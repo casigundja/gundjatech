@@ -1,0 +1,770 @@
+/* ==========================================================================
+   GUNDJATECH ADMIN SYSTEM — "BOOST SOLUTIONS" SAAS LAYOUT + GUNDJATECH PALETTE
+   - Collapsible Sidebar (252px expanded <-> 74px collapsed icon rail)
+   - Deep Obsidian & Slate Surfaces (#0E1017 canvas, #151823 cards, #1C2030 inner)
+   - GundjaTech Brand Accents:
+     * Golden Yellow: #F2C230 / #E4A318 / #FFE074
+     * Electric Blue: #121AFF / #4E5BFF
+     * Petrol Blue: #16749A / #063B5C
+     * Emerald Growth Pills: #34D399 / #6EE7B7
+   ========================================================================== */
+
+@font-face {
+    font-family: "ZSE";
+    src: url("/fonts/ZalandoSansExpanded-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "ZSE";
+    src: url("/fonts/ZalandoSansExpanded-Bold.woff2") format("woff2");
+    font-weight: 700;
+    font-display: swap;
+}
+
+:root {
+    --gtb-bg: #080A11;
+    --gtb-sidebar: #0C0F18;
+    --gtb-card: #121623;
+    --gtb-card-alt: #181D2E;
+    --gtb-border: rgba(255, 255, 255, 0.085);
+    --gtb-border-strong: rgba(255, 255, 255, 0.16);
+    --gtb-gold: #F2C230;
+    --gtb-gold-deep: #E4A318;
+    --gtb-gold-soft: #FFE27A;
+    --gtb-blue: #121AFF;
+    --gtb-blue-mid: #3F4CFF;
+    --gtb-petrol: #16749A;
+    --gtb-petrol-dark: #063B5C;
+    --gtb-mint: #5EEAD4;
+    --gtb-mint-bg: #6EE7B7;
+    --gtb-text: #FFFFFF;
+    --gtb-muted: #949FB5;
+    --gtb-subtle: #647087;
+}
+
+body.gt-admin-boost {
+    background-color: var(--gtb-bg) !important;
+    background-image:
+        radial-gradient(55% 45% at 14% 0%, rgba(242, 194, 48, 0.09) 0%, transparent 65%),
+        radial-gradient(60% 55% at 88% 12%, rgba(18, 26, 255, 0.11) 0%, transparent 65%),
+        radial-gradient(50% 50% at 50% 100%, rgba(6, 59, 92, 0.22) 0%, transparent 70%) !important;
+    color: var(--gtb-text) !important;
+    font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif !important;
+}
+
+body.gt-admin-boost .gt-font-display {
+    font-family: "ZSE", "Plus Jakarta Sans", sans-serif;
+}
+
+/* ==========================================================================
+   COLLAPSIBLE SIDEBAR (Expanded 252px <-> Collapsed 76px Icon Rail)
+   ========================================================================== */
+.gtb-sidebar {
+    width: 252px;
+    background: linear-gradient(180deg, #0E121D 0%, #0A0D15 100%);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 6px 0 30px rgba(0, 0, 0, 0.45);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: width 0.25s cubic-bezier(0.16, 0.84, 0.3, 1), transform 0.25s ease;
+    z-index: 50;
+    user-select: none;
+    overflow-x: hidden;
+}
+
+.gtb-sidebar.is-collapsed {
+    width: 76px;
+}
+
+.gtb-brand-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1A2236 0%, #0E1320 100%);
+    border: 1px solid rgba(242, 194, 48, 0.55);
+    box-shadow: 0 0 18px rgba(242, 194, 48, 0.28);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.gtb-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 14px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--gtb-subtle);
+}
+
+.gtb-nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 11px;
+    padding: 10px 13px;
+    border-radius: 11px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gtb-muted);
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+}
+
+.gtb-sidebar.is-collapsed .gtb-nav-item {
+    justify-content: center;
+    padding: 10px;
+}
+
+.gtb-nav-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: #FFFFFF;
+}
+
+.gtb-nav-item.is-active {
+    background: linear-gradient(90deg, rgba(242, 194, 48, 0.18) 0%, rgba(18, 26, 255, 0.16) 100%) !important;
+    border-color: rgba(242, 194, 48, 0.35) !important;
+    color: #FFFFFF !important;
+    font-weight: 700;
+    box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.5);
+}
+
+.gtb-nav-item.is-active svg {
+    color: var(--gtb-gold) !important;
+}
+
+.gtb-badge-pill {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: rgba(242, 194, 48, 0.14);
+    border: 1px solid rgba(242, 194, 48, 0.3);
+    color: var(--gtb-gold);
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.gtb-count-circle {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--gtb-gold);
+    color: #0B0E1A;
+    font-size: 10.5px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Bottom Promo Card ("ELEVATE YOUR INSIGHTS" adapted to GundjaTech) */
+.gtb-promo-card {
+    margin: 12px;
+    padding: 18px 14px 14px;
+    border-radius: 16px;
+    background:
+        radial-gradient(90% 90% at 50% 100%, rgba(242, 194, 48, 0.35) 0%, rgba(18, 26, 255, 0.25) 52%, rgba(23, 27, 39, 0.95) 100%);
+    border: 1px solid rgba(242, 194, 48, 0.28);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.gtb-promo-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 36px;
+    margin-top: 12px;
+    border-radius: 10px;
+    background: #FFFFFF;
+    color: #0B0E1A !important;
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+    transition: transform 0.18s ease, background-color 0.18s ease;
+}
+
+.gtb-promo-btn:hover {
+    background: var(--gtb-gold);
+    transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   TOPBAR & SUB-HEADER CONTROLS
+   ========================================================================== */
+.gtb-topbar {
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 26px;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.gtb-search-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: min(320px, 100%);
+    height: 40px;
+    padding: 0 8px 0 14px;
+    border-radius: 999px;
+    background: var(--gtb-card);
+    border: 1px solid var(--gtb-border);
+    transition: border-color 0.2s ease;
+}
+
+.gtb-search-box:focus-within {
+    border-color: rgba(242, 194, 48, 0.5);
+}
+
+.gtb-search-box input {
+    background: transparent !important;
+    border: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    color: #FFFFFF !important;
+    font-size: 12px;
+    width: 100%;
+    padding: 0 !important;
+}
+
+.gtb-search-box input::placeholder {
+    color: var(--gtb-muted) !important;
+}
+
+.gtb-kbd-pill {
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: rgba(242, 194, 48, 0.16);
+    color: var(--gtb-gold);
+    font-size: 10px;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.gtb-theme-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 38px;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--gtb-card);
+    border: 1px solid var(--gtb-border);
+}
+
+.gtb-theme-orb {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gtb-muted);
+    transition: all 0.18s ease;
+}
+
+.gtb-theme-orb.is-active {
+    background: linear-gradient(135deg, #FFE074 0%, #F2C230 55%, #E4A318 100%) !important;
+    color: #0B0E1A !important;
+    box-shadow: 0 0 14px rgba(242, 194, 48, 0.5) !important;
+}
+
+/* ==========================================================================
+   CARDS, KPI BOXES, PAIRED BARS, CONCENTRIC RINGS & HEATMAP MATRIX
+   ========================================================================== */
+.gtb-card {
+    background: linear-gradient(165deg, rgba(23, 28, 44, 0.94) 0%, rgba(14, 17, 27, 0.98) 100%);
+    border: 1px solid var(--gtb-border);
+    border-radius: 18px;
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.09),
+        0 20px 44px -18px rgba(0, 0, 0, 0.82);
+    transition: border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.gtb-card:hover {
+    border-color: rgba(242, 194, 48, 0.24);
+}
+
+.gtb-kpi-gold::before,
+.gtb-kpi-blue::before,
+.gtb-kpi-petrol::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 18px;
+    right: 18px;
+    height: 2px;
+    border-radius: 999px;
+    opacity: 0.85;
+}
+
+.gtb-kpi-gold::before {
+    background: linear-gradient(90deg, #F2C230 0%, rgba(242, 194, 48, 0) 100%);
+    box-shadow: 0 2px 16px rgba(242, 194, 48, 0.45);
+}
+
+.gtb-kpi-blue::before {
+    background: linear-gradient(90deg, #4E5BFF 0%, rgba(78, 91, 255, 0) 100%);
+    box-shadow: 0 2px 16px rgba(78, 91, 255, 0.45);
+}
+
+.gtb-kpi-petrol::before {
+    background: linear-gradient(90deg, #38BDF8 0%, rgba(22, 116, 154, 0) 100%);
+    box-shadow: 0 2px 16px rgba(56, 189, 248, 0.4);
+}
+
+.gtb-icon-box {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(242, 194, 48, 0.1);
+    border: 1px solid rgba(242, 194, 48, 0.22);
+    color: var(--gtb-gold);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.gtb-icon-box.is-blue {
+    background: rgba(18, 26, 255, 0.16);
+    border-color: rgba(78, 91, 255, 0.32);
+    color: #7D8BFF;
+}
+
+.gtb-icon-box.is-petrol {
+    background: rgba(22, 116, 154, 0.18);
+    border-color: rgba(22, 116, 154, 0.35);
+    color: #5CE1E6;
+}
+
+.gtb-growth-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #6EE7B7;
+    color: #062E22;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.gtb-ctrl-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 8px;
+    background: #1D2232;
+    border: 1px solid var(--gtb-border);
+    color: #D5DCEB;
+    font-size: 11.5px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.18s ease;
+}
+
+.gtb-ctrl-btn:hover {
+    border-color: var(--gtb-gold);
+    color: var(--gtb-gold);
+}
+
+/* Paired Vertical Bar Chart (Sales Overview style) */
+.gtb-paired-chart {
+    position: relative;
+    height: 230px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding-left: 38px;
+    padding-bottom: 24px;
+}
+
+.gtb-grid-line {
+    position: relative;
+    width: 100%;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.07);
+    height: 0;
+}
+
+.gtb-grid-line span {
+    position: absolute;
+    left: -38px;
+    top: -7px;
+    font-size: 10.5px;
+    color: var(--gtb-subtle);
+    font-weight: 600;
+}
+
+.gtb-bars-overlay {
+    position: absolute;
+    left: 44px;
+    right: 6px;
+    bottom: 24px;
+    top: 8px;
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    align-items: end;
+    gap: 8px;
+}
+
+.gtb-pair-group {
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 3px;
+    position: relative;
+}
+
+.gtb-bar-a {
+    width: 10px;
+    border-radius: 4px 4px 1px 1px;
+    background: linear-gradient(180deg, #FFE68A 0%, #F2C230 55%, #C68B0E 100%);
+    box-shadow: 0 4px 14px rgba(242, 194, 48, 0.26), inset 0 1px 1px rgba(255, 255, 255, 0.55);
+    transition: height 0.3s ease, filter 0.2s ease, transform 0.2s ease;
+}
+
+.gtb-bar-b {
+    width: 10px;
+    border-radius: 4px 4px 1px 1px;
+    background: linear-gradient(180deg, #6E7DFF 0%, #2432FF 60%, #0B1599 100%);
+    box-shadow: 0 4px 14px rgba(36, 50, 255, 0.34), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    transition: height 0.3s ease, filter 0.2s ease, transform 0.2s ease;
+}
+
+.gtb-pair-group:hover .gtb-bar-a,
+.gtb-pair-group:hover .gtb-bar-b {
+    filter: brightness(1.18);
+    transform: translateY(-2px);
+}
+
+.gtb-month-lbl {
+    position: absolute;
+    bottom: -22px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--gtb-subtle);
+}
+
+.gtb-pair-group.is-highlight .gtb-month-lbl {
+    color: #F2C230;
+    font-weight: 800;
+}
+
+/* Floating Dark-Glass Comparison Tooltip inside Sales Overview */
+.gtb-float-tooltip {
+    position: absolute;
+    top: 18px;
+    left: 52%;
+    transform: translateX(-50%);
+    background: rgba(14, 18, 30, 0.94);
+    border: 1px solid rgba(242, 194, 48, 0.42);
+    backdrop-filter: blur(12px);
+    color: #FFFFFF;
+    border-radius: 13px;
+    padding: 10px 14px;
+    box-shadow: 0 20px 42px rgba(0, 0, 0, 0.72), 0 0 24px rgba(242, 194, 48, 0.14);
+    z-index: 10;
+    min-width: 146px;
+    pointer-events: none;
+}
+
+.gtb-float-tooltip::after {
+    content: "";
+    position: absolute;
+    right: -6px;
+    bottom: 14px;
+    width: 10px;
+    height: 10px;
+    background: #0E121E;
+    border-top: 1px solid rgba(242, 194, 48, 0.42);
+    border-right: 1px solid rgba(242, 194, 48, 0.42);
+    transform: rotate(45deg);
+}
+
+/* Heatmap Matrix Cells (Orders by time style) */
+.gtb-heat-cell {
+    height: 31px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10.5px;
+    font-weight: 700;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gtb-heat-cell:hover {
+    transform: scale(1.05);
+    z-index: 2;
+}
+
+.gtb-heat-0 {
+    background: #1D2232;
+    color: #8C95AA;
+}
+
+.gtb-heat-1 {
+    background: rgba(6, 59, 92, 0.68);
+    color: #D5E4F2;
+}
+
+.gtb-heat-2 {
+    background: rgba(22, 116, 154, 0.82);
+    color: #FFFFFF;
+}
+
+.gtb-heat-3 {
+    background: linear-gradient(135deg, #2B38FF 0%, #121AFF 100%);
+    color: #FFFFFF;
+    box-shadow: 0 4px 12px rgba(18, 26, 255, 0.35);
+}
+
+.gtb-heat-4 {
+    background: linear-gradient(135deg, #FFE074 0%, #F2C230 60%, #E4A318 100%);
+    color: #0B0E1A;
+    font-weight: 800;
+    box-shadow: 0 4px 14px rgba(242, 194, 48, 0.42);
+}
+
+/* ==========================================================================
+   COMPATIBILITY WITH ALL INNER ADMIN PAGES (/admin/*)
+   ========================================================================== */
+body.gt-admin-boost .glass-card {
+    background: var(--gtb-card) !important;
+    border: 1px solid var(--gtb-border) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 14px 34px -18px rgba(0, 0, 0, 0.65) !important;
+}
+
+body.gt-admin-boost .btn-primary {
+    background: linear-gradient(135deg, #FFE074 0%, #F2C230 55%, #E4A318 100%) !important;
+    color: #0B0E1A !important;
+    font-weight: 800 !important;
+    border: 0 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 8px 20px -6px rgba(242, 194, 48, 0.45) !important;
+}
+
+body.gt-admin-boost .btn-primary svg,
+body.gt-admin-boost .btn-primary span {
+    color: #0B0E1A !important;
+}
+
+body.gt-admin-boost .btn-secondary {
+    background: var(--gtb-card-alt) !important;
+    border: 1px solid var(--gtb-border-strong) !important;
+    color: #E7F0F5 !important;
+    font-weight: 600 !important;
+    border-radius: 10px !important;
+}
+
+body.gt-admin-boost .btn-secondary:hover {
+    border-color: var(--gtb-gold) !important;
+    color: var(--gtb-gold) !important;
+}
+
+body.gt-admin-boost main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select, textarea) {
+    background-color: #1A1F2E !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    color: #FFFFFF !important;
+    border-radius: 10px;
+}
+
+body.gt-admin-boost main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select, textarea):focus {
+    border-color: var(--gtb-gold) !important;
+    box-shadow: 0 0 0 3px rgba(242, 194, 48, 0.15) !important;
+    outline: none !important;
+}
+
+body.gt-admin-boost main table thead {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+body.gt-admin-boost main table thead th {
+    color: var(--gtb-muted) !important;
+    font-weight: 600 !important;
+}
+
+@media (min-width: 1024px) {
+    .gtb-mobile-toggle {
+        display: none !important;
+    }
+}
+
+/* ==========================================================================
+   LIGHT MODE THEME OVERRIDES (html[data-admin-theme="light"] / .is-light-mode)
+   ========================================================================== */
+html[data-admin-theme="light"],
+body.gt-admin-boost.is-light-mode {
+    --gtb-bg: #F3F6FB;
+    --gtb-sidebar: #FFFFFF;
+    --gtb-card: #FFFFFF;
+    --gtb-card-alt: #F1F5F9;
+    --gtb-border: #E2E8F0;
+    --gtb-border-strong: #CBD5E1;
+    --gtb-text: #0F172A;
+    --gtb-muted: #475569;
+    --gtb-subtle: #64748B;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost,
+body.gt-admin-boost.is-light-mode {
+    background-color: #F3F6FB !important;
+    background-image:
+        radial-gradient(60% 50% at 8% 0%, rgba(22, 116, 154, 0.08) 0%, transparent 65%),
+        radial-gradient(50% 45% at 92% 10%, rgba(242, 194, 48, 0.12) 0%, transparent 65%) !important;
+    color: #0F172A !important;
+}
+
+body.gt-admin-boost.is-light-mode .gtb-sidebar {
+    background: #FFFFFF !important;
+    border-right-color: #E2E8F0 !important;
+    box-shadow: 4px 0 24px rgba(15, 23, 42, 0.04);
+}
+
+body.gt-admin-boost.is-light-mode .gtb-nav-item {
+    color: #475569;
+}
+
+body.gt-admin-boost.is-light-mode .gtb-nav-item:hover {
+    background: #F1F5F9;
+    color: #0F172A;
+}
+
+body.gt-admin-boost.is-light-mode .gtb-nav-item.is-active {
+    background: linear-gradient(90deg, rgba(242, 194, 48, 0.28) 0%, rgba(18, 26, 255, 0.08) 100%) !important;
+    border-color: rgba(228, 163, 24, 0.5) !important;
+    color: #0F172A !important;
+    box-shadow: 0 6px 16px -6px rgba(228, 163, 24, 0.28);
+}
+
+body.gt-admin-boost.is-light-mode .gtb-nav-item.is-active svg {
+    color: #B87D04 !important;
+}
+
+body.gt-admin-boost.is-light-mode .gtb-badge-pill {
+    background: #FEF3C7;
+    border-color: #F59E0B;
+    color: #92400E;
+}
+
+body.gt-admin-boost.is-light-mode .gtb-card,
+body.gt-admin-boost.is-light-mode .glass-card {
+    background: #FFFFFF !important;
+    border-color: #E2E8F0 !important;
+    box-shadow: 0 10px 26px -14px rgba(15, 23, 42, 0.08) !important;
+}
+
+body.gt-admin-boost.is-light-mode .gtb-search-box,
+body.gt-admin-boost.is-light-mode .gtb-theme-switch,
+body.gt-admin-boost.is-light-mode .gtb-ctrl-btn {
+    background: #FFFFFF !important;
+    border-color: #E2E8F0 !important;
+    color: #334155 !important;
+}
+
+body.gt-admin-boost.is-light-mode .gtb-search-box input {
+    color: #0F172A !important;
+}
+
+body.gt-admin-boost.is-light-mode .gtb-kbd-pill {
+    background: #FEF3C7;
+    color: #B45309;
+}
+
+body.gt-admin-boost.is-light-mode .gtb-grid-line {
+    border-bottom-color: #E2E8F0;
+}
+
+body.gt-admin-boost.is-light-mode .gtb-pair-group.is-highlight .gtb-month-lbl {
+    color: #0F172A;
+}
+
+body.gt-admin-boost.is-light-mode .gtb-float-tooltip {
+    background: #0F172A;
+    color: #FFFFFF;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.22);
+}
+
+body.gt-admin-boost.is-light-mode .gtb-float-tooltip::after {
+    background: #0F172A;
+}
+
+body.gt-admin-boost.is-light-mode .gtb-float-tooltip .text-slate-900,
+body.gt-admin-boost.is-light-mode .gtb-float-tooltip .text-slate-600 {
+    color: #F8FAFC !important;
+}
+
+body.gt-admin-boost.is-light-mode .gtb-heat-0 {
+    background: #F1F5F9;
+    color: #64748B;
+}
+
+body.gt-admin-boost.is-light-mode svg circle[stroke="#222738"] {
+    stroke: #E2E8F0 !important;
+}
+
+body.gt-admin-boost.is-light-mode :where(.bg-\[\#222738\], .bg-\[\#171B27\], .bg-\[\#1A1F2E\]) {
+    background-color: #F1F5F9 !important;
+    border-color: #E2E8F0 !important;
+}
+
+body.gt-admin-boost.is-light-mode :where(.text-white):not(.gtb-promo-card *):not(.gtb-heat-1):not(.gtb-heat-2):not(.gtb-heat-3):not(.btn-primary):not(.btn-primary *):not(.bg-emerald-500):not(.bg-red-500) {
+    color: #0F172A !important;
+}
+
+body.gt-admin-boost.is-light-mode :where(.text-\[\#D5DCEB\], .text-\[\#8C95AA\], .text-gray-200, .text-gray-300, .text-gray-400) {
+    color: #475569 !important;
+}
+
+body.gt-admin-boost.is-light-mode :where(.text-\[\#F2C230\], .text-\[\#E4A318\]):not(.gtb-promo-card *):not(.gtb-brand-badge *) {
+    color: #B47804 !important;
+}
+
+body.gt-admin-boost.is-light-mode .text-\[\#6EE7B7\] {
+    color: #059669 !important;
+}
+
+body.gt-admin-boost.is-light-mode :where(.border-white\/5, .border-white\/10, .divide-white\/5 > :not(:last-child)) {
+    border-color: #E2E8F0 !important;
+}
+
+body.gt-admin-boost.is-light-mode main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select, textarea) {
+    background-color: #FFFFFF !important;
+    border-color: #CBD5E1 !important;
+    color: #0F172A !important;
+}
+
+body.gt-admin-boost.is-light-mode .btn-secondary {
+    background: #FFFFFF !important;
+    border-color: #CBD5E1 !important;
+    color: #0F172A !important;
+}

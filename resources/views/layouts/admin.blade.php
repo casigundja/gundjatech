@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="h-full">
+<html lang="pt-BR" class="h-full dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,229 +9,335 @@
     <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="stylesheet" href="/css/gt-panel.css?v=4">
+    <link rel="stylesheet" href="/css/gt-admin.css?v=7">
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('gt_admin_theme') || 'dark';
+                document.documentElement.setAttribute('data-admin-theme', saved);
+                if (saved === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
     @livewireStyles
 </head>
-<body class="gt-panel bg-[#F7F4EC] text-[#1C1508] font-sans antialiased h-full flex overflow-hidden" x-data="{ sidebarOpen: false }">
+<body
+    class="gt-admin-boost font-sans antialiased h-full flex overflow-hidden"
+    x-data="{
+        sidebarOpen: false,
+        sidebarCollapsed: false,
+        profileOpen: false,
+        theme: localStorage.getItem('gt_admin_theme') || 'dark',
+        setTheme(val) {
+            this.theme = val;
+            try { localStorage.setItem('gt_admin_theme', val); } catch (e) {}
+            document.documentElement.setAttribute('data-admin-theme', val);
+            document.documentElement.classList.toggle('dark', val === 'dark');
+        },
+        toggleTheme() {
+            this.setTheme(this.theme === 'dark' ? 'light' : 'dark');
+        }
+    }"
+    :class="theme === 'light' ? 'is-light-mode' : 'is-dark-mode'"
+>
     @php
         $currentUser = Auth::user();
+        $totalNotifications = ($adminPendingRequestsCount ?? 0) + ($adminOpenChatsCount ?? 0);
     @endphp
 
-    <!-- Mobile Sidebar Backdrop -->
-    <div x-show="sidebarOpen" x-cloak @click="sidebarOpen = false" class="fixed inset-0 z-40 bg-[#1C1508]/50 backdrop-blur-[2px] lg:hidden"></div>
+    <!-- Mobile Backdrop -->
+    <div x-show="sidebarOpen" x-cloak @click="sidebarOpen = false" class="fixed inset-0 z-40 bg-black/75 backdrop-blur-xs lg:hidden"></div>
 
-    <!-- Admin Sidebar -->
-    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="gt-sidebar fixed inset-y-0 left-0 z-50 w-64 flex flex-col justify-between transition-transform duration-300 lg:translate-x-0 lg:static lg:inset-0 shrink-0">
+    <!-- Collapsible Left Sidebar (Expanded 252px <-> Collapsed 76px Icon Rail, matching print) -->
+    <aside
+        :class="[
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+            sidebarCollapsed ? 'is-collapsed' : ''
+        ]"
+        class="gtb-sidebar fixed inset-y-0 left-0 z-50 lg:static lg:inset-0 shrink-0"
+    >
         <div class="flex flex-col min-h-0 flex-1">
             <!-- Brand Header -->
-            <div class="gt-sidebar-head h-20 flex items-center justify-between px-5 shrink-0">
+            <div class="h-[72px] flex items-center justify-between px-4 shrink-0" :class="sidebarCollapsed ? 'justify-center' : ''">
                 <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2.5 no-underline">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 300" width="32" height="28" aria-hidden="true" class="shrink-0">
-                        <defs>
-                            <linearGradient id="gtAdmMain" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="#8F6107"/>
-                                <stop offset="100%" stop-color="#2C1D02"/>
-                            </linearGradient>
-                            <linearGradient id="gtAdmTop" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="#4A3205"/>
-                                <stop offset="100%" stop-color="#1E1301"/>
-                            </linearGradient>
-                            <linearGradient id="gtAdmGold" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" stop-color="#FFC94A"/>
-                                <stop offset="100%" stop-color="#E4A318"/>
-                            </linearGradient>
-                        </defs>
-                        <path d="M 236.00 0.00 L 138.00 0.00 C 119.17 0.33, 126.17 1.33, 123.00 2.00 C 119.83 2.67, 121.67 3.33, 119.00 4.00 C 116.33 4.67, 111.83 4.67, 107.00 6.00 C 102.17 7.33, 93.17 10.67, 90.00 12.00 C 86.83 13.33, 90.67 12.67, 88.00 14.00 C 85.33 15.33, 78.83 17.33, 74.00 20.00 C 69.17 22.67, 63.50 26.67, 59.00 30.00 C 54.50 33.33, 51.50 35.67, 47.00 40.00 C 42.50 44.33, 36.67 50.17, 32.00 56.00 C 27.33 61.83, 23.17 67.50, 19.00 75.00 C 14.83 82.50, 9.33 94.83, 7.00 101.00 C 4.67 107.17, 5.67 109.50, 5.00 112.00 C 4.33 114.50, 3.67 113.50, 3.00 116.00 C 2.33 118.50, 1.33 121.00, 1.00 127.00 L 1.00 152.00 L 2.00 145.00 C 3.17 141.17, 4.33 135.83, 8.00 129.00 C 11.67 122.17, 18.83 110.83, 24.00 104.00 C 29.17 97.17, 32.50 93.67, 39.00 88.00 C 45.50 82.33, 53.83 75.50, 63.00 70.00 C 72.17 64.50, 85.33 58.33, 94.00 55.00 C 102.67 51.67, 109.33 51.67, 115.00 50.00 C 120.67 48.33, 122.50 46.33, 128.00 45.00 C 133.50 43.67, 139.00 42.50, 148.00 42.00 C 157.00 41.50, 174.50 42.50, 182.00 42.00 C 189.50 41.50, 189.83 40.33, 193.00 39.00 C 196.17 37.67, 193.83 40.50, 201.00 34.00 L 236.00 0.00 Z" fill="url(#gtAdmTop)"/>
-                        <path d="M 15.00 118.00 C 10.67 125.00, 7.33 133.00, 5.00 139.00 C 2.67 145.00, 1.33 148.00, 1.00 154.00 C 0.67 160.00, 1.50 167.67, 3.00 175.00 C 4.50 182.33, 7.00 190.50, 10.00 198.00 C 13.00 205.50, 17.17 213.67, 21.00 220.00 C 24.83 226.33, 27.67 230.17, 33.00 236.00 C 38.33 241.83, 45.33 249.17, 53.00 255.00 C 60.67 260.83, 71.00 267.00, 79.00 271.00 C 87.00 275.00, 93.33 277.00, 101.00 279.00 C 108.67 281.00, 104.50 283.00, 125.00 283.00 C 145.50 283.00, 203.50 281.33, 224.00 279.00 C 244.50 276.67, 242.17 272.00, 248.00 269.00 C 253.83 266.00, 255.00 264.67, 259.00 261.00 C 263.00 257.33, 268.33 252.00, 272.00 247.00 C 275.67 242.00, 278.83 235.67, 281.00 231.00 C 283.17 226.33, 284.17 233.83, 285.00 219.00 C 285.83 204.17, 286.50 155.67, 286.00 142.00 L 282.00 137.00 L 167.00 137.00 C 146.17 138.33, 161.00 138.50, 157.00 145.00 L 143.00 176.00 L 228.00 176.00 C 242.50 176.33, 229.67 170.67, 230.00 178.00 C 230.33 185.33, 230.67 209.50, 230.00 220.00 C 229.33 230.50, 228.17 235.00, 226.00 241.00 C 223.83 247.00, 220.00 252.00, 217.00 256.00 C 214.00 260.00, 212.00 262.00, 208.00 265.00 C 204.00 268.00, 196.17 272.50, 193.00 274.00 L 189.00 274.00 L 187.00 271.00 L 190.00 267.00 L 188.00 264.00 L 190.00 263.00 L 190.00 252.00 C 190.50 249.33, 193.00 250.00, 193.00 247.00 L 190.00 234.00 L 158.00 238.00 C 146.17 238.00, 129.33 236.33, 119.00 234.00 C 108.67 231.67, 103.67 228.83, 96.00 224.00 C 88.33 219.17, 79.00 211.33, 73.00 205.00 C 67.00 198.67, 63.17 191.67, 60.00 186.00 C 56.83 180.33, 55.67 177.17, 54.00 171.00 C 52.33 164.83, 50.33 156.50, 50.00 149.00 C 49.67 141.50, 50.67 133.00, 52.00 126.00 C 53.33 119.00, 54.67 114.17, 58.00 107.00 C 61.33 99.83, 67.17 89.67, 72.00 83.00 C 76.83 76.33, 80.67 72.17, 87.00 67.00 L 110.00 52.00 L 84.00 60.00 C 74.67 64.17, 62.83 70.83, 54.00 77.00 C 45.17 83.17, 37.50 90.17, 31.00 97.00 C 24.50 103.83, 19.33 111.00, 15.00 118.00 Z" fill="url(#gtAdmMain)"/>
-                        <path d="M 323.00 54.00 C 320.83 50.33, 315.83 44.67, 313.00 42.00 C 310.17 39.33, 308.17 39.00, 306.00 38.00 C 303.83 37.00, 303.33 36.33, 300.00 36.00 C 296.67 35.67, 289.50 35.67, 286.00 36.00 C 282.50 36.33, 281.67 36.83, 279.00 38.00 C 276.33 39.17, 273.67 39.83, 270.00 43.00 C 266.33 46.17, 260.17 54.17, 257.00 57.00 C 253.83 59.83, 269.33 59.33, 251.00 60.00 C 232.67 60.67, 165.83 60.67, 147.00 61.00 C 128.17 61.33, 142.67 60.83, 138.00 62.00 C 133.33 63.17, 124.50 65.67, 119.00 68.00 C 113.50 70.33, 109.83 72.50, 105.00 76.00 C 100.17 79.50, 94.17 84.50, 90.00 89.00 C 85.83 93.50, 82.83 98.33, 80.00 103.00 C 77.17 107.67, 74.83 112.00, 73.00 117.00 C 71.17 122.00, 69.50 130.00, 69.00 133.00 C 68.50 136.00, 70.00 131.67, 70.00 135.00 C 70.00 138.33, 68.33 146.83, 69.00 153.00 C 69.67 159.17, 72.00 166.67, 74.00 172.00 C 76.00 177.33, 78.00 180.67, 81.00 185.00 C 84.00 189.33, 87.33 193.83, 92.00 198.00 C 96.67 202.17, 104.67 207.33, 109.00 210.00 C 113.33 212.67, 116.00 213.33, 118.00 214.00 L 121.00 214.00 L 109.00 202.00 C 106.00 198.50, 105.33 198.33, 103.00 193.00 C 100.67 187.67, 96.33 177.67, 95.00 170.00 C 93.67 162.33, 94.33 153.17, 95.00 147.00 C 95.67 140.83, 97.00 137.67, 99.00 133.00 C 101.00 128.33, 103.50 123.50, 107.00 119.00 C 110.50 114.50, 115.83 109.33, 120.00 106.00 C 124.17 102.67, 127.83 100.83, 132.00 99.00 C 136.17 97.17, 123.83 95.67, 145.00 95.00 C 166.17 94.33, 237.33 93.33, 259.00 95.00 C 280.67 96.67, 271.33 103.00, 275.00 105.00 C 278.67 107.00, 277.83 106.67, 281.00 107.00 C 284.17 107.33, 289.33 108.00, 294.00 107.00 C 298.67 106.00, 305.33 103.00, 309.00 101.00 C 312.67 99.00, 313.67 97.67, 316.00 95.00 C 318.33 92.33, 321.33 88.50, 323.00 85.00 C 324.67 81.50, 325.50 77.50, 326.00 74.00 C 326.50 70.50, 326.50 67.33, 326.00 64.00 C 325.50 60.67, 325.17 57.67, 323.00 54.00 Z M 289.00 55.00 C 290.33 54.83, 292.67 54.83, 294.00 55.00 C 295.33 55.17, 296.17 55.67, 297.00 56.00 C 297.83 56.33, 298.17 56.50, 299.00 57.00 C 299.83 57.50, 301.17 58.33, 302.00 59.00 C 302.83 59.67, 303.33 60.00, 304.00 61.00 C 304.67 62.00, 305.50 63.67, 306.00 65.00 C 306.50 66.33, 306.83 68.00, 307.00 69.00 C 307.17 70.00, 307.17 69.83, 307.00 71.00 C 306.83 72.17, 306.50 74.50, 306.00 76.00 C 305.50 77.50, 305.17 78.50, 304.00 80.00 C 302.83 81.50, 300.50 83.83, 299.00 85.00 C 297.50 86.17, 297.50 86.67, 295.00 87.00 C 292.50 87.33, 286.17 87.17, 284.00 87.00 C 281.83 86.83, 283.33 87.17, 282.00 86.00 C 280.67 84.83, 277.17 81.33, 276.00 80.00 C 274.83 78.67, 275.33 78.83, 275.00 78.00 C 274.67 77.17, 274.17 76.33, 274.00 75.00 C 273.83 73.67, 273.67 71.83, 274.00 70.00 C 274.33 68.17, 274.67 66.00, 276.00 64.00 C 277.33 62.00, 280.33 59.33, 282.00 58.00 C 283.67 56.67, 284.83 56.50, 286.00 56.00 C 287.17 55.50, 287.67 55.17, 289.00 55.00 Z" fill="url(#gtAdmGold)"/>
-                        <circle cx="290.5" cy="71.4" r="15.1" fill="#FFC94A"/>
-                    </svg>
-                    <span class="gt-brand-word">Gundja<span>Tech</span></span>
+                    <span class="gtb-brand-badge">
+                        <img src="/img/favicon.svg" alt="GundjaTech" class="w-5 h-5 object-contain">
+                    </span>
+                    <span x-show="!sidebarCollapsed" class="gt-font-display text-sm font-bold tracking-tight text-white">
+                        Gundja<span class="text-[#F2C230] font-normal">Tech</span>
+                    </span>
                 </a>
-                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#FDF5E2] text-[#8F6107] border border-[#E8D5A5]">Admin</span>
+                <button @click="sidebarOpen = false" class="text-gray-400 hover:text-white lg:hidden p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <!-- Section 1: MAIN MENU + Collapse Toggle (<< / >>) -->
+            <div class="gtb-section-head">
+                <span x-show="!sidebarCollapsed">Menu Principal</span>
+                <span x-show="sidebarCollapsed" x-cloak class="mx-auto">M</span>
+                <button
+                    type="button"
+                    @click="sidebarCollapsed = !sidebarCollapsed"
+                    class="hidden lg:inline-flex text-[#8C95AA] hover:text-[#F2C230] transition cursor-pointer p-0.5"
+                    :title="sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'"
+                >
+                    <span x-text="sidebarCollapsed ? '»' : '«'" class="text-xs font-extrabold leading-none">«</span>
+                </button>
             </div>
 
             <!-- Navigation Links -->
-            <nav class="p-3.5 space-y-1 overflow-y-auto flex-1">
+            <nav class="px-3 space-y-1 overflow-y-auto flex-1">
                 @if($currentUser->hasPermission('admin.dashboard.view'))
-                    <a href="{{ route('admin.dashboard') }}" class="gt-nav-item {{ request()->routeIs('admin.dashboard') ? 'is-active' : '' }}">
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                        <span>Dashboard</span>
-                    </a>
-                @endif
-
-                @if($currentUser->hasPermission('requests.view') || $currentUser->hasPermission('quotations.view') || $currentUser->hasPermission('clients.view') || $currentUser->hasPermission('projects.view') || $currentUser->hasPermission('services.view'))
-                    <div class="gt-nav-section">Operações</div>
-                @endif
-
-                @if($currentUser->hasPermission('requests.view'))
-                    <a href="{{ route('admin.requests.index') }}" class="gt-nav-item justify-between {{ request()->routeIs('admin.requests*') ? 'is-active' : '' }}">
-                        <div class="flex items-center gap-2.5">
-                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                            <span>Solicitações</span>
+                    <a href="{{ route('admin.dashboard') }}" class="gtb-nav-item {{ request()->routeIs('admin.dashboard') ? 'is-active' : '' }}" title="Dashboard">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                            <span x-show="!sidebarCollapsed">Dashboard</span>
                         </div>
-                        @if(($adminPendingRequestsCount ?? 0) > 0)
-                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold {{ request()->routeIs('admin.requests*') ? 'bg-white/20 text-white' : 'bg-[#FFF5D6] text-[#B87900]' }}">
-                                {{ $adminPendingRequestsCount }}
-                            </span>
-                        @endif
-                    </a>
-                @endif
-
-                @if($currentUser->hasPermission('quotations.view'))
-                    <a href="{{ route('admin.quotations.index') }}" class="gt-nav-item {{ request()->routeIs('admin.quotations*') ? 'is-active' : '' }}">
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg>
-                        <span>Orçamentos</span>
-                    </a>
-                @endif
-
-                @if($currentUser->hasPermission('clients.view'))
-                    <a href="{{ route('admin.clients.index') }}" class="gt-nav-item {{ request()->routeIs('admin.clients*') ? 'is-active' : '' }}">
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                        <span>Clientes</span>
-                    </a>
-                @endif
-
-                @if($currentUser->hasPermission('projects.view'))
-                    <a href="{{ route('admin.projects.index') }}" class="gt-nav-item {{ request()->routeIs('admin.projects*') ? 'is-active' : '' }}">
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        <span>Projetos</span>
-                    </a>
-                @endif
-
-                @if($currentUser->hasPermission('services.view'))
-                    <a href="{{ route('admin.services.index') }}" class="gt-nav-item {{ request()->routeIs('admin.services*') ? 'is-active' : '' }}">
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-                        <span>Serviços & Catálogo</span>
-                    </a>
-                @endif
-
-                @if($currentUser->hasPermission('domains.view') || $currentUser->hasPermission('campaigns.view') || $currentUser->hasPermission('finance.view') || $currentUser->hasPermission('chat.view'))
-                    <div class="gt-nav-section">Ativos & Performance</div>
-                @endif
-
-                @if($currentUser->hasPermission('domains.view'))
-                    <a href="{{ route('admin.domains.index') }}" class="gt-nav-item {{ request()->routeIs('admin.domains*') ? 'is-active' : '' }}">
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
-                        <span>Domínios & DNS</span>
                     </a>
                 @endif
 
                 @if($currentUser->hasPermission('campaigns.view'))
-                    <a href="{{ route('admin.campaigns.index') }}" class="gt-nav-item {{ request()->routeIs('admin.campaigns*') ? 'is-active' : '' }}">
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-                        <span>Tráfego Pago</span>
+                    <a href="{{ route('admin.campaigns.index') }}" class="gtb-nav-item {{ request()->routeIs('admin.campaigns*') ? 'is-active' : '' }}" title="Tráfego & Analytics">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            <span x-show="!sidebarCollapsed">Tráfego & Analytics</span>
+                        </div>
                     </a>
                 @endif
 
                 @if($currentUser->hasPermission('finance.view'))
-                    <a href="{{ route('admin.finance.index') }}" class="gt-nav-item {{ request()->routeIs('admin.finance*') ? 'is-active' : '' }}">
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span>Financeiro</span>
+                    <a href="{{ route('admin.finance.index') }}" class="gtb-nav-item {{ request()->routeIs('admin.finance*') ? 'is-active' : '' }}" title="Financeiro & Receita">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                            <span x-show="!sidebarCollapsed">Receita & Caixa</span>
+                        </div>
                     </a>
                 @endif
 
-                @if($currentUser->hasPermission('chat.view'))
-                    <a href="{{ route('admin.chat.index') }}" class="gt-nav-item justify-between {{ request()->routeIs('admin.chat*') ? 'is-active' : '' }}">
-                        <div class="flex items-center gap-2.5">
-                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                            <span>Atendimento & Chat</span>
+                @if($currentUser->hasPermission('projects.view'))
+                    <a href="{{ route('admin.projects.index') }}" class="gtb-nav-item {{ request()->routeIs('admin.projects*') ? 'is-active' : '' }}" title="Projetos">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                            <span x-show="!sidebarCollapsed">Projetos</span>
                         </div>
-                        @if(($adminOpenChatsCount ?? 0) > 0)
-                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold {{ request()->routeIs('admin.chat*') ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-700' }}">
-                                {{ $adminOpenChatsCount }}
-                            </span>
+                        <span x-show="!sidebarCollapsed" class="gtb-badge-pill">PRO</span>
+                    </a>
+                @endif
+
+                @if($currentUser->hasPermission('services.view'))
+                    <a href="{{ route('admin.services.index') }}" class="gtb-nav-item {{ request()->routeIs('admin.services*') ? 'is-active' : '' }}" title="Serviços & Catálogo">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"/></svg>
+                            <span x-show="!sidebarCollapsed">Serviços & Soluções</span>
+                        </div>
+                    </a>
+                @endif
+
+                @if($currentUser->hasPermission('clients.view'))
+                    <a href="{{ route('admin.clients.index') }}" class="gtb-nav-item {{ request()->routeIs('admin.clients*') ? 'is-active' : '' }}" title="Clientes">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            <span x-show="!sidebarCollapsed">Clientes</span>
+                        </div>
+                    </a>
+                @endif
+
+                @if($currentUser->hasPermission('requests.view'))
+                    <a href="{{ route('admin.requests.index') }}" class="gtb-nav-item {{ request()->routeIs('admin.requests*') ? 'is-active' : '' }}" title="Solicitações">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            <span x-show="!sidebarCollapsed">Solicitações</span>
+                        </div>
+                        @if(($adminPendingRequestsCount ?? 0) > 0)
+                            <span x-show="!sidebarCollapsed" class="gtb-count-circle">{{ $adminPendingRequestsCount }}</span>
                         @endif
                     </a>
                 @endif
 
-                @if($currentUser->hasPermission('users.view') || $currentUser->hasPermission('settings.manage'))
-                    <div class="gt-nav-section">Governança & Acesso</div>
+                <!-- Section 2: WORKSPACES / ECOSSISTEMA -->
+                <div class="gtb-section-head pt-4 border-t border-white/5 mt-2">
+                    <span x-show="!sidebarCollapsed">Workspaces</span>
+                    <span x-show="sidebarCollapsed" x-cloak class="mx-auto">W</span>
+                    <a x-show="!sidebarCollapsed" href="{{ route('admin.quotations.create') }}" class="text-[#8C95AA] hover:text-[#F2C230] no-underline text-xs font-bold" title="Novo Orçamento">+</a>
+                </div>
+
+                @if($currentUser->hasPermission('quotations.view'))
+                    <a href="{{ route('admin.quotations.index') }}" class="gtb-nav-item {{ request()->routeIs('admin.quotations*') ? 'is-active' : '' }}" title="Orçamentos">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                            <span x-show="!sidebarCollapsed">Orçamentos</span>
+                        </div>
+                    </a>
+                @endif
+
+                @if($currentUser->hasPermission('domains.view'))
+                    <a href="{{ route('admin.domains.index') }}" class="gtb-nav-item {{ request()->routeIs('admin.domains*') ? 'is-active' : '' }}" title="Domínios & DNS">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+                            <span x-show="!sidebarCollapsed">Domínios & DNS</span>
+                        </div>
+                    </a>
                 @endif
 
                 @if($currentUser->hasPermission('users.view'))
-                    <a href="{{ route('admin.users.index') }}" class="gt-nav-item {{ request()->routeIs('admin.users*') ? 'is-active' : '' }}">
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                        <span>Usuários & Equipe</span>
+                    <a href="{{ route('admin.users.index') }}" class="gtb-nav-item {{ request()->routeIs('admin.users*') ? 'is-active' : '' }}" title="Usuários & Equipe">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                            <span x-show="!sidebarCollapsed">Equipe & Usuários</span>
+                        </div>
                     </a>
                 @endif
 
-                @if($currentUser->hasPermission('settings.manage'))
-                    <a href="{{ route('admin.permissions.index') }}" class="gt-nav-item {{ request()->routeIs('admin.permissions*') ? 'is-active' : '' }}">
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                        <span>Permissões (RBAC)</span>
-                    </a>
-                @endif
+                <div class="pt-3 mt-2 border-t border-white/5 space-y-1">
+                    @if($currentUser->hasPermission('chat.view'))
+                        <a href="{{ route('admin.chat.index') }}" class="gtb-nav-item {{ request()->routeIs('admin.chat*') ? 'is-active' : '' }}" title="Atendimento & Suporte">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <span x-show="!sidebarCollapsed">Suporte & Chat</span>
+                            </div>
+                            @if(($adminOpenChatsCount ?? 0) > 0)
+                                <span x-show="!sidebarCollapsed" class="gtb-count-circle">{{ $adminOpenChatsCount }}</span>
+                            @endif
+                        </a>
+                    @endif
+
+                    @if($currentUser->hasPermission('settings.manage'))
+                        <a href="{{ route('admin.permissions.index') }}" class="gtb-nav-item {{ request()->routeIs('admin.permissions*') ? 'is-active' : '' }}" title="Configurações & RBAC">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                                <span x-show="!sidebarCollapsed">Configurações</span>
+                            </div>
+                        </a>
+                    @endif
+                </div>
             </nav>
         </div>
 
-        <!-- User profile footer in sidebar -->
-        <div class="p-3.5 border-t border-[#E8DFCE] bg-[#FAF7F0]">
-            <div class="flex items-center justify-between gap-2">
-                <div class="flex items-center gap-2.5 truncate">
-                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#2C1D02] to-[#8F6107] text-[#FFC94A] font-bold flex items-center justify-center text-xs shrink-0 shadow-sm">
-                        {{ strtoupper(substr($currentUser->name, 0, 1)) }}
-                    </div>
-                    <div class="truncate">
-                        <div class="text-xs font-bold text-[#1C1508] truncate">{{ $currentUser->name }}</div>
-                        <div class="text-[10px] text-[#8F6107] uppercase font-bold tracking-wide">{{ $currentUser->roleEnum()->label() }}</div>
-                    </div>
-                </div>
-                <form action="{{ route('logout') }}" method="POST">
-                    @csrf
-                    <button type="submit" title="Sair" class="text-[#8E7F66] hover:text-red-600 hover:bg-red-50 rounded-lg p-1.5 transition cursor-pointer">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                    </button>
-                </form>
+        <!-- Bottom Promo Card ("ELEVATE YOUR INSIGHTS" adapted to GundjaTech) -->
+        <div x-show="!sidebarCollapsed" class="gtb-promo-card">
+            <div class="text-[10.5px] font-bold tracking-wider uppercase text-white/90 leading-snug">
+                ELEVE SUA OPERAÇÃO<br>
+                COM <strong class="text-[#F2C230]">GUNDJATECH AI ✦</strong>
             </div>
+            <a href="{{ route('admin.quotations.create') }}" class="gtb-promo-btn">
+                <span>Novo Orçamento</span>
+                <span class="text-[#E4A318]">♛</span>
+            </a>
+        </div>
+        <div x-show="sidebarCollapsed" x-cloak class="p-3 flex justify-center">
+            <a href="{{ route('admin.quotations.create') }}" class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#F2C230] to-[#121AFF] text-[#0B0E1A] flex items-center justify-center font-extrabold no-underline shadow-lg" title="Novo Orçamento">
+                ♛
+            </a>
         </div>
     </aside>
 
-    <!-- Main Content Area -->
+    <!-- Main Workspace Area -->
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <!-- Topbar -->
-        <header class="gt-topbar h-20 flex items-center justify-between px-4 sm:px-7 shrink-0 gap-4">
+        <!-- Top Header Bar (Title on left; Search + KBD + Theme Pill + Bell + User Profile on right) -->
+        <header class="gtb-topbar">
             <div class="flex items-center gap-3 min-w-0">
-                <button @click="sidebarOpen = !sidebarOpen" class="text-[#766852] hover:text-[#8F6107] lg:hidden p-1.5 rounded-lg hover:bg-[#FAF3E3]" aria-label="Abrir menu">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                <button @click="sidebarOpen = !sidebarOpen" class="gtb-mobile-toggle p-2 rounded-xl bg-[#171B27] border border-white/10 text-white" aria-label="Abrir menu">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
-                <h1 class="gt-topbar-title text-base sm:text-lg font-bold truncate">@yield('header_title', 'Painel Geral')</h1>
+                <h1 class="gt-font-display text-lg sm:text-xl font-bold text-white tracking-tight truncate">
+                    @yield('header_title', 'Dashboard')
+                </h1>
             </div>
 
-            <div class="flex items-center gap-2.5 shrink-0">
-                <a href="{{ route('home') }}" target="_blank" class="hidden sm:inline-flex items-center gap-1.5 text-xs text-[#6B5D45] hover:text-[#8F6107] px-3 py-2 rounded-lg hover:bg-[#FAF5E8] transition font-semibold">
-                    <span>Ver Site</span>
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            <div class="flex items-center gap-3 shrink-0">
+                <!-- Search Box with ⌘ F Pill -->
+                <form action="{{ route('admin.requests.index') }}" method="GET" class="gtb-search-box hidden md:flex">
+                    <svg class="w-4 h-4 text-[#8C95AA] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Pesquisar demandas, clientes..." aria-label="Pesquisar">
+                    <span class="gtb-kbd-pill">⌘ F</span>
+                </form>
+
+                <!-- Theme / Mode Toggle Pill (Interactive Light & Dark Switch) -->
+                <div class="gtb-theme-switch" role="group" aria-label="Alternar entre modo claro e modo escuro">
+                    <button
+                        type="button"
+                        @click="setTheme('light')"
+                        :class="theme === 'light' ? 'is-active' : ''"
+                        class="gtb-theme-orb cursor-pointer border-0"
+                        title="Modo Claro"
+                        aria-label="Ativar modo claro"
+                    >
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                    </button>
+                    <button
+                        type="button"
+                        @click="setTheme('dark')"
+                        :class="theme === 'dark' ? 'is-active' : ''"
+                        class="gtb-theme-orb cursor-pointer border-0"
+                        title="Modo Escuro"
+                        aria-label="Ativar modo escuro"
+                    >
+                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+                    </button>
+                </div>
+
+                <!-- Notification Bell with Glowing Dot -->
+                <a href="{{ route('admin.requests.index') }}" class="relative w-10 h-10 rounded-full bg-[#171B27] border border-white/10 flex items-center justify-center text-[#D5DCEB] hover:border-[#F2C230] hover:text-[#F2C230] transition" title="Notificações ({{ $totalNotifications }})">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                    <span class="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-[#34D399] shadow-[0_0_8px_#34D399]"></span>
                 </a>
-                @if($currentUser->isAdmin() || $currentUser->hasPermission('portal.access'))
-                    <a href="{{ route('portal.dashboard') }}" target="_blank" class="hidden md:inline-flex items-center gap-1.5 text-xs bg-white hover:bg-[#FAF5E8] text-[#1C1508] font-semibold px-3.5 py-2 rounded-lg border border-[#D6C9B2] hover:border-[#8F6107] hover:text-[#8F6107] transition">
-                        <span>Portal do Cliente</span>
-                    </a>
-                @endif
+
+                <span class="h-6 w-px bg-white/10 hidden sm:inline-block"></span>
+
+                <!-- User Name, Email & Avatar Dropdown -->
+                <div class="relative" @click.away="profileOpen = false">
+                    <button type="button" @click="profileOpen = !profileOpen" class="flex items-center gap-3 cursor-pointer text-right">
+                        <div class="hidden sm:block leading-tight">
+                            <div class="text-xs font-bold text-white">{{ $currentUser->name }}</div>
+                            <div class="text-[10.5px] text-[#8C95AA]">{{ $currentUser->email }}</div>
+                        </div>
+                        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#F2C230] to-[#34D399] p-0.5 shadow-md shrink-0">
+                            <div class="w-full h-full rounded-full bg-[#171B27] flex items-center justify-center text-xs font-extrabold text-[#F2C230]">
+                                {{ strtoupper(substr($currentUser->name, 0, 2)) }}
+                            </div>
+                        </div>
+                    </button>
+
+                    <div x-show="profileOpen" x-cloak class="absolute right-0 mt-2 w-52 bg-[#1A1F2E] rounded-2xl shadow-2xl border border-white/10 py-2 z-50 text-xs font-semibold text-gray-200">
+                        <a href="{{ route('home') }}" target="_blank" class="block px-4 py-2 hover:bg-white/5 text-gray-200 no-underline">Ver Site Público &nearr;</a>
+                        @if($currentUser->isAdmin() || $currentUser->hasPermission('portal.access'))
+                            <a href="{{ route('portal.dashboard') }}" target="_blank" class="block px-4 py-2 hover:bg-white/5 text-gray-200 no-underline">Portal do Cliente &nearr;</a>
+                        @endif
+                        <form action="{{ route('logout') }}" method="POST" class="border-t border-white/10 mt-1 pt-1">
+                            @csrf
+                            <button type="submit" class="w-full text-left px-4 py-2 text-red-400 hover:bg-red-500/10 font-bold cursor-pointer">Sair do Painel</button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </header>
 
-        <!-- Alerts -->
+        <!-- Flash Alerts -->
         @if(session('success'))
-            <div class="px-4 sm:px-7 pt-4">
-                <div class="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl flex items-center gap-2.5">
-                    <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <div class="px-6 pt-1">
+                <div class="p-3.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold rounded-2xl flex items-center gap-2.5">
+                    <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                     <span>{{ session('success') }}</span>
                 </div>
             </div>
         @endif
         @if(session('error'))
-            <div class="px-4 sm:px-7 pt-4">
-                <div class="p-3.5 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl flex items-center gap-2.5">
-                    <svg class="w-4 h-4 text-red-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            <div class="px-6 pt-1">
+                <div class="p-3.5 bg-red-500/10 border border-red-500/30 text-red-300 text-xs font-semibold rounded-2xl flex items-center gap-2.5">
+                    <svg class="w-4 h-4 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     <span>{{ session('error') }}</span>
                 </div>
             </div>
         @endif
         @if($errors->any())
-            <div class="px-4 sm:px-7 pt-4">
-                <div class="p-3.5 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl space-y-1">
-                    <div class="font-bold text-red-800">Verifique os campos informados:</div>
+            <div class="px-6 pt-1">
+                <div class="p-3.5 bg-red-500/10 border border-red-500/30 text-red-300 text-xs rounded-2xl space-y-1">
+                    <div class="font-bold text-red-200">Verifique os campos informados:</div>
                     <ul class="list-disc list-inside space-y-0.5">
                         @foreach($errors->all() as $error)
                             <li>{{ $error }}</li>
@@ -241,8 +347,8 @@
             </div>
         @endif
 
-        <!-- Scrollable Page Content -->
-        <main class="flex-1 overflow-y-auto p-4 sm:p-7 space-y-6">
+        <!-- Main Scrollable Content -->
+        <main class="flex-1 overflow-y-auto px-4 sm:px-6 pb-8 pt-1 space-y-5">
             @yield('content')
         </main>
     </div>
