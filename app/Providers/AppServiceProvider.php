@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
@@ -28,7 +29,12 @@ class AppServiceProvider extends ServiceProvider
             $host = (string) config('database.connections.pgsql.host', '');
             if (preg_match('/^db\.([a-z0-9]+)\.supabase\.co$/i', $host, $matches)) {
                 $projectRef = $matches[1];
-                if (@gethostbyname($host) === $host) {
+                $needsPooler = Cache::store('file')->remember(
+                    'supabase_ipv4_fallback_'.$projectRef,
+                    3600,
+                    static fn (): bool => @gethostbyname($host) === $host
+                );
+                if ($needsPooler) {
                     config([
                         'database.connections.pgsql.url' => null,
                         'database.connections.pgsql.host' => 'aws-0-us-west-2.pooler.supabase.com',

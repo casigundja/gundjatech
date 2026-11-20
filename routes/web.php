@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminAutonomousCrmController;
 use App\Http\Controllers\Admin\AdminCampaignController;
 use App\Http\Controllers\Admin\AdminChatController;
 use App\Http\Controllers\Admin\AdminClientController;
@@ -195,16 +196,22 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::delete('/financeiro/transacoes/{transaction}', [AdminFinanceController::class, 'destroy'])->name('finance.destroy');
     });
 
-    // Chat / Support
+    // Chat / Support & Autonomous CRM
     Route::middleware('permission:chat.view')->group(function () {
         Route::get('/atendimento', [AdminChatController::class, 'index'])->name('chat.index');
+        Route::get('/atendimento/resumo', [AdminChatController::class, 'summary'])->name('chat.summary');
         Route::get('/atendimento/{conversation}/mensagens', [AdminChatController::class, 'messages'])->name('chat.messages');
+        Route::get('/crm-autonomo', [AdminAutonomousCrmController::class, 'index'])->name('crm.index');
     });
     Route::middleware('permission:chat.manage')->group(function () {
         Route::post('/atendimento/iniciar', [AdminChatController::class, 'startConversation'])->name('chat.start');
         Route::post('/atendimento/{conversation}/mensagem', [AdminChatController::class, 'sendMessage'])->name('chat.send');
+        Route::post('/atendimento/{conversation}/toggle-ai', [AdminChatController::class, 'toggleAi'])->name('chat.toggle-ai');
         Route::post('/atendimento/{conversation}/fechar', [AdminChatController::class, 'closeConversation'])->name('chat.close');
         Route::post('/atendimento/{conversation}/reabrir', [AdminChatController::class, 'reopenConversation'])->name('chat.reopen');
+    });
+    Route::middleware('permission:settings.manage')->group(function () {
+        Route::put('/crm-autonomo/configuracoes', [AdminAutonomousCrmController::class, 'updateSettings'])->name('crm.settings');
     });
 
     // Users & Roles

@@ -13,6 +13,7 @@ use App\Models\RequestStatusHistory;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceRequest;
+use App\Services\AutonomousCrmAgent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -621,7 +622,7 @@ class PublicController extends Controller
         ]);
     }
 
-    public function apiChatStart(Request $request): JsonResponse
+    public function apiChatStart(Request $request, AutonomousCrmAgent $crmAgent): JsonResponse
     {
         if ($request->filled('sobrenome_hp')) {
             return response()->json(['ok' => true]);
@@ -642,9 +643,10 @@ class PublicController extends Controller
         $tema = trim((string) ($validated['tema'] ?? 'geral'));
         $subject = trim((string) ($validated['assunto'] ?? '')) ?: ('Chat do Site • '.$leadName);
         $protocol = null;
+        $aiEnabledDefault = $crmAgent->isGloballyEnabled();
 
         /** @var Conversation $conversation */
-        $conversation = DB::transaction(function () use ($validated, $leadName, $leadEmail, $tema, $subject, $request, &$protocol): Conversation {
+        $conversation = DB::transaction(function () use ($validated, $leadName, $leadEmail, $tema, $subject, $request, $aiEnabledDefault, &$protocol): Conversation {
             $client = $this->resolveLeadClient(
                 $leadEmail,
                 $leadName,
@@ -652,49 +654,12 @@ class PublicController extends Controller
                 null
             );
 
-            $conversation = null;
-            if (! empty($validated['visitor_token'])) {
-                $conversation = Conversation::where('visitor_token', $validated['visitor_token'])
-                    ->where('status', '!=', 'closed')
-                    ->first();
-            }
-
-            if ($conversation === null) {
-                $conversation = Conversation::create([
-                    'client_id' => $client->id,
-                    'subject' => $subject,
-                    'channel' => 'website_chat',
-                    'visitor_token' => Str::random(48),
-                    'visitor_name' => $leadName,
-                    'visitor_email' => $leadEmail,
-                    'visitor_phone' => $validated['telefone'] ?? null,
-                    'status' => 'waiting_staff',
-                ]);
-            } else {
-                $conversation->update([
-                    'visitor_name' => $leadName,
-                    'visitor_email' => $leadEmail,
-                    'visitor_phone' => $validated['telefone'] ?? $conversation->visitor_phone,
-                    'status' => 'waiting_staff',
-                    'closed_at' => null,
-                ]);
-                $conversation->touch();
-            }
-
-            ConversationMessage::create([
-                'conversation_id' => $conversation->id,
-                'sender_id' => Auth::id(),
-                'sender_type' => 'client',
-                'sender_name' => $leadName,
-                'message' => trim($validated['mensagem']),
-                'is_read' => false,
-            ]);
-
-            $recentRequestExists = ServiceRequest::where('email', $leadEmail)
+            $serviceRequest = ServiceRequest::where('email', $leadEmail)
                 ->where('created_at', '>=', now()->subMinutes(2))
-                ->exists();
+                ->latest('id')
+                ->first();
 
-            if (! $recentRequestExists) {
+            if ($serviceRequest === null) {
                 $protocol = 'CHAT-'.date('Ymd').'-'.strtoupper(Str::random(4));
                 $service = $this->resolveServiceForText($tema.' '.$subject.' '.$validated['mensagem']);
 
@@ -718,7 +683,52 @@ class PublicController extends Controller
                     'comment' => 'Conversa iniciada pelo chat online do site.',
                     'user_id' => Auth::id(),
                 ]);
+            } else {
+                $protocol = $serviceRequest->protocol;
             }
+
+            $conversation = null;
+            if (! empty($validated['visitor_token'])) {
+                $conversation = Conversation::where('visitor_token', $validated['visitor_token'])
+                    ->where('status', '!=', 'closed')
+                    ->first();
+            }
+
+            if ($conversation === null) {
+                $conversation = Conversation::create([
+                    'client_id' => $client->id,
+                    'service_request_id' => $serviceRequest->id,
+                    'subject' => $subject,
+                    'channel' => 'website_chat',
+                    'visitor_token' => Str::random(48),
+                    'visitor_name' => $leadName,
+                    'visitor_email' => $leadEmail,
+                    'visitor_phone' => $validated['telefone'] ?? null,
+                    'status' => 'waiting_staff',
+                    'ai_enabled' => $aiEnabledDefault,
+                    'crm_stage' => 'new',
+                ]);
+            } else {
+                $conversation->update([
+                    'service_request_id' => $conversation->service_request_id ?? $serviceRequest->id,
+                    'visitor_name' => $leadName,
+                    'visitor_email' => $leadEmail,
+                    'visitor_phone' => $validated['telefone'] ?? $conversation->visitor_phone,
+                    'status' => 'waiting_staff',
+                    'closed_at' => null,
+                ]);
+                $conversation->touch();
+            }
+
+            ConversationMessage::create([
+                'conversation_id' => $conversation->id,
+                'sender_id' => Auth::id(),
+                'sender_type' => 'client',
+                'sender_name' => $leadName,
+                'is_ai' => false,
+                'message' => trim($validated['mensagem']),
+                'is_read' => false,
+            ]);
 
             $this->recordPublicActivity($request, 'public.chat.started', $conversation, [
                 'email' => $leadEmail,
@@ -729,7 +739,8 @@ class PublicController extends Controller
             return $conversation;
         });
 
-        $conversation->load(['messages.sender']);
+        $aiReply = $crmAgent->handleIncomingVisitorMessage($conversation, trim($validated['mensagem']));
+        $conversation->refresh()->load(['messages.sender']);
 
         return response()->json([
             'ok' => true,
@@ -739,11 +750,15 @@ class PublicController extends Controller
             'track_url' => $protocol ? route('track.request', ['protocol' => $protocol]) : null,
             'status' => $conversation->status,
             'status_label' => $conversation->status_label,
+            'ai_enabled' => (bool) $conversation->ai_enabled,
+            'crm_stage' => $conversation->crm_stage,
+            'lead_score' => (int) $conversation->lead_score,
+            'ai_reply' => $aiReply ? $this->formatChatMessage($aiReply) : null,
             'messages' => $conversation->messages->map(fn (ConversationMessage $msg): array => $this->formatChatMessage($msg))->values()->all(),
         ], 201);
     }
 
-    public function apiChatMessage(Request $request): JsonResponse
+    public function apiChatMessage(Request $request, AutonomousCrmAgent $crmAgent): JsonResponse
     {
         $validated = $request->validate([
             'visitor_token' => ['required', 'string', 'min:24', 'max:64'],
@@ -759,15 +774,17 @@ class PublicController extends Controller
         }
 
         $senderName = $conversation->visitor_name ?: ($conversation->client?->name ?? 'Visitante');
+        $cleanMessage = trim($validated['message']);
 
         /** @var ConversationMessage $msg */
-        $msg = DB::transaction(function () use ($conversation, $validated, $senderName): ConversationMessage {
+        $msg = DB::transaction(function () use ($conversation, $cleanMessage, $senderName): ConversationMessage {
             $msg = ConversationMessage::create([
                 'conversation_id' => $conversation->id,
                 'sender_id' => Auth::id(),
                 'sender_type' => 'client',
                 'sender_name' => $senderName,
-                'message' => trim($validated['message']),
+                'is_ai' => false,
+                'message' => $cleanMessage,
                 'is_read' => false,
             ]);
 
@@ -780,9 +797,16 @@ class PublicController extends Controller
             return $msg;
         });
 
+        $aiReply = $crmAgent->handleIncomingVisitorMessage($conversation, $cleanMessage);
+        $conversation->refresh();
+
         return response()->json([
             'ok' => true,
             'message' => $this->formatChatMessage($msg),
+            'ai_reply' => $aiReply ? $this->formatChatMessage($aiReply) : null,
+            'ai_enabled' => (bool) $conversation->ai_enabled,
+            'crm_stage' => $conversation->crm_stage,
+            'lead_score' => (int) $conversation->lead_score,
             'status' => $conversation->status,
             'status_label' => $conversation->status_label,
         ]);
@@ -927,6 +951,7 @@ class PublicController extends Controller
             'id' => $msg->id,
             'sender_type' => $msg->sender_type,
             'sender_name' => $msg->sender?->name ?? $msg->sender_name ?? ($msg->sender_type === 'staff' ? 'Equipe GundjaTech' : 'Visitante'),
+            'is_ai' => (bool) $msg->is_ai,
             'message' => $msg->message,
             'created_at' => $msg->created_at?->format('d/m H:i') ?? '',
         ];

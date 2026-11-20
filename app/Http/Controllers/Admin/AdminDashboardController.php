@@ -435,16 +435,29 @@ class AdminDashboardController extends Controller
             fputcsv($handle, ['Relatorio Executivo GundjaTech', 'Periodo: Ultimos '.$periodDays.' dias', 'Gerado em: '.now()->format('d/m/Y H:i')], ';');
             fputcsv($handle, [], ';');
 
+            $summary = DB::selectOne(
+                "SELECT
+                    (SELECT COUNT(*) FROM clients) AS total_clients,
+                    (SELECT COUNT(*) FROM clients WHERE status = 'active') AS active_clients,
+                    (SELECT COUNT(*) FROM service_requests) AS total_requests,
+                    (SELECT COUNT(*) FROM service_requests WHERE created_at >= ?) AS period_requests,
+                    (SELECT COUNT(*) FROM conversations WHERE status != 'closed') AS open_chats,
+                    (SELECT COUNT(*) FROM projects WHERE status IN ('planning', 'in_progress', 'reviewing')) AS active_projects,
+                    (SELECT COALESCE(SUM(total), 0) FROM quotations WHERE status IN ('draft', 'sent')) AS open_quotations_value,
+                    (SELECT COALESCE(SUM(amount), 0) FROM financial_transactions WHERE type = 'income' AND status = 'paid') AS paid_revenue",
+                [$periodStart->toDateTimeString()]
+            );
+
             fputcsv($handle, ['RESUMO OPERACIONAL'], ';');
             fputcsv($handle, ['Indicador', 'Valor'], ';');
-            fputcsv($handle, ['Total de Clientes', (string) Client::count()], ';');
-            fputcsv($handle, ['Clientes Ativos', (string) Client::where('status', 'active')->count()], ';');
-            fputcsv($handle, ['Total de Solicitacoes', (string) ServiceRequest::count()], ';');
-            fputcsv($handle, ['Solicitacoes no Periodo', (string) ServiceRequest::where('created_at', '>=', $periodStart)->count()], ';');
-            fputcsv($handle, ['Conversas Abertas (Chat)', (string) Conversation::where('status', '!=', 'closed')->count()], ';');
-            fputcsv($handle, ['Projetos Ativos', (string) Project::whereIn('status', ['planning', 'in_progress', 'reviewing'])->count()], ';');
-            fputcsv($handle, ['Orcamentos em Aberto (R$)', number_format((float) Quotation::whereIn('status', ['draft', 'sent'])->sum('total'), 2, ',', '.')], ';');
-            fputcsv($handle, ['Receita Recebida Total (R$)', number_format((float) FinancialTransaction::where('type', 'income')->where('status', 'paid')->sum('amount'), 2, ',', '.')], ';');
+            fputcsv($handle, ['Total de Clientes', (string) ((int) ($summary->total_clients ?? 0))], ';');
+            fputcsv($handle, ['Clientes Ativos', (string) ((int) ($summary->active_clients ?? 0))], ';');
+            fputcsv($handle, ['Total de Solicitacoes', (string) ((int) ($summary->total_requests ?? 0))], ';');
+            fputcsv($handle, ['Solicitacoes no Periodo', (string) ((int) ($summary->period_requests ?? 0))], ';');
+            fputcsv($handle, ['Conversas Abertas (Chat)', (string) ((int) ($summary->open_chats ?? 0))], ';');
+            fputcsv($handle, ['Projetos Ativos', (string) ((int) ($summary->active_projects ?? 0))], ';');
+            fputcsv($handle, ['Orcamentos em Aberto (R$)', number_format((float) ($summary->open_quotations_value ?? 0), 2, ',', '.')], ';');
+            fputcsv($handle, ['Receita Recebida Total (R$)', number_format((float) ($summary->paid_revenue ?? 0), 2, ',', '.')], ';');
             fputcsv($handle, [], ';');
 
             fputcsv($handle, ['SOLICITACOES RECEBIDAS NO PERIODO'], ';');

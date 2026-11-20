@@ -116,16 +116,16 @@ class LiveIntegrationAndAuditTest extends TestCase
 
         $token = (string) $startResp->json('visitor_token');
         $conversationId = (int) $startResp->json('conversation_id');
-        $firstMessageId = (int) $startResp->json('messages.0.id');
+        $lastInitialMessageId = (int) collect($startResp->json('messages'))->max('id');
 
         $this->assertDatabaseHas('conversations', [
             'id' => $conversationId,
             'channel' => 'website_chat',
-            'status' => 'waiting_staff',
+            'ai_enabled' => true,
             'visitor_email' => 'marcos@horizontetech.com',
         ]);
 
-        // 2. SuperAdmin sees the conversation on Dashboard and Admin Chat (both 'open' and 'waiting_staff' tabs)
+        // 2. SuperAdmin sees the conversation on Dashboard and Admin Chat ('open' and 'ai_active' tabs)
         $admin = User::where('role', UserRole::SuperAdmin->value)->firstOrFail();
 
         $this->actingAs($admin)
@@ -140,11 +140,11 @@ class LiveIntegrationAndAuditTest extends TestCase
             ->assertSee('Quero um site novo');
 
         $this->actingAs($admin)
-            ->get('/admin/atendimento?status=waiting_staff')
+            ->get('/admin/atendimento?status=ai_active')
             ->assertStatus(200)
             ->assertSee('Marcos Paulo');
 
-        // 3. Admin sends a real-time reply
+        // 3. Admin sends a real-time reply (automatically takes over from AI)
         $this->actingAs($admin)
             ->post("/admin/atendimento/{$conversationId}/mensagem", [
                 'message' => 'Ola Marcos! Nossa diretoria esta online para te atender agora.',
@@ -152,7 +152,7 @@ class LiveIntegrationAndAuditTest extends TestCase
             ->assertRedirect(route('admin.chat.index', ['conversation_id' => $conversationId]));
 
         // 4. Public visitor polls for staff replies using visitor_token
-        $pollVisitor = $this->getJson('/api/chat/messages?token='.$token.'&after_id='.$firstMessageId);
+        $pollVisitor = $this->getJson('/api/chat/messages?token='.$token.'&after_id='.$lastInitialMessageId);
         $pollVisitor->assertStatus(200)
             ->assertJson(['ok' => true])
             ->assertJsonFragment([
@@ -162,13 +162,13 @@ class LiveIntegrationAndAuditTest extends TestCase
 
         $staffMsgId = (int) $pollVisitor->json('messages.0.id');
 
-        // 5. Public visitor sends follow-up live message
+        // 5. Public visitor sends follow-up live message (AI paused after human takeover -> waiting_staff)
         $followUp = $this->postJson('/api/chat/message', [
             'visitor_token' => $token,
             'message' => 'Perfeito! Podemos agendar uma demonstracao hoje as 15h?',
         ]);
         $followUp->assertStatus(200)
-            ->assertJson(['ok' => true, 'status' => 'waiting_staff']);
+            ->assertJson(['ok' => true, 'status' => 'waiting_staff', 'ai_enabled' => false]);
 
         // 6. Admin polls for visitor follow-up via live endpoint
         $this->actingAs($admin)
@@ -178,6 +178,35 @@ class LiveIntegrationAndAuditTest extends TestCase
             ->assertJsonFragment([
                 'sender_type' => 'client',
                 'message' => 'Perfeito! Podemos agendar uma demonstracao hoje as 15h?',
+            ]);
+
+        // 7. Admin polls live sidebar summary endpoint (/admin/atendimento/resumo)
+        $this->actingAs($admin)
+            ->getJson('/admin/atendimento/resumo?status=waiting_staff')
+            ->assertStatus(200)
+            ->assertJson([
+                'ok' => true,
+                'open_chats' => 1,
+                'waiting_staff' => 1,
+            ])
+            ->assertJsonFragment([
+                'id' => $conversationId,
+                'name' => 'Marcos Paulo',
+                'channel_label' => 'Site',
+            ]);
+
+        // 8. Admin sends AJAX JSON reply without full page reload
+        $this->actingAs($admin)
+            ->postJson("/admin/atendimento/{$conversationId}/mensagem", [
+                'message' => 'Confirmado para as 15h!',
+            ])
+            ->assertStatus(200)
+            ->assertJson([
+                'ok' => true,
+                'status' => 'waiting_client',
+            ])
+            ->assertJsonFragment([
+                'message' => 'Confirmado para as 15h!',
             ]);
     }
 
@@ -216,9 +245,13 @@ class LiveIntegrationAndAuditTest extends TestCase
             ->assertStatus(200)
             ->assertJson(['ok' => true]);
 
-        // Financial user lacks chat.view permission and cannot poll admin chat
+        // Financial user lacks chat.view permission and cannot poll admin chat or summary
         $this->actingAs($financialUser)
             ->getJson("/admin/atendimento/{$conv1->id}/mensagens")
+            ->assertStatus(403);
+
+        $this->actingAs($financialUser)
+            ->getJson('/admin/atendimento/resumo')
             ->assertStatus(403);
     }
 

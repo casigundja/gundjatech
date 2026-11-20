@@ -406,8 +406,11 @@
                                 var confirmLines = [copy.fim];
                                 if (data && data.ok && data.visitor_token) {
                                     var lastId = 0;
+                                    var aiMsgId = data.ai_reply ? data.ai_reply.id : null;
                                     (data.messages || []).forEach(function (m) {
-                                        renderedMsgIds[m.id] = true;
+                                        if (m.id !== aiMsgId) {
+                                            renderedMsgIds[m.id] = true;
+                                        }
                                         if (m.id > lastId) { lastId = m.id; }
                                     });
                                     liveSession = {
@@ -418,7 +421,11 @@
                                     };
                                     saveLiveSession();
                                     if (data.protocol) {
-                                        confirmLines.push(L("Protocolo gerado: ") + data.protocol + L(". Você pode continuar enviando mensagens aqui abaixo."));
+                                        confirmLines.push(L("Protocolo gerado: ") + data.protocol + ".");
+                                    }
+                                    if (data.ai_reply && data.ai_reply.message) {
+                                        renderedMsgIds[data.ai_reply.id] = true;
+                                        confirmLines.push(data.ai_reply.message);
                                     }
                                     startPollingLiveMessages();
                                 }
@@ -472,8 +479,15 @@
                             appendUserBubble(data.message.message, data.message.id);
                             if (data.message.id > (liveSession.lastId || 0)) {
                                 liveSession.lastId = data.message.id;
-                                saveLiveSession();
                             }
+                            if (data.ai_reply && data.ai_reply.message) {
+                                if (data.ai_reply.id > (liveSession.lastId || 0)) {
+                                    liveSession.lastId = data.ai_reply.id;
+                                }
+                                renderedMsgIds[data.ai_reply.id] = true;
+                                sendBotMessages([data.ai_reply.message]);
+                            }
+                            saveLiveSession();
                         } else {
                             appendBotBubbleInstant(L("Não foi possível enviar sua mensagem. Tente novamente."));
                         }

@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'crm_ai' => [
+        'enabled' => env('CRM_AI_ENABLED', true),
+        'provider' => env('CRM_AI_PROVIDER', 'auto'),
+        'gemini_key' => env('GEMINI_API_KEY'),
+        'gemini_model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+        'openai_key' => env('OPENAI_API_KEY'),
+        'openai_model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
+    ],
+
 ];

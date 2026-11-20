@@ -14,6 +14,7 @@ class ConversationMessage extends Model
         'sender_id',
         'sender_type',
         'sender_name',
+        'is_ai',
         'message',
         'attachment_path',
         'is_read',
@@ -21,6 +22,7 @@ class ConversationMessage extends Model
     ];
 
     protected $casts = [
+        'is_ai' => 'boolean',
         'is_read' => 'boolean',
         'read_at' => 'datetime',
     ];

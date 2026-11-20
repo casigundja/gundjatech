@@ -336,17 +336,17 @@
     <div class="tm-esq">
 
       <div class="tm-barras" role="tablist" aria-label="Diretores da GundjaTech" style="grid-template-columns:repeat(4,minmax(0,1fr))">
-        <button type="button" role="tab" class="tm-barra ativo" data-i="0" data-nome="Casimiro Gundja" data-cargo="Engenheiro de Software" data-bio="Formado em Engenharia de Software, com especialização em desenvolvimento de aplicações web e mobile, arquitetura de sistemas, integração de APIs, banco de dados e soluções tecnológicas escaláveis. Experiência na criação, evolução e gestão de produtos digitais, transformando ideias em soluções eficientes e inovadoras para empresas." aria-selected="true"><span>Casimiro Gundja</span><i><b></b></i></button>
-        <button type="button" role="tab" class="tm-barra" data-i="1" data-nome="Lourenço Gundja" data-cargo="UX &amp; Design" data-bio="Especialista em experiência do usuário (UX), design de interfaces (UI), estratégia de produtos digitais, design systems e criação de experiências intuitivas, funcionais e visualmente impactantes para empresas." aria-selected="false"><span>Lourenço Gundja</span><i><b></b></i></button>
-        <button type="button" role="tab" class="tm-barra" data-i="2" data-nome="José Gundja" data-cargo="Diretor Comercial &amp; Estratégia" data-bio="Especialista em gestão de negócios, performance comercial, tráfego pago e expansão estratégica de marcas em Angola, Portugal e África do Sul." aria-selected="false"><span>José Gundja</span><i><b></b></i></button>
-        <button type="button" role="tab" class="tm-barra" data-i="3" data-nome="Rodrigues Lussiate" data-cargo="Cibersegurança &amp; Segurança da Informação" data-bio="Especialista em cibersegurança, proteção de dados, segurança de redes, gestão de vulnerabilidades. Responsável pela implementação de estratégias de segurança digital e informações corporativas." aria-selected="false"><span>Rodrigues Lussiate</span><i><b></b></i></button>
+        <button type="button" role="tab" class="tm-barra ativo" data-i="0" data-nome="Casimiro Gundja" data-cargo="Engenheiro de Software" data-bio="Engenheiro de Software, com especialização em Banco de Dados, experiente em arquitetura de sistemas, integração de APIs." aria-selected="true"><span>Casimiro Gundja</span><i><b></b></i></button>
+        <button type="button" role="tab" class="tm-barra" data-i="1" data-nome="Lourenço Gundja" data-cargo="UX &amp; Design" data-bio="Especialista em experiência do usuário (UX), design de interfaces (UI), estratégia de produtos digitais, design systems e criação de experiências intuitivas." aria-selected="false"><span>Lourenço Gundja</span><i><b></b></i></button>
+        <button type="button" role="tab" class="tm-barra" data-i="2" data-nome="José Gundja" data-cargo="Diretor Comercial &amp; Estratégia" data-bio="Especialista em gestão de negócios, performance comercial, tráfego pago e expansão estratégica de marcas." aria-selected="false"><span>José Gundja</span><i><b></b></i></button>
+        <button type="button" role="tab" class="tm-barra" data-i="3" data-nome="Rodrigues Lussiate" data-cargo="Cibersegurança" data-bio="Especialista em cibersegurança, proteção de dados, segurança de redes, gestão de vulnerabilidades. Responsável pela implementação de estratégias de segurança digital." aria-selected="false"><span>Rodrigues Lussiate</span><i><b></b></i></button>
       </div>
 
       <div class="tm-palco js-tm-palco">
-        <figure class="tm-foto ativo" data-i="0"><img width="403" height="605" src="/img/time/Jorge.webp?v=2" alt="Casimiro Gundja — Engenheiro de Software e Desenvolvedor de Sistemas"></figure>
+        <figure class="tm-foto ativo" data-i="0"><img width="403" height="605" src="/img/time/Jorge.webp?v=2" alt="Casimiro Gundja — Engenheiro de Software"></figure>
         <figure class="tm-foto" data-i="1"><img width="1024" height="1024" src="/img/time/JoseGundja.webp?v=1" alt="Lourenço Gundja — UX e Design"></figure>
         <figure class="tm-foto" data-i="2"><img width="935" height="1024" src="/img/time/LourencoGundja.webp?v=1" alt="José Gundja — Diretor Comercial e Estratégia"></figure>
-        <figure class="tm-foto" data-i="3"><img width="1024" height="1024" src="/img/time/RodriguesLussite.webp?v=1" alt="Rodrigues Lussiate — Cibersegurança e Segurança da Informação"></figure>
+        <figure class="tm-foto" data-i="3"><img width="1024" height="1024" src="/img/time/RodriguesLussite.webp?v=1" alt="Rodrigues Lussiate — Cibersegurança"></figure>
         <i class="tm-varre" aria-hidden="true"></i>
       </div>
 
@@ -830,7 +830,7 @@
 
 <script defer src="/jsm/main.ac8b157f35.js?v=gt-live1"></script>
 
-<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live1"></script>
+<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live2"></script>
 
 <script defer src="/jsm/animacoes.b868b7f2df.js"></script>
 

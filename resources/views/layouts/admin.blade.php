@@ -154,7 +154,9 @@
                             <span x-show="!sidebarCollapsed">Solicitações</span>
                         </div>
                         @if(($adminPendingRequestsCount ?? 0) > 0)
-                            <span x-show="!sidebarCollapsed" class="gtb-count-circle">{{ $adminPendingRequestsCount }}</span>
+                            <span x-show="!sidebarCollapsed" id="gt-sidebar-requests-badge" class="gtb-count-circle">{{ $adminPendingRequestsCount }}</span>
+                        @else
+                            <span x-show="!sidebarCollapsed" id="gt-sidebar-requests-badge" class="gtb-count-circle hidden">0</span>
                         @endif
                     </a>
                 @endif
@@ -197,13 +199,23 @@
 
                 <div class="pt-3 mt-2 border-t border-white/5 space-y-1">
                     @if($currentUser->hasPermission('chat.view'))
+                        <a href="{{ route('admin.crm.index') }}" class="gtb-nav-item {{ request()->routeIs('admin.crm*') ? 'is-active' : '' }}" title="CRM Autônomo IA">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                <span x-show="!sidebarCollapsed">CRM Autônomo IA</span>
+                            </div>
+                            <span x-show="!sidebarCollapsed" class="gtb-badge-pill">AUTO</span>
+                        </a>
+
                         <a href="{{ route('admin.chat.index') }}" class="gtb-nav-item {{ request()->routeIs('admin.chat*') ? 'is-active' : '' }}" title="Atendimento & Suporte">
                             <div class="flex items-center gap-3">
                                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                 <span x-show="!sidebarCollapsed">Suporte & Chat</span>
                             </div>
                             @if(($adminOpenChatsCount ?? 0) > 0)
-                                <span x-show="!sidebarCollapsed" class="gtb-count-circle">{{ $adminOpenChatsCount }}</span>
+                                <span x-show="!sidebarCollapsed" id="gt-sidebar-chats-badge" class="gtb-count-circle">{{ $adminOpenChatsCount }}</span>
+                            @else
+                                <span x-show="!sidebarCollapsed" id="gt-sidebar-chats-badge" class="gtb-count-circle hidden">0</span>
                             @endif
                         </a>
                     @endif
@@ -290,11 +302,9 @@
                 </div>
 
                 <!-- Notification Bell with Live Indicator -->
-                <a href="{{ route('admin.requests.index') }}" class="relative w-10 h-10 rounded-full bg-[#171B27] border border-white/10 flex items-center justify-center text-[#D5DCEB] hover:border-[#F2C230] hover:text-[#F2C230] transition" title="Notificações ({{ $totalNotifications }})">
+                <a href="{{ route('admin.requests.index') }}" id="gt-topbar-bell-link" class="relative w-10 h-10 rounded-full bg-[#171B27] border border-white/10 flex items-center justify-center text-[#D5DCEB] hover:border-[#F2C230] hover:text-[#F2C230] transition" title="Notificações ({{ $totalNotifications }})">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                    @if($totalNotifications > 0)
-                        <span class="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-[#34D399] shadow-[0_0_8px_#34D399]"></span>
-                    @endif
+                    <span id="gt-topbar-bell-dot" class="{{ $totalNotifications > 0 ? '' : 'hidden' }} absolute top-2 right-2.5 w-2 h-2 rounded-full bg-[#34D399] shadow-[0_0_8px_#34D399]"></span>
                 </a>
 
                 <span class="h-6 w-px bg-white/10 hidden sm:inline-block"></span>
@@ -363,7 +373,167 @@
         </main>
     </div>
 
+    <!-- Live Notification Toast Stack -->
+    <div id="gt-live-toast-stack" class="fixed bottom-5 right-5 z-[90] flex flex-col gap-2.5 max-w-sm pointer-events-none" aria-live="polite"></div>
+
     @livewireScripts
+    @if($currentUser->hasPermission('chat.view'))
+        <script>
+        (function () {
+            let audioCtx = null;
+
+            function isSoundEnabled() {
+                try { return localStorage.getItem('gt_admin_sound') !== 'off'; } catch (e) { return true; }
+            }
+
+            function setSoundEnabled(val) {
+                try { localStorage.setItem('gt_admin_sound', val ? 'on' : 'off'); } catch (e) {}
+            }
+
+            function playChime() {
+                if (!isSoundEnabled()) return;
+                try {
+                    const Ctx = window.AudioContext || window.webkitAudioContext;
+                    if (!Ctx) return;
+                    if (!audioCtx) audioCtx = new Ctx();
+                    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                    const now = audioCtx.currentTime;
+                    [880, 1174.66].forEach(function (freq, idx) {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.11);
+                        gain.gain.setValueAtTime(0.001, now + idx * 0.11);
+                        gain.gain.exponentialRampToValueAtTime(0.14, now + idx * 0.11 + 0.02);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.11 + 0.24);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + idx * 0.11);
+                        osc.stop(now + idx * 0.11 + 0.26);
+                    });
+                } catch (e) {}
+            }
+
+            function showToast(title, body, href) {
+                const stack = document.getElementById('gt-live-toast-stack');
+                if (!stack) return;
+
+                const card = document.createElement('a');
+                card.href = href || @json(route('admin.chat.index'));
+                card.className = 'pointer-events-auto block rounded-2xl p-3.5 shadow-2xl border border-[#F2C230]/50 bg-[#0E121D] text-white no-underline transition hover:border-[#F2C230]';
+
+                const top = document.createElement('div');
+                top.className = 'flex items-center justify-between gap-2';
+                const heading = document.createElement('span');
+                heading.className = 'text-xs font-extrabold text-[#F2C230]';
+                heading.textContent = title;
+                const badge = document.createElement('span');
+                badge.className = 'w-2 h-2 rounded-full bg-[#34D399] shrink-0';
+                top.appendChild(heading);
+                top.appendChild(badge);
+
+                const desc = document.createElement('p');
+                desc.className = 'text-[11px] text-[#D5DCEB] mt-1 leading-snug';
+                desc.textContent = body;
+
+                card.appendChild(top);
+                card.appendChild(desc);
+                stack.appendChild(card);
+
+                setTimeout(function () {
+                    card.style.opacity = '0';
+                    setTimeout(function () { card.remove(); }, 250);
+                }, 7000);
+            }
+
+            function notifyDesktop(title, body, href) {
+                if (!('Notification' in window) || Notification.permission !== 'granted') return;
+                try {
+                    const n = new Notification(title, { body: body, icon: '/img/favicon.svg' });
+                    n.onclick = function () {
+                        window.focus();
+                        if (href) window.location.href = href;
+                        n.close();
+                    };
+                } catch (e) {}
+            }
+
+            function updateGlobalCounters(data) {
+                if (!data) return;
+                const reqBadge = document.getElementById('gt-sidebar-requests-badge');
+                if (reqBadge && typeof data.pending_requests === 'number') {
+                    reqBadge.textContent = String(data.pending_requests);
+                    reqBadge.classList.toggle('hidden', data.pending_requests <= 0);
+                }
+
+                const chatBadge = document.getElementById('gt-sidebar-chats-badge');
+                if (chatBadge && typeof data.open_chats === 'number') {
+                    chatBadge.textContent = String(data.open_chats);
+                    chatBadge.classList.toggle('hidden', data.open_chats <= 0);
+                }
+
+                const bellDot = document.getElementById('gt-topbar-bell-dot');
+                const bellLink = document.getElementById('gt-topbar-bell-link');
+                const total = (data.pending_requests || 0) + (data.open_chats || 0);
+                if (bellDot) bellDot.classList.toggle('hidden', total <= 0);
+                if (bellLink) bellLink.title = 'Notificações (' + total + ')';
+            }
+
+            window.GT_AdminNotify = {
+                isSoundEnabled: isSoundEnabled,
+                setSoundEnabled: setSoundEnabled,
+                playChime: playChime,
+                showToast: showToast,
+                notifyDesktop: notifyDesktop,
+                updateGlobalCounters: updateGlobalCounters
+            };
+
+            // Background polling across non-chat admin pages every 10s
+            if (!window.location.pathname.startsWith('/admin/atendimento')) {
+                const summaryUrl = @json(route('admin.chat.summary', ['counts_only' => 1]));
+                let baselineConvId = null;
+                let baselineMsgId = null;
+
+                async function checkGlobalUpdates() {
+                    try {
+                        const resp = await fetch(summaryUrl, {
+                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                            credentials: 'same-origin'
+                        });
+                        if (!resp.ok) return;
+                        const data = await resp.json();
+                        if (!data || !data.ok) return;
+
+                        updateGlobalCounters(data);
+
+                        if (baselineConvId === null) {
+                            baselineConvId = data.latest_conversation_id;
+                            baselineMsgId = data.latest_client_message_id;
+                            return;
+                        }
+
+                        if (data.latest_conversation_id > baselineConvId) {
+                            baselineConvId = data.latest_conversation_id;
+                            baselineMsgId = Math.max(baselineMsgId, data.latest_client_message_id);
+                            playChime();
+                            showToast('Novo atendimento no chat!', 'Um visitante iniciou conversa no site. Clique para responder.', @json(route('admin.chat.index')));
+                            notifyDesktop('Novo atendimento GundjaTech', 'Um visitante iniciou conversa no site.', @json(route('admin.chat.index')));
+                        } else if (data.latest_client_message_id > baselineMsgId) {
+                            baselineMsgId = data.latest_client_message_id;
+                            playChime();
+                            showToast('Nova mensagem de cliente', 'Há novas mensagens aguardando resposta no chat.', @json(route('admin.chat.index')));
+                            notifyDesktop('Nova mensagem no chat', 'Há novas mensagens aguardando resposta.', @json(route('admin.chat.index')));
+                        }
+                    } catch (e) {}
+                }
+
+                checkGlobalUpdates();
+                setInterval(checkGlobalUpdates, 10000);
+            }
+        })();
+        </script>
+    @endif
     @stack('scripts')
 </body>
 </html>

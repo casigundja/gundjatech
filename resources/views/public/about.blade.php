@@ -315,23 +315,23 @@
         <a class="sb-foto" href="/autor-casimiro-gundja/"><img width="403" height="605" src="/img/time/Jorge.webp?v=2" alt="Casimiro Gundja — Engenheiro de Software e Desenvolvedor de Sistemas da GundjaTech" loading="lazy"></a>
         <h3><a href="/autor-casimiro-gundja/">Casimiro Gundja</a></h3>
         <p class="sb-cargo">Engenheiro de Software</p>
-        <p class="sb-bio">Engenheiro de Software, com especialização em Banco de Dados, experiente em arquitetura de sistemas, integração de APIs, banco de dados e soluções tecnológicas escaláveis.</p>
+        <p class="sb-bio">Engenheiro de Software, com especialização em Banco de Dados, experiente em arquitetura de sistemas, integração de APIs.</p>
         <a class="sb-perfil" href="/autor-casimiro-gundja/">Ver perfil →</a>
       </article><article class="sb-pessoa">
         <div class="sb-foto"><img width="1024" height="1024" src="/img/time/JoseGundja.webp?v=1" alt="Lourenço Gundja — UX e Design da GundjaTech" loading="lazy"></div>
         <h3>Lourenço Gundja</h3>
         <p class="sb-cargo">UX &amp; Design</p>
-        <p class="sb-bio">Especialista em experiência do usuário (UX), design de interfaces (UI), estratégia de produtos digitais, design systems e criação de experiências intuitivas, funcionais e visualmente impactantes para empresas.</p>
+        <p class="sb-bio">Especialista em experiência do usuário (UX), design de interfaces (UI), estratégia de produtos digitais, design systems e criação de experiências intuitivas.</p>
       </article><article class="sb-pessoa">
         <div class="sb-foto"><img width="935" height="1024" src="/img/time/LourencoGundja.webp?v=1" alt="José Gundja — Diretor Comercial e Estratégia da GundjaTech" loading="lazy"></div>
         <h3>José Gundja</h3>
         <p class="sb-cargo">Diretor Comercial &amp; Estratégia</p>
-        <p class="sb-bio">Especialista em gestão de negócios, performance comercial, tráfego pago e expansão estratégica de marcas em Angola, Portugal e África do Sul.</p>
+        <p class="sb-bio">Especialista em gestão de negócios, performance comercial, tráfego pago e expansão estratégica de marcas.</p>
       </article><article class="sb-pessoa">
-        <div class="sb-foto"><img width="1024" height="1024" src="/img/time/RodriguesLussite.webp?v=1" alt="Rodrigues Lussiate — Cibersegurança e Segurança da Informação da GundjaTech" loading="lazy"></div>
+        <div class="sb-foto"><img width="1024" height="1024" src="/img/time/RodriguesLussite.webp?v=1" alt="Rodrigues Lussiate — Cibersegurança da GundjaTech" loading="lazy"></div>
         <h3>Rodrigues Lussiate</h3>
-        <p class="sb-cargo">Cibersegurança &amp; Segurança da Informação</p>
-        <p class="sb-bio">Especialista em cibersegurança, proteção de dados, segurança de redes, gestão de vulnerabilidades. Responsável pela implementação de estratégias de segurança digital e informações corporativas.</p>
+        <p class="sb-cargo">Cibersegurança</p>
+        <p class="sb-bio">Especialista em cibersegurança, proteção de dados, segurança de redes, gestão de vulnerabilidades. Responsável pela implementação de estratégias de segurança digital.</p>
       </article></div>
 
   </div>
@@ -818,7 +818,7 @@
 
 <script defer src="/jsm/main.ac8b157f35.js?v=gt-live1"></script>
 
-<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live1"></script>
+<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live2"></script>
 
 <script defer src="/jsm/animacoes.b868b7f2df.js"></script>
 
