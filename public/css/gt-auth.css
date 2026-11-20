@@ -1,0 +1,1007 @@
+/* ==========================================================================
+   GUNDJATECH AUTHENTICATION SYSTEM — HARMONIOUS 2-PANEL ARCHITECTURAL SPLIT
+   Strict 60-30-10 Visual Hierarchy & Color Harmony:
+   - 60% Left Showcase: Deep Obsidian (#06070E) + warm ambient amber glows +
+     subtle 56px grid + editorial ZSE headline + pulsing Golden G-Nexus Radar
+   - 30% Right Workspace: Calm Warm Champagne (#F7F5F0, matching /admin & /portal)
+     + elevated Pure White (#FFFFFF) Auth Card with subtle blue-to-gold hairline
+   - 10% Intentional Accents:
+     * Golden Amber (#F2C230 / #E4A318): Brand light, radar core, editorial accent
+     * Electric Blue (#121AFF): Primary interactive CTA, focus state & radar blips
+     * Emerald (#22C55E): Micro security telemetry indicators
+   ========================================================================== */
+
+@font-face {
+    font-family: "ZSE";
+    src: url("/fonts/ZalandoSansExpanded-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "ZSE";
+    src: url("/fonts/ZalandoSansExpanded-Bold.woff2") format("woff2");
+    font-weight: 700;
+    font-display: swap;
+}
+
+:root {
+    --gt-obsidian: #06070E;
+    --gt-obsidian-soft: #0C0F1C;
+    --gt-canvas: #F7F5F0;
+    --gt-canvas-deep: #EFEBE1;
+    --gt-white: #FFFFFF;
+    --gt-ink: #111625;
+    --gt-ink-soft: #3D4559;
+    --gt-muted: #646E84;
+    --gt-border: #E5DFD3;
+    --gt-input-border: #D9DFEB;
+    --gt-input-bg: #FAF9F6;
+    --gt-gold: #E4A318;
+    --gt-gold-bright: #F2C230;
+    --gt-gold-glow: #FFC94A;
+    --gt-gold-ink: #9A6806;
+    --gt-gold-soft: #FDF5DF;
+    --gt-blue: #121AFF;
+    --gt-blue-hover: #0B10C9;
+    --gt-ok: #22C55E;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+    color: var(--gt-ink);
+    background: var(--gt-canvas);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
+}
+
+/* ==========================================================================
+   MASTER 2-PANEL SPLIT SHELL (53% Obsidian Showcase | 47% Champagne Workspace)
+   ========================================================================== */
+.gt-auth-shell {
+    min-height: 100vh;
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.96fr);
+    background: var(--gt-canvas);
+}
+
+/* ==========================================================================
+   LEFT PANEL: Deep Obsidian Cybersecurity & Brand Showcase
+   ========================================================================== */
+.gt-showcase {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    background:
+        radial-gradient(95% 75% at 18% 8%, rgba(228, 163, 24, .14) 0%, transparent 62%),
+        radial-gradient(80% 65% at 88% 92%, rgba(18, 26, 255, .10) 0%, transparent 60%),
+        linear-gradient(160deg, #070810 0%, #05060C 58%, #0A0C16 100%);
+    color: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: clamp(24px, 3vw, 40px) clamp(28px, 4.5vw, 68px);
+    border-right: 1px solid rgba(228, 163, 24, .20);
+}
+
+/* Soft Animated Ambient Glows (Controlled opacity — atmospheric, never muddy) */
+.gt-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(84px);
+    mix-blend-mode: screen;
+    pointer-events: none;
+    z-index: -2;
+    will-change: transform;
+}
+
+.gt-glow.g1 {
+    width: 540px;
+    height: 540px;
+    left: -180px;
+    top: -180px;
+    opacity: .52;
+    background: radial-gradient(circle, #E4A318 0%, rgba(160, 106, 8, .35) 42%, transparent 72%);
+    animation: gt-drift-1 26s ease-in-out infinite alternate;
+}
+
+.gt-glow.g2 {
+    width: 460px;
+    height: 460px;
+    right: -160px;
+    bottom: -180px;
+    opacity: .34;
+    background: radial-gradient(circle, #C68B0E 0%, rgba(143, 97, 7, .28) 45%, transparent 72%);
+    animation: gt-drift-2 32s ease-in-out infinite alternate;
+}
+
+@keyframes gt-drift-1 {
+    to { transform: translate(70px, 50px) scale(1.08); }
+}
+@keyframes gt-drift-2 {
+    to { transform: translate(-60px, -45px) scale(1.1); }
+}
+
+/* Subtle Architectural Grid + Fine Gold Dot Matrix */
+.gt-grid-fx {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, .042) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, .042) 1px, transparent 1px);
+    background-size: 56px 56px;
+    -webkit-mask-image: radial-gradient(85% 80% at 50% 50%, #000, transparent);
+    mask-image: radial-gradient(85% 80% at 50% 50%, #000, transparent);
+    animation: gt-grid-scroll 28s linear infinite;
+}
+
+@keyframes gt-grid-scroll {
+    to { background-position: 56px 56px, 56px 56px; }
+}
+
+.gt-dots-fx {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: radial-gradient(rgba(242, 194, 48, .18) 1px, transparent 1.2px);
+    background-size: 24px 24px;
+    -webkit-mask-image: radial-gradient(85% 75% at 50% 52%, #000 30%, transparent 100%);
+    mask-image: radial-gradient(85% 75% at 50% 52%, #000 30%, transparent 100%);
+    opacity: .6;
+}
+
+/* Showcase Top Bar */
+.gt-showcase-top {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.gt-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .14);
+    backdrop-filter: blur(10px);
+    color: #F4F6FB;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background .2s ease, border-color .2s ease, transform .2s ease;
+}
+
+.gt-back-link:hover {
+    background: rgba(255, 255, 255, .12);
+    border-color: rgba(242, 194, 48, .48);
+    transform: translateY(-1px);
+}
+
+.gt-back-link svg {
+    width: 14px;
+    height: 14px;
+    color: var(--gt-gold-bright);
+}
+
+.gt-live-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #B4BCD3;
+    letter-spacing: .01em;
+}
+
+.gt-live-status i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--gt-ok);
+    box-shadow: 0 0 10px var(--gt-ok);
+}
+
+/* Showcase Center Body: Editorial Headline + Animated Golden G-Nexus Radar */
+.gt-showcase-body {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 540px;
+    margin: auto;
+    padding: 24px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.gt-sec-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px 6px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(242, 194, 48, .24);
+    backdrop-filter: blur(8px);
+    font-size: 11.5px;
+    color: #D4DAE9;
+    line-height: 1.1;
+    margin-bottom: 18px;
+}
+
+.gt-sec-pill svg {
+    width: 15px;
+    height: 15px;
+    color: var(--gt-gold-bright);
+    flex: none;
+}
+
+.gt-sec-pill b {
+    color: #FFFFFF;
+    font-weight: 700;
+}
+
+.gt-hero-title {
+    margin: 0;
+    font-family: "ZSE", "Plus Jakarta Sans", sans-serif;
+    font-size: clamp(1.65rem, 2.35vw, 2.45rem);
+    font-weight: 700;
+    line-height: 1.18;
+    letter-spacing: -.03em;
+    color: #FFFFFF;
+}
+
+.gt-hero-title .accent {
+    color: var(--gt-gold-bright);
+}
+
+.gt-hero-desc {
+    margin: 12px 0 0;
+    max-width: 440px;
+    font-size: 13.5px;
+    line-height: 1.58;
+    color: #A2AAC2;
+}
+
+/* Animated Golden G-Nexus Orbital Radar */
+.gt-radar-wrap {
+    margin-top: clamp(22px, 3vh, 36px);
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.gt-radar {
+    position: relative;
+    width: clamp(210px, 21vw, 286px);
+    aspect-ratio: 1;
+}
+
+.gt-radar-svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    display: block;
+}
+
+.gt-radar-ring {
+    fill: none;
+    stroke: rgba(242, 194, 48, .20);
+    stroke-width: 1;
+}
+
+.gt-radar-ring.r1 {
+    stroke: rgba(242, 194, 48, .52);
+}
+
+.gt-radar-arc {
+    fill: none;
+    stroke: var(--gt-gold-bright);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    transform-origin: 200px 200px;
+}
+
+.gt-radar-arc.a1 {
+    stroke-dasharray: 140 1030;
+    animation: gt-spin 14s linear infinite;
+}
+
+.gt-radar-arc.a2 {
+    stroke-dasharray: 90 652;
+    animation: gt-spin 9s linear infinite reverse;
+}
+
+@keyframes gt-spin {
+    to { transform: rotate(360deg); }
+}
+
+.gt-radar-core {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 54px;
+    height: 54px;
+    margin: -27px 0 0 -27px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(145deg, #F2C230, #D9920E);
+    box-shadow: 0 0 0 10px rgba(242, 194, 48, .15), 0 0 54px rgba(228, 163, 24, .85);
+    animation: gt-pulse 3s ease-in-out infinite;
+}
+
+.gt-radar-core img {
+    width: 25px;
+    height: auto;
+    display: block;
+}
+
+@keyframes gt-pulse {
+    50% {
+        box-shadow: 0 0 0 17px rgba(242, 194, 48, .07), 0 0 74px rgba(228, 163, 24, 1);
+    }
+}
+
+/* Intercepted Electric Blue Threat Blips */
+.gt-blip {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 7.5px;
+    height: 7.5px;
+    margin: -3.75px;
+    border-radius: 50%;
+    background: var(--gt-blue);
+    box-shadow: 0 0 14px var(--gt-blue), 0 0 4px #7882FF;
+    opacity: 0;
+    animation: gt-blip-move 4.2s cubic-bezier(.5, 0, .9, .6) infinite;
+}
+
+.gt-blip::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid var(--gt-blue);
+    opacity: 0;
+    animation: inherit;
+    animation-name: gt-blip-burst;
+}
+
+.gt-blip.b1 { --a: -22deg; animation-delay: 0s; }
+.gt-blip.b2 { --a: 42deg; animation-delay: .7s; }
+.gt-blip.b3 { --a: 122deg; animation-delay: 1.4s; }
+.gt-blip.b4 { --a: 192deg; animation-delay: 2.1s; }
+.gt-blip.b5 { --a: 252deg; animation-delay: 2.8s; }
+.gt-blip.b6 { --a: 312deg; animation-delay: 3.5s; }
+
+@keyframes gt-blip-move {
+    0% { opacity: 0; transform: rotate(var(--a)) translateX(165px); }
+    12% { opacity: 1; }
+    56% { opacity: 1; transform: rotate(var(--a)) translateX(116px) scale(1); }
+    64% { opacity: 0; transform: rotate(var(--a)) translateX(114px) scale(2.1); }
+    100% { opacity: 0; transform: rotate(var(--a)) translateX(114px); }
+}
+
+@keyframes gt-blip-burst {
+    0%, 52% { opacity: 0; transform: scale(.4); }
+    58% { opacity: 1; }
+    76% { opacity: 0; transform: scale(2.3); }
+    100% { opacity: 0; }
+}
+
+/* Floating Dark Glass Status Tags (Unobstructed perimeter placement) */
+.gt-tag {
+    position: absolute;
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    white-space: nowrap;
+    background: rgba(11, 13, 24, .88);
+    border: 1px solid rgba(255, 255, 255, .14);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    padding: 6px 11px;
+    font-size: 11px;
+    color: #E2E6F3;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, .5);
+    animation: gt-tag-cycle 9s ease-in-out infinite;
+}
+
+.gt-tag b {
+    color: var(--gt-ok);
+    font-weight: 700;
+}
+
+.gt-tag b::before {
+    content: "● ";
+    font-size: 7.5px;
+    vertical-align: 1px;
+}
+
+.gt-tag.tg1 { left: -24px; top: 8%; animation-delay: -1.6s; }
+.gt-tag.tg2 { right: -26px; top: 15%; animation-delay: 1.4s; }
+.gt-tag.tg3 { left: -14px; bottom: 8%; animation-delay: 4.4s; }
+
+@keyframes gt-tag-cycle {
+    0%, 100% { opacity: 0; transform: translateY(8px); }
+    8%, 32% { opacity: 1; transform: none; }
+    40% { opacity: 0; transform: translateY(-6px); }
+}
+
+/* Showcase Bottom Trust Bar */
+.gt-showcase-foot {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 20px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, .08);
+}
+
+.gt-trust-mini {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 18px;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #A9B2C9;
+}
+
+.gt-trust-mini span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.gt-trust-mini span::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gt-ok);
+    box-shadow: 0 0 8px var(--gt-ok);
+}
+
+.gt-showcase-brand {
+    margin: 0 0 0 auto;
+    font-family: "ZSE", "Plus Jakarta Sans", sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    color: rgba(255, 255, 255, .78);
+}
+
+.gt-showcase-brand span {
+    color: var(--gt-gold-bright);
+}
+
+/* ==========================================================================
+   RIGHT PANEL: Calm Warm Champagne Workspace + Elevated White Auth Card
+   (Exact surface harmony with /admin and /portal)
+   ========================================================================== */
+.gt-workspace {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    background:
+        radial-gradient(75% 55% at 88% 8%, rgba(242, 194, 48, .12) 0%, transparent 65%),
+        radial-gradient(65% 50% at 10% 94%, rgba(18, 26, 255, .045) 0%, transparent 62%),
+        linear-gradient(180deg, #FAF8F3 0%, var(--gt-canvas) 62%, var(--gt-canvas-deep) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: clamp(24px, 3.2vw, 40px) clamp(20px, 4vw, 52px);
+}
+
+.gt-workspace::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: radial-gradient(rgba(17, 22, 37, .055) 1px, transparent 1.2px);
+    background-size: 24px 24px;
+    opacity: .65;
+}
+
+.gt-workspace-top {
+    width: 100%;
+    max-width: 424px;
+    display: flex;
+    justify-content: center;
+}
+
+.gt-eco-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .86);
+    border: 1px solid var(--gt-border);
+    box-shadow: 0 2px 10px rgba(17, 22, 37, .04);
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--gt-ink-soft);
+    letter-spacing: .01em;
+}
+
+.gt-eco-pill i {
+    width: 6.5px;
+    height: 6.5px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Elevated Pure White Auth Card */
+.gt-auth-card {
+    position: relative;
+    overflow: hidden;
+    width: min(416px, 100%);
+    margin: auto 0;
+    background: var(--gt-white);
+    border: 1px solid var(--gt-border);
+    border-radius: 16px;
+    padding: 36px 34px 32px;
+    color: var(--gt-ink);
+    box-shadow:
+        0 24px 56px -16px rgba(17, 22, 37, .12),
+        0 4px 16px -4px rgba(17, 22, 37, .06);
+}
+
+.gt-auth-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3.5px;
+    background: linear-gradient(90deg, var(--gt-blue) 0%, var(--gt-gold) 62%, var(--gt-gold-bright) 100%);
+}
+
+.gt-auth-shell.is-register .gt-auth-card {
+    width: min(444px, 100%);
+    padding: 30px 32px 28px;
+}
+
+.gt-card-logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.gt-card-logo a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 46px;
+    text-decoration: none;
+    transition: transform .2s ease;
+}
+
+.gt-card-logo a:hover {
+    transform: scale(1.06);
+}
+
+.gt-card-title {
+    margin: 0;
+    text-align: center;
+    font-size: 21px;
+    font-weight: 800;
+    line-height: 1.25;
+    letter-spacing: -.025em;
+    color: var(--gt-ink);
+}
+
+.gt-card-sub {
+    margin: 7px 0 24px;
+    text-align: center;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--gt-muted);
+}
+
+.gt-auth-shell.is-register .gt-card-sub {
+    margin-bottom: 18px;
+}
+
+/* Alerts */
+.gt-alert {
+    margin-bottom: 14px;
+    padding: 10px 13px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.gt-alert-warn {
+    background: #FFF8E6;
+    border: 1px solid #F3D17A;
+    color: #8A5D00;
+}
+
+.gt-alert-err {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    color: #B91C1C;
+}
+
+.gt-alert-ok {
+    background: #ECFDF5;
+    border: 1px solid #A7F3D0;
+    color: #065F46;
+}
+
+/* Form Fields */
+.gt-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.gt-auth-shell.is-register .gt-form {
+    gap: 11px;
+}
+
+.gt-row-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.gt-field {
+    position: relative;
+}
+
+.gt-input-wrap {
+    position: relative;
+}
+
+.gt-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gt-ink-soft);
+    letter-spacing: -.01em;
+}
+
+.gt-input {
+    width: 100%;
+    height: 46px;
+    padding: 0 14px;
+    border: 1px solid var(--gt-input-border);
+    border-radius: 10px;
+    background: var(--gt-input-bg);
+    color: var(--gt-ink);
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 500;
+    outline: none;
+    transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.gt-auth-shell.is-register .gt-input {
+    height: 43px;
+    font-size: 13px;
+}
+
+.gt-input::placeholder {
+    color: #8F97AA;
+    font-weight: 400;
+}
+
+.gt-input:hover {
+    border-color: #BFC8DB;
+}
+
+.gt-input:focus {
+    background: #FFFFFF;
+    border-color: var(--gt-blue);
+    box-shadow: 0 0 0 3.5px rgba(18, 26, 255, .12);
+}
+
+/* Clean Override for Browser Autofill Blue/Yellow Fill */
+.gt-input:-webkit-autofill,
+.gt-input:-webkit-autofill:hover,
+.gt-input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--gt-ink);
+    -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+.gt-input.has-toggle {
+    padding-right: 40px;
+}
+
+.gt-toggle-pass {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    border: 0;
+    background: transparent;
+    color: #7D869C;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: color .15s ease, background .15s ease;
+}
+
+.gt-toggle-pass:hover {
+    color: var(--gt-ink);
+    background: rgba(17, 22, 37, .05);
+}
+
+.gt-field-err {
+    display: block;
+    margin-top: 5px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #DC2626;
+}
+
+.gt-form-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 12.5px;
+    color: var(--gt-muted);
+    margin-top: -2px;
+}
+
+.gt-remember {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    user-select: none;
+    color: var(--gt-ink-soft);
+    font-weight: 500;
+}
+
+.gt-remember input {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--gt-blue);
+    margin: 0;
+    cursor: pointer;
+}
+
+.gt-forgot {
+    color: var(--gt-blue);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.gt-forgot:hover {
+    text-decoration: underline;
+}
+
+/* Primary Electric Blue CTA (10% Accent Rule — Pure White Text) */
+.gt-btn-submit {
+    width: 100%;
+    height: 48px;
+    margin-top: 4px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--gt-blue);
+    color: #FFFFFF;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    cursor: pointer;
+    box-shadow: 0 12px 26px -8px rgba(18, 26, 255, .48);
+    transition: background .18s ease, transform .15s ease, box-shadow .18s ease;
+}
+
+.gt-btn-submit:hover {
+    background: var(--gt-blue-hover);
+    box-shadow: 0 16px 32px -8px rgba(18, 26, 255, .58);
+    transform: translateY(-1px);
+}
+
+.gt-btn-submit:active {
+    transform: translateY(0);
+}
+
+/* Divider "ou" */
+.gt-divider {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 18px 0;
+    color: #8C94A8;
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: lowercase;
+}
+
+.gt-divider::before,
+.gt-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #EAE5DA;
+}
+
+/* Secondary Outlined Button */
+.gt-btn-outline {
+    width: 100%;
+    height: 46px;
+    border: 1px solid var(--gt-border);
+    border-radius: 10px;
+    background: #FFFFFF;
+    color: var(--gt-ink);
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    cursor: pointer;
+    transition: background .18s ease, border-color .18s ease, color .18s ease;
+}
+
+.gt-btn-outline:hover {
+    background: var(--gt-gold-soft);
+    border-color: #DFC06A;
+    color: var(--gt-gold-ink);
+}
+
+.gt-btn-outline svg {
+    width: 15px;
+    height: 15px;
+    color: var(--gt-gold-ink);
+}
+
+/* Workspace Bottom Signature */
+.gt-login-signature {
+    margin: 20px 0 0;
+    font-family: "ZSE", "Plus Jakarta Sans", sans-serif;
+    font-size: 13.5px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: var(--gt-ink);
+    text-align: center;
+}
+
+.gt-login-signature span {
+    color: var(--gt-gold-ink);
+}
+
+/* ==========================================================================
+   RESPONSIVE TABLET & MOBILE
+   ========================================================================== */
+@media (max-width: 1120px) {
+    .gt-auth-shell {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+    .gt-showcase {
+        padding: 24px 28px;
+    }
+    .gt-radar {
+        width: clamp(190px, 22vw, 240px);
+    }
+    .gt-tag.tg1 { left: -12px; }
+    .gt-tag.tg2 { right: -12px; }
+}
+
+@media (max-width: 920px) {
+    .gt-auth-shell {
+        grid-template-columns: 1fr;
+        min-height: 100vh;
+    }
+    .gt-showcase {
+        border-right: 0;
+        border-bottom: 1px solid rgba(228, 163, 24, .22);
+        padding: 18px 20px 44px;
+        gap: 14px;
+    }
+    .gt-showcase-body {
+        padding: 8px 0 4px;
+    }
+    .gt-hero-title {
+        font-size: 1.55rem;
+    }
+    .gt-hero-desc {
+        font-size: 12.5px;
+    }
+    .gt-radar-wrap {
+        margin-top: 18px;
+    }
+    .gt-radar {
+        width: 168px;
+    }
+    .gt-radar-core {
+        width: 42px;
+        height: 42px;
+        margin: -21px 0 0 -21px;
+    }
+    .gt-radar-core img {
+        width: 20px;
+    }
+    .gt-tag {
+        font-size: 10px;
+        padding: 5px 9px;
+    }
+    .gt-tag.tg1 { left: -18px; top: 6%; }
+    .gt-tag.tg2 { right: -18px; top: 14%; }
+    .gt-tag.tg3 { left: -10px; bottom: 6%; }
+    .gt-showcase-foot {
+        display: none;
+    }
+    .gt-workspace {
+        overflow: visible;
+        z-index: 2;
+        padding: 0 18px 28px;
+        justify-content: flex-start;
+    }
+    .gt-workspace-top {
+        display: none;
+    }
+    .gt-auth-card,
+    .gt-auth-shell.is-register .gt-auth-card {
+        margin-top: -24px;
+        width: min(440px, 100%);
+        padding: 28px 22px 26px;
+        border-radius: 14px;
+    }
+    .gt-row-2 {
+        grid-template-columns: 1fr;
+        gap: 11px;
+    }
+    .gt-live-status {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gt-glow,
+    .gt-grid-fx,
+    .gt-radar-arc,
+    .gt-radar-core,
+    .gt-blip,
+    .gt-blip::after,
+    .gt-tag {
+        animation: none !important;
+    }
+    .gt-tag.tg1 {
+        opacity: 1;
+    }
+}

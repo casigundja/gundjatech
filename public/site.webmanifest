@@ -1,0 +1,22 @@
+{
+  "name": "GundjaTech — Sites, Tecnologia e Marketing Digital",
+  "short_name": "GundjaTech",
+  "description": "Plataforma corporativa da GundjaTech: criação de sites, cibersegurança, operação contínua, tráfego pago e portal do cliente.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#06070E",
+  "theme_color": "#E4A318",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/img/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/img/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
