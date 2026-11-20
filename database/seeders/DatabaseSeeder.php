@@ -666,8 +666,8 @@ class DatabaseSeeder extends Seeder
         SystemSetting::set('company_name', 'GundjaTech Solutions');
         SystemSetting::set('company_slogan', 'Transformamos ideias em soluções digitais.');
         SystemSetting::set('company_email', 'contato@gundjatech.com');
-        SystemSetting::set('company_phone', '(11) 3456-7890');
-        SystemSetting::set('company_whatsapp', '5511998765432');
+        SystemSetting::set('company_phone', '(19) 95324-8420');
+        SystemSetting::set('company_whatsapp', '5519953248420');
         SystemSetting::set('company_address', 'Av. Paulista, 1000 - Bela Vista, São Paulo - SP');
         SystemSetting::set('company_cnpj', '48.912.345/0001-88');
         SystemSetting::set('primary_color', '#FFA525');

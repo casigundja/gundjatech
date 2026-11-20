@@ -5,7 +5,7 @@
     var qs = function (sel, root) { return (root || document).querySelector(sel); };
     var qsa = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
     var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    var WA_URL = "https://wa.me/5511995204050";
+    var WA_URL = "https://wa.me/5519953248420";
 
     function getSession(key) {
         try { return sessionStorage.getItem(key); } catch (e) { return null; }
@@ -522,7 +522,6 @@
                                 if (data.ai_reply.id > (liveSession.lastId || 0)) {
                                     liveSession.lastId = data.ai_reply.id;
                                 }
-                                renderedMsgIds[data.ai_reply.id] = true;
                                 appendBotBubbleInstant(data.ai_reply.message, data.ai_reply.id);
                             }
                             saveLiveSession();

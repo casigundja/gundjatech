@@ -210,7 +210,7 @@
     var waHref = null;
 
     function openWhatsappWindow(lead, tag) {
-        var baseHref = waHref || "https://wa.me/5511995204050";
+        var baseHref = waHref || "https://wa.me/5519953248420";
         var baseUrl = baseHref.split("?")[0];
         var existingText = new URLSearchParams(baseHref.split("?")[1] || "").get("text") || "";
         var lines = [L("Olá! Sou") + " " + lead.nome + (lead.empresa ? ", " + L("da") + " " + lead.empresa : "") + "."];

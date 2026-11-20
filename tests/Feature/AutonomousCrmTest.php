@@ -257,5 +257,93 @@ class AutonomousCrmTest extends TestCase
                 'crm_ai_system_prompt' => 'Hack',
             ])
             ->assertStatus(403);
+
+        $this->actingAs($attendant)
+            ->post('/admin/crm-autonomo/testar')
+            ->assertStatus(403);
+    }
+
+    public function test_vertex_ai_express_aq_key_routes_to_aiplatform_and_connection_tester_reports_status(): void
+    {
+        $this->seed(ProductionSeeder::class);
+        $admin = User::where('role', UserRole::SuperAdmin->value)->firstOrFail();
+
+        SystemSetting::set('crm_ai_provider', 'gemini', 'crm_ai');
+        SystemSetting::set('crm_ai_model', 'gemini-2.5-flash', 'crm_ai');
+        SystemSetting::set('crm_ai_api_key', Crypt::encryptString('AQ.TestVertexExpressKey12345'), 'crm_ai');
+
+        Http::fake([
+            'aiplatform.googleapis.com/*' => Http::sequence()
+                ->push([
+                    'candidates' => [[
+                        'content' => [
+                            'parts' => [[
+                                'text' => json_encode([
+                                    'reply' => 'Olá via Vertex AI Express! Qual é o objetivo do seu sistema?',
+                                    'crm_stage' => 'qualifying',
+                                    'lead_score' => 68,
+                                    'summary' => 'Lead atendido via Vertex AI Express.',
+                                    'handoff_to_human' => false,
+                                    'handoff_reason' => null,
+                                    'create_draft_quotation' => false,
+                                    'extracted' => [
+                                        'company' => 'Kwanza Digital',
+                                        'project_type' => 'Sistema Web Sob Medida',
+                                        'service_slug' => 'sistema-web-sob-medida',
+                                    ],
+                                ]),
+                            ]],
+                        ],
+                    ]],
+                ], 200)
+                ->push([
+                    'error' => [
+                        'code' => 403,
+                        'message' => 'Agent Platform API has not been used in project 739817877452 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/aiplatform.googleapis.com/overview?project=739817877452 then retry.',
+                    ],
+                ], 403)
+                ->push([
+                    'candidates' => [[
+                        'content' => [
+                            'parts' => [['text' => '{"ok": true}']],
+                        ],
+                    ]],
+                ], 200),
+        ]);
+
+        // 1. Live chat message routes AQ. key to aiplatform.googleapis.com with x-goog-api-key header
+        $start = $this->postJson('/api/chat/start', [
+            'nome' => 'Pedro Silva',
+            'email' => 'pedro@kwanzadigital.com',
+            'telefone' => '(11) 92222-3333',
+            'assunto' => 'Sistema Web',
+            'mensagem' => 'Queremos um sistema web de gestão.',
+        ]);
+
+        $start->assertStatus(201)
+            ->assertJsonPath('ai_reply.message', 'Olá via Vertex AI Express! Qual é o objetivo do seu sistema?')
+            ->assertJsonPath('lead_score', 68);
+
+        Http::assertSent(static function ($request): bool {
+            return str_contains($request->url(), 'https://aiplatform.googleapis.com/v1/publishers/google/models/gemini-2.5-flash:generateContent')
+                && $request->hasHeader('x-goog-api-key', 'AQ.TestVertexExpressKey12345');
+        });
+
+        // 2. Admin connection test detects disabled Vertex AI API and surfaces enable URL
+        $this->actingAs($admin)
+            ->post('/admin/crm-autonomo/testar')
+            ->assertRedirect(route('admin.crm.index'))
+            ->assertSessionHas('crm_test_result', static function (array $result): bool {
+                return $result['ok'] === false
+                    && str_contains((string) $result['action_url'], 'aiplatform.googleapis.com/overview?project=739817877452');
+            });
+
+        // 3. Admin connection test succeeds once enabled
+        $this->actingAs($admin)
+            ->post('/admin/crm-autonomo/testar')
+            ->assertRedirect(route('admin.crm.index'))
+            ->assertSessionHas('crm_test_result', static function (array $result): bool {
+                return $result['ok'] === true && $result['mode'] === 'vertex_express';
+            });
     }
 }

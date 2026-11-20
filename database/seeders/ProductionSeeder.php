@@ -261,8 +261,8 @@ class ProductionSeeder extends Seeder
         SystemSetting::set('company_name', 'GundjaTech');
         SystemSetting::set('company_slogan', 'Engenharia digital, criação de sites, cibersegurança e operação contínua.');
         SystemSetting::set('company_email', 'contato@gundjatech.com');
-        SystemSetting::set('company_phone', '(11) 99520-4050');
-        SystemSetting::set('company_whatsapp', '5511995204050');
+        SystemSetting::set('company_phone', '(19) 95324-8420');
+        SystemSetting::set('company_whatsapp', '5519953248420');
         SystemSetting::set('company_cnpj', '');
         SystemSetting::set('primary_color', '#F2C230');
         SystemSetting::set('secondary_color', '#16749A');

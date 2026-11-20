@@ -5,7 +5,7 @@
 @section('content')
 @php
     $modeLabel = match ($config['effective_mode']) {
-        'gemini' => 'Google Gemini (' . $config['model'] . ')',
+        'gemini' => (! empty($config['is_vertex_express']) ? 'Google Gemini · Vertex AI Express (' : 'Google Gemini (') . $config['model'] . ')',
         'openai' => 'OpenAI (' . $config['model'] . ')',
         default => 'Motor Comercial Local (sem API externa)',
     };
@@ -170,15 +170,34 @@
     <section class="xl:col-span-4 gtb-card space-y-4">
         <div>
             <h2 class="text-sm sm:text-base font-bold text-white">Configurações do Agente IA</h2>
-            <p class="text-[11px] text-[#8C95AA]">Funciona imediatamente com o motor comercial local e se potencializa automaticamente ao informar sua chave Gemini ou OpenAI.</p>
+            <p class="text-[11px] text-[#8C95AA]">Funciona imediatamente com o motor comercial local e se potencializa automaticamente ao informar sua chave Gemini (AI Studio ou Vertex AI Express) ou OpenAI.</p>
         </div>
+
+        @if(session('crm_test_result'))
+            @php($testResult = session('crm_test_result'))
+            <div class="p-3.5 rounded-xl border text-xs space-y-2 {{ ! empty($testResult['ok']) ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-400/50 text-emerald-900 dark:text-[#6EE7B7]' : 'bg-amber-50 dark:bg-amber-500/10 border-[#F2C230]/70 text-[#063B5C] dark:text-amber-200' }}">
+                <div class="font-bold flex items-center justify-between gap-2">
+                    <span>{{ ! empty($testResult['ok']) ? 'Conexão IA Verificada' : 'Ação Necessária na API Externa' }}</span>
+                    @if(! empty($testResult['latency_ms']))
+                        <span class="text-[10px] font-mono opacity-80">{{ $testResult['latency_ms'] }}ms</span>
+                    @endif
+                </div>
+                <p class="text-[11px] leading-relaxed text-[#063B5C] dark:text-[#E7F0F5]">{{ $testResult['message'] ?? '' }}</p>
+                @if(! empty($testResult['action_url']))
+                    <a href="{{ $testResult['action_url'] }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F2C230] text-[#063B5C] font-extrabold text-[11px] no-underline hover:bg-[#E0B020]">
+                        <span>{{ $testResult['action_label'] ?? 'Abrir Google Cloud Console' }}</span>
+                        <span>&rarr;</span>
+                    </a>
+                @endif
+            </div>
+        @endif
 
         @if(Auth::user()->hasPermission('settings.manage'))
             <form action="{{ route('admin.crm.settings') }}" method="POST" class="space-y-3.5 text-xs">
                 @csrf
                 @method('PUT')
 
-                <label class="flex items-center justify-between gap-3 p-3 rounded-xl bg-[#171B27] border border-white/10 cursor-pointer">
+                <label class="gtb-surface-box flex items-center justify-between gap-3 p-3 rounded-xl cursor-pointer">
                     <div>
                         <div class="font-bold text-white">Piloto Automático Ativo</div>
                         <div class="text-[10.5px] text-[#8C95AA]">Responder novos visitantes automaticamente no chat</div>
@@ -186,7 +205,7 @@
                     <input type="checkbox" name="crm_ai_enabled" value="1" @checked($config['enabled']) class="w-4 h-4 accent-[#F2C230]">
                 </label>
 
-                <label class="flex items-center justify-between gap-3 p-3 rounded-xl bg-[#171B27] border border-white/10 cursor-pointer">
+                <label class="gtb-surface-box flex items-center justify-between gap-3 p-3 rounded-xl cursor-pointer">
                     <div>
                         <div class="font-bold text-white">Auto-gerar Pré-Orçamento</div>
                         <div class="text-[10.5px] text-[#8C95AA]">Criar rascunho em /admin/orcamentos ao qualificar</div>
@@ -218,10 +237,10 @@
                     <label class="block text-[11px] font-bold text-[#8C95AA] uppercase mb-1">
                         Chave de API (Gemini ou OpenAI)
                         @if($config['has_api_key'])
-                            <span class="text-[#6EE7B7] normal-case font-semibold">• Configurada e criptografada ✓</span>
+                            <span class="text-[#6EE7B7] normal-case font-semibold">• Configurada ({{ $config['api_key_prefix'] }}) ✓</span>
                         @endif
                     </label>
-                    <input type="password" name="crm_ai_api_key" autocomplete="new-password" placeholder="{{ $config['has_api_key'] ? 'Deixe em branco para manter a chave atual' : 'Cole sua GEMINI_API_KEY ou OPENAI_API_KEY' }}" class="w-full px-3 py-2 text-xs font-mono">
+                    <input type="password" name="crm_ai_api_key" autocomplete="new-password" placeholder="{{ $config['has_api_key'] ? 'Deixe em branco para manter a chave atual' : 'AIza... (AI Studio), AQ... (Vertex Express) ou sk-... (OpenAI)' }}" class="w-full px-3 py-2 text-xs font-mono">
                     @if($config['has_api_key'])
                         <label class="inline-flex items-center gap-2 mt-1.5 text-[10.5px] text-red-400 cursor-pointer">
                             <input type="checkbox" name="clear_api_key" value="1" class="accent-red-500">
@@ -237,6 +256,13 @@
 
                 <button type="submit" class="btn-primary w-full py-2.5 text-xs cursor-pointer">
                     Salvar Configurações do CRM Autônomo
+                </button>
+            </form>
+
+            <form action="{{ route('admin.crm.test') }}" method="POST" class="pt-1">
+                @csrf
+                <button type="submit" class="btn-secondary w-full py-2 text-xs cursor-pointer">
+                    Testar Conexão com a IA Agora
                 </button>
             </form>
         @else

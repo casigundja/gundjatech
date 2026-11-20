@@ -15,6 +15,7 @@ use App\Models\Service;
 use App\Models\ServiceRequest;
 use App\Models\SystemSetting;
 use App\Models\User;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
@@ -101,8 +102,10 @@ class AutonomousCrmAgent
             'enabled' => $enabled,
             'provider' => $provider,
             'effective_mode' => $effectiveMode,
+            'is_vertex_express' => $effectiveMode === 'gemini' && str_starts_with($activeKey, 'AQ.'),
             'model' => $model,
             'api_key' => $activeKey,
+            'api_key_prefix' => $activeKey !== '' ? substr($activeKey, 0, 5).'…' : '',
             'has_api_key' => $activeKey !== '',
             'agent_name' => $agentName,
             'auto_draft_quotation' => $autoDraftBool,
@@ -139,6 +142,168 @@ class AutonomousCrmAgent
     }
 
     /**
+     * @return array{ok: bool, mode: string, model: string, latency_ms: int, message: string, action_url: ?string, action_label: ?string}
+     */
+    public function testConnection(): array
+    {
+        $config = $this->getConfig();
+        $mode = (string) $config['effective_mode'];
+        $model = (string) $config['model'];
+
+        if (! in_array($mode, ['gemini', 'openai'], true) || $config['api_key'] === '') {
+            return [
+                'ok' => true,
+                'mode' => 'rules',
+                'model' => 'motor-local',
+                'latency_ms' => 0,
+                'message' => 'Operando com Motor Comercial Local (nenhuma chave externa configurada).',
+                'action_url' => null,
+                'action_label' => null,
+            ];
+        }
+
+        $startedAt = microtime(true);
+
+        try {
+            if ($mode === 'gemini') {
+                $apiKey = (string) $config['api_key'];
+                $isVertexExpress = str_starts_with($apiKey, 'AQ.');
+                $endpoint = $isVertexExpress
+                    ? "https://aiplatform.googleapis.com/v1/publishers/google/models/{$model}:generateContent"
+                    : "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
+
+                $response = $this->httpClient()
+                    ->withHeaders(['x-goog-api-key' => $apiKey])
+                    ->post($endpoint, [
+                        'contents' => [
+                            [
+                                'role' => 'user',
+                                'parts' => [['text' => 'Responda apenas JSON: {"ok": true}']],
+                            ],
+                        ],
+                        'generationConfig' => [
+                            'temperature' => 0.0,
+                            'responseMimeType' => 'application/json',
+                        ],
+                    ]);
+
+                $latencyMs = (int) round((microtime(true) - $startedAt) * 1000);
+                $label = $isVertexExpress ? "Google Gemini · Vertex AI Express ({$model})" : "Google Gemini ({$model})";
+
+                if ($response->successful()) {
+                    return [
+                        'ok' => true,
+                        'mode' => $isVertexExpress ? 'vertex_express' : 'gemini',
+                        'model' => $model,
+                        'latency_ms' => $latencyMs,
+                        'message' => "Conexão ativa! {$label} respondeu com sucesso em {$latencyMs}ms.",
+                        'action_url' => null,
+                        'action_label' => null,
+                    ];
+                }
+
+                $errorMsg = (string) data_get($response->json(), 'error.message', '');
+                $actionUrl = null;
+                $actionLabel = null;
+
+                if (preg_match('#https://console\.(?:developers|cloud)\.google\.com/[^\s"\']+#', $errorMsg, $matches) === 1) {
+                    $actionUrl = rtrim($matches[0], '.,)');
+                    $actionLabel = str_contains($actionUrl, '/billing/')
+                        ? 'Ativar Faturamento (Billing) no Google Cloud'
+                        : 'Ativar API no Google Cloud Console';
+                }
+
+                if ($response->status() === 403 && str_contains(strtolower($errorMsg), 'requires billing')) {
+                    return [
+                        'ok' => false,
+                        'mode' => $isVertexExpress ? 'vertex_express' : 'gemini',
+                        'model' => $model,
+                        'latency_ms' => $latencyMs,
+                        'message' => 'Vertex AI API já está ativa neste projeto, mas o Google exige vincular uma conta de faturamento (Billing) ao projeto para liberar o Vertex AI — ou usar uma chave gratuita AIza... do Google AI Studio.',
+                        'action_url' => $actionUrl,
+                        'action_label' => $actionLabel ?? 'Ativar Faturamento (Billing) no Google Cloud',
+                    ];
+                }
+
+                if ($response->status() === 403 && str_contains(strtolower($errorMsg), 'disabled')) {
+                    return [
+                        'ok' => false,
+                        'mode' => $isVertexExpress ? 'vertex_express' : 'gemini',
+                        'model' => $model,
+                        'latency_ms' => $latencyMs,
+                        'message' => 'Chave reconhecida pelo Google Cloud, mas a Vertex AI API ainda está desativada neste projeto. Ative-a no link abaixo (enquanto isso, o chat continua operando pelo Motor Local).',
+                        'action_url' => $actionUrl,
+                        'action_label' => $actionLabel,
+                    ];
+                }
+
+                return [
+                    'ok' => false,
+                    'mode' => $isVertexExpress ? 'vertex_express' : 'gemini',
+                    'model' => $model,
+                    'latency_ms' => $latencyMs,
+                    'message' => sprintf(
+                        'Falha HTTP %d ao conectar em %s: %s',
+                        $response->status(),
+                        $label,
+                        Str::limit($errorMsg !== '' ? $errorMsg : $response->body(), 180)
+                    ),
+                    'action_url' => $actionUrl,
+                    'action_label' => $actionLabel,
+                ];
+            }
+
+            $response = $this->httpClient()
+                ->withToken((string) $config['api_key'])
+                ->post('https://api.openai.com/v1/chat/completions', [
+                    'model' => $model,
+                    'temperature' => 0.0,
+                    'max_tokens' => 20,
+                    'messages' => [
+                        ['role' => 'user', 'content' => 'Responda apenas OK.'],
+                    ],
+                ]);
+
+            $latencyMs = (int) round((microtime(true) - $startedAt) * 1000);
+            if ($response->successful()) {
+                return [
+                    'ok' => true,
+                    'mode' => 'openai',
+                    'model' => $model,
+                    'latency_ms' => $latencyMs,
+                    'message' => "Conexão ativa! OpenAI ({$model}) respondeu com sucesso em {$latencyMs}ms.",
+                    'action_url' => null,
+                    'action_label' => null,
+                ];
+            }
+
+            $errorMsg = (string) data_get($response->json(), 'error.message', $response->body());
+
+            return [
+                'ok' => false,
+                'mode' => 'openai',
+                'model' => $model,
+                'latency_ms' => $latencyMs,
+                'message' => sprintf('Falha HTTP %d ao conectar na OpenAI (%s): %s', $response->status(), $model, Str::limit($errorMsg, 180)),
+                'action_url' => null,
+                'action_label' => null,
+            ];
+        } catch (\Throwable $e) {
+            $latencyMs = (int) round((microtime(true) - $startedAt) * 1000);
+
+            return [
+                'ok' => false,
+                'mode' => $mode,
+                'model' => $model,
+                'latency_ms' => $latencyMs,
+                'message' => 'Erro de rede/SSL ao testar conexão com a IA: '.Str::limit($e->getMessage(), 180),
+                'action_url' => null,
+                'action_label' => null,
+            ];
+        }
+    }
+
+    /**
      * @param  Collection<int, Service>  $services
      * @param  Collection<int, PortfolioProject>  $cases
      * @param  array<string, mixed>  $config
@@ -148,11 +313,17 @@ class AutonomousCrmAgent
     {
         try {
             $model = trim((string) $config['model']) ?: 'gemini-2.5-flash';
-            $endpoint = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
+            $apiKey = (string) $config['api_key'];
+            $isVertexExpress = str_starts_with($apiKey, 'AQ.');
+
+            $endpoint = $isVertexExpress
+                ? "https://aiplatform.googleapis.com/v1/publishers/google/models/{$model}:generateContent"
+                : "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
+
             $prompt = $this->buildStructuredPrompt($conversation, $incomingMessage, $services, $cases, $config);
 
-            $response = Http::timeout(12)
-                ->withQueryParameters(['key' => $config['api_key']])
+            $response = $this->httpClient()
+                ->withHeaders(['x-goog-api-key' => $apiKey])
                 ->post($endpoint, [
                     'contents' => [
                         [
@@ -167,7 +338,11 @@ class AutonomousCrmAgent
                 ]);
 
             if (! $response->successful()) {
-                Log::warning('AutonomousCrmAgent Gemini fallback triggered', ['status' => $response->status()]);
+                Log::warning('AutonomousCrmAgent Gemini fallback triggered', [
+                    'status' => $response->status(),
+                    'vertex_express' => $isVertexExpress,
+                    'body' => Str::limit((string) $response->body(), 300),
+                ]);
 
                 return null;
             }
@@ -194,7 +369,7 @@ class AutonomousCrmAgent
             $model = trim((string) $config['model']) ?: 'gpt-4o-mini';
             $prompt = $this->buildStructuredPrompt($conversation, $incomingMessage, $services, $cases, $config);
 
-            $response = Http::timeout(12)
+            $response = $this->httpClient()
                 ->withToken((string) $config['api_key'])
                 ->post('https://api.openai.com/v1/chat/completions', [
                     'model' => $model,
@@ -361,9 +536,10 @@ PROMPT;
             $extracted['city_state'] = $detectedLocation;
         }
 
-        // Capture detailed scope when visitor writes a substantive non-onboarding message
+        // Capture detailed scope when visitor writes a real answer (even concise ones like "Limpar lixo" or "Clínica")
         $isInitialChoiceMessage = Str::startsWith($msgLower, 'interesse informado no chat:');
-        if (! $isInitialChoiceMessage && mb_strlen(trim($incomingMessage)) >= 14) {
+        $isCheckInOrGreeting = (bool) preg_match('/^(?:oi|ol[aá]|bom dia|boa tarde|boa noite|t[aá]\s*a[ií]\??|tem algu[eé]m\??|al[oô]\??|ok|blz|beleza|certo|obrigad[oa]|valeu)[\s!.?]*$/iu', trim($incomingMessage));
+        if (! $isInitialChoiceMessage && ! $isCheckInOrGreeting && mb_strlen(trim($incomingMessage)) >= 3) {
             $prevScope = trim((string) ($extracted['scope'] ?? ''));
             if ($prevScope === '') {
                 $extracted['scope'] = Str::limit(trim($incomingMessage), 400);
@@ -411,9 +587,11 @@ PROMPT;
             ];
         }
 
-        // 4. Answer direct FAQ / Pricing / Portfolio questions naturally
+        // 4. Answer direct check-ins / greetings / FAQ / Pricing / Portfolio questions naturally
         $prefixAnswer = '';
-        if (Str::contains($msgLower, ['quanto custa', 'preco', 'preço', 'valor', 'investimento'])) {
+        if ($isCheckInOrGreeting) {
+            $prefixAnswer = "Sim, {$firstName}! Estou online acompanhando seu atendimento em tempo real. ";
+        } elseif (Str::contains($msgLower, ['quanto custa', 'preco', 'preço', 'valor', 'investimento'])) {
             if ($matchedService !== null) {
                 $priceFmt = number_format((float) $matchedService->base_price, 2, ',', '.');
                 $days = (int) ($matchedService->estimated_days ?? 15);
@@ -428,19 +606,21 @@ PROMPT;
                 : 'Desenvolvemos projetos sob medida para educação, saúde, tecnologia e consultoria empresarial. ';
         }
 
-        // 5. Decide next progressive CRM qualification step
+        // 5. Decide next progressive CRM qualification step (avoid repeating the exact same wording)
         $hasService = $matchedService !== null;
         $hasScope = ! empty($extracted['scope']);
         $hasBudget = ! empty($extracted['estimated_budget']);
         $hasDeadline = ! empty($extracted['desired_deadline_days']);
         $hasCompany = ! empty($extracted['company']);
         $alreadyDrafted = ! empty($extracted['draft_quotation_id']);
+        $lastStep = (string) ($extracted['last_step'] ?? '');
 
         if ($hasService && $hasScope && ($hasBudget || $hasDeadline)) {
             $priceBase = (float) ($matchedService?->base_price ?? 3800);
             $estimate = $hasBudget ? (float) $extracted['estimated_budget'] : $priceBase;
             $estimateFmt = number_format($estimate, 2, ',', '.');
             $deadlineTxt = $hasDeadline ? "{$extracted['desired_deadline_days']} dias" : (($matchedService?->estimated_days ?? 15).' dias estimados');
+            $extracted['last_step'] = 'proposal_ready';
 
             $reply = $alreadyDrafted
                 ? "{$prefixAnswer}Excelente, {$firstName}! Atualizei esses detalhes na sua solicitação e no pré-orçamento. Deseja incluir alguma integração específica ou prefere que um diretor assuma agora para validar a proposta final?"
@@ -459,13 +639,23 @@ PROMPT;
         }
 
         if (! $hasService) {
-            $reply = "{$prefixAnswer}Prazer, {$firstName}! Sou o assistente comercial da GundjaTech. Qual solução você busca hoje: Site Institucional, Loja Virtual (E-commerce), Landing Page, Cibersegurança/Domínios ou Gestão de Tráfego Pago?";
+            $extracted['last_step'] = 'ask_service';
+            $reply = $lastStep === 'ask_service'
+                ? "{$prefixAnswer}Me conta em uma frase qual solução você precisa hoje (ex.: site novo, loja virtual, sistema web, segurança ou tráfego pago) que já monto sua proposta!"
+                : "{$prefixAnswer}Prazer, {$firstName}! Sou o assistente comercial da GundjaTech. Qual solução você busca hoje: Site Institucional, Loja Virtual (E-commerce), Landing Page, Cibersegurança/Domínios ou Gestão de Tráfego Pago?";
         } elseif (! $hasScope) {
-            $reply = "{$prefixAnswer}Ótima escolha, {$firstName}! Para estruturar uma recomendação sob medida de {$matchedService->name}, qual é o nome da sua empresa e o principal objetivo que você quer alcançar com o projeto?";
+            $extracted['last_step'] = 'ask_scope';
+            $reply = $lastStep === 'ask_scope'
+                ? "{$prefixAnswer}Pode me dizer qual o ramo da sua empresa e o que você gostaria que o site fizesse? Com isso já avanço para o prazo e estimativa!"
+                : "{$prefixAnswer}Ótima escolha, {$firstName}! Para estruturar uma recomendação sob medida de {$matchedService->name}, qual é o nome da sua empresa e o principal objetivo que você quer alcançar com o projeto?";
         } elseif (! $hasDeadline && ! $hasBudget) {
+            $extracted['last_step'] = 'ask_budget_deadline';
             $companyAck = $hasCompany ? " para a {$extracted['company']}" : '';
-            $reply = "{$prefixAnswer}Excelente, anotei o escopo{$companyAck}! Para montarmos seu pré-orçamento agora mesmo: qual prazo ideal você tem em mente (ex.: 15 ou 30 dias) e qual faixa de investimento planeja?";
+            $reply = $lastStep === 'ask_budget_deadline'
+                ? "{$prefixAnswer}Entendido! Para eu gerar seu pré-orçamento automático agora, informe apenas o prazo desejado (ex.: 30 dias) ou uma faixa de investimento (ex.: R$ 4.000)."
+                : "{$prefixAnswer}Perfeito, anotei o objetivo ({$extracted['scope']}){$companyAck}! Para montarmos seu pré-orçamento agora mesmo: qual prazo ideal você tem em mente (ex.: 15 ou 30 dias) e qual faixa de investimento planeja?";
         } else {
+            $extracted['last_step'] = 'ask_missing_slot';
             $missingQuestion = ! $hasBudget
                 ? 'Qual faixa de investimento você tem prevista para este projeto?'
                 : 'Qual prazo ideal você gostaria para colocar o projeto no ar?';
@@ -908,6 +1098,28 @@ PROMPT;
             'services' => collect($raw['services'] ?? [])->map(static fn (array $item): object => (object) $item),
             'cases' => collect($raw['cases'] ?? [])->map(static fn (array $item): object => (object) $item),
         ];
+    }
+
+    private function httpClient(): PendingRequest
+    {
+        $client = Http::timeout(15);
+
+        if (empty(ini_get('curl.cainfo')) && empty(ini_get('openssl.cafile'))) {
+            $candidates = [
+                'C:\\Program Files\\Git\\mingw64\\etc\\ssl\\certs\\ca-bundle.crt',
+                'C:\\Program Files\\Git\\usr\\ssl\\certs\\ca-bundle.crt',
+                '/etc/ssl/certs/ca-certificates.crt',
+            ];
+            foreach ($candidates as $caPath) {
+                if (is_file($caPath)) {
+                    $client = $client->withOptions(['verify' => $caPath]);
+
+                    break;
+                }
+            }
+        }
+
+        return $client;
     }
 
     private function decryptStoredApiKey(string $raw): string

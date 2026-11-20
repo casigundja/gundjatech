@@ -7,5 +7,5 @@
 
 @section('actions')
     <a href="{{ url('/') }}" class="gt-btn-primary">Voltar para o Início &rarr;</a>
-    <a href="https://wa.me/5511995204050" class="gt-btn-secondary">Suporte WhatsApp</a>
+    <a href="https://wa.me/5519953248420" class="gt-btn-secondary">Suporte WhatsApp</a>
 @endsection

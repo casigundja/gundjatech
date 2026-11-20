@@ -177,7 +177,7 @@
 
   <a href="/login">Área do Cliente</a>
 
-  <a class="btn mm-whats" href="https://wa.me/5511995204050"><svg><use href="#i-whats"/></svg> WhatsApp (11) 99520-4050</a>
+  <a class="btn mm-whats" href="https://wa.me/5519953248420"><svg><use href="#i-whats"/></svg> WhatsApp (19) 95324-8420</a>
 
 </nav>
 
@@ -235,7 +235,7 @@
 
 </div>
 
-<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "WebPage", "@id": "/criacao-de-sites-alphaville/#pagina", "url": "/criacao-de-sites-alphaville/", "name": "Criação de Sites em Alphaville e Barueri | GundjaTech", "description": "Agência de criação de sites em Alphaville, Barueri: escritório na Alameda Rio Negro, reuniões presenciais e sites sob medida para empresas da região.", "inLanguage": "pt-BR", "isPartOf": {"@type": "WebSite", "@id": "/#site", "name": "GundjaTech", "url": "/"}, "about": {"@id": "/criacao-de-sites/#servico"}, "publisher": {"@id": "/#organizacao"}, "dateModified": "2026-10-06", "breadcrumb": {"@id": "/criacao-de-sites-alphaville/#trilha"}}, {"@type": "BreadcrumbList", "@id": "/criacao-de-sites-alphaville/#trilha", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Início", "item": "/"}, {"@type": "ListItem", "position": 2, "name": "Criação de sites", "item": "/criacao-de-sites/"}, {"@type": "ListItem", "position": 3, "name": "Alphaville e Barueri", "item": "/criacao-de-sites-alphaville/"}]}, {"@type": "ProfessionalService", "@id": "/criacao-de-sites-alphaville/#local", "name": "GundjaTech Alphaville", "url": "/criacao-de-sites-alphaville/", "telephone": "+55-11-99520-4050", "parentOrganization": {"@id": "/#organizacao"}, "address": {"@type": "PostalAddress", "streetAddress": "Alameda Rio Negro, 500, cj. 215", "addressLocality": "Barueri", "addressRegion": "SP", "addressCountry": "BR"}, "areaServed": [{"@type": "City", "name": "Barueri"}, {"@type": "City", "name": "Santana de Parnaíba"}, {"@type": "City", "name": "Osasco"}, {"@type": "City", "name": "Cotia"}, {"@type": "Place", "name": "Alphaville"}]}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "WebPage", "@id": "/criacao-de-sites-alphaville/#pagina", "url": "/criacao-de-sites-alphaville/", "name": "Criação de Sites em Alphaville e Barueri | GundjaTech", "description": "Agência de criação de sites em Alphaville, Barueri: escritório na Alameda Rio Negro, reuniões presenciais e sites sob medida para empresas da região.", "inLanguage": "pt-BR", "isPartOf": {"@type": "WebSite", "@id": "/#site", "name": "GundjaTech", "url": "/"}, "about": {"@id": "/criacao-de-sites/#servico"}, "publisher": {"@id": "/#organizacao"}, "dateModified": "2026-10-06", "breadcrumb": {"@id": "/criacao-de-sites-alphaville/#trilha"}}, {"@type": "BreadcrumbList", "@id": "/criacao-de-sites-alphaville/#trilha", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Início", "item": "/"}, {"@type": "ListItem", "position": 2, "name": "Criação de sites", "item": "/criacao-de-sites/"}, {"@type": "ListItem", "position": 3, "name": "Alphaville e Barueri", "item": "/criacao-de-sites-alphaville/"}]}, {"@type": "ProfessionalService", "@id": "/criacao-de-sites-alphaville/#local", "name": "GundjaTech Alphaville", "url": "/criacao-de-sites-alphaville/", "telephone": "+55-19-95324-8420", "parentOrganization": {"@id": "/#organizacao"}, "address": {"@type": "PostalAddress", "streetAddress": "Alameda Rio Negro, 500, cj. 215", "addressLocality": "Barueri", "addressRegion": "SP", "addressCountry": "BR"}, "areaServed": [{"@type": "City", "name": "Barueri"}, {"@type": "City", "name": "Santana de Parnaíba"}, {"@type": "City", "name": "Osasco"}, {"@type": "City", "name": "Cotia"}, {"@type": "Place", "name": "Alphaville"}]}]}</script>
 
 <section class="secao centro in-faq" aria-labelledby="faq-titulo">
 
@@ -263,7 +263,7 @@
 
         <ul class="in-contato-canais">
 
-          <li><a href="https://wa.me/5511995204050"><svg><use href="#i-whats"/></svg> (11) 99520-4050</a></li>
+          <li><a href="https://wa.me/5519953248420"><svg><use href="#i-whats"/></svg> (19) 95324-8420</a></li>
 
           <li><a href="mailto:contato@gundjatech.com">contato@gundjatech.com</a></li>
 
@@ -336,7 +336,7 @@
 
         
 
-        <div><h3>Fale com a gente</h3><ul><li><a href="mailto:contato@gundjatech.com">contato@gundjatech.com</a></li><li><a href="https://wa.me/5511995204050">WhatsApp (11) 99520-4050</a></li></ul></div>
+        <div><h3>Fale com a gente</h3><ul><li><a href="mailto:contato@gundjatech.com">contato@gundjatech.com</a></li><li><a href="https://wa.me/5519953248420">WhatsApp (19) 95324-8420</a></li></ul></div>
 
       </div>
 
@@ -346,7 +346,7 @@
 
       <a href="https://www.linkedin.com/" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg></a>
 
-      <a href="https://wa.me/5511995204050" aria-label="WhatsApp"><svg><use href="#i-whats"/></svg></a>
+      <a href="https://wa.me/5519953248420" aria-label="WhatsApp"><svg><use href="#i-whats"/></svg></a>
 
     </div><a href="/politica-de-privacidade/">Política de privacidade</a></div>
 
@@ -489,7 +489,7 @@
 
 <script defer src="/jsm/main.ac8b157f35.js?v=gt-live1"></script>
 
-<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live3"></script>
+<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live5"></script>
 
 <script defer src="/jsm/animacoes.b868b7f2df.js"></script>
 

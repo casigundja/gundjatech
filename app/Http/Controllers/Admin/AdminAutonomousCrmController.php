@@ -42,7 +42,7 @@ class AdminAutonomousCrmController extends Controller
         ));
     }
 
-    public function updateSettings(Request $request): RedirectResponse
+    public function updateSettings(Request $request, AutonomousCrmAgent $crmAgent): RedirectResponse
     {
         $validated = $request->validate([
             'crm_ai_enabled' => ['nullable', 'boolean'],
@@ -55,19 +55,24 @@ class AdminAutonomousCrmController extends Controller
             'clear_api_key' => ['nullable', 'boolean'],
         ]);
 
-        SystemSetting::set('crm_ai_enabled', $request->boolean('crm_ai_enabled') ? '1' : '0', 'crm_ai');
-        SystemSetting::set('crm_ai_auto_draft_quotation', $request->boolean('crm_ai_auto_draft_quotation') ? '1' : '0', 'crm_ai');
-        SystemSetting::set('crm_ai_provider', $validated['crm_ai_provider'], 'crm_ai');
-        SystemSetting::set('crm_ai_model', trim((string) ($validated['crm_ai_model'] ?? '')), 'crm_ai');
-        SystemSetting::set('crm_ai_agent_name', trim($validated['crm_ai_agent_name']), 'crm_ai');
-        SystemSetting::set('crm_ai_system_prompt', trim($validated['crm_ai_system_prompt']), 'crm_ai');
+        $now = now();
+        $rows = [
+            ['key' => 'crm_ai_enabled', 'value' => $request->boolean('crm_ai_enabled') ? '1' : '0', 'group' => 'crm_ai', 'created_at' => $now, 'updated_at' => $now],
+            ['key' => 'crm_ai_auto_draft_quotation', 'value' => $request->boolean('crm_ai_auto_draft_quotation') ? '1' : '0', 'group' => 'crm_ai', 'created_at' => $now, 'updated_at' => $now],
+            ['key' => 'crm_ai_provider', 'value' => $validated['crm_ai_provider'], 'group' => 'crm_ai', 'created_at' => $now, 'updated_at' => $now],
+            ['key' => 'crm_ai_model', 'value' => trim((string) ($validated['crm_ai_model'] ?? '')), 'group' => 'crm_ai', 'created_at' => $now, 'updated_at' => $now],
+            ['key' => 'crm_ai_agent_name', 'value' => trim($validated['crm_ai_agent_name']), 'group' => 'crm_ai', 'created_at' => $now, 'updated_at' => $now],
+            ['key' => 'crm_ai_system_prompt', 'value' => trim($validated['crm_ai_system_prompt']), 'group' => 'crm_ai', 'created_at' => $now, 'updated_at' => $now],
+        ];
 
-        if ($request->boolean('clear_api_key')) {
-            SystemSetting::set('crm_ai_api_key', '', 'crm_ai');
-        } elseif (! empty($validated['crm_ai_api_key'])) {
-            SystemSetting::set('crm_ai_api_key', Crypt::encryptString(trim($validated['crm_ai_api_key'])), 'crm_ai');
+        $newApiKey = trim((string) ($validated['crm_ai_api_key'] ?? ''));
+        if ($newApiKey !== '') {
+            $rows[] = ['key' => 'crm_ai_api_key', 'value' => Crypt::encryptString($newApiKey), 'group' => 'crm_ai', 'created_at' => $now, 'updated_at' => $now];
+        } elseif ($request->boolean('clear_api_key')) {
+            $rows[] = ['key' => 'crm_ai_api_key', 'value' => '', 'group' => 'crm_ai', 'created_at' => $now, 'updated_at' => $now];
         }
 
+        SystemSetting::upsert($rows, ['key'], ['value', 'group', 'updated_at']);
         AutonomousCrmAgent::flushCache();
 
         ActivityLog::create([
@@ -78,13 +83,27 @@ class AdminAutonomousCrmController extends Controller
                 'provider' => $validated['crm_ai_provider'],
                 'model' => trim((string) ($validated['crm_ai_model'] ?? '')),
                 'auto_draft_quotation' => $request->boolean('crm_ai_auto_draft_quotation'),
-                'api_key_updated' => ! empty($validated['crm_ai_api_key']) || $request->boolean('clear_api_key'),
+                'api_key_updated' => $newApiKey !== '' || $request->boolean('clear_api_key'),
             ],
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ]);
 
-        return redirect()->route('admin.crm.index')
+        $redirect = redirect()->route('admin.crm.index')
             ->with('success', 'Configurações do CRM Autônomo atualizadas com sucesso!');
+
+        if (! app()->runningUnitTests() && $newApiKey !== '') {
+            $redirect->with('crm_test_result', $crmAgent->testConnection());
+        }
+
+        return $redirect;
+    }
+
+    public function testConnection(AutonomousCrmAgent $crmAgent): RedirectResponse
+    {
+        $result = $crmAgent->testConnection();
+
+        return redirect()->route('admin.crm.index')
+            ->with('crm_test_result', $result);
     }
 }

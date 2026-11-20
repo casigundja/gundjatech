@@ -212,6 +212,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     });
     Route::middleware('permission:settings.manage')->group(function () {
         Route::put('/crm-autonomo/configuracoes', [AdminAutonomousCrmController::class, 'updateSettings'])->name('crm.settings');
+        Route::post('/crm-autonomo/testar', [AdminAutonomousCrmController::class, 'testConnection'])->name('crm.test');
     });
 
     // Users & Roles

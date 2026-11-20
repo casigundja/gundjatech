@@ -221,7 +221,7 @@
 
   <a href="/login">Área do Cliente</a>
 
-  <a class="btn mm-whats" href="https://wa.me/5511995204050"><svg><use href="#i-whats"/></svg> WhatsApp (11) 99520-4050</a>
+  <a class="btn mm-whats" href="https://wa.me/5519953248420"><svg><use href="#i-whats"/></svg> WhatsApp (19) 95324-8420</a>
 
 </nav>
 
@@ -751,7 +751,7 @@
 
       <div class="duvida-botoes">
 
-        <a class="btn btn-whats" href="https://wa.me/5511995204050?text=URGENTE%3A%20preciso%20de%20ajuda%20com%20a%20seguran%C3%A7a%20do%20meu%20site."><svg><use href="#i-whats"/></svg> Chamar no WhatsApp</a>
+        <a class="btn btn-whats" href="https://wa.me/5519953248420?text=URGENTE%3A%20preciso%20de%20ajuda%20com%20a%20seguran%C3%A7a%20do%20meu%20site."><svg><use href="#i-whats"/></svg> Chamar no WhatsApp</a>
 
         <button type="button" class="btn btn-vermelho js-abre-chat">Conversar pelo chat</button>
 
@@ -777,7 +777,7 @@
 
         <ul class="bullets"><li>Resposta em até 4 horas úteis</li><li>Assinamos NDA antes de qualquer análise</li><li>Proposta fechada, com SLA em contrato</li><li>Diagnóstico de segurança sem custo</li></ul>
 
-        <a class="btn btn-claro" href="https://wa.me/5511995204050"><svg><use href="#i-whats"/></svg> Prefere conversar pelo WhatsApp?</a>
+        <a class="btn btn-claro" href="https://wa.me/5519953248420"><svg><use href="#i-whats"/></svg> Prefere conversar pelo WhatsApp?</a>
 
       </div>
 
@@ -886,7 +886,7 @@
 
         
 
-        <div><h3>Fale com a gente</h3><ul><li><a href="mailto:contato@gundjatech.com">contato@gundjatech.com</a></li><li><a href="https://wa.me/5511995204050">WhatsApp (11) 99520-4050</a></li></ul></div>
+        <div><h3>Fale com a gente</h3><ul><li><a href="mailto:contato@gundjatech.com">contato@gundjatech.com</a></li><li><a href="https://wa.me/5519953248420">WhatsApp (19) 95324-8420</a></li></ul></div>
 
       </div>
 
@@ -896,7 +896,7 @@
 
       <a href="https://www.linkedin.com/" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg></a>
 
-      <a href="https://wa.me/5511995204050" aria-label="WhatsApp"><svg><use href="#i-whats"/></svg></a>
+      <a href="https://wa.me/5519953248420" aria-label="WhatsApp"><svg><use href="#i-whats"/></svg></a>
 
     </div><a href="/politica-de-privacidade/">Política de privacidade</a></div>
 
@@ -1045,7 +1045,7 @@
 
 <script defer src="/jsm/main.ac8b157f35.js?v=gt-live1"></script>
 
-<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live3"></script>
+<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live5"></script>
 
 <script defer src="/jsm/animacoes.b868b7f2df.js"></script>
 

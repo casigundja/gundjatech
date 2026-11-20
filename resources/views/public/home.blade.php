@@ -63,7 +63,7 @@
 
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 
-<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "Organization", "@id": "/#organizacao", "name": "GundjaTech", "legalName": "GundjaTech Tecnologia e Soluções Digitais", "url": "/", "logo": {"@type": "ImageObject", "url": "/img/logo-sinnapse-azul.svg"}, "image": "/img/og-sinnapse.jpg", "email": "contato@gundjatech.com", "telephone": "+55-11-99520-4050", "contactPoint": {"@type": "ContactPoint", "telephone": "+55-11-99520-4050", "contactType": "sales", "areaServed": ["AO", "PT", "ZA", "BR", "Worldwide"], "availableLanguage": ["Portuguese"]}, "sameAs": ["https://www.linkedin.com/", "https://www.instagram.com/"], "knowsAbout": ["Criação de sites", "Desenvolvimento web", "WordPress", "SEO", "Cibersegurança", "Hospedagem de sites", "Marketing digital"], "description": "Agência de criação de sites, plataformas digitais, cibersegurança e operação contínua para empresas em Angola, Portugal e África do Sul.", "employee": [{"@id": "/autor-casimiro-gundja/#pessoa"}]}, {"@type": "WebSite", "@id": "/#site", "name": "GundjaTech", "url": "/", "inLanguage": ["pt-BR"], "publisher": {"@id": "/#organizacao"}}, {"@type": "WebPage", "@id": "/#pagina", "url": "/", "name": "GundjaTech | Agência de sites, tecnologia e marketing digital", "description": "Criamos e operamos sites, plataformas e sistemas sob medida de alta performance para marcas como KLASSE, Instituto Paraíso do Saber e Cotech Contabilidade.", "inLanguage": "pt-BR", "isPartOf": {"@id": "/#site"}, "about": {"@id": "/#organizacao"}, "primaryImageOfPage": {"@type": "ImageObject", "url": "/img/og-sinnapse.jpg"}}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "Organization", "@id": "/#organizacao", "name": "GundjaTech", "legalName": "GundjaTech Tecnologia e Soluções Digitais", "url": "/", "logo": {"@type": "ImageObject", "url": "/img/logo-sinnapse-azul.svg"}, "image": "/img/og-sinnapse.jpg", "email": "contato@gundjatech.com", "telephone": "+55-19-95324-8420", "contactPoint": {"@type": "ContactPoint", "telephone": "+55-19-95324-8420", "contactType": "sales", "areaServed": ["AO", "PT", "ZA", "BR", "Worldwide"], "availableLanguage": ["Portuguese"]}, "sameAs": ["https://www.linkedin.com/", "https://www.instagram.com/"], "knowsAbout": ["Criação de sites", "Desenvolvimento web", "WordPress", "SEO", "Cibersegurança", "Hospedagem de sites", "Marketing digital"], "description": "Agência de criação de sites, plataformas digitais, cibersegurança e operação contínua para empresas em Angola, Portugal e África do Sul.", "employee": [{"@id": "/autor-casimiro-gundja/#pessoa"}]}, {"@type": "WebSite", "@id": "/#site", "name": "GundjaTech", "url": "/", "inLanguage": ["pt-BR"], "publisher": {"@id": "/#organizacao"}}, {"@type": "WebPage", "@id": "/#pagina", "url": "/", "name": "GundjaTech | Agência de sites, tecnologia e marketing digital", "description": "Criamos e operamos sites, plataformas e sistemas sob medida de alta performance para marcas como KLASSE, Instituto Paraíso do Saber e Cotech Contabilidade.", "inLanguage": "pt-BR", "isPartOf": {"@id": "/#site"}, "about": {"@id": "/#organizacao"}, "primaryImageOfPage": {"@type": "ImageObject", "url": "/img/og-sinnapse.jpg"}}]}</script>
 
 </head>
 
@@ -183,7 +183,7 @@
 
   <a href="/login">Área do Cliente</a>
 
-  <a class="btn mm-whats" href="https://wa.me/5511995204050"><svg><use href="#i-whats"/></svg> WhatsApp (11) 99520-4050</a>
+  <a class="btn mm-whats" href="https://wa.me/5519953248420"><svg><use href="#i-whats"/></svg> WhatsApp (19) 95324-8420</a>
 
 </nav>
 
@@ -574,13 +574,13 @@
 
     <h2 id="faq-titulo">Perguntas <em>frequentes</em></h2>
 
-    <div class="faq-lista" style="text-align:left"><details><summary><h3 class="faq-q">O que a GundjaTech faz?</h3></summary><p>A GundjaTech é uma agência de criação de sites de São Paulo, com cibersegurança e operação de sites. Criamos e desenvolvemos sites sob medida e em WordPress, sistemas web e integrações, protegemos sites com segurança gerenciada e cuidamos da operação mensal, com hospedagem, atualizações e melhorias.</p></details><details><summary><h3 class="faq-q">Para quais empresas a GundjaTech já trabalhou?</h3></summary><p>Desenvolvemos projetos sob medida para empresas de educação, saúde, tecnologia e finanças, incluindo KLASSE, Instituto Paraíso do Saber e Cotech Contabilidade. Conheça os detalhes em <a href="/portfolio">gundjatech.com/portfolio</a>.</p></details><details><summary><h3 class="faq-q">Quanto custa um site com a GundjaTech?</h3></summary><p>Depende do escopo: número de páginas, integrações e funcionalidades. Você recebe uma proposta fechada, com prazo e valor em contrato. O guia <a href="/quanto-custa-um-site/">quanto custa um site</a> explica o que define o preço.</p></details><details><summary><h3 class="faq-q">A GundjaTech cuida da hospedagem e da manutenção do site?</h3></summary><p>Sim. A <a href="/servicos/gestao-de-trafego-pago">operação de sites</a> inclui hospedagem, segurança, atualizações e melhorias mensais, com planos a partir de R$ 1.700 por mês.</p></details><details><summary><h3 class="faq-q">A GundjaTech cuida da segurança do site?</h3></summary><p>Sim. A <a href="/servicos/gerenciamento-de-dominios">cibersegurança</a> da GundjaTech inclui firewall de aplicação, monitoramento 24/7, backups e resposta a incidentes.</p></details><details><summary><h3 class="faq-q">Como começo um projeto com a GundjaTech?</h3></summary><p>Fale com a gente pelo WhatsApp (11) 99520-4050, pelo e-mail contato@gundjatech.com ou pela página de <a href="/contato">contato</a>. Um diretor da GundjaTech responde em até 4 horas úteis.</p></details></div>
+    <div class="faq-lista" style="text-align:left"><details><summary><h3 class="faq-q">O que a GundjaTech faz?</h3></summary><p>A GundjaTech é uma agência de criação de sites de São Paulo, com cibersegurança e operação de sites. Criamos e desenvolvemos sites sob medida e em WordPress, sistemas web e integrações, protegemos sites com segurança gerenciada e cuidamos da operação mensal, com hospedagem, atualizações e melhorias.</p></details><details><summary><h3 class="faq-q">Para quais empresas a GundjaTech já trabalhou?</h3></summary><p>Desenvolvemos projetos sob medida para empresas de educação, saúde, tecnologia e finanças, incluindo KLASSE, Instituto Paraíso do Saber e Cotech Contabilidade. Conheça os detalhes em <a href="/portfolio">gundjatech.com/portfolio</a>.</p></details><details><summary><h3 class="faq-q">Quanto custa um site com a GundjaTech?</h3></summary><p>Depende do escopo: número de páginas, integrações e funcionalidades. Você recebe uma proposta fechada, com prazo e valor em contrato. O guia <a href="/quanto-custa-um-site/">quanto custa um site</a> explica o que define o preço.</p></details><details><summary><h3 class="faq-q">A GundjaTech cuida da hospedagem e da manutenção do site?</h3></summary><p>Sim. A <a href="/servicos/gestao-de-trafego-pago">operação de sites</a> inclui hospedagem, segurança, atualizações e melhorias mensais, com planos a partir de R$ 1.700 por mês.</p></details><details><summary><h3 class="faq-q">A GundjaTech cuida da segurança do site?</h3></summary><p>Sim. A <a href="/servicos/gerenciamento-de-dominios">cibersegurança</a> da GundjaTech inclui firewall de aplicação, monitoramento 24/7, backups e resposta a incidentes.</p></details><details><summary><h3 class="faq-q">Como começo um projeto com a GundjaTech?</h3></summary><p>Fale com a gente pelo WhatsApp (19) 95324-8420, pelo e-mail contato@gundjatech.com ou pela página de <a href="/contato">contato</a>. Um diretor da GundjaTech responde em até 4 horas úteis.</p></details></div>
 
     <p class="hm-faq-data">Atualizado em <time datetime="2026-11-17">17 de novembro de 2026</time>.</p>
 
   </div>
 
-  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "dateModified": "2026-11-17", "mainEntity": [{"@type": "Question", "name": "O que a GundjaTech faz?", "acceptedAnswer": {"@type": "Answer", "text": "A GundjaTech é uma agência de criação de sites de São Paulo, com cibersegurança e operação de sites. Criamos e desenvolvemos sites sob medida e em WordPress, sistemas web e integrações, protegemos sites com segurança gerenciada e cuidamos da operação mensal, com hospedagem, atualizações e melhorias."}}, {"@type": "Question", "name": "Para quais empresas a GundjaTech já trabalhou?", "acceptedAnswer": {"@type": "Answer", "text": "Desenvolvemos projetos sob medida para empresas de educação, saúde, tecnologia e finanças, incluindo KLASSE, Instituto Paraíso do Saber e Cotech Contabilidade. Conheça os detalhes em gundjatech.com/portfolio."}}, {"@type": "Question", "name": "Quanto custa um site com a GundjaTech?", "acceptedAnswer": {"@type": "Answer", "text": "Depende do escopo: número de páginas, integrações e funcionalidades. Você recebe uma proposta fechada, com prazo e valor em contrato. O guia quanto custa um site explica o que define o preço."}}, {"@type": "Question", "name": "A GundjaTech cuida da hospedagem e da manutenção do site?", "acceptedAnswer": {"@type": "Answer", "text": "Sim. A operação de sites inclui hospedagem, segurança, atualizações e melhorias mensais, com planos a partir de R$ 1.700 por mês."}}, {"@type": "Question", "name": "A GundjaTech cuida da segurança do site?", "acceptedAnswer": {"@type": "Answer", "text": "Sim. A cibersegurança da GundjaTech inclui firewall de aplicação, monitoramento 24/7, backups e resposta a incidentes."}}, {"@type": "Question", "name": "Como começo um projeto com a GundjaTech?", "acceptedAnswer": {"@type": "Answer", "text": "Fale com a gente pelo WhatsApp (11) 99520-4050, pelo e-mail contato@gundjatech.com ou pela página de contato. Um diretor da GundjaTech responde em até 4 horas úteis."}}]}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "dateModified": "2026-11-17", "mainEntity": [{"@type": "Question", "name": "O que a GundjaTech faz?", "acceptedAnswer": {"@type": "Answer", "text": "A GundjaTech é uma agência de criação de sites de São Paulo, com cibersegurança e operação de sites. Criamos e desenvolvemos sites sob medida e em WordPress, sistemas web e integrações, protegemos sites com segurança gerenciada e cuidamos da operação mensal, com hospedagem, atualizações e melhorias."}}, {"@type": "Question", "name": "Para quais empresas a GundjaTech já trabalhou?", "acceptedAnswer": {"@type": "Answer", "text": "Desenvolvemos projetos sob medida para empresas de educação, saúde, tecnologia e finanças, incluindo KLASSE, Instituto Paraíso do Saber e Cotech Contabilidade. Conheça os detalhes em gundjatech.com/portfolio."}}, {"@type": "Question", "name": "Quanto custa um site com a GundjaTech?", "acceptedAnswer": {"@type": "Answer", "text": "Depende do escopo: número de páginas, integrações e funcionalidades. Você recebe uma proposta fechada, com prazo e valor em contrato. O guia quanto custa um site explica o que define o preço."}}, {"@type": "Question", "name": "A GundjaTech cuida da hospedagem e da manutenção do site?", "acceptedAnswer": {"@type": "Answer", "text": "Sim. A operação de sites inclui hospedagem, segurança, atualizações e melhorias mensais, com planos a partir de R$ 1.700 por mês."}}, {"@type": "Question", "name": "A GundjaTech cuida da segurança do site?", "acceptedAnswer": {"@type": "Answer", "text": "Sim. A cibersegurança da GundjaTech inclui firewall de aplicação, monitoramento 24/7, backups e resposta a incidentes."}}, {"@type": "Question", "name": "Como começo um projeto com a GundjaTech?", "acceptedAnswer": {"@type": "Answer", "text": "Fale com a gente pelo WhatsApp (19) 95324-8420, pelo e-mail contato@gundjatech.com ou pela página de contato. Um diretor da GundjaTech responde em até 4 horas úteis."}}]}</script>
 
 </section>
 
@@ -598,7 +598,7 @@
 
       <ul class="hm-contato-canais">
 
-        <li><a href="https://wa.me/5511995204050"><svg><use href="#i-whats"/></svg><span><small>WhatsApp</small>(11) 99520-4050</span></a></li>
+        <li><a href="https://wa.me/5519953248420"><svg><use href="#i-whats"/></svg><span><small>WhatsApp</small>(19) 95324-8420</span></a></li>
 
         <li><a href="mailto:contato@gundjatech.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span><small>E-mail</small>contato@gundjatech.com</span></a></li>
 
@@ -677,7 +677,7 @@
 
         
 
-        <div><h3>Fale com a gente</h3><ul><li><a href="mailto:contato@gundjatech.com">contato@gundjatech.com</a></li><li><a href="https://wa.me/5511995204050">WhatsApp (11) 99520-4050</a></li></ul></div>
+        <div><h3>Fale com a gente</h3><ul><li><a href="mailto:contato@gundjatech.com">contato@gundjatech.com</a></li><li><a href="https://wa.me/5519953248420">WhatsApp (19) 95324-8420</a></li></ul></div>
 
       </div>
 
@@ -687,7 +687,7 @@
 
       <a href="https://www.linkedin.com/" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg></a>
 
-      <a href="https://wa.me/5511995204050" aria-label="WhatsApp"><svg><use href="#i-whats"/></svg></a>
+      <a href="https://wa.me/5519953248420" aria-label="WhatsApp"><svg><use href="#i-whats"/></svg></a>
 
     </div><a href="/politica-de-privacidade/">Política de privacidade</a></div>
 
@@ -830,7 +830,7 @@
 
 <script defer src="/jsm/main.ac8b157f35.js?v=gt-live1"></script>
 
-<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live3"></script>
+<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live5"></script>
 
 <script defer src="/jsm/animacoes.b868b7f2df.js"></script>
 

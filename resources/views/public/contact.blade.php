@@ -25,7 +25,7 @@
 
 <title>Contato | GundjaTech: WhatsApp, e-mail e atendimento</title>
 
-<meta name="description" content="Fale com a GundjaTech pelo WhatsApp (11) 99520-4050, pelo e-mail contato@gundjatech.com ou pelo formulário. Um diretor responde em até 4 horas úteis.">
+<meta name="description" content="Fale com a GundjaTech pelo WhatsApp (19) 95324-8420, pelo e-mail contato@gundjatech.com ou pelo formulário. Um diretor responde em até 4 horas úteis.">
 
 <link rel="canonical" href="/contato">
 
@@ -35,7 +35,7 @@
 
 <meta property="og:title" content="Contato | GundjaTech: WhatsApp, e-mail e atendimento">
 
-<meta property="og:description" content="Fale com a GundjaTech pelo WhatsApp (11) 99520-4050, pelo e-mail contato@gundjatech.com ou pelo formulário. Um diretor responde em até 4 horas úteis.">
+<meta property="og:description" content="Fale com a GundjaTech pelo WhatsApp (19) 95324-8420, pelo e-mail contato@gundjatech.com ou pelo formulário. Um diretor responde em até 4 horas úteis.">
 
 <meta property="og:type" content="website">
 
@@ -61,11 +61,11 @@
 
 <meta name="twitter:title" content="Contato | GundjaTech: WhatsApp, e-mail e atendimento">
 
-<meta name="twitter:description" content="Fale com a GundjaTech pelo WhatsApp (11) 99520-4050, pelo e-mail contato@gundjatech.com ou pelo formulário. Um diretor responde em até 4 horas úteis.">
+<meta name="twitter:description" content="Fale com a GundjaTech pelo WhatsApp (19) 95324-8420, pelo e-mail contato@gundjatech.com ou pelo formulário. Um diretor responde em até 4 horas úteis.">
 
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 
-<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "WebPage", "@id": "/contato#pagina", "url": "/contato", "name": "Contato | GundjaTech: WhatsApp, e-mail e atendimento", "description": "Fale com a GundjaTech pelo WhatsApp (11) 99520-4050, pelo e-mail contato@gundjatech.com ou pelo formulário. Um diretor responde em até 4 horas úteis.", "inLanguage": "pt-BR", "isPartOf": {"@type": "WebSite", "@id": "/#site", "name": "GundjaTech", "url": "/"}, "breadcrumb": {"@id": "/contato#trilha"}}, {"@type": "BreadcrumbList", "@id": "/contato#trilha", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Início", "item": "/"}, {"@type": "ListItem", "position": 2, "name": "Contato", "item": "/contato"}]}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "WebPage", "@id": "/contato#pagina", "url": "/contato", "name": "Contato | GundjaTech: WhatsApp, e-mail e atendimento", "description": "Fale com a GundjaTech pelo WhatsApp (19) 95324-8420, pelo e-mail contato@gundjatech.com ou pelo formulário. Um diretor responde em até 4 horas úteis.", "inLanguage": "pt-BR", "isPartOf": {"@type": "WebSite", "@id": "/#site", "name": "GundjaTech", "url": "/"}, "breadcrumb": {"@id": "/contato#trilha"}}, {"@type": "BreadcrumbList", "@id": "/contato#trilha", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Início", "item": "/"}, {"@type": "ListItem", "position": 2, "name": "Contato", "item": "/contato"}]}]}</script>
 
 </head>
 
@@ -183,7 +183,7 @@
 
   <a href="/login">Área do Cliente</a>
 
-  <a class="btn mm-whats" href="https://wa.me/5511995204050"><svg><use href="#i-whats"/></svg> WhatsApp (11) 99520-4050</a>
+  <a class="btn mm-whats" href="https://wa.me/5519953248420"><svg><use href="#i-whats"/></svg> WhatsApp (19) 95324-8420</a>
 
 </nav>
 
@@ -203,7 +203,7 @@
 
       <ul class="hm-contato-canais">
 
-        <li><a class="ct-whats-destaque" href="https://wa.me/5511995204050"><svg><use href="#i-whats"/></svg><span><small>Prefere conversar agora?</small>Chamar no WhatsApp</span></a></li>
+        <li><a class="ct-whats-destaque" href="https://wa.me/5519953248420"><svg><use href="#i-whats"/></svg><span><small>Prefere conversar agora?</small>Chamar no WhatsApp</span></a></li>
 
         <li><a href="mailto:contato@gundjatech.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span><small>E-mail</small>contato@gundjatech.com</span></a></li>
 
@@ -261,7 +261,7 @@
 
     <div class="g-grade js-garantias">
 
-      <article class="g-card ct-card"><header><span class="sb-ordem">WhatsApp</span><h3><a href="https://wa.me/5511995204050">(11) 99520-4050</a></h3><p>O jeito mais rápido de falar com a gente.</p></header></article>
+      <article class="g-card ct-card"><header><span class="sb-ordem">WhatsApp</span><h3><a href="https://wa.me/5519953248420">(19) 95324-8420</a></h3><p>O jeito mais rápido de falar com a gente.</p></header></article>
 
       <article class="g-card ct-card"><header><span class="sb-ordem">E-mail</span><h3><a href="mailto:contato@gundjatech.com">contato@gundjatech.com</a></h3><p>Para propostas, documentos e parcerias.</p></header></article>
 
@@ -312,7 +312,7 @@
 
         
 
-        <div><h3>Fale com a gente</h3><ul><li><a href="mailto:contato@gundjatech.com">contato@gundjatech.com</a></li><li><a href="https://wa.me/5511995204050">WhatsApp (11) 99520-4050</a></li></ul></div>
+        <div><h3>Fale com a gente</h3><ul><li><a href="mailto:contato@gundjatech.com">contato@gundjatech.com</a></li><li><a href="https://wa.me/5519953248420">WhatsApp (19) 95324-8420</a></li></ul></div>
 
       </div>
 
@@ -322,7 +322,7 @@
 
       <a href="https://www.linkedin.com/" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg></a>
 
-      <a href="https://wa.me/5511995204050" aria-label="WhatsApp"><svg><use href="#i-whats"/></svg></a>
+      <a href="https://wa.me/5519953248420" aria-label="WhatsApp"><svg><use href="#i-whats"/></svg></a>
 
     </div><a href="/politica-de-privacidade/">Política de privacidade</a></div>
 
@@ -465,7 +465,7 @@
 
 <script defer src="/jsm/main.ac8b157f35.js?v=gt-live1"></script>
 
-<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live3"></script>
+<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live5"></script>
 
 <script defer src="/jsm/animacoes.b868b7f2df.js"></script>
 

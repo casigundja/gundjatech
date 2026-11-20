@@ -9,18 +9,27 @@
     <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="stylesheet" href="/css/gt-admin.css?v=8">
+    <link rel="stylesheet" href="/css/gt-admin.css?v=9">
     <script>
         (function () {
-            try {
-                var saved = localStorage.getItem('gt_admin_theme') || 'dark';
-                document.documentElement.setAttribute('data-admin-theme', saved);
-                if (saved === 'dark') {
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
+            function applyAdminTheme(val) {
+                var theme = val === 'light' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-admin-theme', theme);
+                document.documentElement.classList.toggle('dark', theme === 'dark');
+                if (document.body) {
+                    document.body.classList.toggle('is-light-mode', theme === 'light');
+                    document.body.classList.toggle('is-dark-mode', theme === 'dark');
                 }
-            } catch (e) {}
+                return theme;
+            }
+            window.GT_SetAdminTheme = function (val) {
+                var theme = applyAdminTheme(val);
+                try { localStorage.setItem('gt_admin_theme', theme); } catch (e) {}
+                return theme;
+            };
+            var saved = 'dark';
+            try { saved = localStorage.getItem('gt_admin_theme') || 'dark'; } catch (e) {}
+            applyAdminTheme(saved);
         })();
     </script>
     @livewireStyles
@@ -31,12 +40,9 @@
         sidebarOpen: false,
         sidebarCollapsed: false,
         profileOpen: false,
-        theme: localStorage.getItem('gt_admin_theme') || 'dark',
+        theme: (function () { try { return localStorage.getItem('gt_admin_theme') || 'dark'; } catch (e) { return 'dark'; } })(),
         setTheme(val) {
-            this.theme = val;
-            try { localStorage.setItem('gt_admin_theme', val); } catch (e) {}
-            document.documentElement.setAttribute('data-admin-theme', val);
-            document.documentElement.classList.toggle('dark', val === 'dark');
+            this.theme = window.GT_SetAdminTheme ? window.GT_SetAdminTheme(val) : (val === 'light' ? 'light' : 'dark');
         },
         toggleTheme() {
             this.setTheme(this.theme === 'dark' ? 'light' : 'dark');
@@ -44,6 +50,13 @@
     }"
     :class="theme === 'light' ? 'is-light-mode' : 'is-dark-mode'"
 >
+    <script>
+        (function () {
+            var t = document.documentElement.getAttribute('data-admin-theme') || 'dark';
+            document.body.classList.toggle('is-light-mode', t === 'light');
+            document.body.classList.toggle('is-dark-mode', t !== 'light');
+        })();
+    </script>
     @php
         $currentUser = Auth::user();
         $totalNotifications = ($adminPendingRequestsCount ?? 0) + ($adminOpenChatsCount ?? 0);
@@ -67,8 +80,8 @@
                     <span class="gtb-brand-badge">
                         <img src="/img/favicon.svg" alt="GundjaTech" class="w-5 h-5 object-contain">
                     </span>
-                    <span x-show="!sidebarCollapsed" class="gt-font-display text-sm font-bold tracking-tight text-white">
-                        Gundja<span class="text-[#F2C230] font-normal">Tech</span>
+                    <span x-show="!sidebarCollapsed" class="gt-font-display gtb-brand-word text-sm font-bold tracking-tight text-white">
+                        Gundja<span class="gtb-brand-tech text-[#F2C230] font-normal">Tech</span>
                     </span>
                 </a>
                 <button @click="sidebarOpen = false" class="text-gray-400 hover:text-white lg:hidden p-1">
@@ -261,10 +274,10 @@
         <!-- Top Header Bar (Title on left; Search + KBD + Theme Pill + Bell + User Profile on right) -->
         <header class="gtb-topbar">
             <div class="flex items-center gap-3 min-w-0">
-                <button @click="sidebarOpen = !sidebarOpen" class="gtb-mobile-toggle p-2 rounded-xl bg-[#171B27] border border-white/10 text-white" aria-label="Abrir menu">
+                <button @click="sidebarOpen = !sidebarOpen" class="gtb-mobile-toggle gtb-icon-btn rounded-xl" aria-label="Abrir menu">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
-                <h1 class="gt-font-display text-lg sm:text-xl font-bold text-white tracking-tight truncate">
+                <h1 class="gt-font-display gtb-topbar-title text-lg sm:text-xl font-bold tracking-tight truncate">
                     @yield('header_title', 'Dashboard')
                 </h1>
             </div>
@@ -281,6 +294,8 @@
                 <div class="gtb-theme-switch" role="group" aria-label="Alternar entre modo claro e modo escuro">
                     <button
                         type="button"
+                        data-theme-orb="light"
+                        onclick="window.GT_SetAdminTheme && window.GT_SetAdminTheme('light')"
                         @click="setTheme('light')"
                         :class="theme === 'light' ? 'is-active' : ''"
                         class="gtb-theme-orb cursor-pointer border-0"
@@ -291,6 +306,8 @@
                     </button>
                     <button
                         type="button"
+                        data-theme-orb="dark"
+                        onclick="window.GT_SetAdminTheme && window.GT_SetAdminTheme('dark')"
                         @click="setTheme('dark')"
                         :class="theme === 'dark' ? 'is-active' : ''"
                         class="gtb-theme-orb cursor-pointer border-0"
@@ -303,13 +320,13 @@
 
                 <!-- Quick Sound Alert Toggle (unlocks browser audio & tests chime) -->
                 @if($currentUser->hasPermission('chat.view'))
-                    <button type="button" id="gt-topbar-sound-btn" class="w-10 h-10 rounded-full bg-[#171B27] border border-white/10 flex items-center justify-center text-[#F2C230] hover:border-[#F2C230] transition cursor-pointer" title="Alertas sonoros: Ativo (clique para testar/alternar)">
+                    <button type="button" id="gt-topbar-sound-btn" class="gtb-icon-btn text-[#F2C230] cursor-pointer" title="Alertas sonoros: Ativo (clique para testar/alternar)">
                         <svg id="gt-topbar-sound-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
                     </button>
                 @endif
 
                 <!-- Notification Bell with Live Indicator -->
-                <a href="{{ route('admin.requests.index') }}" id="gt-topbar-bell-link" class="relative w-10 h-10 rounded-full bg-[#171B27] border border-white/10 flex items-center justify-center text-[#D5DCEB] hover:border-[#F2C230] hover:text-[#F2C230] transition" title="Notificações ({{ $totalNotifications }})">
+                <a href="{{ route('admin.requests.index') }}" id="gt-topbar-bell-link" class="gtb-icon-btn relative" title="Notificações ({{ $totalNotifications }})">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
                     <span id="gt-topbar-bell-dot" class="{{ $totalNotifications > 0 ? '' : 'hidden' }} absolute top-2 right-2.5 w-2 h-2 rounded-full bg-[#34D399] shadow-[0_0_8px_#34D399]"></span>
                 </a>
@@ -323,17 +340,17 @@
                             <div class="text-xs font-bold text-white">{{ $currentUser->name }}</div>
                             <div class="text-[10.5px] text-[#8C95AA]">{{ $currentUser->email }}</div>
                         </div>
-                        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#F2C230] to-[#34D399] p-0.5 shadow-md shrink-0">
-                            <div class="w-full h-full rounded-full bg-[#171B27] flex items-center justify-center text-xs font-extrabold text-[#F2C230]">
+                        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#F2C230] to-[#16749A] p-0.5 shadow-md shrink-0">
+                            <div class="gtb-avatar-inner w-full h-full rounded-full flex items-center justify-center text-xs font-extrabold">
                                 {{ strtoupper(substr($currentUser->name, 0, 2)) }}
                             </div>
                         </div>
                     </button>
 
-                    <div x-show="profileOpen" x-cloak class="absolute right-0 mt-2 w-52 bg-[#1A1F2E] rounded-2xl shadow-2xl border border-white/10 py-2 z-50 text-xs font-semibold text-gray-200">
-                        <a href="{{ route('home') }}" target="_blank" class="block px-4 py-2 hover:bg-white/5 text-gray-200 no-underline">Ver Site Público &nearr;</a>
+                    <div x-show="profileOpen" x-cloak class="gtb-dropdown absolute right-0 mt-2 w-52 rounded-2xl shadow-2xl py-2 z-50 text-xs font-semibold">
+                        <a href="{{ route('home') }}" target="_blank" class="block px-4 py-2 no-underline">Ver Site Público &nearr;</a>
                         @if($currentUser->isAdmin() || $currentUser->hasPermission('portal.access'))
-                            <a href="{{ route('portal.dashboard') }}" target="_blank" class="block px-4 py-2 hover:bg-white/5 text-gray-200 no-underline">Portal do Cliente &nearr;</a>
+                            <a href="{{ route('portal.dashboard') }}" target="_blank" class="block px-4 py-2 no-underline">Portal do Cliente &nearr;</a>
                         @endif
                         <form action="{{ route('logout') }}" method="POST" class="border-t border-white/10 mt-1 pt-1">
                             @csrf
@@ -346,25 +363,25 @@
 
         <!-- Flash Alerts -->
         @if(session('success'))
-            <div class="px-6 pt-1">
-                <div class="p-3.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold rounded-2xl flex items-center gap-2.5">
-                    <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <div class="px-6 pt-3">
+                <div class="gtb-alert-success p-3.5 text-xs font-semibold rounded-2xl flex items-center gap-2.5">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                     <span>{{ session('success') }}</span>
                 </div>
             </div>
         @endif
         @if(session('error'))
-            <div class="px-6 pt-1">
-                <div class="p-3.5 bg-red-500/10 border border-red-500/30 text-red-300 text-xs font-semibold rounded-2xl flex items-center gap-2.5">
-                    <svg class="w-4 h-4 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            <div class="px-6 pt-3">
+                <div class="gtb-alert-error p-3.5 text-xs font-semibold rounded-2xl flex items-center gap-2.5">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     <span>{{ session('error') }}</span>
                 </div>
             </div>
         @endif
         @if($errors->any())
-            <div class="px-6 pt-1">
-                <div class="p-3.5 bg-red-500/10 border border-red-500/30 text-red-300 text-xs rounded-2xl space-y-1">
-                    <div class="font-bold text-red-200">Verifique os campos informados:</div>
+            <div class="px-6 pt-3">
+                <div class="gtb-alert-error p-3.5 text-xs rounded-2xl space-y-1">
+                    <div class="font-bold">Verifique os campos informados:</div>
                     <ul class="list-disc list-inside space-y-0.5">
                         @foreach($errors->all() as $error)
                             <li>{{ $error }}</li>
@@ -375,7 +392,7 @@
         @endif
 
         <!-- Main Scrollable Content -->
-        <main class="flex-1 overflow-y-auto px-4 sm:px-6 pb-8 pt-1 space-y-5">
+        <main class="flex-1 overflow-y-auto px-4 sm:px-6 pb-8 pt-4 space-y-5">
             @yield('content')
         </main>
     </div>
@@ -486,12 +503,12 @@
 
                 const card = document.createElement('a');
                 card.href = href || @json(route('admin.chat.index'));
-                card.className = 'pointer-events-auto block rounded-2xl p-3.5 shadow-2xl border border-[#F2C230]/60 bg-[#0E121D] text-white no-underline transition hover:border-[#F2C230]';
+                card.className = 'gtb-toast-card pointer-events-auto block rounded-2xl p-3.5 shadow-2xl no-underline transition';
 
                 const top = document.createElement('div');
                 top.className = 'flex items-center justify-between gap-2';
                 const heading = document.createElement('span');
-                heading.className = 'text-xs font-extrabold text-[#F2C230]';
+                heading.className = 'gtb-toast-title text-xs font-extrabold';
                 heading.textContent = title;
                 const badge = document.createElement('span');
                 badge.className = 'w-2 h-2 rounded-full bg-[#34D399] shrink-0';
@@ -499,7 +516,7 @@
                 top.appendChild(badge);
 
                 const desc = document.createElement('p');
-                desc.className = 'text-[11px] text-[#D5DCEB] mt-1 leading-snug';
+                desc.className = 'gtb-toast-body text-[11px] mt-1 leading-snug';
                 desc.textContent = body;
 
                 card.appendChild(top);

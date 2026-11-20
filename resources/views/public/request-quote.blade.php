@@ -12,7 +12,7 @@
 
       <ul class="hm-contato-canais">
         <li>
-          <a class="ct-whats-destaque" href="https://wa.me/5511995204050">
+          <a class="ct-whats-destaque" href="https://wa.me/5519953248420">
             <svg><use href="#i-whats"/></svg>
             <span><small>Prefere conversar agora?</small>Chamar no WhatsApp</span>
           </a>

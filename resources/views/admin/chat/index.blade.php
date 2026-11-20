@@ -38,7 +38,7 @@
         class="glass-card rounded-3xl border border-white/10 overflow-hidden flex flex-col md:flex-row min-h-[540px] md:h-[calc(100vh-230px)]"
     >
         <!-- Left Conversation List (Live auto-refresh every 5s) -->
-        <div class="w-full md:w-72 lg:w-80 max-h-64 md:max-h-none border-b md:border-b-0 md:border-r border-white/10 flex flex-col bg-[#121623] shrink-0">
+        <div class="gtb-chat-sidebar w-full md:w-72 lg:w-80 max-h-64 md:max-h-none border-b md:border-b-0 md:border-r flex flex-col shrink-0">
             <div class="p-4 border-b border-white/10 flex items-center justify-between">
                 <h3 class="text-xs font-bold uppercase tracking-wider text-white">Conversas (<span id="admin-chat-count">{{ $conversations->count() }}</span>)</h3>
                 <span class="inline-flex items-center gap-1 text-[10px] font-bold text-[#6EE7B7]">
@@ -51,7 +51,7 @@
                         $convName = $conv->visitor_name ?: ($conv->client?->display_name ?? 'Visitante');
                         $isActive = isset($activeConversation) && $activeConversation->id === $conv->id;
                     @endphp
-                    <a href="{{ route('admin.chat.index', array_filter(['conversation_id' => $conv->id, 'status' => request('status')])) }}" data-conv-id="{{ $conv->id }}" class="block p-4 hover:bg-white/5 transition {{ $isActive ? 'bg-white/5 border-l-4 border-[#F2C230]' : '' }}">
+                    <a href="{{ route('admin.chat.index', array_filter(['conversation_id' => $conv->id, 'status' => request('status')])) }}" data-conv-id="{{ $conv->id }}" class="gtb-chat-item block p-4 transition {{ $isActive ? 'is-active' : '' }}">
                         <div class="flex items-center justify-between mb-1 gap-2">
                             <span class="text-xs font-bold text-white truncate">{{ $convName }}</span>
                             <span class="text-[10px] text-[#8C95AA] shrink-0">{{ $conv->updated_at->format('H:i') }}</span>
@@ -81,7 +81,7 @@
         </div>
 
         <!-- Right Chat Area -->
-        <div class="flex-1 flex flex-col bg-[#0C0F18] min-w-0">
+        <div class="gtb-chat-main flex-1 flex flex-col min-w-0">
             @if($activeConversation)
                 @php
                     $activeName = $activeConversation->visitor_name ?: ($activeConversation->client?->display_name ?? 'Visitante');
@@ -90,7 +90,7 @@
                     $lastMsgId = (int) ($activeConversation->messages->last()?->id ?? 0);
                 @endphp
                 <!-- Chat Header -->
-                <div class="min-h-16 py-3 border-b border-white/10 px-4 sm:px-6 flex flex-wrap items-center justify-between gap-3 bg-[#121623]">
+                <div class="gtb-chat-header min-h-16 py-3 border-b px-4 sm:px-6 flex flex-wrap items-center justify-between gap-3">
                     <div class="min-w-0">
                         <div class="flex flex-wrap items-center gap-2">
                             <h4 class="text-sm font-bold text-white truncate">{{ $activeName }}</h4>
@@ -139,16 +139,16 @@
                     $draftQuotationId = $crmExtracted['draft_quotation_id'] ?? $activeConversation->serviceRequest?->quotation?->id;
                 @endphp
                 <!-- Autonomous CRM Live Intelligence Bar -->
-                <div class="px-4 sm:px-6 py-2.5 border-b border-white/10 bg-[#171B27]/80 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                <div class="gtb-ai-bar px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
                     <div class="flex flex-wrap items-center gap-2 min-w-0">
-                        <span id="admin-chat-ai-badge" class="px-2 py-0.5 rounded-full font-extrabold text-[10px] {{ $activeConversation->ai_enabled ? 'bg-[#F2C230]/20 text-[#F2C230]' : 'bg-white/10 text-[#D5DCEB]' }}">
+                        <span id="admin-chat-ai-badge" class="px-2.5 py-0.5 rounded-full font-extrabold text-[10px] border {{ $activeConversation->ai_enabled ? 'bg-[#F2C230]/20 border-[#F2C230]/40 text-[#F2C230]' : 'bg-white/10 border-white/15 text-[#D5DCEB]' }}">
                             {{ $activeConversation->ai_enabled ? 'Piloto Automático IA' : 'Controle Humano' }}
                         </span>
-                        <span class="px-2 py-0.5 rounded-full bg-[#121AFF]/20 text-[#93A3FF] font-bold text-[10px]">
+                        <span class="px-2.5 py-0.5 rounded-full bg-[#121AFF]/20 text-[#93A3FF] font-bold text-[10px]">
                             {{ $activeConversation->crm_stage_label }} · Score {{ (int) $activeConversation->lead_score }}/100
                         </span>
                         @if($activeConversation->ai_summary)
-                            <span id="admin-chat-ai-summary" class="text-[#D5DCEB] truncate max-w-md" title="{{ $activeConversation->ai_summary }}">{{ $activeConversation->ai_summary }}</span>
+                            <span id="admin-chat-ai-summary" class="text-[#D5DCEB] truncate max-w-md font-medium" title="{{ $activeConversation->ai_summary }}">{{ $activeConversation->ai_summary }}</span>
                         @endif
                     </div>
                     <div class="flex items-center gap-3 shrink-0">
@@ -174,7 +174,7 @@
                             $senderLabel = $msg->sender?->name ?? $msg->sender_name ?? ($isStaff ? 'Equipe GundjaTech' : $activeName);
                         @endphp
                         <div class="flex {{ $isStaff ? 'justify-end' : 'justify-start' }}" data-msg-id="{{ $msg->id }}">
-                            <div class="max-w-md p-3.5 rounded-2xl text-xs space-y-1 {{ $isStaff ? 'bg-[#F2C230] text-[#063B5C] font-semibold' : 'bg-[#171B27] text-white border border-white/10' }}">
+                            <div class="max-w-md p-3.5 rounded-2xl text-xs space-y-1 {{ $isStaff ? 'gtb-chat-bubble-staff' : 'gtb-chat-bubble-client' }}">
                                 <div class="text-[10px] font-bold opacity-80 flex items-center gap-1.5">
                                     <span>{{ $senderLabel }}</span>
                                     @if($msg->is_ai)
@@ -192,7 +192,7 @@
 
                 <!-- Send Input (AJAX live send with progressive fallback) -->
                 @if(Auth::user()->hasPermission('chat.manage'))
-                    <div class="p-4 border-t border-white/10 bg-[#121623]">
+                    <div class="gtb-chat-composer p-4 border-t">
                         <form id="admin-chat-reply-form" action="{{ route('admin.chat.send', $activeConversation) }}" method="POST" class="flex gap-2">
                             @csrf
                             <input id="admin-chat-reply-input" type="text" name="message" required placeholder="Digite sua resposta em tempo real..." class="flex-1 bg-[#171B27] border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#F2C230]">
@@ -297,7 +297,7 @@
         row.dataset.msgId = String(msg.id);
 
         const bubble = document.createElement('div');
-        bubble.className = 'max-w-md p-3.5 rounded-2xl text-xs space-y-1 ' + (isStaff ? 'bg-[#F2C230] text-[#063B5C] font-semibold' : 'bg-[#171B27] text-white border border-white/10');
+        bubble.className = 'max-w-md p-3.5 rounded-2xl text-xs space-y-1 ' + (isStaff ? 'gtb-chat-bubble-staff' : 'gtb-chat-bubble-client');
 
         const senderEl = document.createElement('div');
         senderEl.className = 'text-[10px] font-bold opacity-80 flex items-center gap-1.5';
@@ -393,7 +393,7 @@
             const link = document.createElement('a');
             link.href = conv.url;
             link.dataset.convId = String(conv.id);
-            link.className = 'block p-4 hover:bg-white/5 transition' + (isActive ? ' bg-white/5 border-l-4 border-[#F2C230]' : '');
+            link.className = 'gtb-chat-item block p-4 transition' + (isActive ? ' is-active' : '');
 
             const row1 = document.createElement('div');
             row1.className = 'flex items-center justify-between mb-1 gap-2';
