@@ -331,7 +331,7 @@
         <div class="sb-foto"><img width="1024" height="1024" src="/img/time/RodriguesLussite.webp?v=1" alt="Rodrigues Lussiate — Cibersegurança e Segurança da Informação da GundjaTech" loading="lazy"></div>
         <h3>Rodrigues Lussiate</h3>
         <p class="sb-cargo">Cibersegurança &amp; Segurança da Informação</p>
-        <p class="sb-bio">Especialista em cibersegurança, proteção de dados, segurança de redes, gestão de vulnerabilidades e infraestrutura de TI. Responsável pela implementação de estratégias de segurança digital, prevenção de ameaças e proteção dos sistemas e informações corporativas.</p>
+        <p class="sb-bio">Especialista em cibersegurança, proteção de dados, segurança de redes, gestão de vulnerabilidades. Responsável pela implementação de estratégias de segurança digital e informações corporativas.</p>
       </article></div>
 
   </div>
