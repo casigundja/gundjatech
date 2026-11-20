@@ -65,6 +65,7 @@ class AdminChatController extends Controller
         $counts = DB::selectOne(
             "SELECT
                 (SELECT COUNT(*) FROM service_requests WHERE status IN ('new', 'analyzing', 'awaiting_info')) AS pending_requests,
+                (SELECT COALESCE(MAX(id), 0) FROM service_requests) AS latest_request_id,
                 (SELECT COUNT(*) FROM conversations WHERE status != 'closed') AS open_chats,
                 (SELECT COUNT(*) FROM conversations WHERE status = 'waiting_staff') AS waiting_staff,
                 (SELECT COUNT(*) FROM conversations WHERE ai_enabled = true AND status != 'closed') AS ai_active_chats,
@@ -76,6 +77,7 @@ class AdminChatController extends Controller
         $payload = [
             'ok' => true,
             'pending_requests' => (int) ($counts->pending_requests ?? 0),
+            'latest_request_id' => (int) ($counts->latest_request_id ?? 0),
             'open_chats' => (int) ($counts->open_chats ?? 0),
             'waiting_staff' => (int) ($counts->waiting_staff ?? 0),
             'ai_active_chats' => (int) ($counts->ai_active_chats ?? 0),

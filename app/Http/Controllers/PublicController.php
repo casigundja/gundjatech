@@ -644,9 +644,10 @@ class PublicController extends Controller
         $subject = trim((string) ($validated['assunto'] ?? '')) ?: ('Chat do Site • '.$leadName);
         $protocol = null;
         $aiEnabledDefault = $crmAgent->isGloballyEnabled();
+        $initialVisitorMessage = null;
 
         /** @var Conversation $conversation */
-        $conversation = DB::transaction(function () use ($validated, $leadName, $leadEmail, $tema, $subject, $request, $aiEnabledDefault, &$protocol): Conversation {
+        $conversation = DB::transaction(function () use ($validated, $leadName, $leadEmail, $tema, $subject, $request, $aiEnabledDefault, &$protocol, &$initialVisitorMessage): Conversation {
             $client = $this->resolveLeadClient(
                 $leadEmail,
                 $leadName,
@@ -716,11 +717,11 @@ class PublicController extends Controller
                     'visitor_phone' => $validated['telefone'] ?? $conversation->visitor_phone,
                     'status' => 'waiting_staff',
                     'closed_at' => null,
+                    'updated_at' => now(),
                 ]);
-                $conversation->touch();
             }
 
-            ConversationMessage::create([
+            $initialVisitorMessage = ConversationMessage::create([
                 'conversation_id' => $conversation->id,
                 'sender_id' => Auth::id(),
                 'sender_type' => 'client',
@@ -729,6 +730,10 @@ class PublicController extends Controller
                 'message' => trim($validated['mensagem']),
                 'is_read' => false,
             ]);
+
+            $conversation->setRelation('client', $client);
+            $conversation->setRelation('serviceRequest', $serviceRequest);
+            $conversation->setRelation('messages', collect([$initialVisitorMessage]));
 
             $this->recordPublicActivity($request, 'public.chat.started', $conversation, [
                 'email' => $leadEmail,
@@ -740,7 +745,14 @@ class PublicController extends Controller
         });
 
         $aiReply = $crmAgent->handleIncomingVisitorMessage($conversation, trim($validated['mensagem']));
-        $conversation->refresh()->load(['messages.sender']);
+
+        $formattedMessages = [];
+        if ($initialVisitorMessage instanceof ConversationMessage) {
+            $formattedMessages[] = $this->formatChatMessage($initialVisitorMessage);
+        }
+        if ($aiReply instanceof ConversationMessage) {
+            $formattedMessages[] = $this->formatChatMessage($aiReply);
+        }
 
         return response()->json([
             'ok' => true,
@@ -754,7 +766,7 @@ class PublicController extends Controller
             'crm_stage' => $conversation->crm_stage,
             'lead_score' => (int) $conversation->lead_score,
             'ai_reply' => $aiReply ? $this->formatChatMessage($aiReply) : null,
-            'messages' => $conversation->messages->map(fn (ConversationMessage $msg): array => $this->formatChatMessage($msg))->values()->all(),
+            'messages' => $formattedMessages,
         ], 201);
     }
 
@@ -773,7 +785,7 @@ class PublicController extends Controller
             ], 404);
         }
 
-        $senderName = $conversation->visitor_name ?: ($conversation->client?->name ?? 'Visitante');
+        $senderName = $conversation->visitor_name ?: 'Visitante';
         $cleanMessage = trim($validated['message']);
 
         /** @var ConversationMessage $msg */
@@ -791,14 +803,13 @@ class PublicController extends Controller
             $conversation->update([
                 'status' => 'waiting_staff',
                 'closed_at' => null,
+                'updated_at' => now(),
             ]);
-            $conversation->touch();
 
             return $msg;
         });
 
         $aiReply = $crmAgent->handleIncomingVisitorMessage($conversation, $cleanMessage);
-        $conversation->refresh();
 
         return response()->json([
             'ok' => true,

@@ -447,10 +447,7 @@
         });
     }
 
-    // 5. Poll Active Conversation Messages + Full Sidebar List every 5s
-    let knownLatestConvId = null;
-    let knownLatestClientMsgId = null;
-
+    // 5. Sequential live polling (Active Conversation + Sidebar Summary every 5s, never overlapping)
     async function pollActiveConversation() {
         if (!stream) return;
         try {
@@ -498,42 +495,61 @@
                 renderSidebarList(data.conversations);
             }
 
-            if (knownLatestConvId === null) {
-                knownLatestConvId = data.latest_conversation_id;
-                knownLatestClientMsgId = data.latest_client_message_id;
+            const prevConv = notify ? notify.readSeen('gt_seen_conv_id') : null;
+            const prevMsg = notify ? notify.readSeen('gt_seen_msg_id') : null;
+            const prevReq = notify ? notify.readSeen('gt_seen_req_id') : null;
+
+            if (prevConv === null || prevMsg === null || prevReq === null) {
+                if (notify) {
+                    notify.writeSeen('gt_seen_conv_id', data.latest_conversation_id || 0);
+                    notify.writeSeen('gt_seen_msg_id', data.latest_client_message_id || 0);
+                    notify.writeSeen('gt_seen_req_id', data.latest_request_id || 0);
+                }
                 return;
             }
 
-            if (data.latest_conversation_id > knownLatestConvId) {
-                knownLatestConvId = data.latest_conversation_id;
-                knownLatestClientMsgId = Math.max(knownLatestClientMsgId, data.latest_client_message_id);
-                const newest = (data.conversations || [])[0];
-                const title = 'Novo atendimento: ' + (newest ? newest.name : 'Visitante');
-                const body = newest ? newest.subject + ' — ' + newest.latest_message : 'Nova conversa recebida no chat do site.';
-                const url = newest ? newest.url : @json(route('admin.chat.index'));
+            if ((data.latest_conversation_id || 0) > prevConv) {
                 if (notify) {
+                    notify.writeSeen('gt_seen_conv_id', data.latest_conversation_id);
+                    notify.writeSeen('gt_seen_msg_id', Math.max(prevMsg, data.latest_client_message_id || 0));
+                    notify.writeSeen('gt_seen_req_id', Math.max(prevReq, data.latest_request_id || 0));
+                    const newest = (data.conversations || [])[0];
+                    const title = 'Novo atendimento: ' + (newest ? newest.name : 'Visitante');
+                    const body = newest ? newest.subject + ' — ' + newest.latest_message : 'Nova conversa recebida no chat do site.';
+                    const url = newest ? newest.url : @json(route('admin.chat.index'));
                     notify.playChime();
                     notify.showToast(title, body, url);
                     notify.notifyDesktop(title, body, url);
                 }
-            } else if (data.latest_client_message_id > knownLatestClientMsgId) {
-                knownLatestClientMsgId = data.latest_client_message_id;
-                const newest = (data.conversations || []).find(function (c) { return c.unread_client_count > 0; }) || (data.conversations || [])[0];
-                if (newest && newest.id !== activeConvId && notify) {
-                    const title = 'Nova mensagem de ' + newest.name;
+            } else if ((data.latest_request_id || 0) > prevReq) {
+                if (notify) {
+                    notify.writeSeen('gt_seen_req_id', data.latest_request_id);
                     notify.playChime();
-                    notify.showToast(title, newest.latest_message, newest.url);
-                    notify.notifyDesktop(title, newest.latest_message, newest.url);
+                    notify.showToast('Nova solicitação recebida!', 'Um novo lead chegou pelo site.', @json(route('admin.requests.index')));
+                    notify.notifyDesktop('Nova solicitação GundjaTech', 'Um novo lead chegou pelo site.', @json(route('admin.requests.index')));
+                }
+            } else if ((data.latest_client_message_id || 0) > prevMsg) {
+                if (notify) {
+                    notify.writeSeen('gt_seen_msg_id', data.latest_client_message_id);
+                    const newest = (data.conversations || []).find(function (c) { return c.unread_client_count > 0; }) || (data.conversations || [])[0];
+                    if (newest && newest.id !== activeConvId) {
+                        const title = 'Nova mensagem de ' + newest.name;
+                        notify.playChime();
+                        notify.showToast(title, newest.latest_message, newest.url);
+                        notify.notifyDesktop(title, newest.latest_message, newest.url);
+                    }
                 }
             }
         } catch (e) {}
     }
 
-    pollSidebarSummary();
-    setInterval(function () {
-        pollActiveConversation();
-        pollSidebarSummary();
-    }, 5000);
+    async function liveLoop() {
+        await pollActiveConversation();
+        await pollSidebarSummary();
+        setTimeout(liveLoop, 5000);
+    }
+
+    liveLoop();
 })();
 </script>
 @endpush

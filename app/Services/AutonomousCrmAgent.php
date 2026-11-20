@@ -16,6 +16,7 @@ use App\Models\ServiceRequest;
 use App\Models\SystemSetting;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -24,11 +25,22 @@ use Illuminate\Support\Str;
 
 class AutonomousCrmAgent
 {
+    public const CACHE_CONFIG_KEY = 'gundjatech_crm_ai_settings_v2';
+
+    public const CACHE_CATALOG_KEY = 'gundjatech_crm_ai_catalog_v2';
+
     public const DEFAULT_SYSTEM_PROMPT = 'Você é o Assistente Comercial Sênior da GundjaTech (engenharia digital, criação de sites sob medida, sistemas web, cibersegurança, gestão de domínios e tráfego pago). Converse em português de forma clara, executiva, acolhedora e objetiva (máximo 3 frases por resposta). Use apenas os serviços, preços base e cases reais informados no contexto. Qualifique o visitante fazendo uma pergunta de cada vez (projeto/objetivo, empresa, prazo desejado e faixa de investimento) para montar o pré-orçamento no CRM. Se o visitante relatar emergência (site invadido/fora do ar), pedir desconto, quiser fechar contrato ou pedir para falar com um humano/diretor, acione handoff_to_human=true.';
+
+    public static function flushCache(): void
+    {
+        Cache::store('file')->forget(self::CACHE_CONFIG_KEY);
+        Cache::store('file')->forget(self::CACHE_CATALOG_KEY);
+    }
 
     public function isGloballyEnabled(): bool
     {
-        $raw = SystemSetting::get('crm_ai_enabled');
+        $settings = $this->loadRawSettings();
+        $raw = $settings['crm_ai_enabled'] ?? null;
         if ($raw === null) {
             return (bool) config('services.crm_ai.enabled', true);
         }
@@ -41,14 +53,15 @@ class AutonomousCrmAgent
      */
     public function getConfig(): array
     {
+        $settings = $this->loadRawSettings();
         $enabled = $this->isGloballyEnabled();
-        $provider = (string) (SystemSetting::get('crm_ai_provider') ?: config('services.crm_ai.provider', 'auto'));
-        $agentName = (string) (SystemSetting::get('crm_ai_agent_name') ?: 'Assistente IA GundjaTech');
-        $autoDraft = SystemSetting::get('crm_ai_auto_draft_quotation');
+        $provider = (string) (($settings['crm_ai_provider'] ?? '') ?: config('services.crm_ai.provider', 'auto'));
+        $agentName = (string) (($settings['crm_ai_agent_name'] ?? '') ?: 'Assistente IA GundjaTech');
+        $autoDraft = $settings['crm_ai_auto_draft_quotation'] ?? null;
         $autoDraftBool = $autoDraft === null ? true : in_array(strtolower((string) $autoDraft), ['1', 'true', 'yes', 'on'], true);
-        $systemPrompt = (string) (SystemSetting::get('crm_ai_system_prompt') ?: self::DEFAULT_SYSTEM_PROMPT);
+        $systemPrompt = (string) (($settings['crm_ai_system_prompt'] ?? '') ?: self::DEFAULT_SYSTEM_PROMPT);
 
-        $storedKey = $this->decryptStoredApiKey();
+        $storedKey = $this->decryptStoredApiKey((string) ($settings['crm_ai_api_key'] ?? ''));
         $geminiEnvKey = (string) (config('services.crm_ai.gemini_key') ?? '');
         $openaiEnvKey = (string) (config('services.crm_ai.openai_key') ?? '');
 
@@ -82,7 +95,7 @@ class AutonomousCrmAgent
             }
         }
 
-        $model = (string) (SystemSetting::get('crm_ai_model') ?: $defaultModel);
+        $model = (string) (($settings['crm_ai_model'] ?? '') ?: $defaultModel);
 
         return [
             'enabled' => $enabled,
@@ -104,16 +117,18 @@ class AutonomousCrmAgent
             return null;
         }
 
-        $conversation->loadMissing(['client', 'serviceRequest', 'messages']);
-
-        $services = Service::with('category')->where('is_active', true)->orderBy('id')->get();
-        $cases = PortfolioProject::where('is_published', true)->orderBy('id')->take(5)->get();
+        $catalog = $this->loadCachedCatalog();
+        $services = $catalog['services'];
+        $cases = $catalog['cases'];
 
         $decision = null;
-        if ($config['effective_mode'] === 'gemini' && $config['api_key'] !== '') {
-            $decision = $this->callGemini($conversation, $incomingMessage, $services, $cases, $config);
-        } elseif ($config['effective_mode'] === 'openai' && $config['api_key'] !== '') {
-            $decision = $this->callOpenAi($conversation, $incomingMessage, $services, $cases, $config);
+        if (in_array($config['effective_mode'], ['gemini', 'openai'], true) && $config['api_key'] !== '') {
+            $conversation->loadMissing(['messages']);
+            if ($config['effective_mode'] === 'gemini') {
+                $decision = $this->callGemini($conversation, $incomingMessage, $services, $cases, $config);
+            } else {
+                $decision = $this->callOpenAi($conversation, $incomingMessage, $services, $cases, $config);
+            }
         }
 
         if ($decision === null) {
@@ -214,16 +229,16 @@ class AutonomousCrmAgent
      */
     private function buildStructuredPrompt(Conversation $conversation, string $incomingMessage, $services, $cases, array $config): string
     {
-        $catalogLines = $services->map(static fn (Service $s): string => sprintf(
+        $catalogLines = $services->map(static fn (object $s): string => sprintf(
             '- slug: %s | nome: %s | categoria: %s | preco_base: R$ %s | prazo_estimado_dias: %d',
             $s->slug,
             $s->name,
-            $s->category?->name ?? 'Geral',
+            $s->category_name ?? 'Geral',
             number_format((float) $s->base_price, 2, ',', '.'),
             (int) ($s->estimated_days ?? 15)
         ))->implode("\n");
 
-        $caseLines = $cases->map(static fn (PortfolioProject $c): string => "- {$c->client_name} ({$c->category}): {$c->description}")->implode("\n");
+        $caseLines = $cases->map(static fn (object $c): string => "- {$c->client_name} ({$c->category}): {$c->description}")->implode("\n");
 
         $historyLines = $conversation->messages->take(-14)->map(static function (ConversationMessage $m): string {
             $who = $m->sender_type === 'staff' ? ($m->is_ai ? 'IA_GUNDJATECH' : 'HUMANO_EQUIPE') : 'VISITANTE';
@@ -520,8 +535,9 @@ PROMPT;
             $summary,
             $config
         ): ConversationMessage {
-            // 1. Enrich Client CRM record
-            $client = $conversation->client;
+            // 1. Enrich Client CRM record (only query/write when new info is extracted)
+            $hasClientChanges = ! empty($merged['company']) || ! empty($merged['city_state']) || $score >= 60;
+            $client = $hasClientChanges ? $conversation->client : null;
             if ($client !== null) {
                 $clientUpdates = [];
                 if (! empty($merged['company']) && (empty($client->company_name) || $client->company_name === $client->name)) {
@@ -534,20 +550,25 @@ PROMPT;
                         $clientUpdates['state'] = Str::limit($parts[1], 50, '');
                     }
                 }
-                $clientUpdates['notes'] = trim("CRM Autônomo IA ({$score}/100): {$summary}");
+                $newNotes = trim("CRM Autônomo IA ({$score}/100): {$summary}");
+                if ($client->notes !== $newNotes) {
+                    $clientUpdates['notes'] = $newNotes;
+                }
                 if ($clientUpdates !== []) {
                     $client->update($clientUpdates);
                 }
             }
 
-            // 2. Enrich linked ServiceRequest
-            $serviceRequest = $conversation->serviceRequest;
+            // 2. Enrich linked ServiceRequest (only when new CRM data or score threshold reached)
+            $needsRequestSync = $conversation->service_request_id !== null
+                && (! empty($merged['company']) || ! empty($merged['estimated_budget']) || ! empty($merged['desired_deadline_days']) || ! empty($merged['scope']) || $score >= 55);
+            $serviceRequest = $needsRequestSync ? $conversation->serviceRequest : null;
             if ($serviceRequest !== null) {
                 $reqUpdates = [];
-                if ($matchedService !== null) {
+                if ($matchedService !== null && $serviceRequest->service_id !== $matchedService->id) {
                     $reqUpdates['service_id'] = $matchedService->id;
                 }
-                if (! empty($merged['company'])) {
+                if (! empty($merged['company']) && $serviceRequest->company !== $merged['company']) {
                     $reqUpdates['company'] = Str::limit((string) $merged['company'], 255, '');
                 }
                 if (! empty($merged['estimated_budget']) && is_numeric($merged['estimated_budget'])) {
@@ -580,7 +601,7 @@ PROMPT;
             $shouldDraft = (bool) ($decision['create_draft_quotation'] ?? false)
                 && (bool) $config['auto_draft_quotation']
                 && empty($merged['draft_quotation_id'])
-                && $client !== null;
+                && $conversation->client_id !== null;
 
             if ($shouldDraft) {
                 $creatorId = User::whereIn('role', [UserRole::SuperAdmin->value, UserRole::Admin->value, UserRole::Manager->value])
@@ -595,8 +616,8 @@ PROMPT;
                     $serviceTitle = $matchedService?->name ?? ($merged['project_type'] ?? 'Projeto Digital Sob Medida');
                     $quotation = Quotation::create([
                         'quotation_number' => 'ORC-AI-'.date('Ymd').'-'.strtoupper(Str::random(4)),
-                        'service_request_id' => $serviceRequest?->id,
-                        'client_id' => $client->id,
+                        'service_request_id' => $conversation->service_request_id,
+                        'client_id' => $conversation->client_id,
                         'user_id' => $creatorId,
                         'title' => "Pré-Orçamento IA • {$serviceTitle}",
                         'subtotal' => $unitPrice,
@@ -618,18 +639,6 @@ PROMPT;
 
                     $merged['draft_quotation_id'] = $quotation->id;
                     $merged['draft_quotation_number'] = $quotation->quotation_number;
-
-                    ActivityLog::create([
-                        'user_id' => null,
-                        'action' => 'crm.ai.quotation_drafted',
-                        'subject_type' => Quotation::class,
-                        'subject_id' => $quotation->id,
-                        'details' => [
-                            'conversation_id' => $conversation->id,
-                            'quotation_number' => $quotation->quotation_number,
-                            'total' => $unitPrice,
-                        ],
-                    ]);
                 }
             }
 
@@ -644,7 +653,7 @@ PROMPT;
                 'is_read' => false,
             ]);
 
-            // 5. Update Conversation CRM state
+            // 5. Update Conversation CRM state (single UPDATE, no redundant touch())
             $conversation->update([
                 'ai_enabled' => $handoff ? false : true,
                 'crm_stage' => $stage,
@@ -653,21 +662,24 @@ PROMPT;
                 'extracted_data' => $merged,
                 'ai_handoff_reason' => $handoff ? Str::limit((string) ($decision['handoff_reason'] ?? 'Transferido para equipe humana'), 255, '') : $conversation->ai_handoff_reason,
                 'status' => ($handoff || $stage === 'proposal_ready') ? 'waiting_staff' : 'open',
+                'updated_at' => now(),
             ]);
-            $conversation->touch();
 
-            ActivityLog::create([
-                'user_id' => null,
-                'action' => $handoff ? 'crm.ai.handoff' : 'crm.ai.replied',
-                'subject_type' => Conversation::class,
-                'subject_id' => $conversation->id,
-                'details' => [
-                    'stage' => $stage,
-                    'lead_score' => $score,
-                    'mode' => $config['effective_mode'],
-                    'handoff_reason' => $handoff ? ($decision['handoff_reason'] ?? null) : null,
-                ],
-            ]);
+            if ($handoff || ! empty($merged['draft_quotation_id'])) {
+                ActivityLog::create([
+                    'user_id' => null,
+                    'action' => $handoff ? 'crm.ai.handoff' : 'crm.ai.quotation_drafted',
+                    'subject_type' => Conversation::class,
+                    'subject_id' => $conversation->id,
+                    'details' => [
+                        'stage' => $stage,
+                        'lead_score' => $score,
+                        'mode' => $config['effective_mode'],
+                        'quotation_number' => $merged['draft_quotation_number'] ?? null,
+                        'handoff_reason' => $handoff ? ($decision['handoff_reason'] ?? null) : null,
+                    ],
+                ]);
+            }
 
             return $aiMessage;
         });
@@ -676,9 +688,9 @@ PROMPT;
     }
 
     /**
-     * @param  Collection<int, Service>  $services
+     * @param  Collection<int, object>  $services
      */
-    private function matchService(string $lowerText, $services): ?Service
+    private function matchService(string $lowerText, $services): ?object
     {
         if (Str::contains($lowerText, ['loja virtual', 'ecommerce', 'e-commerce', 'vender online', 'carrinho'])) {
             return $services->firstWhere('slug', 'loja-virtual-alta-conversao') ?? $services->first();
@@ -835,9 +847,71 @@ PROMPT;
         return implode(' · ', $parts);
     }
 
-    private function decryptStoredApiKey(): string
+    /**
+     * @return array<string, string|null>
+     */
+    private function loadRawSettings(): array
     {
-        $raw = (string) (SystemSetting::get('crm_ai_api_key') ?? '');
+        if (app()->runningUnitTests()) {
+            return SystemSetting::where('group', 'crm_ai')->pluck('value', 'key')->all();
+        }
+
+        return Cache::store('file')->remember(
+            self::CACHE_CONFIG_KEY,
+            300,
+            static fn (): array => SystemSetting::where('group', 'crm_ai')->pluck('value', 'key')->all()
+        );
+    }
+
+    /**
+     * @return array{services: Collection<int, object>, cases: Collection<int, object>}
+     */
+    private function loadCachedCatalog(): array
+    {
+        $fetchRaw = static function (): array {
+            $services = Service::with('category:id,name')
+                ->where('is_active', true)
+                ->orderBy('id')
+                ->get(['id', 'category_id', 'slug', 'name', 'base_price', 'estimated_days'])
+                ->map(static fn (Service $s): array => [
+                    'id' => (int) $s->id,
+                    'slug' => (string) $s->slug,
+                    'name' => (string) $s->name,
+                    'category_name' => (string) ($s->category?->name ?? 'Geral'),
+                    'base_price' => (float) $s->base_price,
+                    'estimated_days' => (int) ($s->estimated_days ?? 15),
+                ])
+                ->all();
+
+            $cases = PortfolioProject::where('is_published', true)
+                ->orderBy('id')
+                ->take(5)
+                ->get(['client_name', 'category', 'description'])
+                ->map(static fn (PortfolioProject $c): array => [
+                    'client_name' => (string) $c->client_name,
+                    'category' => (string) $c->category,
+                    'description' => (string) $c->description,
+                ])
+                ->all();
+
+            return [
+                'services' => $services,
+                'cases' => $cases,
+            ];
+        };
+
+        $raw = app()->runningUnitTests()
+            ? $fetchRaw()
+            : Cache::store('file')->remember(self::CACHE_CATALOG_KEY, 300, $fetchRaw);
+
+        return [
+            'services' => collect($raw['services'] ?? [])->map(static fn (array $item): object => (object) $item),
+            'cases' => collect($raw['cases'] ?? [])->map(static fn (array $item): object => (object) $item),
+        ];
+    }
+
+    private function decryptStoredApiKey(string $raw): string
+    {
         if ($raw === '') {
             return '';
         }

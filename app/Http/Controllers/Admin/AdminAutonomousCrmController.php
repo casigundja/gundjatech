@@ -68,6 +68,8 @@ class AdminAutonomousCrmController extends Controller
             SystemSetting::set('crm_ai_api_key', Crypt::encryptString(trim($validated['crm_ai_api_key'])), 'crm_ai');
         }
 
+        AutonomousCrmAgent::flushCache();
+
         ActivityLog::create([
             'user_id' => Auth::id(),
             'action' => 'crm.ai.settings_updated',

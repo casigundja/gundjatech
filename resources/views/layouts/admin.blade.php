@@ -301,6 +301,13 @@
                     </button>
                 </div>
 
+                <!-- Quick Sound Alert Toggle (unlocks browser audio & tests chime) -->
+                @if($currentUser->hasPermission('chat.view'))
+                    <button type="button" id="gt-topbar-sound-btn" class="w-10 h-10 rounded-full bg-[#171B27] border border-white/10 flex items-center justify-center text-[#F2C230] hover:border-[#F2C230] transition cursor-pointer" title="Alertas sonoros: Ativo (clique para testar/alternar)">
+                        <svg id="gt-topbar-sound-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+                    </button>
+                @endif
+
                 <!-- Notification Bell with Live Indicator -->
                 <a href="{{ route('admin.requests.index') }}" id="gt-topbar-bell-link" class="relative w-10 h-10 rounded-full bg-[#171B27] border border-white/10 flex items-center justify-center text-[#D5DCEB] hover:border-[#F2C230] hover:text-[#F2C230] transition" title="Notificações ({{ $totalNotifications }})">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
@@ -382,37 +389,95 @@
         (function () {
             let audioCtx = null;
 
+            function ensureAudioUnlocked() {
+                try {
+                    const Ctx = window.AudioContext || window.webkitAudioContext;
+                    if (!Ctx) return null;
+                    if (!audioCtx) audioCtx = new Ctx();
+                    if (audioCtx.state === 'suspended') audioCtx.resume();
+                    return audioCtx;
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            // Unlock browser AudioContext automatically on the first click or keypress in /admin
+            ['pointerdown', 'keydown'].forEach(function (evName) {
+                window.addEventListener(evName, function () {
+                    ensureAudioUnlocked();
+                }, { once: true, passive: true });
+            });
+
             function isSoundEnabled() {
                 try { return localStorage.getItem('gt_admin_sound') !== 'off'; } catch (e) { return true; }
             }
 
             function setSoundEnabled(val) {
                 try { localStorage.setItem('gt_admin_sound', val ? 'on' : 'off'); } catch (e) {}
+                syncTopbarSoundBtn();
+            }
+
+            function syncTopbarSoundBtn() {
+                const btn = document.getElementById('gt-topbar-sound-btn');
+                if (!btn) return;
+                const on = isSoundEnabled();
+                btn.style.opacity = on ? '1' : '0.45';
+                btn.title = on ? 'Alertas sonoros: Ativo (clique para silenciar)' : 'Alertas sonoros: Mudo (clique para ativar e testar)';
+            }
+
+            const topSoundBtn = document.getElementById('gt-topbar-sound-btn');
+            if (topSoundBtn) {
+                syncTopbarSoundBtn();
+                topSoundBtn.addEventListener('click', function () {
+                    const next = !isSoundEnabled();
+                    setSoundEnabled(next);
+                    if (next) {
+                        playChime();
+                        showToast('Alertas sonoros ativados!', 'Você ouvirá um aviso sempre que chegar uma nova solicitação ou mensagem.', @json(route('admin.chat.index')));
+                    }
+                });
             }
 
             function playChime() {
                 if (!isSoundEnabled()) return;
                 try {
-                    const Ctx = window.AudioContext || window.webkitAudioContext;
-                    if (!Ctx) return;
-                    if (!audioCtx) audioCtx = new Ctx();
-                    if (audioCtx.state === 'suspended') audioCtx.resume();
+                    const ctx = ensureAudioUnlocked();
+                    if (!ctx) return;
 
-                    const now = audioCtx.currentTime;
-                    [880, 1174.66].forEach(function (freq, idx) {
-                        const osc = audioCtx.createOscillator();
-                        const gain = audioCtx.createGain();
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(freq, now + idx * 0.11);
-                        gain.gain.setValueAtTime(0.001, now + idx * 0.11);
-                        gain.gain.exponentialRampToValueAtTime(0.14, now + idx * 0.11 + 0.02);
-                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.11 + 0.24);
-                        osc.connect(gain);
-                        gain.connect(audioCtx.destination);
-                        osc.start(now + idx * 0.11);
-                        osc.stop(now + idx * 0.11 + 0.26);
-                    });
+                    const runTones = function () {
+                        const now = ctx.currentTime;
+                        [783.99, 1046.5, 1318.51].forEach(function (freq, idx) {
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            osc.type = 'triangle';
+                            osc.frequency.setValueAtTime(freq, now + idx * 0.095);
+                            gain.gain.setValueAtTime(0.001, now + idx * 0.095);
+                            gain.gain.exponentialRampToValueAtTime(0.22, now + idx * 0.095 + 0.02);
+                            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.095 + 0.28);
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.start(now + idx * 0.095);
+                            osc.stop(now + idx * 0.095 + 0.30);
+                        });
+                    };
+
+                    if (ctx.state === 'suspended') {
+                        ctx.resume().then(runTones).catch(function () {});
+                    } else {
+                        runTones();
+                    }
                 } catch (e) {}
+            }
+
+            function readSeen(key) {
+                try {
+                    const v = sessionStorage.getItem(key);
+                    return v !== null ? parseInt(v, 10) : null;
+                } catch (e) { return null; }
+            }
+
+            function writeSeen(key, val) {
+                try { sessionStorage.setItem(key, String(val)); } catch (e) {}
             }
 
             function showToast(title, body, href) {
@@ -421,7 +486,7 @@
 
                 const card = document.createElement('a');
                 card.href = href || @json(route('admin.chat.index'));
-                card.className = 'pointer-events-auto block rounded-2xl p-3.5 shadow-2xl border border-[#F2C230]/50 bg-[#0E121D] text-white no-underline transition hover:border-[#F2C230]';
+                card.className = 'pointer-events-auto block rounded-2xl p-3.5 shadow-2xl border border-[#F2C230]/60 bg-[#0E121D] text-white no-underline transition hover:border-[#F2C230]';
 
                 const top = document.createElement('div');
                 top.className = 'flex items-center justify-between gap-2';
@@ -444,7 +509,7 @@
                 setTimeout(function () {
                     card.style.opacity = '0';
                     setTimeout(function () { card.remove(); }, 250);
-                }, 7000);
+                }, 8000);
             }
 
             function notifyDesktop(title, body, href) {
@@ -486,14 +551,14 @@
                 playChime: playChime,
                 showToast: showToast,
                 notifyDesktop: notifyDesktop,
-                updateGlobalCounters: updateGlobalCounters
+                updateGlobalCounters: updateGlobalCounters,
+                readSeen: readSeen,
+                writeSeen: writeSeen
             };
 
-            // Background polling across non-chat admin pages every 10s
+            // Sequential background polling across non-chat admin pages every 6s (never overlaps)
             if (!window.location.pathname.startsWith('/admin/atendimento')) {
                 const summaryUrl = @json(route('admin.chat.summary', ['counts_only' => 1]));
-                let baselineConvId = null;
-                let baselineMsgId = null;
 
                 async function checkGlobalUpdates() {
                     try {
@@ -507,29 +572,42 @@
 
                         updateGlobalCounters(data);
 
-                        if (baselineConvId === null) {
-                            baselineConvId = data.latest_conversation_id;
-                            baselineMsgId = data.latest_client_message_id;
+                        const prevConv = readSeen('gt_seen_conv_id');
+                        const prevMsg = readSeen('gt_seen_msg_id');
+                        const prevReq = readSeen('gt_seen_req_id');
+
+                        if (prevConv === null || prevMsg === null || prevReq === null) {
+                            writeSeen('gt_seen_conv_id', data.latest_conversation_id || 0);
+                            writeSeen('gt_seen_msg_id', data.latest_client_message_id || 0);
+                            writeSeen('gt_seen_req_id', data.latest_request_id || 0);
                             return;
                         }
 
-                        if (data.latest_conversation_id > baselineConvId) {
-                            baselineConvId = data.latest_conversation_id;
-                            baselineMsgId = Math.max(baselineMsgId, data.latest_client_message_id);
+                        if ((data.latest_conversation_id || 0) > prevConv) {
+                            writeSeen('gt_seen_conv_id', data.latest_conversation_id);
+                            writeSeen('gt_seen_msg_id', Math.max(prevMsg, data.latest_client_message_id || 0));
+                            writeSeen('gt_seen_req_id', Math.max(prevReq, data.latest_request_id || 0));
                             playChime();
-                            showToast('Novo atendimento no chat!', 'Um visitante iniciou conversa no site. Clique para responder.', @json(route('admin.chat.index')));
+                            showToast('Novo atendimento no chat!', 'Um visitante iniciou conversa no site (CRM Autônomo ativo). Clique para acompanhar.', @json(route('admin.chat.index')));
                             notifyDesktop('Novo atendimento GundjaTech', 'Um visitante iniciou conversa no site.', @json(route('admin.chat.index')));
-                        } else if (data.latest_client_message_id > baselineMsgId) {
-                            baselineMsgId = data.latest_client_message_id;
+                        } else if ((data.latest_request_id || 0) > prevReq) {
+                            writeSeen('gt_seen_req_id', data.latest_request_id);
                             playChime();
-                            showToast('Nova mensagem de cliente', 'Há novas mensagens aguardando resposta no chat.', @json(route('admin.chat.index')));
-                            notifyDesktop('Nova mensagem no chat', 'Há novas mensagens aguardando resposta.', @json(route('admin.chat.index')));
+                            showToast('Nova solicitação recebida!', 'Um novo lead chegou pelo site. Clique para abrir a fila.', @json(route('admin.requests.index')));
+                            notifyDesktop('Nova solicitação GundjaTech', 'Um novo lead chegou pelo formulário do site.', @json(route('admin.requests.index')));
+                        } else if ((data.latest_client_message_id || 0) > prevMsg) {
+                            writeSeen('gt_seen_msg_id', data.latest_client_message_id);
+                            playChime();
+                            showToast('Nova mensagem de visitante', 'Há novas mensagens no chat ao vivo. Clique para abrir.', @json(route('admin.chat.index')));
+                            notifyDesktop('Nova mensagem no chat', 'Há novas mensagens no chat ao vivo.', @json(route('admin.chat.index')));
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                    } finally {
+                        setTimeout(checkGlobalUpdates, 6000);
+                    }
                 }
 
                 checkGlobalUpdates();
-                setInterval(checkGlobalUpdates, 10000);
             }
         })();
         </script>
