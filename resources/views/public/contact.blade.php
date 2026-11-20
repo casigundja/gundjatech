@@ -221,7 +221,7 @@
 
       <label class="campo">Telefone*<input type="tel" name="telefone" autocomplete="tel" placeholder="(11) 90000-0000" required></label>
 
-      <label class="campo">Site da empresa*<input type="text" name="site" inputmode="url" placeholder="www.suaempresa.com.br" required></label>
+      <label class="campo">Site da empresa (se tiver)<input type="text" name="site" inputmode="url" placeholder="www.suaempresa.com.br"></label>
 
       <label class="campo cheio">Empresa<input type="text" name="empresa" autocomplete="organization"></label>
 
@@ -267,7 +267,7 @@
 
     </div>
 
-    <p class="ct-rodape">GundjaTech Publicidade e Propaganda LTDA · CNPJ 20.256.891/0001-59 · Quer saber quem está por trás da empresa? Veja <a href="/sobre">sobre a GundjaTech</a>. · Página atualizada em <time datetime="2026-11-17">17 de novembro de 2026</time>.</p>
+    <p class="ct-rodape">GundjaTech Engenharia Digital &amp; Tecnologia · Quer saber quem está por trás da empresa? Veja <a href="/sobre">sobre a GundjaTech</a>. · Página atualizada em <time datetime="2026-11-20">20 de novembro de 2026</time>.</p>
 
   </div>
 
@@ -463,9 +463,9 @@
 
 
 
-<script defer src="/jsm/main.ac8b157f35.js"></script>
+<script defer src="/jsm/main.ac8b157f35.js?v=gt-live1"></script>
 
-<script defer src="/jsm/campanha.1fe0f2564d.js"></script>
+<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live1"></script>
 
 <script defer src="/jsm/animacoes.b868b7f2df.js"></script>
 
@@ -473,7 +473,7 @@
 
 <script defer src="/jsm/blog-post.92fa79da23.js"></script>
 
-<script src="/jsm/leads.ce7ca30ca6.js" defer></script>
+<script src="/jsm/leads.ce7ca30ca6.js?v=gt-live1" defer></script>
 
 <script src="/jsm/cro.107b971293.js" defer></script>
 

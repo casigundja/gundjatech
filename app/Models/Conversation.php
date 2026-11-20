@@ -14,6 +14,10 @@ class Conversation extends Model
         'user_id',
         'subject',
         'channel',
+        'visitor_token',
+        'visitor_name',
+        'visitor_email',
+        'visitor_phone',
         'status',
         'closed_at',
     ];

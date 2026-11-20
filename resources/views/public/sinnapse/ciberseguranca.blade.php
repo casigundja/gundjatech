@@ -1043,9 +1043,9 @@
 
 
 
-<script defer src="/jsm/main.ac8b157f35.js"></script>
+<script defer src="/jsm/main.ac8b157f35.js?v=gt-live1"></script>
 
-<script defer src="/jsm/campanha.1fe0f2564d.js"></script>
+<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live1"></script>
 
 <script defer src="/jsm/animacoes.b868b7f2df.js"></script>
 
@@ -1053,7 +1053,7 @@
 
 <script defer src="/jsm/ciber.0a4f78b3e0.js"></script>
 
-<script src="/jsm/leads.ce7ca30ca6.js" defer></script>
+<script src="/jsm/leads.ce7ca30ca6.js?v=gt-live1" defer></script>
 
 <script src="/jsm/cro.107b971293.js" defer></script>
 

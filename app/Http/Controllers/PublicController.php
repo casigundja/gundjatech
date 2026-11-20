@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\BlogPost;
+use App\Models\Client;
+use App\Models\Conversation;
+use App\Models\ConversationMessage;
 use App\Models\PortfolioProject;
 use App\Models\RequestAttachment;
 use App\Models\RequestStatusHistory;
@@ -266,16 +270,23 @@ class PublicController extends Controller
         ]);
 
         $protocol = 'CNT-'.date('Ymd').'-'.strtoupper(Str::random(4));
-        $defaultService = Service::where('is_active', true)->first();
+        $defaultService = $this->resolveServiceForText($data['subject'].' '.$data['message']);
 
-        DB::transaction(function () use ($data, $protocol, $defaultService): void {
+        DB::transaction(function () use ($data, $protocol, $defaultService, $request): void {
+            $client = $this->resolveLeadClient(
+                $data['email'],
+                $data['name'],
+                $data['phone'] ?? null,
+                null
+            );
+
             $serviceRequest = ServiceRequest::create([
                 'protocol' => $protocol,
-                'client_id' => Auth::check() && Auth::user()->client ? Auth::user()->client->id : null,
+                'client_id' => $client->id,
                 'user_id' => Auth::id(),
                 'service_id' => $defaultService?->id,
                 'name' => $data['name'],
-                'email' => $data['email'],
+                'email' => strtolower(trim($data['email'])),
                 'phone' => $data['phone'] ?? null,
                 'service_title' => 'Contato: '.$data['subject'],
                 'description' => $data['message'],
@@ -288,6 +299,11 @@ class PublicController extends Controller
                 'new_status' => 'new',
                 'comment' => 'Mensagem enviada pelo formulário de contato do site.',
                 'user_id' => Auth::id(),
+            ]);
+
+            $this->recordPublicActivity($request, 'public.contact.created', $serviceRequest, [
+                'protocol' => $protocol,
+                'email' => $serviceRequest->email,
             ]);
         });
 
@@ -321,19 +337,21 @@ class PublicController extends Controller
 
         DB::beginTransaction();
         try {
-            $clientId = null;
-            if (Auth::check() && Auth::user()->client) {
-                $clientId = Auth::user()->client->id;
-            }
+            $client = $this->resolveLeadClient(
+                $validated['email'],
+                $validated['contact_name'],
+                $validated['phone'],
+                $validated['company_name'] ?? null
+            );
 
             $serviceRequest = ServiceRequest::create([
                 'protocol' => $protocol,
-                'client_id' => $clientId,
+                'client_id' => $client->id,
                 'user_id' => Auth::id(),
                 'service_id' => $validated['service_id'],
                 'name' => $validated['contact_name'],
                 'company' => $validated['company_name'] ?? null,
-                'email' => $validated['email'],
+                'email' => strtolower(trim($validated['email'])),
                 'phone' => $validated['phone'],
                 'service_title' => $validated['title'],
                 'description' => $validated['description'],
@@ -363,6 +381,11 @@ class PublicController extends Controller
                     'uploaded_by_user_id' => Auth::id(),
                 ]);
             }
+
+            $this->recordPublicActivity($request, 'public.quote.created', $serviceRequest, [
+                'protocol' => $protocol,
+                'email' => $serviceRequest->email,
+            ]);
 
             DB::commit();
 
@@ -402,42 +425,195 @@ class PublicController extends Controller
         $validated = $request->validate([
             'nome' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
-            'telefone' => ['nullable', 'string', 'max:30'],
+            'telefone' => ['nullable', 'string', 'max:40'],
             'empresa' => ['nullable', 'string', 'max:255'],
             'site' => ['nullable', 'string', 'max:255'],
             'origem' => ['nullable', 'string', 'max:100'],
-            'mensagem' => ['nullable', 'string', 'max:3000'],
+            'campanha' => ['nullable', 'string', 'max:120'],
+            'pagina' => ['nullable', 'string', 'max:500'],
+            'mensagem' => ['nullable', 'string', 'max:4000'],
+            'arquivo' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,png,jpg,jpeg,webp,zip'],
         ]);
 
         $protocol = 'GNDJ-'.date('Ymd').'-'.strtoupper(Str::random(4));
-        $service = Service::where('is_active', true)->first();
+        $origem = trim((string) ($validated['origem'] ?? 'site')) ?: 'site';
+        $campanha = trim((string) ($validated['campanha'] ?? ''));
+        $leadName = trim((string) ($validated['nome'] ?? '')) ?: 'Lead do Site';
+        $leadEmail = strtolower(trim($validated['email']));
+        $service = $this->resolveServiceForText($origem.' '.$campanha.' '.($validated['mensagem'] ?? ''));
 
-        if ($service) {
-            DB::transaction(function () use ($validated, $protocol, $service): void {
-                $sitePrefix = ! empty($validated['site']) ? 'Site: '.$validated['site'].' | ' : '';
-                $serviceRequest = ServiceRequest::create([
-                    'protocol' => $protocol,
-                    'client_id' => Auth::check() && Auth::user()->client ? Auth::user()->client->id : null,
-                    'user_id' => Auth::id(),
-                    'service_id' => $service->id,
-                    'name' => $validated['nome'] ?? 'Cliente Site',
-                    'company' => $validated['empresa'] ?? null,
-                    'email' => $validated['email'],
-                    'phone' => $validated['telefone'] ?? '',
-                    'service_title' => 'Solicitação Digital ('.($validated['origem'] ?? 'home').')',
-                    'description' => trim($sitePrefix.($validated['mensagem'] ?? 'Solicitação de diagnóstico pelo site.')),
-                    'status' => 'new',
-                ]);
+        $conversation = null;
 
-                RequestStatusHistory::create([
+        DB::transaction(function () use ($validated, $protocol, $origem, $campanha, $leadName, $leadEmail, $service, $request, &$conversation): void {
+            $client = $this->resolveLeadClient(
+                $leadEmail,
+                $leadName,
+                $validated['telefone'] ?? null,
+                $validated['empresa'] ?? null
+            );
+
+            $detailsParts = [];
+            if (! empty($validated['site'])) {
+                $detailsParts[] = 'Site: '.$validated['site'];
+            }
+            if ($campanha !== '') {
+                $detailsParts[] = 'Campanha: '.$campanha;
+            }
+            if (! empty($validated['mensagem'])) {
+                $detailsParts[] = $validated['mensagem'];
+            }
+            if (! empty($validated['pagina'])) {
+                $detailsParts[] = 'Página: '.$validated['pagina'];
+            }
+
+            $description = trim(implode(' | ', $detailsParts));
+            if ($description === '') {
+                $description = 'Solicitação de diagnóstico recebida pelo site GundjaTech.';
+            }
+
+            $serviceRequest = ServiceRequest::create([
+                'protocol' => $protocol,
+                'client_id' => $client->id,
+                'user_id' => Auth::id(),
+                'service_id' => $service?->id,
+                'name' => $leadName,
+                'company' => $validated['empresa'] ?? null,
+                'email' => $leadEmail,
+                'phone' => $validated['telefone'] ?? null,
+                'service_title' => 'Solicitação Digital ('.$origem.')',
+                'description' => $description,
+                'status' => 'new',
+            ]);
+
+            RequestStatusHistory::create([
+                'service_request_id' => $serviceRequest->id,
+                'old_status' => null,
+                'new_status' => 'new',
+                'comment' => "Lead recebido automaticamente via formulário ({$origem}).",
+                'user_id' => Auth::id(),
+            ]);
+
+            if ($request->hasFile('arquivo')) {
+                $file = $request->file('arquivo');
+                $path = $file->store('attachments', 'local');
+
+                RequestAttachment::create([
                     'service_request_id' => $serviceRequest->id,
-                    'old_status' => null,
-                    'new_status' => 'new',
-                    'comment' => 'Lead recebido via formulário interativo da home.',
-                    'user_id' => Auth::id(),
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_path' => $path,
+                    'file_size' => $file->getSize(),
+                    'mime_type' => $file->getClientMimeType(),
+                    'uploaded_by_user_id' => Auth::id(),
                 ]);
-            });
-        }
+            }
+
+            if (str_starts_with(strtolower($origem), 'chat')) {
+                $conversation = Conversation::create([
+                    'client_id' => $client->id,
+                    'subject' => 'Chat do Site • '.$leadName,
+                    'channel' => 'website_chat',
+                    'visitor_token' => Str::random(48),
+                    'visitor_name' => $leadName,
+                    'visitor_email' => $leadEmail,
+                    'visitor_phone' => $validated['telefone'] ?? null,
+                    'status' => 'waiting_staff',
+                ]);
+
+                ConversationMessage::create([
+                    'conversation_id' => $conversation->id,
+                    'sender_id' => Auth::id(),
+                    'sender_type' => 'client',
+                    'sender_name' => $leadName,
+                    'message' => $description,
+                    'is_read' => false,
+                ]);
+            }
+
+            $this->recordPublicActivity($request, 'public.lead.created', $serviceRequest, [
+                'protocol' => $protocol,
+                'origem' => $origem,
+                'email' => $leadEmail,
+            ]);
+        });
+
+        return response()->json([
+            'ok' => true,
+            'protocol' => $protocol,
+            'track_url' => route('track.request', ['protocol' => $protocol]),
+            'conversation_id' => $conversation?->id,
+            'visitor_token' => $conversation?->visitor_token,
+        ]);
+    }
+
+    public function apiWhatsapp(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'nome' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'telefone' => ['nullable', 'string', 'max:40'],
+            'empresa' => ['nullable', 'string', 'max:255'],
+            'site' => ['nullable', 'string', 'max:255'],
+            'qualificado' => ['nullable', 'boolean'],
+            'lingua' => ['nullable', 'string', 'max:20'],
+        ]);
+
+        $protocol = null;
+
+        DB::transaction(function () use ($validated, $request, &$protocol): void {
+            if (! empty($validated['email'])) {
+                $email = strtolower(trim($validated['email']));
+                $alreadyLogged = ServiceRequest::where('email', $email)
+                    ->where('created_at', '>=', now()->subMinutes(2))
+                    ->exists();
+
+                if (! $alreadyLogged) {
+                    $name = trim((string) ($validated['nome'] ?? '')) ?: 'Contato WhatsApp';
+                    $client = $this->resolveLeadClient(
+                        $email,
+                        $name,
+                        $validated['telefone'] ?? null,
+                        $validated['empresa'] ?? null
+                    );
+                    $service = $this->resolveServiceForText('whatsapp');
+                    $protocol = 'WPP-'.date('Ymd').'-'.strtoupper(Str::random(4));
+
+                    $serviceRequest = ServiceRequest::create([
+                        'protocol' => $protocol,
+                        'client_id' => $client->id,
+                        'user_id' => Auth::id(),
+                        'service_id' => $service?->id,
+                        'name' => $name,
+                        'company' => $validated['empresa'] ?? null,
+                        'email' => $email,
+                        'phone' => $validated['telefone'] ?? null,
+                        'service_title' => 'Contato via WhatsApp do Site',
+                        'description' => trim('Qualificação WhatsApp'.(! empty($validated['site']) ? ' | Site: '.$validated['site'] : '')),
+                        'status' => 'new',
+                    ]);
+
+                    RequestStatusHistory::create([
+                        'service_request_id' => $serviceRequest->id,
+                        'old_status' => null,
+                        'new_status' => 'new',
+                        'comment' => 'Lead qualificado no modal de WhatsApp do site.',
+                        'user_id' => Auth::id(),
+                    ]);
+                }
+            }
+
+            ActivityLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'public.whatsapp.clicked',
+                'details' => [
+                    'nome' => $validated['nome'] ?? null,
+                    'telefone' => $validated['telefone'] ?? null,
+                    'qualificado' => (bool) ($validated['qualificado'] ?? false),
+                    'lingua' => $validated['lingua'] ?? null,
+                ],
+                'ip_address' => $request->ip(),
+                'user_agent' => Str::limit((string) $request->userAgent(), 255),
+            ]);
+        });
 
         return response()->json([
             'ok' => true,
@@ -445,8 +621,314 @@ class PublicController extends Controller
         ]);
     }
 
-    public function apiWhatsapp(Request $request): JsonResponse
+    public function apiChatStart(Request $request): JsonResponse
     {
-        return response()->json(['ok' => true]);
+        if ($request->filled('sobrenome_hp')) {
+            return response()->json(['ok' => true]);
+        }
+
+        $validated = $request->validate([
+            'nome' => ['required', 'string', 'max:150'],
+            'email' => ['required', 'email', 'max:255'],
+            'telefone' => ['nullable', 'string', 'max:40'],
+            'assunto' => ['nullable', 'string', 'max:200'],
+            'mensagem' => ['required', 'string', 'max:3000'],
+            'tema' => ['nullable', 'string', 'max:60'],
+            'visitor_token' => ['nullable', 'string', 'min:24', 'max:64'],
+        ]);
+
+        $leadName = trim($validated['nome']);
+        $leadEmail = strtolower(trim($validated['email']));
+        $tema = trim((string) ($validated['tema'] ?? 'geral'));
+        $subject = trim((string) ($validated['assunto'] ?? '')) ?: ('Chat do Site • '.$leadName);
+        $protocol = null;
+
+        /** @var Conversation $conversation */
+        $conversation = DB::transaction(function () use ($validated, $leadName, $leadEmail, $tema, $subject, $request, &$protocol): Conversation {
+            $client = $this->resolveLeadClient(
+                $leadEmail,
+                $leadName,
+                $validated['telefone'] ?? null,
+                null
+            );
+
+            $conversation = null;
+            if (! empty($validated['visitor_token'])) {
+                $conversation = Conversation::where('visitor_token', $validated['visitor_token'])
+                    ->where('status', '!=', 'closed')
+                    ->first();
+            }
+
+            if ($conversation === null) {
+                $conversation = Conversation::create([
+                    'client_id' => $client->id,
+                    'subject' => $subject,
+                    'channel' => 'website_chat',
+                    'visitor_token' => Str::random(48),
+                    'visitor_name' => $leadName,
+                    'visitor_email' => $leadEmail,
+                    'visitor_phone' => $validated['telefone'] ?? null,
+                    'status' => 'waiting_staff',
+                ]);
+            } else {
+                $conversation->update([
+                    'visitor_name' => $leadName,
+                    'visitor_email' => $leadEmail,
+                    'visitor_phone' => $validated['telefone'] ?? $conversation->visitor_phone,
+                    'status' => 'waiting_staff',
+                    'closed_at' => null,
+                ]);
+                $conversation->touch();
+            }
+
+            ConversationMessage::create([
+                'conversation_id' => $conversation->id,
+                'sender_id' => Auth::id(),
+                'sender_type' => 'client',
+                'sender_name' => $leadName,
+                'message' => trim($validated['mensagem']),
+                'is_read' => false,
+            ]);
+
+            $recentRequestExists = ServiceRequest::where('email', $leadEmail)
+                ->where('created_at', '>=', now()->subMinutes(2))
+                ->exists();
+
+            if (! $recentRequestExists) {
+                $protocol = 'CHAT-'.date('Ymd').'-'.strtoupper(Str::random(4));
+                $service = $this->resolveServiceForText($tema.' '.$subject.' '.$validated['mensagem']);
+
+                $serviceRequest = ServiceRequest::create([
+                    'protocol' => $protocol,
+                    'client_id' => $client->id,
+                    'user_id' => Auth::id(),
+                    'service_id' => $service?->id,
+                    'name' => $leadName,
+                    'email' => $leadEmail,
+                    'phone' => $validated['telefone'] ?? null,
+                    'service_title' => $subject,
+                    'description' => trim($validated['mensagem']),
+                    'status' => 'new',
+                ]);
+
+                RequestStatusHistory::create([
+                    'service_request_id' => $serviceRequest->id,
+                    'old_status' => null,
+                    'new_status' => 'new',
+                    'comment' => 'Conversa iniciada pelo chat online do site.',
+                    'user_id' => Auth::id(),
+                ]);
+            }
+
+            $this->recordPublicActivity($request, 'public.chat.started', $conversation, [
+                'email' => $leadEmail,
+                'protocol' => $protocol,
+                'tema' => $tema,
+            ]);
+
+            return $conversation;
+        });
+
+        $conversation->load(['messages.sender']);
+
+        return response()->json([
+            'ok' => true,
+            'conversation_id' => $conversation->id,
+            'visitor_token' => $conversation->visitor_token,
+            'protocol' => $protocol,
+            'track_url' => $protocol ? route('track.request', ['protocol' => $protocol]) : null,
+            'status' => $conversation->status,
+            'status_label' => $conversation->status_label,
+            'messages' => $conversation->messages->map(fn (ConversationMessage $msg): array => $this->formatChatMessage($msg))->values()->all(),
+        ], 201);
+    }
+
+    public function apiChatMessage(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'visitor_token' => ['required', 'string', 'min:24', 'max:64'],
+            'message' => ['required', 'string', 'max:3000'],
+        ]);
+
+        $conversation = Conversation::where('visitor_token', $validated['visitor_token'])->first();
+        if ($conversation === null) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Sessão de atendimento não localizada.',
+            ], 404);
+        }
+
+        $senderName = $conversation->visitor_name ?: ($conversation->client?->name ?? 'Visitante');
+
+        /** @var ConversationMessage $msg */
+        $msg = DB::transaction(function () use ($conversation, $validated, $senderName): ConversationMessage {
+            $msg = ConversationMessage::create([
+                'conversation_id' => $conversation->id,
+                'sender_id' => Auth::id(),
+                'sender_type' => 'client',
+                'sender_name' => $senderName,
+                'message' => trim($validated['message']),
+                'is_read' => false,
+            ]);
+
+            $conversation->update([
+                'status' => 'waiting_staff',
+                'closed_at' => null,
+            ]);
+            $conversation->touch();
+
+            return $msg;
+        });
+
+        return response()->json([
+            'ok' => true,
+            'message' => $this->formatChatMessage($msg),
+            'status' => $conversation->status,
+            'status_label' => $conversation->status_label,
+        ]);
+    }
+
+    public function apiChatMessages(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'token' => ['required', 'string', 'min:24', 'max:64'],
+            'after_id' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        $conversation = Conversation::where('visitor_token', $validated['token'])->first();
+        if ($conversation === null) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Sessão de atendimento não localizada.',
+            ], 404);
+        }
+
+        $conversation->messages()
+            ->where('sender_type', 'staff')
+            ->where('is_read', false)
+            ->update([
+                'is_read' => true,
+                'read_at' => now(),
+            ]);
+
+        $query = $conversation->messages()->with('sender');
+        if (! empty($validated['after_id'])) {
+            $query->where('id', '>', (int) $validated['after_id']);
+        }
+
+        $messages = $query->get()
+            ->map(fn (ConversationMessage $msg): array => $this->formatChatMessage($msg))
+            ->values()
+            ->all();
+
+        return response()->json([
+            'ok' => true,
+            'conversation_id' => $conversation->id,
+            'status' => $conversation->status,
+            'status_label' => $conversation->status_label,
+            'messages' => $messages,
+        ]);
+    }
+
+    private function resolveLeadClient(string $email, string $name, ?string $phone, ?string $company): Client
+    {
+        if (Auth::check() && Auth::user()->client !== null) {
+            return Auth::user()->client;
+        }
+
+        $normalizedEmail = strtolower(trim($email));
+        $client = Client::whereRaw('LOWER(email) = ?', [$normalizedEmail])->first();
+
+        if ($client !== null) {
+            $updates = [];
+            if (empty($client->phone) && ! empty($phone)) {
+                $updates['phone'] = $phone;
+            }
+            if ((empty($client->company_name) || $client->company_name === $client->name) && ! empty($company)) {
+                $updates['company_name'] = $company;
+            }
+            if ($updates !== []) {
+                $client->update($updates);
+            }
+
+            return $client;
+        }
+
+        return Client::create([
+            'name' => $name,
+            'company_name' => $company ?: $name,
+            'email' => $normalizedEmail,
+            'phone' => $phone,
+            'status' => 'lead',
+        ]);
+    }
+
+    private function resolveServiceForText(string $text): ?Service
+    {
+        $haystack = Str::lower($text);
+
+        if (Str::contains($haystack, ['seguranca', 'segurança', 'ciber', 'dominio', 'domínio', 'dns', 'invadido', 'ssl'])) {
+            $match = Service::where('is_active', true)
+                ->whereHas('category', fn ($q) => $q->where('slug', 'gerenciamento-de-dominios'))
+                ->first();
+            if ($match !== null) {
+                return $match;
+            }
+        }
+
+        if (Str::contains($haystack, ['trafego', 'tráfego', 'ads', 'operacao', 'operação', 'google ads', 'meta ads'])) {
+            $match = Service::where('is_active', true)
+                ->whereHas('category', fn ($q) => $q->where('slug', 'gestao-de-trafego-pago'))
+                ->first();
+            if ($match !== null) {
+                return $match;
+            }
+        }
+
+        if (Str::contains($haystack, ['ecommerce', 'e-commerce', 'loja virtual', 'loja'])) {
+            $match = Service::where('is_active', true)->where('slug', 'loja-virtual-alta-conversao')->first();
+            if ($match !== null) {
+                return $match;
+            }
+        }
+
+        if (Str::contains($haystack, ['landing'])) {
+            $match = Service::where('is_active', true)->where('slug', 'landing-page-alta-performance')->first();
+            if ($match !== null) {
+                return $match;
+            }
+        }
+
+        return Service::where('is_active', true)->orderBy('id')->first();
+    }
+
+    /**
+     * @param  array<string, mixed>  $details
+     */
+    private function recordPublicActivity(Request $request, string $action, object $subject, array $details = []): void
+    {
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => $action,
+            'subject_type' => $subject::class,
+            'subject_id' => $subject->id ?? null,
+            'details' => $details,
+            'ip_address' => $request->ip(),
+            'user_agent' => Str::limit((string) $request->userAgent(), 255),
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function formatChatMessage(ConversationMessage $msg): array
+    {
+        return [
+            'id' => $msg->id,
+            'sender_type' => $msg->sender_type,
+            'sender_name' => $msg->sender?->name ?? $msg->sender_name ?? ($msg->sender_type === 'staff' ? 'Equipe GundjaTech' : 'Visitante'),
+            'message' => $msg->message,
+            'created_at' => $msg->created_at?->format('d/m H:i') ?? '',
+        ];
     }
 }

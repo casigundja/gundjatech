@@ -1,1 +1,623 @@
-!function(){"use strict";var e=window.SNP_L||function(e){return e},t=function(e,t){return(t||document).querySelector(e)},o=function(e,t){return Array.prototype.slice.call((t||document).querySelectorAll(e))},a=window.matchMedia("(prefers-reduced-motion: reduce)").matches,n="https://wa.me/5511995204050";function i(e){try{return sessionStorage.getItem(e)}catch(e){return null}}function r(e,t){try{sessionStorage.setItem(e,t)}catch(e){}}function s(e,t){window.dataLayer&&window.dataLayer.push(Object.assign({event:e},t||{}))}i("snp_lead"),document.addEventListener("submit",function(e){e.target.matches(".js-form")&&!e.target.querySelector(":invalid")&&r("snp_lead","1")},!0);var c=t(".js-header");function d(){c.classList.toggle("rolou",window.scrollY>40)}window.addEventListener("scroll",d,{passive:!0}),d();var l=t(".dock"),u=t(".js-hero")||t(".js-hm3"),m=!1,p=o("main form, .diag, #contato, .rodape, .op-planos, .js-sem-dock").filter(function(e){return!e.closest("dialog")});function f(){if(l){var e,t=u?.6*u.offsetHeight:400;l.classList.toggle("recolhida",window.scrollY<t||(e=window.innerHeight,p.some(function(t){var o=t.getBoundingClientRect();return o.top<e-40&&o.bottom>80}))||m)}}document.addEventListener("focusin",function(e){e.target.matches("input, textarea, select")&&(m=!0,f())}),document.addEventListener("focusout",function(){m=!1,setTimeout(f,50)}),window.addEventListener("scroll",f,{passive:!0}),window.addEventListener("resize",f),f();var v=t("#cadastro");Date.now(),i("snp_cadastro"),o(".js-cadastro").forEach(function(e){e.addEventListener("click",function(){var e;e="botao",v.open||(v.showModal?v.showModal():v.setAttribute("open",""),s("popup_campanha",{origem:e}))})}),t(".js-fechar-cadastro").addEventListener("click",function(){v.close()}),v.addEventListener("click",function(e){e.target===v&&v.close()});var h=t("#projetos")||t("#camadas");window.addEventListener("scroll",function(){h&&(h.getBoundingClientRect().bottom,window.innerHeight)},{passive:!0}),document.addEventListener("mouseout",function(e){!e.relatedTarget&&e.clientY});var g=window.scrollY,w=Date.now(),b=0;window.addEventListener("scroll",function(){var e=window.scrollY,t=Date.now();t-w>1200&&(b=0,w=t),b=e<g?b+(g-e):0,g=e,window.innerWidth},{passive:!0});var L=t(".js-chat"),E=t(".js-chat-painel"),x=t(".js-chat-btn"),j=t(".js-chat-msgs"),y=t(".js-chat-opcoes"),k=t(".js-chat-form"),S=t("#chat-campo"),C=t(".js-chat-convite"),A=!1,q=null,_={};function D(){j.scrollTop=j.scrollHeight}function T(e){var t=document.createElement("div");t.className="msg-eu",t.textContent=e,j.appendChild(t),D()}function P(e,t){var o=[].concat(e);!function e(){if(o.length){var n=document.createElement("div");n.className="msg-digitando",n.innerHTML="<i></i><i></i><i></i>",j.appendChild(n),D(),setTimeout(function(){n.remove();var t=document.createElement("div");t.className="msg-bot",t.textContent=o.shift(),j.appendChild(t),D(),e()},a?150:700)}else t&&t()}()}function N(e){y.innerHTML="",e.forEach(function(e){var t;e.link?((t=document.createElement("a")).href=e.link,t.target="_blank",t.rel="noopener"):(t=document.createElement("button")).type="button",t.textContent=e.texto,t.addEventListener("click",function(){e.link?s("chat_whatsapp"):(_.escolhas=(_.escolhas||[]).concat([e.texto]),y.innerHTML="",T(e.texto),e.acao())}),y.appendChild(t)})}function Q(t,o,a){P(t,function(){q={tipo:o,depois:a},k.hidden=!1,S.type="tel"===o?"tel":"email"===o?"email":"text",S.placeholder=e("tel"===o?"(11) 90000-0000":"email"===o?"seu@empresa.com.br":"Digite aqui..."),S.focus()})}k.addEventListener("submit",function(t){t.preventDefault();var o=S.value.trim();if(o&&q)if("tel"===q.tipo&&o.replace(/\D/g,"").length<("pt-PT"===document.documentElement.lang?9:10))P(e("Confere o número pra mim? Preciso do DDD e do telefone."));else if("email"!==q.tipo||/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(o)){T(o),S.value="",k.hidden=!0;var a=q.depois;q=null,a(o)}else P(e("Confere o e-mail pra mim? Ele é obrigatório para continuarmos."))});var F="seguranca"===document.body.dataset.tema,H=F?{oferta:e("Ótimo! Um especialista analisa a segurança do seu site e mostra o que corrigir primeiro, sem custo."),fim:e("Perfeito! Um especialista em segurança da GundjaTech vai falar com você em até 4 horas úteis."),whats:e("Olá! Sou {n} e quero o diagnóstico de segurança do meu site."),ola:e("Precisa de ajuda com a segurança do seu site?"),op1:e("Quero o diagnóstico grátis"),op2:e("Meu site foi invadido"),preco:[e("Depende do número de sites e do nível de monitoramento."),e("Primeiro fazemos o diagnóstico gratuito e você recebe uma proposta fechada. Quer começar por ele?")],ver:"camadas",verTxt:e("Ver como protegemos")}:{oferta:e("Ótimo! Um especialista analisa o seu site e mostra o que mudar para gerar mais clientes."),fim:e("Perfeito! Um diretor da GundjaTech vai falar com você em até 4 horas úteis."),whats:e("Olá! Sou {n} e quero a análise do meu site."),ola:e("Precisa de ajuda com o site da sua empresa?"),op1:e("Quero um site novo"),op2:e("Quero refazer meu site"),preco:[e("Depende do escopo: número de páginas, integrações e funcionalidades."),e("Você recebe uma proposta fechada, com prazo e valor em contrato. Quer começar pela análise do seu site?")],ver:"projetos",verTxt:e("Ver projetos")};function M(){var e=document.getElementById(H.ver);e&&e.scrollIntoView({behavior:"smooth"})}function O(){P([e("Vamos resolver isso agora."),e("Chama a gente no WhatsApp que um especialista entra no caso imediatamente.")],function(){N([{texto:e("Chamar no WhatsApp agora"),link:n+"?text="+encodeURIComponent(e("URGENTE: meu site foi invadido e preciso de ajuda."))},{texto:e("Prefiro deixar meu contato"),acao:U}])})}function U(){Q([H.oferta,e("Como posso te chamar?")],"texto",function(t){_.nomeCompleto=t,_.nome=t.split(" ")[0],Q(e("Prazer, ")+_.nome+e("! Qual é o seu e-mail? De preferência o da empresa."),"email",function(t){_.email=t.toLowerCase(),Q(e("Obrigado! E qual é o seu WhatsApp com DDD?"),"tel",function(t){_.tel=t,r("snp_lead","1");var o=!/@(gmail|googlemail|hotmail|outlook|live|msn|yahoo|ymail|icloud|me|bol|uol|terra|ig|globo|aol|proton|protonmail|zoho)\./i.test(_.email);r("snp_wq_dados",JSON.stringify({nome:_.nomeCompleto,email:_.email,telefone:t,empresa:"",site:"",origem:"chat"})),r("snp_wq",JSON.stringify(o?"Q":"F")),window.SNP_enviaLead&&window.SNP_enviaLead({nome:_.nomeCompleto||_.nome,email:_.email,telefone:t,origem:F?"chat-seguranca":"chat",mensagem:"Conversa no chat: "+(_.escolhas||[]).join(" > ")}),P([H.fim,e("Se preferir, já pode chamar a gente agora.")],function(){N([{texto:e("Falar agora no WhatsApp"),link:n+"?text="+encodeURIComponent(H.whats.replace("{n}",_.nome))},{texto:H.verTxt,acao:function(){M(),P(e("Boa! Estou por aqui se precisar."))}}])})})})})}function W(){L.classList.add("aberto"),E.hidden=!1,C.classList.remove("on"),x.setAttribute("aria-expanded","true"),x.setAttribute("aria-label","Fechar chat"),r("snp_convite","1"),A||(A=!0,s("chat_aberto"),P([e("Oi! Aqui é da GundjaTech."),H.ola],function(){N([{texto:H.op1,acao:U},{texto:H.op2,acao:F?O:U},{texto:e("Quanto custa?"),acao:function(){P(H.preco,function(){N([{texto:e("Sim, quero"),acao:U},{texto:e("Falar no WhatsApp"),link:n}])})}},{texto:e("Só estou olhando"),acao:function(){P(e("Fica à vontade! Se precisar, é só chamar por aqui."),function(){N([{texto:H.verTxt,acao:M},{texto:e("Falar no WhatsApp"),link:n}])})}}])}))}function z(){L.classList.remove("aberto"),E.hidden=!0,x.setAttribute("aria-expanded","false"),x.setAttribute("aria-label","Abrir chat")}x.addEventListener("click",function(){L.classList.contains("aberto")?z():W()}),o(".js-abre-chat").forEach(function(e){e.addEventListener("click",function(){L.classList.contains("aberto")||W()})}),t(".js-chat-fecha").addEventListener("click",z),C.addEventListener("click",function(e){e.target.closest(".js-convite-fecha")||W()}),t(".js-convite-fecha").addEventListener("click",function(){C.classList.remove("on"),r("snp_convite","1")}),document.addEventListener("keydown",function(e){"Escape"===e.key&&L.classList.contains("aberto")&&z()}),"1"!==i("snp_convite")&&setTimeout(function(){L.classList.contains("aberto")||document.querySelector("dialog[open]")||C.classList.add("on")},6e3)}(),function(){var e=document.querySelector(".js-mm-btn"),t=document.querySelector(".js-mm");function o(){t.hidden=!0,document.documentElement.classList.remove("mm-aberto"),e.setAttribute("aria-expanded","false"),e.setAttribute("aria-label","Abrir menu"),document.body.style.overflow=""}e&&t&&(e.addEventListener("click",function(){if(!t.hidden)return o();t.hidden=!1,document.documentElement.classList.add("mm-aberto"),e.setAttribute("aria-expanded","true"),e.setAttribute("aria-label","Fechar menu"),document.body.style.overflow="hidden"}),t.addEventListener("click",function(e){e.target.closest("a")&&o()}),document.addEventListener("keydown",function(e){"Escape"!==e.key||t.hidden||o()}))}();
+(function () {
+    "use strict";
+
+    var L = window.SNP_L || function (text) { return text; };
+    var qs = function (sel, root) { return (root || document).querySelector(sel); };
+    var qsa = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+    var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var WA_URL = "https://wa.me/5511995204050";
+
+    function getSession(key) {
+        try { return sessionStorage.getItem(key); } catch (e) { return null; }
+    }
+
+    function setSession(key, val) {
+        try { sessionStorage.setItem(key, val); } catch (e) {}
+    }
+
+    function removeSession(key) {
+        try { sessionStorage.removeItem(key); } catch (e) {}
+    }
+
+    function pushDataLayer(event, extra) {
+        if (window.dataLayer) {
+            window.dataLayer.push(Object.assign({ event: event }, extra || {}));
+        }
+    }
+
+    document.addEventListener("submit", function (ev) {
+        if (ev.target && ev.target.matches && ev.target.matches(".js-form") && !ev.target.querySelector(":invalid")) {
+            setSession("snp_lead", "1");
+        }
+    }, true);
+
+    // Sticky Header Scroll Class
+    var header = qs(".js-header");
+    if (header) {
+        var onHeaderScroll = function () { header.classList.toggle("rolou", window.scrollY > 40); };
+        window.addEventListener("scroll", onHeaderScroll, { passive: true });
+        onHeaderScroll();
+    }
+
+    // Bottom Floating Dock Visibility
+    var dock = qs(".dock");
+    var hero = qs(".js-hero") || qs(".js-hm3");
+    var inputFocused = false;
+    var dockObstructions = qsa("main form, .diag, #contato, .rodape, .op-planos, .js-sem-dock").filter(function (el) {
+        return !el.closest("dialog");
+    });
+
+    function updateDock() {
+        if (!dock) { return; }
+        var threshold = hero ? 0.6 * hero.offsetHeight : 400;
+        var vh = window.innerHeight;
+        var overlaps = dockObstructions.some(function (el) {
+            var r = el.getBoundingClientRect();
+            return r.top < vh - 40 && r.bottom > 80;
+        });
+        dock.classList.toggle("recolhida", window.scrollY < threshold || overlaps || inputFocused);
+    }
+
+    document.addEventListener("focusin", function (ev) {
+        if (ev.target && ev.target.matches && ev.target.matches("input, textarea, select")) {
+            inputFocused = true;
+            updateDock();
+        }
+    });
+    document.addEventListener("focusout", function () {
+        inputFocused = false;
+        setTimeout(updateDock, 50);
+    });
+    window.addEventListener("scroll", updateDock, { passive: true });
+    window.addEventListener("resize", updateDock);
+    updateDock();
+
+    // Campaign Modal (#cadastro)
+    var campaignDialog = qs("#cadastro");
+    if (campaignDialog) {
+        qsa(".js-cadastro").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                if (!campaignDialog.open) {
+                    if (campaignDialog.showModal) { campaignDialog.showModal(); } else { campaignDialog.setAttribute("open", ""); }
+                    pushDataLayer("popup_campanha", { origem: "botao" });
+                }
+            });
+        });
+        var closeCampaignBtn = qs(".js-fechar-cadastro");
+        if (closeCampaignBtn) {
+            closeCampaignBtn.addEventListener("click", function () { campaignDialog.close(); });
+        }
+        campaignDialog.addEventListener("click", function (ev) {
+            if (ev.target === campaignDialog) { campaignDialog.close(); }
+        });
+    }
+
+    // =========================================================================
+    // LIVE TWO-WAY WEBSITE CHAT CONNECTED TO /api/chat/* AND /admin/atendimento
+    // =========================================================================
+    var chatRoot = qs(".js-chat");
+    var chatPanel = qs(".js-chat-painel");
+    var chatToggleBtn = qs(".js-chat-btn");
+    var chatMessagesEl = qs(".js-chat-msgs");
+    var chatOptionsEl = qs(".js-chat-opcoes");
+    var chatForm = qs(".js-chat-form");
+    var chatInput = qs("#chat-campo");
+    var chatInvite = qs(".js-chat-convite");
+
+    if (chatRoot && chatPanel && chatToggleBtn && chatMessagesEl && chatOptionsEl && chatForm && chatInput) {
+        var chatStarted = false;
+        var currentStep = null;
+        var visitorData = {};
+        var liveSession = null;
+        var pollTimer = null;
+        var renderedMsgIds = {};
+
+        try {
+            var storedSession = getSession("gt_chat_session");
+            if (storedSession) {
+                liveSession = JSON.parse(storedSession);
+            }
+        } catch (e) {
+            liveSession = null;
+        }
+
+        function saveLiveSession() {
+            if (liveSession) {
+                setSession("gt_chat_session", JSON.stringify(liveSession));
+            }
+        }
+
+        function scrollChatBottom() {
+            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+        }
+
+        function appendUserBubble(text, msgId) {
+            if (msgId && renderedMsgIds[msgId]) { return; }
+            if (msgId) { renderedMsgIds[msgId] = true; }
+            var el = document.createElement("div");
+            el.className = "msg-eu";
+            el.textContent = text;
+            chatMessagesEl.appendChild(el);
+            scrollChatBottom();
+        }
+
+        function appendBotBubbleInstant(text, msgId) {
+            if (msgId && renderedMsgIds[msgId]) { return; }
+            if (msgId) { renderedMsgIds[msgId] = true; }
+            var el = document.createElement("div");
+            el.className = "msg-bot";
+            el.textContent = text;
+            chatMessagesEl.appendChild(el);
+            scrollChatBottom();
+        }
+
+        function sendBotMessages(messages, done) {
+            var queue = [].concat(messages);
+            (function next() {
+                if (queue.length === 0) {
+                    if (done) { done(); }
+                    return;
+                }
+                var typing = document.createElement("div");
+                typing.className = "msg-digitando";
+                typing.innerHTML = "<i></i><i></i><i></i>";
+                chatMessagesEl.appendChild(typing);
+                scrollChatBottom();
+                setTimeout(function () {
+                    typing.remove();
+                    appendBotBubbleInstant(queue.shift());
+                    next();
+                }, reducedMotion ? 120 : 520);
+            })();
+        }
+
+        function renderOptions(options) {
+            chatOptionsEl.innerHTML = "";
+            options.forEach(function (opt) {
+                var btn;
+                if (opt.link) {
+                    btn = document.createElement("a");
+                    btn.href = opt.link;
+                    btn.target = "_blank";
+                    btn.rel = "noopener";
+                } else {
+                    btn = document.createElement("button");
+                    btn.type = "button";
+                }
+                btn.textContent = opt.texto;
+                btn.addEventListener("click", function () {
+                    if (opt.link) {
+                        pushDataLayer("chat_whatsapp");
+                    } else {
+                        visitorData.escolhas = (visitorData.escolhas || []).concat([opt.texto]);
+                        chatOptionsEl.innerHTML = "";
+                        if (!opt.silent) { appendUserBubble(opt.texto); }
+                        opt.acao();
+                    }
+                });
+                chatOptionsEl.appendChild(btn);
+            });
+        }
+
+        function askInput(prompts, type, callback) {
+            sendBotMessages(prompts, function () {
+                currentStep = { tipo: type, depois: callback };
+                chatForm.hidden = false;
+                chatInput.type = type === "tel" ? "tel" : (type === "email" ? "email" : "text");
+                chatInput.placeholder = L(
+                    type === "tel" ? "(11) 90000-0000"
+                        : (type === "email" ? "seu@empresa.com.br" : "Digite aqui...")
+                );
+                chatInput.focus();
+            });
+        }
+
+        function enableLiveChatInput() {
+            currentStep = { tipo: "live" };
+            chatForm.hidden = false;
+            chatInput.type = "text";
+            chatInput.placeholder = L("Escreva sua mensagem para a equipe...");
+        }
+
+        function startPollingLiveMessages() {
+            if (pollTimer) { clearInterval(pollTimer); }
+            if (!liveSession || !liveSession.token) { return; }
+
+            var pollOnce = function () {
+                if (!liveSession || !liveSession.token) { return; }
+                var url = "/api/chat/messages?token=" + encodeURIComponent(liveSession.token) + "&after_id=" + (liveSession.lastId || 0);
+                fetch(url, {
+                    headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest" }
+                })
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (data) {
+                        if (!data || !data.ok || !Array.isArray(data.messages)) { return; }
+                        data.messages.forEach(function (msg) {
+                            if (msg.id > (liveSession.lastId || 0)) {
+                                liveSession.lastId = msg.id;
+                            }
+                            if (msg.sender_type === "staff") {
+                                var prefix = msg.sender_name ? msg.sender_name + ": " : "";
+                                appendBotBubbleInstant(prefix + msg.message, msg.id);
+                            } else {
+                                appendUserBubble(msg.message, msg.id);
+                            }
+                        });
+                        saveLiveSession();
+
+                        if (data.status === "closed") {
+                            renderOptions([
+                                {
+                                    texto: L("Iniciar nova conversa"),
+                                    silent: true,
+                                    acao: function () {
+                                        removeSession("gt_chat_session");
+                                        liveSession = null;
+                                        renderedMsgIds = {};
+                                        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+                                        chatMessagesEl.innerHTML = "";
+                                        chatStarted = false;
+                                        openChat();
+                                    }
+                                },
+                                { texto: L("Falar no WhatsApp"), link: WA_URL }
+                            ]);
+                        }
+                    })
+                    .catch(function () {});
+            };
+
+            pollTimer = setInterval(pollOnce, 5000);
+        }
+
+        function restoreExistingLiveSession() {
+            if (!liveSession || !liveSession.token) { return false; }
+            chatStarted = true;
+            chatMessagesEl.innerHTML = "";
+            renderedMsgIds = {};
+
+            appendBotBubbleInstant(L("Atendimento conectado à equipe GundjaTech em tempo real."));
+            enableLiveChatInput();
+
+            fetch("/api/chat/messages?token=" + encodeURIComponent(liveSession.token), {
+                headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest" }
+            })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (data) {
+                    if (!data || !data.ok) {
+                        removeSession("gt_chat_session");
+                        liveSession = null;
+                        chatMessagesEl.innerHTML = "";
+                        chatStarted = false;
+                        openChat();
+                        return;
+                    }
+                    (data.messages || []).forEach(function (msg) {
+                        if (msg.id > (liveSession.lastId || 0)) {
+                            liveSession.lastId = msg.id;
+                        }
+                        if (msg.sender_type === "staff") {
+                            var prefix = msg.sender_name ? msg.sender_name + ": " : "";
+                            appendBotBubbleInstant(prefix + msg.message, msg.id);
+                        } else {
+                            appendUserBubble(msg.message, msg.id);
+                        }
+                    });
+                    saveLiveSession();
+                    startPollingLiveMessages();
+                })
+                .catch(function () {
+                    startPollingLiveMessages();
+                });
+
+            return true;
+        }
+
+        var isSecurityTheme = document.body.dataset.tema === "seguranca";
+        var copy = isSecurityTheme ? {
+            oferta: L("Ótimo! Um especialista analisa a segurança do seu site e mostra o que corrigir primeiro, sem custo."),
+            fim: L("Atendimento conectado! Um especialista em segurança da GundjaTech já recebeu sua conversa no painel e pode responder por aqui mesmo."),
+            whats: L("Olá! Sou {n} e quero o diagnóstico de segurança do meu site."),
+            ola: L("Precisa de ajuda com a segurança do seu site?"),
+            op1: L("Quero o diagnóstico grátis"),
+            op2: L("Meu site foi invadido"),
+            preco: [
+                L("Depende do número de sites e do nível de monitoramento."),
+                L("Primeiro fazemos o diagnóstico gratuito e você recebe uma proposta fechada. Quer começar por ele?")
+            ],
+            ver: "camadas",
+            verTxt: L("Ver como protegemos")
+        } : {
+            oferta: L("Ótimo! Um especialista analisa o seu projeto e mostra o que mudar para gerar mais clientes."),
+            fim: L("Atendimento conectado! Nossa equipe já recebeu sua mensagem no painel e pode responder por aqui em tempo real."),
+            whats: L("Olá! Sou {n} e quero falar sobre meu projeto com a GundjaTech."),
+            ola: L("Precisa de ajuda com o site ou sistema da sua empresa?"),
+            op1: L("Quero um site novo"),
+            op2: L("Quero refazer meu site"),
+            preco: [
+                L("Depende do escopo: número de páginas, integrações e funcionalidades."),
+                L("Você recebe uma proposta fechada, com prazo e valor em contrato. Quer começar pela análise do seu projeto?")
+            ],
+            ver: "projetos",
+            verTxt: L("Ver projetos")
+        };
+
+        function scrollToTargetSection() {
+            var target = document.getElementById(copy.ver);
+            if (target) { target.scrollIntoView({ behavior: "smooth" }); }
+        }
+
+        function startEmergencyFlow() {
+            sendBotMessages([
+                L("Vamos resolver isso agora."),
+                L("Chama a gente no WhatsApp que um especialista entra no caso imediatamente ou deixe seu contato aqui.")
+            ], function () {
+                renderOptions([
+                    { texto: L("Chamar no WhatsApp agora"), link: WA_URL + "?text=" + encodeURIComponent(L("URGENTE: meu site foi invadido e preciso de ajuda.")) },
+                    { texto: L("Atendimento ao vivo aqui"), acao: startLeadCaptureFlow }
+                ]);
+            });
+        }
+
+        function startLeadCaptureFlow() {
+            askInput([copy.oferta, L("Como posso te chamar?")], "texto", function (fullName) {
+                visitorData.nomeCompleto = fullName;
+                visitorData.nome = fullName.split(" ")[0];
+
+                askInput(L("Prazer, ") + visitorData.nome + L("! Qual é o seu e-mail? De preferência o da empresa."), "email", function (email) {
+                    visitorData.email = email.toLowerCase();
+
+                    askInput(L("Obrigado! E qual é o seu WhatsApp com DDD?"), "tel", function (phone) {
+                        visitorData.tel = phone;
+                        setSession("snp_lead", "1");
+
+                        var isCorp = !/@(gmail|googlemail|hotmail|outlook|live|msn|yahoo|ymail|icloud|me|bol|uol|terra|ig|globo|aol|proton|protonmail|zoho)\./i.test(visitorData.email);
+                        setSession("snp_wq_dados", JSON.stringify({
+                            nome: visitorData.nomeCompleto,
+                            email: visitorData.email,
+                            telefone: phone,
+                            empresa: "",
+                            site: "",
+                            origem: "chat"
+                        }));
+                        setSession("snp_wq", JSON.stringify(isCorp ? "Q" : "F"));
+
+                        var choicesSummary = (visitorData.escolhas || []).join(" > ") || L("Atendimento Online");
+                        var initialMsg = L("Interesse informado no chat: ") + choicesSummary;
+
+                        fetch("/api/chat/start", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "Accept": "application/json",
+                                "X-Requested-With": "XMLHttpRequest"
+                            },
+                            body: JSON.stringify({
+                                nome: visitorData.nomeCompleto || visitorData.nome,
+                                email: visitorData.email,
+                                telefone: phone,
+                                assunto: choicesSummary,
+                                mensagem: initialMsg,
+                                tema: isSecurityTheme ? "seguranca" : "geral"
+                            })
+                        })
+                            .then(function (resp) { return resp.json().catch(function () { return { ok: false }; }); })
+                            .then(function (data) {
+                                var confirmLines = [copy.fim];
+                                if (data && data.ok && data.visitor_token) {
+                                    var lastId = 0;
+                                    (data.messages || []).forEach(function (m) {
+                                        renderedMsgIds[m.id] = true;
+                                        if (m.id > lastId) { lastId = m.id; }
+                                    });
+                                    liveSession = {
+                                        token: data.visitor_token,
+                                        conversationId: data.conversation_id,
+                                        protocol: data.protocol || null,
+                                        lastId: lastId
+                                    };
+                                    saveLiveSession();
+                                    if (data.protocol) {
+                                        confirmLines.push(L("Protocolo gerado: ") + data.protocol + L(". Você pode continuar enviando mensagens aqui abaixo."));
+                                    }
+                                    startPollingLiveMessages();
+                                }
+                                sendBotMessages(confirmLines, function () {
+                                    enableLiveChatInput();
+                                    renderOptions([
+                                        { texto: L("Falar agora no WhatsApp"), link: WA_URL + "?text=" + encodeURIComponent(copy.whats.replace("{n}", visitorData.nome)) },
+                                        { texto: copy.verTxt, acao: function () { scrollToTargetSection(); } }
+                                    ]);
+                                });
+                            })
+                            .catch(function () {
+                                sendBotMessages([L("Recebemos seu contato. Você também pode chamar diretamente no WhatsApp.")], function () {
+                                    renderOptions([
+                                        { texto: L("Falar agora no WhatsApp"), link: WA_URL + "?text=" + encodeURIComponent(copy.whats.replace("{n}", visitorData.nome)) }
+                                    ]);
+                                });
+                            });
+                    });
+                });
+            });
+        }
+
+        chatForm.addEventListener("submit", function (ev) {
+            ev.preventDefault();
+            var value = chatInput.value.trim();
+            if (!value || !currentStep) { return; }
+
+            if (currentStep.tipo === "live") {
+                if (!liveSession || !liveSession.token) { return; }
+                chatInput.value = "";
+                chatInput.disabled = true;
+
+                fetch("/api/chat/message", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: JSON.stringify({
+                        visitor_token: liveSession.token,
+                        message: value
+                    })
+                })
+                    .then(function (resp) { return resp.json().catch(function () { return { ok: false }; }); })
+                    .then(function (data) {
+                        chatInput.disabled = false;
+                        chatInput.focus();
+                        if (data && data.ok && data.message) {
+                            appendUserBubble(data.message.message, data.message.id);
+                            if (data.message.id > (liveSession.lastId || 0)) {
+                                liveSession.lastId = data.message.id;
+                                saveLiveSession();
+                            }
+                        } else {
+                            appendBotBubbleInstant(L("Não foi possível enviar sua mensagem. Tente novamente."));
+                        }
+                    })
+                    .catch(function () {
+                        chatInput.disabled = false;
+                        appendBotBubbleInstant(L("Sem conexão no momento. Tente novamente ou chame no WhatsApp."));
+                    });
+                return;
+            }
+
+            if (currentStep.tipo === "tel") {
+                var minDigits = document.documentElement.lang === "pt-PT" ? 9 : 10;
+                if (value.replace(/\D/g, "").length < minDigits) {
+                    sendBotMessages(L("Confere o número pra mim? Preciso do DDD e do telefone."));
+                    return;
+                }
+            }
+
+            if (currentStep.tipo === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) {
+                sendBotMessages(L("Confere o e-mail pra mim? Ele é obrigatório para continuarmos."));
+                return;
+            }
+
+            appendUserBubble(value);
+            chatInput.value = "";
+            chatForm.hidden = true;
+            var nextAction = currentStep.depois;
+            currentStep = null;
+            nextAction(value);
+        });
+
+        function openChat() {
+            chatRoot.classList.add("aberto");
+            chatPanel.hidden = false;
+            if (chatInvite) { chatInvite.classList.remove("on"); }
+            chatToggleBtn.setAttribute("aria-expanded", "true");
+            chatToggleBtn.setAttribute("aria-label", "Fechar chat");
+            setSession("snp_convite", "1");
+
+            if (!chatStarted) {
+                if (restoreExistingLiveSession()) { return; }
+                chatStarted = true;
+                pushDataLayer("chat_aberto");
+                sendBotMessages([L("Oi! Aqui é da GundjaTech."), copy.ola], function () {
+                    renderOptions([
+                        { texto: copy.op1, acao: startLeadCaptureFlow },
+                        { texto: copy.op2, acao: isSecurityTheme ? startEmergencyFlow : startLeadCaptureFlow },
+                        {
+                            texto: L("Quanto custa?"),
+                            acao: function () {
+                                sendBotMessages(copy.preco, function () {
+                                    renderOptions([
+                                        { texto: L("Sim, quero falar com um especialista"), acao: startLeadCaptureFlow },
+                                        { texto: L("Falar no WhatsApp"), link: WA_URL }
+                                    ]);
+                                });
+                            }
+                        },
+                        {
+                            texto: L("Só estou olhando"),
+                            acao: function () {
+                                sendBotMessages(L("Fica à vontade! Se precisar, é só chamar por aqui."), function () {
+                                    renderOptions([
+                                        { texto: copy.verTxt, acao: scrollToTargetSection },
+                                        { texto: L("Iniciar atendimento"), acao: startLeadCaptureFlow }
+                                    ]);
+                                });
+                            }
+                        }
+                    ]);
+                });
+            }
+        }
+
+        function closeChat() {
+            chatRoot.classList.remove("aberto");
+            chatPanel.hidden = true;
+            chatToggleBtn.setAttribute("aria-expanded", "false");
+            chatToggleBtn.setAttribute("aria-label", "Abrir chat");
+        }
+
+        chatToggleBtn.addEventListener("click", function () {
+            if (chatRoot.classList.contains("aberto")) { closeChat(); } else { openChat(); }
+        });
+        qsa(".js-abre-chat").forEach(function (el) {
+            el.addEventListener("click", function () {
+                if (!chatRoot.classList.contains("aberto")) { openChat(); }
+            });
+        });
+        var chatCloseBtn = qs(".js-chat-fecha");
+        if (chatCloseBtn) { chatCloseBtn.addEventListener("click", closeChat); }
+        if (chatInvite) {
+            chatInvite.addEventListener("click", function (ev) {
+                if (!ev.target.closest(".js-convite-fecha")) { openChat(); }
+            });
+            var inviteCloseBtn = qs(".js-convite-fecha");
+            if (inviteCloseBtn) {
+                inviteCloseBtn.addEventListener("click", function () {
+                    chatInvite.classList.remove("on");
+                    setSession("snp_convite", "1");
+                });
+            }
+            if (getSession("snp_convite") !== "1") {
+                setTimeout(function () {
+                    if (!chatRoot.classList.contains("aberto") && !document.querySelector("dialog[open]")) {
+                        chatInvite.classList.add("on");
+                    }
+                }, 6000);
+            }
+        }
+        document.addEventListener("keydown", function (ev) {
+            if (ev.key === "Escape" && chatRoot.classList.contains("aberto")) { closeChat(); }
+        });
+    }
+})();
+
+// Mobile Navigation Menu
+(function () {
+    "use strict";
+    var menuBtn = document.querySelector(".js-mm-btn");
+    var menuDrawer = document.querySelector(".js-mm");
+    if (!menuBtn || !menuDrawer) { return; }
+
+    function closeMenu() {
+        menuDrawer.hidden = true;
+        document.documentElement.classList.remove("mm-aberto");
+        menuBtn.setAttribute("aria-expanded", "false");
+        menuBtn.setAttribute("aria-label", "Abrir menu");
+        document.body.style.overflow = "";
+    }
+
+    menuBtn.addEventListener("click", function () {
+        if (!menuDrawer.hidden) { return closeMenu(); }
+        menuDrawer.hidden = false;
+        document.documentElement.classList.add("mm-aberto");
+        menuBtn.setAttribute("aria-expanded", "true");
+        menuBtn.setAttribute("aria-label", "Fechar menu");
+        document.body.style.overflow = "hidden";
+    });
+    menuDrawer.addEventListener("click", function (ev) {
+        if (ev.target.closest("a")) { closeMenu(); }
+    });
+    document.addEventListener("keydown", function (ev) {
+        if (ev.key === "Escape" && !menuDrawer.hidden) { closeMenu(); }
+    });
+})();

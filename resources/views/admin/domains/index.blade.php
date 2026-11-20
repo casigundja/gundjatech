@@ -114,7 +114,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Nome do Domínio *</label>
-                    <input type="text" name="domain_name" required placeholder="exemplo.com.br" class="w-full bg-[#141414] border border-[#2E2D2C] rounded-xl px-4 py-2 text-xs text-white font-mono">
+                    <input type="text" name="domain_name" required placeholder="seudominio.com.br" class="w-full bg-[#141414] border border-[#2E2D2C] rounded-xl px-4 py-2 text-xs text-white font-mono">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>

@@ -13,6 +13,7 @@ class ConversationMessage extends Model
         'conversation_id',
         'sender_id',
         'sender_type',
+        'sender_name',
         'message',
         'attachment_path',
         'is_read',

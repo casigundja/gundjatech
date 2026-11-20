@@ -339,14 +339,14 @@
         <button type="button" role="tab" class="tm-barra ativo" data-i="0" data-nome="Casimiro Gundja" data-cargo="Engenheiro de Software" data-bio="Formado em Engenharia de Software, com especialização em desenvolvimento de aplicações web e mobile, arquitetura de sistemas, integração de APIs, banco de dados e soluções tecnológicas escaláveis. Experiência na criação, evolução e gestão de produtos digitais, transformando ideias em soluções eficientes e inovadoras para empresas." aria-selected="true"><span>Casimiro Gundja</span><i><b></b></i></button>
         <button type="button" role="tab" class="tm-barra" data-i="1" data-nome="Lourenço Gundja" data-cargo="UX &amp; Design" data-bio="Especialista em experiência do usuário (UX), design de interfaces (UI), estratégia de produtos digitais, design systems e criação de experiências intuitivas, funcionais e visualmente impactantes para empresas." aria-selected="false"><span>Lourenço Gundja</span><i><b></b></i></button>
         <button type="button" role="tab" class="tm-barra" data-i="2" data-nome="José Gundja" data-cargo="Diretor Comercial &amp; Estratégia" data-bio="Especialista em gestão de negócios, performance comercial, tráfego pago e expansão estratégica de marcas em Angola, Portugal e África do Sul." aria-selected="false"><span>José Gundja</span><i><b></b></i></button>
-        <button type="button" role="tab" class="tm-barra" data-i="3" data-nome="Rodrigues Lussite" data-cargo="Inovação &amp; Novas Tecnologias" data-bio="Especialista em Marketing Digital, Sites, Cibersegurança, SEO e Infraestrutura. Responsável pela área de inovação e novas tecnologias." aria-selected="false"><span>Rodrigues Lussite</span><i><b></b></i></button>
+        <button type="button" role="tab" class="tm-barra" data-i="3" data-nome="Rodrigues Lussiate" data-cargo="Cibersegurança &amp; Segurança da Informação" data-bio="Especialista em cibersegurança, proteção de dados, segurança de redes, gestão de vulnerabilidades e infraestrutura de TI. Responsável pela implementação de estratégias de segurança digital, prevenção de ameaças e proteção dos sistemas e informações corporativas." aria-selected="false"><span>Rodrigues Lussiate</span><i><b></b></i></button>
       </div>
 
       <div class="tm-palco js-tm-palco">
         <figure class="tm-foto ativo" data-i="0"><img width="403" height="605" src="/img/time/Jorge.webp?v=2" alt="Casimiro Gundja — Engenheiro de Software e Desenvolvedor de Sistemas"></figure>
         <figure class="tm-foto" data-i="1"><img width="1024" height="1024" src="/img/time/JoseGundja.webp?v=1" alt="Lourenço Gundja — UX e Design"></figure>
         <figure class="tm-foto" data-i="2"><img width="935" height="1024" src="/img/time/LourencoGundja.webp?v=1" alt="José Gundja — Diretor Comercial e Estratégia"></figure>
-        <figure class="tm-foto" data-i="3"><img width="1024" height="1024" src="/img/time/RodriguesLussite.webp?v=1" alt="Rodrigues Lussite — Inovação e Novas Tecnologias"></figure>
+        <figure class="tm-foto" data-i="3"><img width="1024" height="1024" src="/img/time/RodriguesLussite.webp?v=1" alt="Rodrigues Lussiate — Cibersegurança e Segurança da Informação"></figure>
         <i class="tm-varre" aria-hidden="true"></i>
       </div>
 
@@ -546,15 +546,15 @@
 
       <div class="hm-dep-pilha js-dep">
 
-      <figure class="hm-dep-card ativo" data-i="0"><span class="est" aria-label="5 estrelas">★★★★★</span><blockquote>O serviço de criação de sites da GundjaTech é algo de primeiro mundo. Consideramos uma das melhores agências de criação de sites do Brasil. O site seguiu padrões mundiais de estética e performance, e executivos do clube elogiaram muito o trabalho. Entrega no prazo combinado. Obrigado e parabéns!</blockquote><figcaption><span class="av">FL</span><span><b>Fabeka Lebron</b>CEO, FC Barcelona</span></figcaption></figure>
+      <figure class="hm-dep-card ativo" data-i="0"><span class="est" aria-label="5 estrelas">★★★★★</span><blockquote>A plataforma digital da KLASSE elevou nosso posicionamento em tecnologia educativa e tornou muito mais clara a jornada das escolas que buscam gestão financeira, matrículas e documentos acadêmicos em tempo real.</blockquote><figcaption><span class="av">KL</span><span><b>Equipe KLASSE</b>EdTech · Gestão Escolar</span></figcaption></figure>
 
-      <figure class="hm-dep-card" data-i="1"><span class="est" aria-label="5 estrelas">★★★★★</span><blockquote>A criação do nosso site é apenas uma pequena parte dos mais de 5 anos de parceria. A GundjaTech nos ajudou no planejamento estratégico, na nova marca, no site com e-commerce e em todo o nosso marketing. Somos muito gratos por essa parceria de grande sucesso.</blockquote><figcaption><span class="av">LC</span><span><b>Leandro Chen</b>Sócio-Diretor, 3DCRIAR</span></figcaption></figure>
+      <figure class="hm-dep-card" data-i="1"><span class="est" aria-label="5 estrelas">★★★★★</span><blockquote>Nosso novo portal institucional organizou os cinco cursos técnicos de saúde, simplificou as admissões online e apresentou os laboratórios do campus com credibilidade científica em desktop e mobile.</blockquote><figcaption><span class="av">IP</span><span><b>Direção Acadêmica</b>Instituto Paraíso do Saber</span></figcaption></figure>
 
-      <figure class="hm-dep-card" data-i="2"><span class="est" aria-label="5 estrelas">★★★★★</span><blockquote>Além de captar muito bem nossa visão de negócio, trouxeram ideias inovadoras para o projeto. O processo foi transparente e eficiente, e o resultado final não poderia ser melhor. Estamos muito satisfeitos com a qualidade e o profissionalismo em cada etapa.</blockquote><figcaption><span class="av">WG</span><span><b>Waldo Gomes</b>Netsafe</span></figcaption></figure>
+      <figure class="hm-dep-card" data-i="2"><span class="est" aria-label="5 estrelas">★★★★★</span><blockquote>A plataforma corporativa com calculadoras fiscais interativas diferenciou nossa presença no setor contábil e aumentou a qualificação dos contatos empresariais desde o lançamento.</blockquote><figcaption><span class="av">CC</span><span><b>Diretoria Executiva</b>Cotech Contabilidade</span></figcaption></figure>
 
-      <figure class="hm-dep-card" data-i="3"><span class="est" aria-label="5 estrelas">★★★★★</span><blockquote>Desde o início ficou claro que entendiam nossas necessidades e visão. O processo de criação foi personalizado e profissional, e o resultado superou as nossas expectativas. Recomendamos para quem busca qualidade, prazo e comprometimento.</blockquote><figcaption><span class="av">MS</span><span><b>Milena Seabra</b>Diretora, Faculdade Belavista</span></figcaption></figure>
+      <figure class="hm-dep-card" data-i="3"><span class="est" aria-label="5 estrelas">★★★★★</span><blockquote>Processo transparente do briefing à publicação, com acompanhamento em tempo real pelo Portal do Cliente, código limpo, SEO técnico e prazos respeitados em contrato.</blockquote><figcaption><span class="av">GT</span><span><b>Projetos Sob Medida</b>Engenharia Web GundjaTech</span></figcaption></figure>
 
-      <figure class="hm-dep-card" data-i="4"><span class="est" aria-label="5 estrelas">★★★★★</span><blockquote>Nosso site foi totalmente personalizado, com simuladores e integração com o Banco Central. Estética impecável aliada a um conhecimento profundo de marketing tradicional e digital. Resultado acima do esperado.</blockquote><figcaption><span class="av">LA</span><span><b>Lui Amaral</b>Sócio e CEO, TRX</span></figcaption></figure>
+      <figure class="hm-dep-card" data-i="4"><span class="est" aria-label="5 estrelas">★★★★★</span><blockquote>Monitoramento 24/7, firewall de aplicação, gestão profissional de domínios e operação contínua que mantêm nossos sistemas rápidos, seguros e disponíveis todos os dias.</blockquote><figcaption><span class="av">OC</span><span><b>Operação & Segurança</b>Cibersegurança GundjaTech</span></figcaption></figure>
 
     </div>
 
@@ -614,7 +614,7 @@
 
       <label class="campo">Telefone*<input type="tel" name="telefone" autocomplete="tel" placeholder="(11) 90000-0000" required></label>
 
-      <label class="campo">Site da empresa*<input type="text" name="site" inputmode="url" placeholder="www.suaempresa.com.br" required></label>
+      <label class="campo">Site da empresa (se tiver)<input type="text" name="site" inputmode="url" placeholder="www.suaempresa.com.br"></label>
 
       <label class="campo cheio">Empresa<input type="text" name="empresa" autocomplete="organization"></label>
 
@@ -828,9 +828,9 @@
 
 
 
-<script defer src="/jsm/main.ac8b157f35.js"></script>
+<script defer src="/jsm/main.ac8b157f35.js?v=gt-live1"></script>
 
-<script defer src="/jsm/campanha.1fe0f2564d.js"></script>
+<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live1"></script>
 
 <script defer src="/jsm/animacoes.b868b7f2df.js"></script>
 
@@ -846,7 +846,7 @@
 
 <script defer src="/jsm/home-servicos.7a6f7404e2.js"></script>
 
-<script src="/jsm/leads.ce7ca30ca6.js" defer></script>
+<script src="/jsm/leads.ce7ca30ca6.js?v=gt-live1" defer></script>
 
 <script src="/jsm/cro.107b971293.js" defer></script>
 

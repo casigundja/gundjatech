@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Models\Conversation;
+use App\Models\ServiceRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -84,7 +86,9 @@ class AuthController extends Controller
                 'is_active' => true,
             ]);
 
-            $existingClient = Client::where('email', $data['email'])
+            $normalizedEmail = strtolower(trim($data['email']));
+
+            $existingClient = Client::whereRaw('LOWER(email) = ?', [$normalizedEmail])
                 ->whereNull('user_id')
                 ->first();
 
@@ -96,16 +100,30 @@ class AuthController extends Controller
                     'phone' => $data['phone'] ?? $existingClient->phone,
                     'status' => 'active',
                 ]);
+                $client = $existingClient;
             } else {
-                Client::create([
+                $client = Client::create([
                     'user_id' => $user->id,
                     'name' => $data['name'],
                     'company_name' => $data['company_name'] ?: $data['name'],
-                    'email' => $data['email'],
+                    'email' => $normalizedEmail,
                     'phone' => $data['phone'] ?? null,
                     'status' => 'active',
                 ]);
             }
+
+            ServiceRequest::whereRaw('LOWER(email) = ?', [$normalizedEmail])
+                ->where(function ($q): void {
+                    $q->whereNull('client_id')->orWhereNull('user_id');
+                })
+                ->update([
+                    'client_id' => $client->id,
+                    'user_id' => $user->id,
+                ]);
+
+            Conversation::whereRaw('LOWER(visitor_email) = ?', [$normalizedEmail])
+                ->where('client_id', '!=', $client->id)
+                ->update(['client_id' => $client->id]);
 
             return $user;
         });

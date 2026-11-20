@@ -328,10 +328,10 @@
         <p class="sb-cargo">Diretor Comercial &amp; Estratégia</p>
         <p class="sb-bio">Especialista em gestão de negócios, performance comercial, tráfego pago e expansão estratégica de marcas em Angola, Portugal e África do Sul.</p>
       </article><article class="sb-pessoa">
-        <div class="sb-foto"><img width="1024" height="1024" src="/img/time/RodriguesLussite.webp?v=1" alt="Rodrigues Lussite — Inovação e Novas Tecnologias da GundjaTech" loading="lazy"></div>
-        <h3>Rodrigues Lussite</h3>
-        <p class="sb-cargo">Inovação &amp; Novas Tecnologias</p>
-        <p class="sb-bio">Especialista em Marketing Digital, Sites, Cibersegurança, SEO e Infraestrutura. Responsável pela área de inovação e novas tecnologias.</p>
+        <div class="sb-foto"><img width="1024" height="1024" src="/img/time/RodriguesLussite.webp?v=1" alt="Rodrigues Lussiate — Cibersegurança e Segurança da Informação da GundjaTech" loading="lazy"></div>
+        <h3>Rodrigues Lussiate</h3>
+        <p class="sb-cargo">Cibersegurança &amp; Segurança da Informação</p>
+        <p class="sb-bio">Especialista em cibersegurança, proteção de dados, segurança de redes, gestão de vulnerabilidades e infraestrutura de TI. Responsável pela implementação de estratégias de segurança digital, prevenção de ameaças e proteção dos sistemas e informações corporativas.</p>
       </article></div>
 
   </div>
@@ -600,7 +600,7 @@
 
       <label class="campo">Telefone*<input type="tel" name="telefone" autocomplete="tel" placeholder="(11) 90000-0000" required></label>
 
-      <label class="campo">Site da empresa*<input type="text" name="site" inputmode="url" placeholder="www.suaempresa.com.br" required></label>
+      <label class="campo">Site da empresa (se tiver)<input type="text" name="site" inputmode="url" placeholder="www.suaempresa.com.br"></label>
 
       <label class="campo cheio">Empresa<input type="text" name="empresa" autocomplete="organization"></label>
 
@@ -816,9 +816,9 @@
 
 
 
-<script defer src="/jsm/main.ac8b157f35.js"></script>
+<script defer src="/jsm/main.ac8b157f35.js?v=gt-live1"></script>
 
-<script defer src="/jsm/campanha.1fe0f2564d.js"></script>
+<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live1"></script>
 
 <script defer src="/jsm/animacoes.b868b7f2df.js"></script>
 
@@ -828,7 +828,7 @@
 
 <script defer src="/jsm/blog-post.92fa79da23.js"></script>
 
-<script src="/jsm/leads.ce7ca30ca6.js" defer></script>
+<script src="/jsm/leads.ce7ca30ca6.js?v=gt-live1" defer></script>
 
 <script src="/jsm/cro.107b971293.js" defer></script>
 

@@ -197,7 +197,7 @@
 
       <h1>Criação de sites em <em>Alphaville</em> e Barueri</h1>
 
-      <p class="in-sub">Escritório na Alameda Rio Negro, reuniões presenciais e o mesmo time que atende marcas como Nestlé e FC Barcelona.</p>
+      <p class="in-sub">Atendimento consultivo e engenharia digital sob medida com a equipe responsável por plataformas como KLASSE, Instituto Paraíso do Saber e Cotech Contabilidade.</p>
 
       <div class="in-botoes"><a class="btn in-btn-vermelho" href="#contato">Agendar uma conversa <svg><use href="#i-seta"/></svg></a><a class="btn btn-linha" href="/servicos/criacao-de-sites">Agência de criação de sites</a></div>
 
@@ -487,9 +487,9 @@
 
 
 
-<script defer src="/jsm/main.ac8b157f35.js"></script>
+<script defer src="/jsm/main.ac8b157f35.js?v=gt-live1"></script>
 
-<script defer src="/jsm/campanha.1fe0f2564d.js"></script>
+<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live1"></script>
 
 <script defer src="/jsm/animacoes.b868b7f2df.js"></script>
 
@@ -497,7 +497,7 @@
 
 <script defer src="/jsm/blog-post.92fa79da23.js"></script>
 
-<script src="/jsm/leads.ce7ca30ca6.js" defer></script>
+<script src="/jsm/leads.ce7ca30ca6.js?v=gt-live1" defer></script>
 
 <script src="/jsm/cro.107b971293.js" defer></script>
 

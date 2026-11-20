@@ -9,7 +9,7 @@
     <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="stylesheet" href="/css/gt-admin.css?v=7">
+    <link rel="stylesheet" href="/css/gt-admin.css?v=8">
     <script>
         (function () {
             try {
@@ -163,7 +163,9 @@
                 <div class="gtb-section-head pt-4 border-t border-white/5 mt-2">
                     <span x-show="!sidebarCollapsed">Workspaces</span>
                     <span x-show="sidebarCollapsed" x-cloak class="mx-auto">W</span>
-                    <a x-show="!sidebarCollapsed" href="{{ route('admin.quotations.create') }}" class="text-[#8C95AA] hover:text-[#F2C230] no-underline text-xs font-bold" title="Novo Orçamento">+</a>
+                    @if($currentUser->hasPermission('quotations.manage'))
+                        <a x-show="!sidebarCollapsed" href="{{ route('admin.quotations.create') }}" class="text-[#8C95AA] hover:text-[#F2C230] no-underline text-xs font-bold" title="Novo Orçamento">+</a>
+                    @endif
                 </div>
 
                 @if($currentUser->hasPermission('quotations.view'))
@@ -218,19 +220,25 @@
             </nav>
         </div>
 
-        <!-- Bottom Promo Card ("ELEVATE YOUR INSIGHTS" adapted to GundjaTech) -->
+        <!-- Bottom Action Card -->
+        @php
+            $sidebarCtaUrl = $currentUser->hasPermission('quotations.manage')
+                ? route('admin.quotations.create')
+                : ($currentUser->hasPermission('requests.view') ? route('admin.requests.index') : route('admin.dashboard'));
+            $sidebarCtaLabel = $currentUser->hasPermission('quotations.manage') ? 'Novo Orçamento' : 'Ver Solicitações';
+        @endphp
         <div x-show="!sidebarCollapsed" class="gtb-promo-card">
             <div class="text-[10.5px] font-bold tracking-wider uppercase text-white/90 leading-snug">
-                ELEVE SUA OPERAÇÃO<br>
-                COM <strong class="text-[#F2C230]">GUNDJATECH AI ✦</strong>
+                GESTÃO OPERACIONAL<br>
+                <strong class="text-[#F2C230]">GUNDJATECH PRO ✦</strong>
             </div>
-            <a href="{{ route('admin.quotations.create') }}" class="gtb-promo-btn">
-                <span>Novo Orçamento</span>
+            <a href="{{ $sidebarCtaUrl }}" class="gtb-promo-btn">
+                <span>{{ $sidebarCtaLabel }}</span>
                 <span class="text-[#E4A318]">♛</span>
             </a>
         </div>
         <div x-show="sidebarCollapsed" x-cloak class="p-3 flex justify-center">
-            <a href="{{ route('admin.quotations.create') }}" class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#F2C230] to-[#121AFF] text-[#0B0E1A] flex items-center justify-center font-extrabold no-underline shadow-lg" title="Novo Orçamento">
+            <a href="{{ $sidebarCtaUrl }}" class="w-10 h-10 rounded-xl text-[#0B0E1A] flex items-center justify-center font-extrabold no-underline shadow-lg" style="background: linear-gradient(135deg, #F2C230 0%, #121AFF 100%);" title="{{ $sidebarCtaLabel }}">
                 ♛
             </a>
         </div>
@@ -281,10 +289,12 @@
                     </button>
                 </div>
 
-                <!-- Notification Bell with Glowing Dot -->
+                <!-- Notification Bell with Live Indicator -->
                 <a href="{{ route('admin.requests.index') }}" class="relative w-10 h-10 rounded-full bg-[#171B27] border border-white/10 flex items-center justify-center text-[#D5DCEB] hover:border-[#F2C230] hover:text-[#F2C230] transition" title="Notificações ({{ $totalNotifications }})">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                    <span class="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-[#34D399] shadow-[0_0_8px_#34D399]"></span>
+                    @if($totalNotifications > 0)
+                        <span class="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-[#34D399] shadow-[0_0_8px_#34D399]"></span>
+                    @endif
                 </a>
 
                 <span class="h-6 w-px bg-white/10 hidden sm:inline-block"></span>

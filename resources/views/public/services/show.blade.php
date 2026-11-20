@@ -44,7 +44,7 @@
       <label class="campo">Nome*<input type="text" name="nome" autocomplete="name" required></label>
       <label class="campo">E-mail corporativo*<input type="email" name="email" autocomplete="email" required></label>
       <label class="campo">Telefone*<input type="tel" name="telefone" autocomplete="tel" placeholder="(11) 90000-0000" required></label>
-      <label class="campo">Site da empresa*<input type="text" name="site" inputmode="url" placeholder="www.suaempresa.com.br" required></label>
+      <label class="campo">Site da empresa (se tiver)<input type="text" name="site" inputmode="url" placeholder="www.suaempresa.com.br"></label>
       <label class="campo cheio">Empresa<input type="text" name="empresa" autocomplete="organization"></label>
       <label class="campo cheio">Mensagem<textarea name="mensagem" placeholder="Conte um pouco sobre o projeto de {{ $service->name }}"></textarea></label>
       <input type="hidden" name="origem" value="servico-{{ $service->slug }}">

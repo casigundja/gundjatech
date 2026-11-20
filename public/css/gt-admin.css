@@ -732,8 +732,8 @@ body.gt-admin-boost.is-light-mode svg circle[stroke="#222738"] {
     stroke: #E2E8F0 !important;
 }
 
-body.gt-admin-boost.is-light-mode :where(.bg-\[\#222738\], .bg-\[\#171B27\], .bg-\[\#1A1F2E\]) {
-    background-color: #F1F5F9 !important;
+body.gt-admin-boost.is-light-mode :where(.bg-\[\#222738\], .bg-\[\#171B27\], .bg-\[\#1A1F2E\], .bg-\[\#121623\], .bg-\[\#0C0F18\]) {
+    background-color: #F8FAFC !important;
     border-color: #E2E8F0 !important;
 }
 

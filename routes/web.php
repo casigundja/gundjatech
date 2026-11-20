@@ -45,6 +45,9 @@ Route::post('/solicitar-orcamento', [PublicController::class, 'storeRequest'])->
 Route::get('/acompanhar-solicitacao', [PublicController::class, 'trackRequest'])->middleware('throttle:30,1')->name('track.request');
 Route::post('/api/lead', [PublicController::class, 'apiLead'])->middleware('throttle:20,1')->name('api.lead');
 Route::post('/api/whatsapp', [PublicController::class, 'apiWhatsapp'])->middleware('throttle:30,1')->name('api.whatsapp');
+Route::post('/api/chat/start', [PublicController::class, 'apiChatStart'])->middleware('throttle:20,1')->name('api.chat.start');
+Route::post('/api/chat/message', [PublicController::class, 'apiChatMessage'])->middleware('throttle:30,1')->name('api.chat.message');
+Route::get('/api/chat/messages', [PublicController::class, 'apiChatMessages'])->middleware('throttle:60,1')->name('api.chat.messages');
 Route::get('/sobre-nos', [PublicController::class, 'about']);
 Route::get('/cases', [PublicController::class, 'portfolio']);
 Route::get('/cases/{slug}', [PublicController::class, 'caseDetail']);
@@ -87,6 +90,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/', [AdminDashboardController::class, 'index'])
         ->middleware('permission:admin.dashboard.view')
         ->name('dashboard');
+    Route::get('/relatorio/exportar', [AdminDashboardController::class, 'exportReport'])
+        ->middleware('permission:admin.dashboard.view')
+        ->name('dashboard.export');
 
     // Clients
     Route::middleware('permission:clients.manage')->group(function () {
@@ -192,6 +198,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Chat / Support
     Route::middleware('permission:chat.view')->group(function () {
         Route::get('/atendimento', [AdminChatController::class, 'index'])->name('chat.index');
+        Route::get('/atendimento/{conversation}/mensagens', [AdminChatController::class, 'messages'])->name('chat.messages');
     });
     Route::middleware('permission:chat.manage')->group(function () {
         Route::post('/atendimento/iniciar', [AdminChatController::class, 'startConversation'])->name('chat.start');
@@ -268,6 +275,7 @@ Route::middleware(['auth', 'client'])->prefix('portal')->name('portal.')->group(
     // Chat
     Route::middleware('permission:portal.chat.manage')->group(function () {
         Route::get('/atendimento', [PortalChatController::class, 'index'])->name('chat.index');
+        Route::get('/atendimento/{conversation}/mensagens', [PortalChatController::class, 'messages'])->name('chat.messages');
         Route::post('/atendimento/{conversation}/mensagem', [PortalChatController::class, 'sendMessage'])->name('chat.send');
     });
 });

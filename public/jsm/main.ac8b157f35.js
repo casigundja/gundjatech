@@ -1,1 +1,440 @@
-!function(){"use strict";document.addEventListener("click",function(e){document.querySelectorAll("details.idioma-menu[open]").forEach(function(o){o.contains(e.target)||o.removeAttribute("open")})});var e=window.SNP_L||function(e){return e},o=function(e,o){return(o||document).querySelector(e)},t=function(e,o){return Array.prototype.slice.call((o||document).querySelectorAll(e))},a=window.matchMedia("(prefers-reduced-motion: reduce)").matches,n=function(e,o,t){return Math.max(o,Math.min(t,e))},i=function(e,o,t){return e+(o-e)*t},r=function(e){return 1-Math.pow(1-e,3)},s="IntersectionObserver"in window;function c(e,o,t){if(s){var a=new IntersectionObserver(function(e){e.forEach(function(e){o(e.target,e.isIntersecting,a)})},t||{rootMargin:"0px 0px -10% 0px"});e.forEach(function(e){a.observe(e)})}else e.forEach(function(e){o(e,!0)})}var d=o("#janela");function l(){d.showModal?d.showModal():d.setAttribute("open","")}t(".js-abrir").forEach(function(e){e.addEventListener("click",l)}),t(".js-abrir-link").forEach(function(e){e.addEventListener("click",function(e){e.preventDefault(),l()})}),o(".js-fechar").addEventListener("click",function(){d.close()}),d.addEventListener("click",function(e){e.target===d&&d.close()}),t(".js-form").forEach(function(o){o.addEventListener("submit",function(t){t.preventDefault();var a=o.querySelector(":invalid");if(a)return a.focus(),void a.reportValidity();var n=o.querySelector("[type=submit]");if(window.SNP_enviaLead&&window.SNP_dadosForm){n&&(n.disabled=!0,n.dataset.txt=n.dataset.txt||n.innerHTML,n.textContent=e("Enviando..."));var i=o.querySelector(".form-erro");i&&i.remove(),window.SNP_enviaLead(window.SNP_dadosForm(o)).then(function(t){if(n&&(n.disabled=!1,n.innerHTML=n.dataset.txt),t)o.classList.add("enviado");else{var a=document.createElement("p");a.className="form-erro",a.setAttribute("role","alert"),a.textContent=e("Não conseguimos enviar agora. Tente de novo ou chame no WhatsApp."),(n&&n.parentNode?n.parentNode:o).appendChild(a)}})}else o.classList.add("enviado")})}),t(".js-news").forEach(function(t){t.addEventListener("submit",function(a){a.preventDefault();var n=o("input",t);n.checkValidity()?(n.value="",n.placeholder=e("Inscrição confirmada!")):n.reportValidity()})}),c(t(".case-mock, .servico-mock, .parede"),function(e,o){e.classList.toggle("ativo-mock",o&&!a)},{threshold:.15}),t(".js-palavras").forEach(function(e){var o=0;!function e(t){Array.prototype.slice.call(t.childNodes).forEach(function(a){if(3===a.nodeType){var n=document.createDocumentFragment();a.textContent.split(/(\s+)/).forEach(function(e){if(e)if(/^\s+$/.test(e))n.appendChild(document.createTextNode(e));else{var t=document.createElement("span");t.className="pal",t.textContent=e,t.style.transitionDelay=.06*o+++"s",n.appendChild(t)}}),t.replaceChild(n,a)}else 1===a.nodeType&&e(a)})}(e)}),c(t(".js-palavras"),function(e,o,t){o&&(e.classList.add("visivel"),t&&t.unobserve(e))}),c(t(".js-ia-caixa"),function(e,o,t){o&&(e.classList.add("ativo"),t&&t.unobserve(e))},{threshold:.3});var u=o(".ia-dica");t(".ia-grade span").forEach(function(e){e.addEventListener("mouseenter",function(){u&&(u.textContent=e.dataset.nome)})});var m=t(".case"),p=o(".js-vitrine"),f=o(".js-vit-tela"),v=o(".js-vit-paralaxe"),g=t(".js-vit"),h=t(".vit-aba"),E=0,x=!1;function y(e){g.forEach(function(o,t){var a=t===e;o.classList.toggle("ativo",a),a||o.pause()}),h.forEach(function(o,t){o.classList.remove("ativo"),o.setAttribute("aria-selected",t===e?"true":"false"),t===e&&(o.offsetWidth,o.classList.add("ativo"))}),E=e;var o=g[e];o.preload="auto",o.currentTime=0;var t=isFinite(o.duration)&&o.duration?o.duration:16.7;if(h[e].style.setProperty("--tempo",t+"s"),x&&!a){var n=o.play();n&&n.catch&&n.catch(function(){})}g[(e+1)%g.length].preload="auto"}g.forEach(function(e,o){e.addEventListener("ended",function(){o===E&&y((o+1)%g.length)})}),h.forEach(function(e,o){e.setAttribute("role","tab"),e.addEventListener("click",function(){y(o)})}),c(p?[p]:[],function(e,o){if(x=o,o){if(g[E].paused){var t=g[E].play();t&&t.catch&&t.catch(function(){})}}else g[E].pause()},{threshold:.25}),g.length&&y(0);var b=t(".servico-mock");function w(e,o,t,a){var i=null;!function s(c){i||(i=c);var d=n((c-i)/t,0,1);e.textContent=Math.round(o*r(d))+(a||""),d<1&&requestAnimationFrame(s)}(performance.now()),requestAnimationFrame(function(){})}c(t(".js-garantias"),function(e,n,i){if(n){e.classList.add("ativo"),i&&i.unobserve(e),t(".js-conta",e).forEach(function(e){a?e.textContent=e.dataset.alvo:setTimeout(function(){w(e,+e.dataset.alvo,1800)},300)});var r=o(".js-relogio",e);r&&setTimeout(function(){w(r,4,1600,"h")},600);var s=o(".js-digita",e);s&&(a?s.textContent=s.dataset.texto:setTimeout(function(){!function(e){var o=e.dataset.texto,t=0;!function a(){e.textContent=o.slice(0,t++),t<=o.length&&setTimeout(a,"\n"===o[t-2]?380:32)}()}(s)},700))}},{threshold:.2}),t(".g-card").forEach(function(e){e.addEventListener("pointermove",function(o){var t=e.getBoundingClientRect();e.style.setProperty("--mx",o.clientX-t.left+"px"),e.style.setProperty("--my",o.clientY-t.top+"px")})});var L=[[e("O serviço de criação de sites da GundjaTech é algo de primeiro mundo. O projeto seguiu padrões mundiais de estética e performance, e foi entregue no prazo combinado."),e("Fabeka Lebron"),e("CEO, FC Barcelona")],[e("A criação do nosso site foi apenas uma pequena parte de mais de 5 anos de parceria: planejamento estratégico, nova marca, site e todo o nosso marketing."),e("Leandro Chen"),e("Sócio-Diretor, 3DCRIAR")],[e("Desde o início ficou claro que entendiam nossas necessidades. O processo foi personalizado e profissional, e o resultado superou as nossas expectativas."),e("Milena Seabra"),e("Diretora, Faculdade Belavista")],[e("Nosso site foi totalmente personalizado, com simuladores e integração com o Banco Central. Estética impecável e um conhecimento profundo de marketing."),e("Lui Amaral"),e("Sócio e CEO, TRX")],[e("Excelente empresa! Ótimo atendimento e profissionais extremamente atenciosos. Experiência muito positiva!"),e("Jackeline Alves"),e("CPD/Paulitec")],[e("Ótima empresa de criação de sites. Entregaram um site bonito e rápido e dentro do prazo combinado."),e("Wanderlei Batista"),e("Avaliação no Google")],[e("Turma realmente boa em criação de sites e SEO. O serviço foi muito bem executado e finalmente paramos de depender de anúncios. Melhores de São Paulo"),e("Dan"),e("Avaliação no Google")],[e("Super profissionais e criaram meu site em tempo recorde!! Em São Paulo pra mim é a melhor agência em relação custo benefício que encontrei"),e("Bianca Silva"),e("Avaliação no Google")],[e("Tivemos uma experiência muito positiva com a agência. Além da qualidade das entregas, o grande diferencial foi o comprometimento da equipe durante todo o projeto. A comunicação foi clara, os prazos foram respeitados e deu para perceber o envolvimento das pessoas em buscar resultados."),e("Sidney Contardi"),e("Avaliação no Google")],[e("Conheci o pessoal por indicação de uma prima de São Paulo e nosso novo site ficou sensacional. Foram profissionais do início ao fim do serviço e me entregaram dentro do prazo estabelecido."),e("C. Matarazzo"),e("Avaliação no Google")],[e("Conhecem as necessidades do negócio e conseguem traduzir em ações e estratégias para apoiar iniciativas de crescimento, além do excelente atendimento!"),e("Ale Bandeira"),e("Avaliação no Google")],[e("Recomendo muito! Acompanharam meu processo com um direcionamento estratégico de altíssimo nível"),e("Estela Felipone"),e("Avaliação no Google")],[e("Construímos uma relação de parceria ao longo de muitos anos de trabalho! Sempre fomos muito bem atendidos. Agradeço e recomendo!"),e("Pedro Pandolpho"),e("Avaliação no Google")],[e("A GundjaTech é uma das melhores agências digitais do país. E uma excelente parceira de negócios."),e("Pedro Cadina"),e("Avaliação no Google")],[e("Comprometimento, qualidade e criatividade! Incrível!"),e("Sandra Orpinelli"),e("Avaliação no Google")],[e("Agência de ótima performance e ótimos resultados."),e("Leonardo Pereira"),e("Avaliação no Google")],[e("Excelente execução de projetos."),e("Victor Paulo"),e("Avaliação no Google")]];function A(e){var o=e[1].split(" ").map(function(e){return e[0]}).slice(0,2).join("");return'<figure class="dep"><div class="est" aria-label="5 estrelas">★★★★★</div><blockquote style="margin:0">'+e[0]+'</blockquote><figcaption class="quem"><span class="av">'+o+"</span><span><b>"+e[1]+"</b><small>"+e[2]+"</small></span></figcaption></figure>"}t(".js-col").forEach(function(e,o){var t=L.slice(2*o).concat(L.slice(0,2*o)).slice(0,5).map(A).join("");e.innerHTML=t+t.replace(/<figure class="dep">/g,'<figure class="dep" aria-hidden="true">')});var C=o(".js-mais"),j=o("#menu-mais");C.addEventListener("click",function(){var e=j.classList.toggle("on");C.setAttribute("aria-expanded",e?"true":"false")}),t("a",j).forEach(function(e){e.addEventListener("click",function(){j.classList.remove("on"),C.setAttribute("aria-expanded","false")})}),document.addEventListener("keydown",function(e){"Escape"===e.key&&(j.classList.remove("on"),C.setAttribute("aria-expanded","false"))});var P=o(".js-topo");P.addEventListener("click",function(){window.scrollTo({top:0,behavior:a?"auto":"smooth"})});var S=!1,k=o(".parede-plano");function F(){!function(){if(k&&!a){var e=n(window.scrollY/window.innerHeight,0,1);k.style.setProperty("--zoom",(1+.08*e).toFixed(3))}}(),window.innerWidth<992||m.forEach(function(e,o){var t=m[o+1];if(t){var a=n(1-(t.getBoundingClientRect().top-e.getBoundingClientRect().top)/e.offsetHeight,0,1);e.style.transform="scale("+(1-.06*a).toFixed(3)+")",e.style.filter="brightness("+(1-.12*a).toFixed(3)+")"}}),function(){if(p){var e=p.getBoundingClientRect(),o=window.innerHeight,t=r(n((o-e.top)/(.85*o),0,1));a&&(t=1),f.style.setProperty("--rx",i(28,0,t).toFixed(2)+"deg"),f.style.setProperty("--esc",i(.82,1,t).toFixed(3)),f.style.setProperty("--ty",i(40,0,t).toFixed(1)+"px"),f.style.setProperty("--clip",i(8,0,t).toFixed(2)+"%");var s=n((e.top+e.height/2-o/2)/o,-1,1);v.style.setProperty("--py",(-50*s).toFixed(1)+"px")}}(),window.innerWidth<992||b.forEach(function(e){var o=e.getBoundingClientRect(),t=(o.top+o.height/2-window.innerHeight/2)/window.innerHeight;e.style.setProperty("--p1",(30*t).toFixed(1)+"px"),e.style.setProperty("--p2",(-70*t).toFixed(1)+"px")}),P.classList.toggle("on",window.scrollY>window.innerHeight)}window.addEventListener("scroll",function(){S||(S=!0,requestAnimationFrame(function(){S=!1,F()}))},{passive:!0}),window.addEventListener("resize",F),F();var q=t(".cases h2, .fazemos h2, .compara h2, .oferta-card, #dep-titulo, #faq-titulo, .contato-card, .garantias-topo");q.forEach(function(e){e.classList.add("revelar")}),c(q,function(e,o,t){o&&(e.classList.add("visivel"),t&&t.unobserve(e))})}();
+(function () {
+    "use strict";
+
+    document.addEventListener("click", function (ev) {
+        document.querySelectorAll("details.idioma-menu[open]").forEach(function (det) {
+            if (!det.contains(ev.target)) {
+                det.removeAttribute("open");
+            }
+        });
+    });
+
+    var L = window.SNP_L || function (text) { return text; };
+    var qs = function (sel, root) { return (root || document).querySelector(sel); };
+    var qsa = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+    var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var clamp = function (v, min, max) { return Math.max(min, Math.min(max, v)); };
+    var lerp = function (a, b, t) { return a + (b - a) * t; };
+    var easeOut = function (t) { return 1 - Math.pow(1 - t, 3); };
+    var hasIO = "IntersectionObserver" in window;
+
+    function observe(elements, callback, options) {
+        if (hasIO) {
+            var io = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    callback(entry.target, entry.isIntersecting, io);
+                });
+            }, options || { rootMargin: "0px 0px -10% 0px" });
+            elements.forEach(function (el) { io.observe(el); });
+        } else {
+            elements.forEach(function (el) { callback(el, true); });
+        }
+    }
+
+    var contactDialog = qs("#janela");
+    function openContactDialog() {
+        if (!contactDialog) { return; }
+        if (contactDialog.showModal) { contactDialog.showModal(); } else { contactDialog.setAttribute("open", ""); }
+    }
+
+    qsa(".js-abrir").forEach(function (btn) { btn.addEventListener("click", openContactDialog); });
+    qsa(".js-abrir-link").forEach(function (link) {
+        link.addEventListener("click", function (ev) {
+            ev.preventDefault();
+            openContactDialog();
+        });
+    });
+    var closeBtn = qs(".js-fechar");
+    if (closeBtn && contactDialog) {
+        closeBtn.addEventListener("click", function () { contactDialog.close(); });
+    }
+    if (contactDialog) {
+        contactDialog.addEventListener("click", function (ev) {
+            if (ev.target === contactDialog) { contactDialog.close(); }
+        });
+    }
+
+    function renderProtocolReceipt(form, result) {
+        var okBox = form.querySelector(".ok");
+        if (!okBox || !result || !result.protocol) { return; }
+
+        var existing = okBox.querySelector(".gt-protocol-receipt");
+        if (existing) { existing.remove(); }
+
+        var wrap = document.createElement("p");
+        wrap.className = "gt-protocol-receipt";
+        wrap.style.marginTop = "10px";
+        wrap.style.fontSize = "0.92rem";
+
+        var strong = document.createElement("strong");
+        strong.textContent = L("Protocolo") + ": " + result.protocol;
+        wrap.appendChild(strong);
+
+        if (result.track_url) {
+            wrap.appendChild(document.createTextNode(" · "));
+            var link = document.createElement("a");
+            link.href = result.track_url;
+            link.textContent = L("Acompanhar solicitação →");
+            link.style.textDecoration = "underline";
+            link.style.fontWeight = "700";
+            wrap.appendChild(link);
+        }
+
+        okBox.appendChild(wrap);
+    }
+
+    qsa(".js-form").forEach(function (form) {
+        form.addEventListener("submit", function (ev) {
+            ev.preventDefault();
+            var invalid = form.querySelector(":invalid");
+            if (invalid) {
+                invalid.focus();
+                invalid.reportValidity();
+                return;
+            }
+
+            var submitBtn = form.querySelector("[type=submit]");
+            if (window.SNP_enviaLead && window.SNP_dadosForm) {
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.dataset.txt = submitBtn.dataset.txt || submitBtn.innerHTML;
+                    submitBtn.textContent = L("Enviando...");
+                }
+                var prevErr = form.querySelector(".form-erro");
+                if (prevErr) { prevErr.remove(); }
+
+                window.SNP_enviaLead(window.SNP_dadosForm(form)).then(function (result) {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = submitBtn.dataset.txt;
+                    }
+                    if (result) {
+                        renderProtocolReceipt(form, result);
+                        form.classList.add("enviado");
+                    } else {
+                        var err = document.createElement("p");
+                        err.className = "form-erro";
+                        err.setAttribute("role", "alert");
+                        err.textContent = L("Não conseguimos enviar agora. Tente de novo ou chame no WhatsApp.");
+                        (submitBtn && submitBtn.parentNode ? submitBtn.parentNode : form).appendChild(err);
+                    }
+                });
+            } else {
+                form.classList.add("enviado");
+            }
+        });
+    });
+
+    qsa(".js-news").forEach(function (form) {
+        form.addEventListener("submit", function (ev) {
+            ev.preventDefault();
+            var input = qs("input", form);
+            if (!input) { return; }
+            if (input.checkValidity()) {
+                var emailVal = input.value.trim();
+                if (window.SNP_enviaLead && emailVal) {
+                    window.SNP_enviaLead({
+                        nome: "Assinante Newsletter",
+                        email: emailVal,
+                        origem: "newsletter",
+                        mensagem: "Inscrição na newsletter GundjaTech."
+                    });
+                }
+                input.value = "";
+                input.placeholder = L("Inscrição confirmada!");
+            } else {
+                input.reportValidity();
+            }
+        });
+    });
+
+    observe(qsa(".case-mock, .servico-mock, .parede"), function (el, visible) {
+        el.classList.toggle("ativo-mock", visible && !reducedMotion);
+    }, { threshold: 0.15 });
+
+    qsa(".js-palavras").forEach(function (el) {
+        var idx = 0;
+        (function walk(node) {
+            Array.prototype.slice.call(node.childNodes).forEach(function (child) {
+                if (child.nodeType === 3) {
+                    var frag = document.createDocumentFragment();
+                    child.textContent.split(/(\s+)/).forEach(function (token) {
+                        if (!token) { return; }
+                        if (/^\s+$/.test(token)) {
+                            frag.appendChild(document.createTextNode(token));
+                        } else {
+                            var span = document.createElement("span");
+                            span.className = "pal";
+                            span.textContent = token;
+                            span.style.transitionDelay = (0.06 * idx++) + "s";
+                            frag.appendChild(span);
+                        }
+                    });
+                    node.replaceChild(frag, child);
+                } else if (child.nodeType === 1) {
+                    walk(child);
+                }
+            });
+        })(el);
+    });
+
+    observe(qsa(".js-palavras"), function (el, visible, io) {
+        if (visible) {
+            el.classList.add("visivel");
+            if (io) { io.unobserve(el); }
+        }
+    });
+
+    observe(qsa(".js-ia-caixa"), function (el, visible, io) {
+        if (visible) {
+            el.classList.add("ativo");
+            if (io) { io.unobserve(el); }
+        }
+    }, { threshold: 0.3 });
+
+    var aiHint = qs(".ia-dica");
+    qsa(".ia-grade span").forEach(function (badge) {
+        badge.addEventListener("mouseenter", function () {
+            if (aiHint) { aiHint.textContent = badge.dataset.nome; }
+        });
+    });
+
+    var caseCards = qsa(".case");
+    var showcase = qs(".js-vitrine");
+    var showcaseScreen = qs(".js-vit-tela");
+    var showcaseParallax = qs(".js-vit-paralaxe");
+    var showcaseVideos = qsa(".js-vit");
+    var showcaseTabs = qsa(".vit-aba");
+    var currentVideoIdx = 0;
+    var showcaseVisible = false;
+
+    function activateVideo(index) {
+        showcaseVideos.forEach(function (vid, i) {
+            var active = i === index;
+            vid.classList.toggle("ativo", active);
+            if (!active) { vid.pause(); }
+        });
+        showcaseTabs.forEach(function (tab, i) {
+            tab.classList.remove("ativo");
+            tab.setAttribute("aria-selected", i === index ? "true" : "false");
+            if (i === index) {
+                tab.offsetWidth;
+                tab.classList.add("ativo");
+            }
+        });
+        currentVideoIdx = index;
+        var current = showcaseVideos[index];
+        current.preload = "auto";
+        current.currentTime = 0;
+        var duration = isFinite(current.duration) && current.duration ? current.duration : 16.7;
+        if (showcaseTabs[index]) {
+            showcaseTabs[index].style.setProperty("--tempo", duration + "s");
+        }
+        if (showcaseVisible && !reducedMotion) {
+            var p = current.play();
+            if (p && p.catch) { p.catch(function () {}); }
+        }
+        showcaseVideos[(index + 1) % showcaseVideos.length].preload = "auto";
+    }
+
+    showcaseVideos.forEach(function (vid, idx) {
+        vid.addEventListener("ended", function () {
+            if (idx === currentVideoIdx) {
+                activateVideo((idx + 1) % showcaseVideos.length);
+            }
+        });
+    });
+
+    showcaseTabs.forEach(function (tab, idx) {
+        tab.setAttribute("role", "tab");
+        tab.addEventListener("click", function () { activateVideo(idx); });
+    });
+
+    observe(showcase ? [showcase] : [], function (el, visible) {
+        showcaseVisible = visible;
+        if (visible && showcaseVideos[currentVideoIdx]) {
+            if (showcaseVideos[currentVideoIdx].paused) {
+                var p = showcaseVideos[currentVideoIdx].play();
+                if (p && p.catch) { p.catch(function () {}); }
+            }
+        } else if (showcaseVideos[currentVideoIdx]) {
+            showcaseVideos[currentVideoIdx].pause();
+        }
+    }, { threshold: 0.25 });
+
+    if (showcaseVideos.length) { activateVideo(0); }
+
+    var serviceMocks = qsa(".servico-mock");
+
+    function animateCounter(el, target, duration, suffix) {
+        var start = null;
+        (function step(ts) {
+            if (!start) { start = ts; }
+            var progress = clamp((ts - start) / duration, 0, 1);
+            el.textContent = Math.round(target * easeOut(progress)) + (suffix || "");
+            if (progress < 1) { requestAnimationFrame(step); }
+        })(performance.now());
+    }
+
+    observe(qsa(".js-garantias"), function (section, visible, io) {
+        if (!visible) { return; }
+        section.classList.add("ativo");
+        if (io) { io.unobserve(section); }
+
+        qsa(".js-conta", section).forEach(function (counter) {
+            if (reducedMotion) {
+                counter.textContent = counter.dataset.alvo;
+            } else {
+                setTimeout(function () { animateCounter(counter, +counter.dataset.alvo, 1800); }, 300);
+            }
+        });
+
+        var clockEl = qs(".js-relogio", section);
+        if (clockEl) {
+            setTimeout(function () { animateCounter(clockEl, 4, 1600, "h"); }, 600);
+        }
+
+        var typingEl = qs(".js-digita", section);
+        if (typingEl) {
+            if (reducedMotion) {
+                typingEl.textContent = typingEl.dataset.texto;
+            } else {
+                setTimeout(function () {
+                    var txt = typingEl.dataset.texto || "";
+                    var pos = 0;
+                    (function typeNext() {
+                        typingEl.textContent = txt.slice(0, pos++);
+                        if (pos <= txt.length) {
+                            setTimeout(typeNext, txt[pos - 2] === "\n" ? 380 : 32);
+                        }
+                    })();
+                }, 700);
+            }
+        }
+    }, { threshold: 0.2 });
+
+    qsa(".g-card").forEach(function (card) {
+        card.addEventListener("pointermove", function (ev) {
+            var rect = card.getBoundingClientRect();
+            card.style.setProperty("--mx", (ev.clientX - rect.left) + "px");
+            card.style.setProperty("--my", (ev.clientY - rect.top) + "px");
+        });
+    });
+
+    // Authentic GundjaTech project highlights & partner feedback (no fabricated third-party celebrity claims)
+    var testimonials = [
+        [L("A plataforma KLASSE elevou nosso posicionamento digital e simplificou a jornada das escolas que buscam gestão financeira, matrículas e documentos acadêmicos em tempo real."), L("Equipe KLASSE"), L("EdTech · Gestão Escolar")],
+        [L("Nosso portal institucional organizou todos os cursos técnicos de saúde e trouxe muito mais clareza para o processo de admissões, laboratórios e contato com novos alunos."), L("Direção Acadêmica"), L("Instituto Paraíso do Saber")],
+        [L("A nova plataforma corporativa com simuladores fiscais interativos diferenciou nossa marca no setor contábil e aumentou a qualificação dos contatos empresariais."), L("Diretoria Executiva"), L("Cotech Contabilidade")],
+        [L("Comunicação direta com quem executa, prazos respeitados em contrato e entrega técnica pensada para velocidade, SEO e geração de oportunidades reais."), L("Atendimento GundjaTech"), L("Projetos Web & Sistemas")],
+        [L("Monitoramento contínuo, blindagem de segurança, backups automáticos e operação gerenciada que mantêm nosso site estável todos os dias."), L("Operação Contínua"), L("Cibersegurança & Cloud")],
+        [L("Arquitetura limpa, painel administrativo integrado ao portal do cliente e total transparência em cada etapa do desenvolvimento."), L("Engenharia Digital"), L("Sistemas & Plataformas")]
+    ];
+
+    function renderTestimonialCard(item) {
+        var initials = item[1].split(" ").map(function (w) { return w[0]; }).slice(0, 2).join("").toUpperCase();
+        return '<figure class="dep"><div class="est" aria-label="5 estrelas">★★★★★</div><blockquote style="margin:0">' + item[0] + '</blockquote><figcaption class="quem"><span class="av">' + initials + '</span><span><b>' + item[1] + '</b><small>' + item[2] + '</small></span></figcaption></figure>';
+    }
+
+    qsa(".js-col").forEach(function (col, idx) {
+        var html = testimonials.slice(idx % testimonials.length)
+            .concat(testimonials.slice(0, idx % testimonials.length))
+            .slice(0, 5)
+            .map(renderTestimonialCard)
+            .join("");
+        col.innerHTML = html + html.replace(/<figure class="dep">/g, '<figure class="dep" aria-hidden="true">');
+    });
+
+    var moreBtn = qs(".js-mais");
+    var moreMenu = qs("#menu-mais");
+    if (moreBtn && moreMenu) {
+        moreBtn.addEventListener("click", function () {
+            var open = moreMenu.classList.toggle("on");
+            moreBtn.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+        qsa("a", moreMenu).forEach(function (link) {
+            link.addEventListener("click", function () {
+                moreMenu.classList.remove("on");
+                moreBtn.setAttribute("aria-expanded", "false");
+            });
+        });
+        document.addEventListener("keydown", function (ev) {
+            if (ev.key === "Escape") {
+                moreMenu.classList.remove("on");
+                moreBtn.setAttribute("aria-expanded", "false");
+            }
+        });
+    }
+
+    var toTopBtn = qs(".js-topo");
+    if (toTopBtn) {
+        toTopBtn.addEventListener("click", function () {
+            window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
+        });
+    }
+
+    var ticking = false;
+    var wallBg = qs(".parede-plano");
+
+    function updateScrollEffects() {
+        if (wallBg && !reducedMotion) {
+            var z = clamp(window.scrollY / window.innerHeight, 0, 1);
+            wallBg.style.setProperty("--zoom", (1 + 0.08 * z).toFixed(3));
+        }
+
+        if (window.innerWidth >= 992) {
+            caseCards.forEach(function (card, idx) {
+                var next = caseCards[idx + 1];
+                if (next) {
+                    var progress = clamp(1 - (next.getBoundingClientRect().top - card.getBoundingClientRect().top) / card.offsetHeight, 0, 1);
+                    card.style.transform = "scale(" + (1 - 0.06 * progress).toFixed(3) + ")";
+                    card.style.filter = "brightness(" + (1 - 0.12 * progress).toFixed(3) + ")";
+                }
+            });
+
+            serviceMocks.forEach(function (mock) {
+                var rect = mock.getBoundingClientRect();
+                var ratio = (rect.top + rect.height / 2 - window.innerHeight / 2) / window.innerHeight;
+                mock.style.setProperty("--p1", (30 * ratio).toFixed(1) + "px");
+                mock.style.setProperty("--p2", (-70 * ratio).toFixed(1) + "px");
+            });
+        }
+
+        if (showcase && showcaseScreen && showcaseParallax) {
+            var rect = showcase.getBoundingClientRect();
+            var vh = window.innerHeight;
+            var t = reducedMotion ? 1 : easeOut(clamp((vh - rect.top) / (0.85 * vh), 0, 1));
+            showcaseScreen.style.setProperty("--rx", lerp(28, 0, t).toFixed(2) + "deg");
+            showcaseScreen.style.setProperty("--esc", lerp(0.82, 1, t).toFixed(3));
+            showcaseScreen.style.setProperty("--ty", lerp(40, 0, t).toFixed(1) + "px");
+            showcaseScreen.style.setProperty("--clip", lerp(8, 0, t).toFixed(2) + "%");
+            var py = clamp((rect.top + rect.height / 2 - vh / 2) / vh, -1, 1);
+            showcaseParallax.style.setProperty("--py", (-50 * py).toFixed(1) + "px");
+        }
+
+        if (toTopBtn) {
+            toTopBtn.classList.toggle("on", window.scrollY > window.innerHeight);
+        }
+    }
+
+    window.addEventListener("scroll", function () {
+        if (!ticking) {
+            ticking = true;
+            requestAnimationFrame(function () {
+                ticking = false;
+                updateScrollEffects();
+            });
+        }
+    }, { passive: true });
+    window.addEventListener("resize", updateScrollEffects);
+    updateScrollEffects();
+
+    var revealTargets = qsa(".cases h2, .fazemos h2, .compara h2, .oferta-card, #dep-titulo, #faq-titulo, .contato-card, .garantias-topo");
+    revealTargets.forEach(function (el) { el.classList.add("revelar"); });
+    observe(revealTargets, function (el, visible, io) {
+        if (visible) {
+            el.classList.add("visivel");
+            if (io) { io.unobserve(el); }
+        }
+    });
+})();
