@@ -10,6 +10,7 @@ FROM php:8.4-apache-bookworm
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 ENV COMPOSER_ALLOW_SUPERUSER=1
 ENV PORT=10000
+ENV LOG_CHANNEL=stderr
 
 # System dependencies & PHP extensions for Laravel 13 + Supabase PostgreSQL
 RUN apt-get update && apt-get install -y --no-install-recommends \
