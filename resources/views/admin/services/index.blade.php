@@ -66,10 +66,18 @@
                                 @if(Auth::user()->hasPermission('services.manage'))
                                     <div class="inline-flex items-center gap-3">
                                         <a href="{{ route('admin.services.edit', $s) }}" class="text-[#E4A318] hover:underline font-bold">Editar</a>
-                                        <form action="{{ route('admin.services.destroy', $s) }}" method="POST" onsubmit="return confirm('Excluir o serviço {{ addslashes($s->name) }}?');">
+                                        <form
+                                            action="{{ route('admin.services.destroy', $s) }}"
+                                            method="POST"
+                                            data-confirm-title="Excluir serviço"
+                                            data-confirm-message="Tem certeza que deseja remover este serviço do catálogo oficial da GundjaTech?"
+                                            data-confirm-target="{{ $s->name }}"
+                                            data-confirm-button="Sim, excluir serviço"
+                                            data-confirm-tone="danger"
+                                        >
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-red-400 hover:text-red-300">Excluir</button>
+                                            <button type="submit" class="text-red-400 hover:text-red-300 cursor-pointer">Excluir</button>
                                         </form>
                                     </div>
                                 @endif

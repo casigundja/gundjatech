@@ -368,4 +368,114 @@ class LiveIntegrationAndAuditTest extends TestCase
         $this->assertGreaterThanOrEqual(2, BlogPost::count());
         $this->assertGreaterThanOrEqual(6, Service::count());
     }
+
+    public function test_admin_can_cancel_and_delete_service_requests_with_rbac_and_attachment_cleanup(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        Storage::fake('local');
+
+        $admin = User::where('role', UserRole::SuperAdmin->value)->firstOrFail();
+        $financialUser = User::where('email', 'financeiro@gundjatech.com')->firstOrFail();
+
+        $serviceRequest = ServiceRequest::create([
+            'protocol' => 'CHAT-20261120-TEST',
+            'name' => 'Teste Limpeza',
+            'email' => 'teste-limpeza@exemplo.com',
+            'service_title' => 'Solicitação de teste para limpeza',
+            'description' => 'Registro de teste a cancelar e excluir.',
+            'status' => 'new',
+        ]);
+
+        Storage::disk('local')->put('requests/test-briefing.pdf', 'pdf-bytes');
+        $serviceRequest->attachments()->create([
+            'file_name' => 'test-briefing.pdf',
+            'file_path' => 'requests/test-briefing.pdf',
+            'file_type' => 'application/pdf',
+            'file_size' => 9,
+        ]);
+
+        // Index renders custom confirmation modal attributes (no native confirm())
+        $this->actingAs($admin)
+            ->get('/admin/solicitacoes')
+            ->assertStatus(200)
+            ->assertSee('data-confirm-title="Cancelar solicitação"', false)
+            ->assertSee('data-confirm-title="Excluir solicitação"', false)
+            ->assertDontSee('return confirm(', false);
+
+        // Unauthorized staff (lacks requests.manage) gets 403 on cancel & destroy
+        $this->actingAs($financialUser)
+            ->post("/admin/solicitacoes/{$serviceRequest->id}/cancelar")
+            ->assertStatus(403);
+
+        $this->actingAs($financialUser)
+            ->delete("/admin/solicitacoes/{$serviceRequest->id}")
+            ->assertStatus(403);
+
+        // Authorized admin cancels the request
+        $this->actingAs($admin)
+            ->post("/admin/solicitacoes/{$serviceRequest->id}/cancelar")
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('service_requests', [
+            'id' => $serviceRequest->id,
+            'status' => 'cancelled',
+        ]);
+        $this->assertDatabaseHas('request_status_histories', [
+            'service_request_id' => $serviceRequest->id,
+            'new_status' => 'cancelled',
+        ]);
+
+        // Authorized admin permanently deletes the request + cascades histories/attachments + cleans file
+        $this->actingAs($admin)
+            ->delete("/admin/solicitacoes/{$serviceRequest->id}")
+            ->assertRedirect(route('admin.requests.index'));
+
+        $this->assertDatabaseMissing('service_requests', ['id' => $serviceRequest->id]);
+        $this->assertDatabaseMissing('request_status_histories', ['service_request_id' => $serviceRequest->id]);
+        $this->assertDatabaseMissing('request_attachments', ['service_request_id' => $serviceRequest->id]);
+        Storage::disk('local')->assertMissing('requests/test-briefing.pdf');
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'request.deleted',
+            'subject_id' => $serviceRequest->id,
+        ]);
+    }
+
+    public function test_admin_can_delete_other_users_safely_with_confirmation_modal_and_self_protection(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $superAdmin = User::where('role', UserRole::SuperAdmin->value)->firstOrFail();
+        $attendant = User::where('email', 'atendimento@gundjatech.com')->firstOrFail();
+
+        // /admin/usuarios renders confirmation modal attributes for other users
+        $this->actingAs($superAdmin)
+            ->get('/admin/usuarios')
+            ->assertStatus(200)
+            ->assertSee('data-confirm-title="Excluir usuário"', false)
+            ->assertDontSee('return confirm(', false);
+
+        // Unauthorized attendant (lacks users.manage) gets 403
+        $this->actingAs($attendant)
+            ->delete("/admin/usuarios/{$superAdmin->id}")
+            ->assertStatus(403);
+
+        // SuperAdmin CANNOT delete own logged-in account
+        $this->actingAs($superAdmin)
+            ->delete("/admin/usuarios/{$superAdmin->id}")
+            ->assertRedirect()
+            ->assertSessionHas('error');
+        $this->assertDatabaseHas('users', ['id' => $superAdmin->id]);
+
+        // SuperAdmin CAN delete another user cleanly (even if user authored content/quotations)
+        $this->actingAs($superAdmin)
+            ->delete("/admin/usuarios/{$attendant->id}")
+            ->assertRedirect(route('admin.users.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('users', ['id' => $attendant->id]);
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'user.deleted',
+            'subject_id' => $attendant->id,
+        ]);
+    }
 }

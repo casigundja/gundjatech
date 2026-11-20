@@ -162,8 +162,43 @@
                             <textarea name="internal_notes" rows="3" placeholder="Anotações visíveis apenas pela equipe..." class="w-full bg-[#141414] border border-[#2E2D2C] rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-[#E4A318]">{{ $serviceRequest->internal_notes }}</textarea>
                         </div>
 
-                        <button type="submit" class="btn-primary w-full py-2.5 rounded-xl text-xs font-bold">Salvar Atualização</button>
+                        <button type="submit" class="btn-primary w-full py-2.5 rounded-xl text-xs font-bold cursor-pointer">Salvar Atualização</button>
                     </form>
+
+                    <div class="pt-4 border-t border-white/10 space-y-2.5">
+                        @if(! in_array($serviceRequest->status, ['cancelled', 'completed'], true))
+                            <form
+                                action="{{ route('admin.requests.cancel', $serviceRequest) }}"
+                                method="POST"
+                                data-confirm-title="Cancelar solicitação"
+                                data-confirm-message="Deseja marcar esta solicitação como cancelada? O histórico será mantido e o status passará para Cancelada."
+                                data-confirm-target="{{ $serviceRequest->protocol }} • {{ $serviceRequest->name }}"
+                                data-confirm-button="Sim, cancelar solicitação"
+                                data-confirm-tone="warning"
+                            >
+                                @csrf
+                                <button type="submit" class="w-full py-2 rounded-xl text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/35 hover:bg-amber-500/25 transition cursor-pointer">
+                                    Cancelar Solicitação
+                                </button>
+                            </form>
+                        @endif
+
+                        <form
+                            action="{{ route('admin.requests.destroy', $serviceRequest) }}"
+                            method="POST"
+                            data-confirm-title="Excluir solicitação"
+                            data-confirm-message="Tem certeza que deseja excluir esta solicitação definitivamente do banco de dados? Anexos e histórico vinculados serão removidos e esta ação não pode ser desfeita."
+                            data-confirm-target="{{ $serviceRequest->protocol }} • {{ $serviceRequest->title ?: $serviceRequest->name }}"
+                            data-confirm-button="Sim, excluir definitivamente"
+                            data-confirm-tone="danger"
+                        >
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="w-full py-2 rounded-xl text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition cursor-pointer">
+                                Excluir Solicitação do Banco
+                            </button>
+                        </form>
+                    </div>
                 </div>
             @endif
         </div>

@@ -78,6 +78,19 @@ class AutonomousCrmTest extends TestCase
         $this->assertSame('draft', $quotation->status);
         $this->assertStringStartsWith('ORC-AI-', $quotation->quotation_number);
         $this->assertSame(1, $quotation->items->count());
+
+        // Admin quotation detail renders full recipient & contact details + WhatsApp link
+        $admin = User::where('role', UserRole::SuperAdmin->value)->firstOrFail();
+        $this->actingAs($admin)
+            ->get(route('admin.quotations.show', $quotation))
+            ->assertStatus(200)
+            ->assertSee('Destinatário &amp; Contato', false)
+            ->assertSee('Beatriz Nogueira')
+            ->assertSee('Aurora Moda')
+            ->assertSee('beatriz@auroramoda.com')
+            ->assertSee('(11) 98765-1122')
+            ->assertSee('https://wa.me/5511987651122', false)
+            ->assertSee('Abrir Conversa no Chat');
     }
 
     public function test_autonomous_crm_triggers_human_handoff_on_emergency_or_director_request(): void
@@ -345,5 +358,54 @@ class AutonomousCrmTest extends TestCase
             ->assertSessionHas('crm_test_result', static function (array $result): bool {
                 return $result['ok'] === true && $result['mode'] === 'vertex_express';
             });
+    }
+
+    public function test_admin_can_delete_chat_conversation_with_cascade_messages_and_rbac(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $admin = User::where('role', UserRole::SuperAdmin->value)->firstOrFail();
+        $financialUser = User::where('email', 'financeiro@gundjatech.com')->firstOrFail();
+
+        $start = $this->postJson('/api/chat/start', [
+            'nome' => 'Visitante Descartavel',
+            'email' => 'descartavel@teste.com',
+            'telefone' => '(19) 95324-8420',
+            'assunto' => 'Teste de limpeza',
+            'mensagem' => 'Mensagem de teste para exclusao.',
+        ])->assertStatus(201);
+
+        $convId = (int) $start->json('conversation_id');
+        $this->assertDatabaseHas('conversations', ['id' => $convId]);
+        $this->assertDatabaseHas('conversation_messages', ['conversation_id' => $convId]);
+
+        // Both /admin/atendimento and /admin/crm-autonomo render confirmation modal attributes
+        $this->actingAs($admin)
+            ->get(route('admin.chat.index', ['conversation_id' => $convId]))
+            ->assertStatus(200)
+            ->assertSee('data-confirm-title="Excluir atendimento"', false);
+
+        $this->actingAs($admin)
+            ->get(route('admin.crm.index'))
+            ->assertStatus(200)
+            ->assertSee('data-confirm-title="Excluir atendimento"', false);
+
+        // Unauthorized staff (lacks chat.manage) gets 403
+        $this->actingAs($financialUser)
+            ->delete(route('admin.chat.destroy', $convId))
+            ->assertStatus(403);
+
+        // Authorized admin deletes conversation + cascades messages + records audit log
+        $this->actingAs($admin)
+            ->delete(route('admin.chat.destroy', $convId))
+            ->assertRedirect(route('admin.chat.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('conversations', ['id' => $convId]);
+        $this->assertDatabaseMissing('conversation_messages', ['conversation_id' => $convId]);
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'chat.deleted',
+            'subject_id' => $convId,
+        ]);
     }
 }

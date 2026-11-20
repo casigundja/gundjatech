@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Models\BlogPost;
+use App\Models\Quotation;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
@@ -140,5 +143,56 @@ class AdminUserController extends Controller
         ]);
 
         return redirect()->route('admin.users.index')->with('success', 'Usuário atualizado com sucesso!');
+    }
+
+    public function destroy(Request $request, User $user): RedirectResponse
+    {
+        if ($user->id === Auth::id()) {
+            return back()->with('error', 'Você não pode excluir sua própria conta enquanto estiver logado.');
+        }
+
+        if ($user->isSuperAdmin() && ! Auth::user()->isSuperAdmin()) {
+            return back()->with('error', 'Apenas Super Administradores podem excluir outro Super Administrador.');
+        }
+
+        if (
+            $user->isSuperAdmin()
+            && User::where('role', UserRole::SuperAdmin->value)
+                ->where('is_active', true)
+                ->where('id', '!=', $user->id)
+                ->doesntExist()
+        ) {
+            return back()->with('error', 'Não é possível excluir o último Super Administrador ativo do sistema.');
+        }
+
+        $deletedId = $user->id;
+        $deletedName = $user->name;
+        $deletedEmail = $user->email;
+        $deletedRole = $user->role;
+        $actingAdminId = (int) Auth::id();
+
+        DB::transaction(function () use ($user, $actingAdminId): void {
+            Quotation::where('user_id', $user->id)->update(['user_id' => $actingAdminId]);
+            BlogPost::where('author_id', $user->id)->update(['author_id' => $actingAdminId]);
+            DB::table('sessions')->where('user_id', $user->id)->delete();
+            $user->delete();
+        });
+
+        ActivityLog::create([
+            'user_id' => $actingAdminId,
+            'action' => 'user.deleted',
+            'subject_type' => User::class,
+            'subject_id' => $deletedId,
+            'details' => [
+                'name' => $deletedName,
+                'email' => $deletedEmail,
+                'role' => $deletedRole,
+            ],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return redirect()->route('admin.users.index')
+            ->with('success', "Usuário {$deletedName} excluído com sucesso.");
     }
 }

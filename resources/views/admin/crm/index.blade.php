@@ -152,6 +152,24 @@
                                         </button>
                                     </form>
                                 @endif
+                                @if(Auth::user()->hasPermission('chat.manage'))
+                                    <form
+                                        action="{{ route('admin.chat.destroy', $conv) }}"
+                                        method="POST"
+                                        data-confirm-title="Excluir atendimento"
+                                        data-confirm-message="Tem certeza que deseja excluir esta conversa e todas as mensagens definitivamente do banco de dados? Essa ação não pode ser desfeita."
+                                        data-confirm-target="{{ $leadName }} • {{ $conv->subject }}"
+                                        data-confirm-button="Sim, excluir conversa"
+                                        data-confirm-tone="danger"
+                                    >
+                                        @csrf
+                                        @method('DELETE')
+                                        <input type="hidden" name="redirect_to" value="crm">
+                                        <button type="submit" class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition cursor-pointer">
+                                            Excluir
+                                        </button>
+                                    </form>
+                                @endif
                             </td>
                         </tr>
                     @empty

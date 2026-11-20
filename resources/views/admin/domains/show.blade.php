@@ -53,10 +53,18 @@
                             <td class="px-4 py-3 text-gray-400">{{ $dns->ttl }}s</td>
                             <td class="px-4 py-3 text-right font-sans">
                                 @if(Auth::user()->hasPermission('domains.manage'))
-                                    <form action="{{ route('admin.domains.dns.destroy', $dns) }}" method="POST" onsubmit="return confirm('Remover registro DNS {{ $dns->type }} {{ $dns->host }}?');">
+                                    <form
+                                        action="{{ route('admin.domains.dns.destroy', $dns) }}"
+                                        method="POST"
+                                        data-confirm-title="Remover registro DNS"
+                                        data-confirm-message="Tem certeza que deseja remover este apontamento DNS do domínio? Essa alteração pode afetar o acesso imediato ao serviço associado."
+                                        data-confirm-target="{{ $dns->type }} • {{ $dns->host }}"
+                                        data-confirm-button="Sim, remover DNS"
+                                        data-confirm-tone="danger"
+                                    >
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-red-400 hover:text-red-300 text-xs font-semibold">Remover</button>
+                                        <button type="submit" class="text-red-400 hover:text-red-300 text-xs font-semibold cursor-pointer">Remover</button>
                                     </form>
                                 @endif
                             </td>

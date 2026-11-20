@@ -60,13 +60,60 @@
                             <td class="px-6 py-4 text-gray-300">
                                 {{ $r->assignedUser?->name ?? 'Não atribuído' }}
                             </td>
-                            <td class="px-6 py-4">
-                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#1C1C1C] text-gray-200 border border-[#333333]">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @php
+                                    $statusBadgeClass = match ($r->status) {
+                                        'new' => 'bg-[#F2C230]/20 text-[#F2C230] border border-[#F2C230]/40',
+                                        'analyzing', 'awaiting_info' => 'bg-[#121AFF]/20 text-[#93A3FF] border border-[#121AFF]/30',
+                                        'quotation_sent', 'awaiting_approval', 'in_progress' => 'bg-amber-500/15 text-amber-300 border border-amber-500/30',
+                                        'approved', 'completed' => 'bg-emerald-500/15 text-[#6EE7B7] border border-emerald-500/30',
+                                        'cancelled' => 'bg-red-500/15 text-red-400 border border-red-500/30',
+                                        default => 'bg-white/10 text-[#D5DCEB] border border-white/15',
+                                    };
+                                @endphp
+                                <span class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold {{ $statusBadgeClass }}">
                                     {{ $r->status_label }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-right">
-                                <a href="{{ route('admin.requests.show', $r) }}" class="btn-primary px-3 py-1.5 rounded-lg text-xs font-bold inline-block">Gerenciar &rarr;</a>
+                            <td class="px-6 py-4 text-right whitespace-nowrap">
+                                <div class="inline-flex items-center justify-end gap-2">
+                                    <a href="{{ route('admin.requests.show', $r) }}" class="btn-primary px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center no-underline">
+                                        Gerenciar &rarr;
+                                    </a>
+                                    @if(Auth::user()->hasPermission('requests.manage'))
+                                        @if(! in_array($r->status, ['cancelled', 'completed'], true))
+                                            <form
+                                                action="{{ route('admin.requests.cancel', $r) }}"
+                                                method="POST"
+                                                data-confirm-title="Cancelar solicitação"
+                                                data-confirm-message="Deseja marcar esta solicitação como cancelada? Ela permanecerá registrada no histórico com status Cancelada."
+                                                data-confirm-target="{{ $r->protocol }} • {{ $r->name }}"
+                                                data-confirm-button="Sim, cancelar"
+                                                data-confirm-tone="warning"
+                                            >
+                                                @csrf
+                                                <button type="submit" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/35 hover:bg-amber-500/25 transition cursor-pointer">
+                                                    Cancelar
+                                                </button>
+                                            </form>
+                                        @endif
+                                        <form
+                                            action="{{ route('admin.requests.destroy', $r) }}"
+                                            method="POST"
+                                            data-confirm-title="Excluir solicitação"
+                                            data-confirm-message="Tem certeza que deseja excluir esta solicitação definitivamente do banco de dados? Anexos e histórico vinculados serão removidos e essa ação não pode ser desfeita."
+                                            data-confirm-target="{{ $r->protocol }} • {{ $r->title ?: $r->name }}"
+                                            data-confirm-button="Sim, excluir do banco"
+                                            data-confirm-tone="danger"
+                                        >
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition cursor-pointer">
+                                                Excluir
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty

@@ -9,7 +9,7 @@
     <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="stylesheet" href="/css/gt-admin.css?v=9">
+    <link rel="stylesheet" href="/css/gt-admin.css?v=10">
     <script>
         (function () {
             function applyAdminTheme(val) {
@@ -399,6 +399,135 @@
 
     <!-- Live Notification Toast Stack -->
     <div id="gt-live-toast-stack" class="fixed bottom-5 right-5 z-[90] flex flex-col gap-2.5 max-w-sm pointer-events-none" aria-live="polite"></div>
+
+    <!-- Global Executive Confirmation Modal (replaces native browser confirm()) -->
+    <div id="gt-confirm-modal" class="gtb-confirm-backdrop fixed inset-0 z-[100] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="gt-confirm-title">
+        <div id="gt-confirm-card" class="gtb-confirm-card w-full max-w-md">
+            <div class="gtb-confirm-bar"></div>
+            <div class="p-6 space-y-4">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <span class="gtb-confirm-icon">
+                            <svg id="gt-confirm-svg-danger" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            <svg id="gt-confirm-svg-warning" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        </span>
+                        <div>
+                            <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#8C95AA]">
+                                <img src="/img/favicon.svg" alt="" class="w-3.5 h-3.5 object-contain">
+                                <span>GundjaTech • Confirmação</span>
+                            </div>
+                            <h3 id="gt-confirm-title" class="gt-font-display gtb-confirm-title text-base font-bold mt-0.5">Confirmar ação</h3>
+                        </div>
+                    </div>
+                    <button type="button" id="gt-confirm-close" class="p-1.5 rounded-lg text-[#8C95AA] hover:text-[#F2C230] transition cursor-pointer" aria-label="Fechar">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <p id="gt-confirm-message" class="gtb-confirm-message text-xs sm:text-sm leading-relaxed"></p>
+
+                <div id="gt-confirm-target-wrap" class="gtb-confirm-target hidden px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-[#F2C230] shrink-0"></span>
+                    <span id="gt-confirm-target" class="truncate"></span>
+                </div>
+            </div>
+
+            <div class="gtb-confirm-footer px-6 py-4 flex items-center justify-end gap-2.5">
+                <button type="button" id="gt-confirm-cancel" class="btn-secondary px-4 py-2 text-xs cursor-pointer">
+                    Cancelar
+                </button>
+                <button type="button" id="gt-confirm-ok" class="gtb-btn-danger px-4 py-2 text-xs cursor-pointer">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const modal = document.getElementById('gt-confirm-modal');
+            const card = document.getElementById('gt-confirm-card');
+            const titleEl = document.getElementById('gt-confirm-title');
+            const msgEl = document.getElementById('gt-confirm-message');
+            const targetWrap = document.getElementById('gt-confirm-target-wrap');
+            const targetEl = document.getElementById('gt-confirm-target');
+            const okBtn = document.getElementById('gt-confirm-ok');
+            const cancelBtn = document.getElementById('gt-confirm-cancel');
+            const closeBtn = document.getElementById('gt-confirm-close');
+            const svgDanger = document.getElementById('gt-confirm-svg-danger');
+            const svgWarning = document.getElementById('gt-confirm-svg-warning');
+
+            if (!modal || !card || !okBtn) return;
+
+            let pendingForm = null;
+
+            function closeModal() {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                okBtn.disabled = false;
+                pendingForm = null;
+            }
+
+            function openModal(form) {
+                pendingForm = form;
+                const tone = form.dataset.confirmTone || 'danger';
+                const isWarning = tone === 'warning';
+
+                card.classList.toggle('is-warning', isWarning);
+                svgDanger.classList.toggle('hidden', isWarning);
+                svgWarning.classList.toggle('hidden', !isWarning);
+
+                titleEl.textContent = form.dataset.confirmTitle || 'Confirmar exclusão';
+                msgEl.textContent = form.dataset.confirmMessage || 'Tem certeza que deseja continuar com esta ação?';
+
+                const targetText = (form.dataset.confirmTarget || '').trim();
+                if (targetText) {
+                    targetEl.textContent = targetText;
+                    targetWrap.classList.remove('hidden');
+                } else {
+                    targetWrap.classList.add('hidden');
+                }
+
+                okBtn.className = (isWarning ? 'btn-primary' : 'gtb-btn-danger') + ' px-4 py-2 text-xs cursor-pointer';
+                okBtn.textContent = form.dataset.confirmButton || (isWarning ? 'Confirmar' : 'Sim, excluir');
+                okBtn.disabled = false;
+
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                cancelBtn.focus();
+            }
+
+            document.addEventListener('submit', function (ev) {
+                const form = ev.target;
+                if (!(form instanceof HTMLFormElement)) return;
+                if (!form.dataset.confirmMessage) return;
+                if (form.dataset.confirmed === '1') return;
+
+                ev.preventDefault();
+                openModal(form);
+            }, true);
+
+            okBtn.addEventListener('click', function () {
+                if (!pendingForm) return;
+                const formToSubmit = pendingForm;
+                okBtn.disabled = true;
+                okBtn.textContent = 'Processando...';
+                formToSubmit.dataset.confirmed = '1';
+                formToSubmit.submit();
+            });
+
+            cancelBtn.addEventListener('click', closeModal);
+            closeBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', function (ev) {
+                if (ev.target === modal) closeModal();
+            });
+            document.addEventListener('keydown', function (ev) {
+                if (ev.key === 'Escape' && !modal.classList.contains('hidden')) {
+                    closeModal();
+                }
+            });
+        })();
+    </script>
 
     @livewireScripts
     @if($currentUser->hasPermission('chat.view'))

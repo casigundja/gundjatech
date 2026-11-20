@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Client;
+use App\Models\Conversation;
 use App\Models\Project;
 use App\Models\Quotation;
 use App\Models\QuotationItem;
@@ -37,7 +38,9 @@ class AdminQuotationController extends Controller
                     ->orWhereRaw('LOWER(title) LIKE ?', [$like])
                     ->orWhereHas('client', function ($cq) use ($like): void {
                         $cq->whereRaw('LOWER(company_name) LIKE ?', [$like])
-                            ->orWhereRaw('LOWER(name) LIKE ?', [$like]);
+                            ->orWhereRaw('LOWER(name) LIKE ?', [$like])
+                            ->orWhereRaw('LOWER(email) LIKE ?', [$like])
+                            ->orWhereRaw('LOWER(COALESCE(phone, \'\')) LIKE ?', [$like]);
                     });
             });
         }
@@ -187,7 +190,53 @@ class AdminQuotationController extends Controller
     {
         $quotation->load(['client', 'creator', 'serviceRequest', 'items.service', 'project', 'contract']);
 
-        return view('admin.quotations.show', compact('quotation'));
+        $linkedConversation = Conversation::query()
+            ->when(
+                $quotation->service_request_id,
+                static fn ($q) => $q->where('service_request_id', $quotation->service_request_id),
+                static fn ($q) => $q->where('client_id', $quotation->client_id)
+            )
+            ->latest('updated_at')
+            ->first();
+
+        $recipientName = trim((string) ($quotation->serviceRequest?->name ?: $quotation->client?->name ?: $quotation->client?->display_name ?: 'Cliente não informado'));
+        $recipientCompany = trim((string) ($quotation->client?->company_name ?: $quotation->serviceRequest?->company ?: ''));
+        if (strcasecmp($recipientCompany, $recipientName) === 0) {
+            $recipientCompany = '';
+        }
+
+        $recipientEmail = trim((string) ($quotation->client?->email ?: $quotation->serviceRequest?->email ?: ''));
+        $recipientPhone = trim((string) ($quotation->client?->phone ?: $quotation->serviceRequest?->phone ?: ''));
+        $recipientLocation = collect([$quotation->client?->city, $quotation->client?->state])->filter()->implode(' / ');
+        $recipientDocument = trim((string) ($quotation->client?->document ?: ''));
+
+        $whatsappUrl = null;
+        $digits = preg_replace('/\D+/', '', $recipientPhone) ?: '';
+        if (strlen($digits) >= 10) {
+            if (strlen($digits) <= 11 && ! str_starts_with($digits, '55')) {
+                $digits = '55'.$digits;
+            }
+            $waMessage = sprintf(
+                'Olá %s! Aqui é da GundjaTech. Seu orçamento %s (%s) no valor de R$ %s está pronto. Podemos conversar sobre os próximos passos?',
+                $recipientName,
+                $quotation->quotation_number,
+                $quotation->title,
+                number_format((float) $quotation->total, 2, ',', '.')
+            );
+            $whatsappUrl = 'https://wa.me/'.$digits.'?text='.rawurlencode($waMessage);
+        }
+
+        $recipientContact = [
+            'name' => $recipientName,
+            'company' => $recipientCompany,
+            'email' => $recipientEmail,
+            'phone' => $recipientPhone,
+            'location' => $recipientLocation,
+            'document' => $recipientDocument,
+            'whatsapp_url' => $whatsappUrl,
+        ];
+
+        return view('admin.quotations.show', compact('quotation', 'recipientContact', 'linkedConversation'));
     }
 
     public function updateStatus(Request $request, Quotation $quotation): RedirectResponse

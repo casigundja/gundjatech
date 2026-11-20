@@ -11,9 +11,16 @@
         </div>
         <div class="flex items-center gap-3">
             <a href="{{ route('admin.users.index') }}" class="btn-secondary px-4 py-2 rounded-xl text-xs font-semibold">Gerenciar Usuários</a>
-            <form action="{{ route('admin.permissions.reset') }}" method="POST" onsubmit="return confirm('Restaurar todas as permissões para o padrão original da GundjaTech?');">
+            <form
+                action="{{ route('admin.permissions.reset') }}"
+                method="POST"
+                data-confirm-title="Restaurar permissões padrão"
+                data-confirm-message="Deseja restaurar todas as permissões de cargos para a configuração original da GundjaTech? Ajustes manuais anteriores serão substituídos."
+                data-confirm-button="Restaurar padrões"
+                data-confirm-tone="warning"
+            >
                 @csrf
-                <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 transition">
+                <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 transition cursor-pointer">
                     Restaurar Padrões
                 </button>
             </form>

@@ -134,6 +134,79 @@ class AdminRequestController extends Controller
         return back()->with('success', 'Status da solicitação atualizado com sucesso!');
     }
 
+    public function cancel(Request $request, ServiceRequest $serviceRequest): RedirectResponse
+    {
+        if ($serviceRequest->status === 'cancelled') {
+            return back()->with('success', "A solicitação {$serviceRequest->protocol} já está cancelada.");
+        }
+
+        $oldStatus = $serviceRequest->status;
+
+        DB::transaction(function () use ($serviceRequest, $oldStatus): void {
+            $serviceRequest->update(['status' => 'cancelled']);
+
+            RequestStatusHistory::create([
+                'service_request_id' => $serviceRequest->id,
+                'old_status' => $oldStatus,
+                'new_status' => 'cancelled',
+                'comment' => 'Solicitação cancelada pela equipe administrativa.',
+                'user_id' => Auth::id(),
+            ]);
+        });
+
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'request.cancelled',
+            'subject_type' => ServiceRequest::class,
+            'subject_id' => $serviceRequest->id,
+            'details' => [
+                'protocol' => $serviceRequest->protocol,
+                'from' => $oldStatus,
+                'to' => 'cancelled',
+            ],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return back()->with('success', "Solicitação {$serviceRequest->protocol} cancelada com sucesso.");
+    }
+
+    public function destroy(Request $request, ServiceRequest $serviceRequest): RedirectResponse
+    {
+        $protocol = $serviceRequest->protocol;
+        $title = $serviceRequest->title ?: $protocol;
+        $requestId = $serviceRequest->id;
+        $attachmentPaths = $serviceRequest->attachments()->pluck('file_path')->all();
+
+        DB::transaction(function () use ($serviceRequest): void {
+            $serviceRequest->delete();
+        });
+
+        foreach ($attachmentPaths as $filePath) {
+            foreach (['local', 'public'] as $disk) {
+                if (Storage::disk($disk)->exists($filePath)) {
+                    Storage::disk($disk)->delete($filePath);
+                }
+            }
+        }
+
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'request.deleted',
+            'subject_type' => ServiceRequest::class,
+            'subject_id' => $requestId,
+            'details' => [
+                'protocol' => $protocol,
+                'title' => $title,
+            ],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return redirect()->route('admin.requests.index')
+            ->with('success', "Solicitação {$protocol} excluída definitivamente do banco de dados.");
+    }
+
     public function generateQuotation(Request $request, ServiceRequest $serviceRequest): RedirectResponse
     {
         $validated = $request->validate([

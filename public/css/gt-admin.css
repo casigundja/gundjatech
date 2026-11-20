@@ -1011,7 +1011,7 @@ html[data-admin-theme="light"] svg circle[stroke="#222738"] {
 }
 
 /* Light Mode — Complete Utility Overrides Across ALL Inner Admin Views */
-html[data-admin-theme="light"] body.gt-admin-boost :where(.bg-\[\#222738\], .bg-\[\#171B27\], .bg-\[\#171B27\]\/80, .bg-\[\#1A1F2E\], .bg-\[\#121623\], .bg-\[\#0C0F18\], .bg-\[\#141414\], .bg-\[\#161616\], .bg-\[\#181818\], .bg-\[\#191919\], .bg-\[\#0B0B0B\], .bg-gray-800, .bg-gray-900) {
+html[data-admin-theme="light"] body.gt-admin-boost :where(.bg-\[\#222738\], .bg-\[\#171B27\], .bg-\[\#171B27\]\/80, .bg-\[\#1A1F2E\], .bg-\[\#121623\], .bg-\[\#0C0F18\], .bg-\[\#141414\], .bg-\[\#161616\], .bg-\[\#181818\], .bg-\[\#191919\], .bg-\[\#1C1C1C\], .bg-\[\#0B0B0B\], .bg-gray-800, .bg-gray-900) {
     background-color: #F4F8FB !important;
     border-color: #CFE0EB !important;
 }
@@ -1045,6 +1045,11 @@ html[data-admin-theme="light"] body.gt-admin-boost :where(.bg-amber-500\/15, .bg
     border-color: rgba(217, 119, 6, 0.35) !important;
 }
 
+html[data-admin-theme="light"] body.gt-admin-boost :where(.bg-red-500\/10, .bg-red-500\/15, .bg-red-500\/20) {
+    background-color: #FEE2E2 !important;
+    border-color: rgba(220, 38, 38, 0.35) !important;
+}
+
 html[data-admin-theme="light"] body.gt-admin-boost :where(.text-white):not(.gtb-promo-card *):not(.gtb-heat-1):not(.gtb-heat-2):not(.gtb-heat-3):not(.gtb-float-tooltip *):not(.btn-primary):not(.btn-primary *):not(.bg-emerald-500):not(.bg-red-500):not(.bg-\[\#063B5C\]) {
     color: #063B5C !important;
 }
@@ -1061,7 +1066,7 @@ html[data-admin-theme="light"] body.gt-admin-boost :where(.text-\[\#6EE7B7\], .t
     color: #047857 !important;
 }
 
-html[data-admin-theme="light"] body.gt-admin-boost :where(.text-\[\#93A3FF\], .text-blue-300, .text-blue-400, .text-sky-300) {
+html[data-admin-theme="light"] body.gt-admin-boost :where(.text-\[\#93A3FF\], .text-blue-300, .text-blue-400, .text-sky-300, .text-sky-400) {
     color: #0E5A7A !important;
 }
 
@@ -1150,4 +1155,142 @@ html[data-admin-theme="light"] .gtb-toast-title {
 
 html[data-admin-theme="light"] .gtb-toast-body {
     color: #3E5C71 !important;
+}
+
+/* ==========================================================================
+   EXECUTIVE CONFIRMATION MODAL (Replaces native window.confirm everywhere)
+   ========================================================================== */
+@keyframes gtbConfirmIn {
+    0% {
+        opacity: 0;
+        transform: translateY(8px) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.gtb-confirm-backdrop {
+    background: rgba(4, 17, 29, 0.74);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.gtb-confirm-card {
+    background: linear-gradient(165deg, #0C253A 0%, #071826 100%);
+    border: 1px solid rgba(231, 240, 245, 0.16);
+    border-radius: 22px;
+    box-shadow: 0 28px 64px -16px rgba(0, 0, 0, 0.75);
+    animation: gtbConfirmIn 0.18s cubic-bezier(0.16, 0.84, 0.3, 1);
+    overflow: hidden;
+}
+
+.gtb-confirm-bar {
+    height: 4px;
+    width: 100%;
+    background: linear-gradient(90deg, #EF4444 0%, #DC2626 60%, #F2C230 100%);
+}
+
+.gtb-confirm-card.is-warning .gtb-confirm-bar {
+    background: linear-gradient(90deg, #F2C230 0%, #E0B020 60%, #16749A 100%);
+}
+
+.gtb-confirm-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: rgba(239, 68, 68, 0.14);
+    border: 1px solid rgba(239, 68, 68, 0.32);
+    color: #FCA5A5;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.gtb-confirm-card.is-warning .gtb-confirm-icon {
+    background: rgba(242, 194, 48, 0.16);
+    border-color: rgba(242, 194, 48, 0.42);
+    color: #F2C230;
+}
+
+.gtb-confirm-title {
+    color: #FFFFFF;
+}
+
+.gtb-confirm-message {
+    color: #B8D0DF;
+}
+
+.gtb-confirm-target {
+    background: #0E2940;
+    border: 1px solid rgba(231, 240, 245, 0.14);
+    color: #FFFFFF;
+}
+
+.gtb-confirm-footer {
+    background: rgba(4, 17, 29, 0.38);
+    border-top: 1px solid rgba(231, 240, 245, 0.09);
+}
+
+.gtb-btn-danger {
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%) !important;
+    color: #FFFFFF !important;
+    font-weight: 800 !important;
+    border: 0 !important;
+    border-radius: 11px !important;
+    box-shadow: 0 8px 20px -6px rgba(220, 38, 38, 0.55) !important;
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.gtb-btn-danger:hover {
+    filter: brightness(1.06);
+    transform: translateY(-1px);
+}
+
+.gtb-btn-danger:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
+html[data-admin-theme="light"] .gtb-confirm-backdrop {
+    background: rgba(6, 59, 92, 0.44) !important;
+}
+
+html[data-admin-theme="light"] .gtb-confirm-card {
+    background: #FFFFFF !important;
+    border: 1px solid #CFE0EB !important;
+    box-shadow: 0 28px 60px -16px rgba(6, 59, 92, 0.30) !important;
+}
+
+html[data-admin-theme="light"] .gtb-confirm-icon {
+    background: #FEF2F2 !important;
+    border-color: #FECACA !important;
+    color: #DC2626 !important;
+}
+
+html[data-admin-theme="light"] .gtb-confirm-card.is-warning .gtb-confirm-icon {
+    background: #FEF7DC !important;
+    border-color: rgba(217, 155, 0, 0.45) !important;
+    color: #9A6B00 !important;
+}
+
+html[data-admin-theme="light"] .gtb-confirm-title {
+    color: #063B5C !important;
+}
+
+html[data-admin-theme="light"] .gtb-confirm-message {
+    color: #3E5C71 !important;
+}
+
+html[data-admin-theme="light"] .gtb-confirm-target {
+    background: #EEF5F9 !important;
+    border-color: #CFE0EB !important;
+    color: #063B5C !important;
+}
+
+html[data-admin-theme="light"] .gtb-confirm-footer {
+    background: #F4F8FB !important;
+    border-top-color: #D4E3ED !important;
 }

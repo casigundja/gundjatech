@@ -109,10 +109,18 @@
                                                 </button>
                                             </form>
                                         @endif
-                                        <form action="{{ route('admin.finance.destroy', $t) }}" method="POST" onsubmit="return confirm('Excluir este lançamento financeiro?');">
+                                        <form
+                                            action="{{ route('admin.finance.destroy', $t) }}"
+                                            method="POST"
+                                            data-confirm-title="Excluir lançamento financeiro"
+                                            data-confirm-message="Tem certeza que deseja excluir este lançamento? Os totalizadores de receita e caixa serão recalculados imediatamente."
+                                            data-confirm-target="{{ $t->description ?? ('Lançamento #' . $t->id) }} • R$ {{ number_format((float) $t->amount, 2, ',', '.') }}"
+                                            data-confirm-button="Sim, excluir lançamento"
+                                            data-confirm-tone="danger"
+                                        >
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-red-400 hover:text-red-300 text-xs">Excluir</button>
+                                            <button type="submit" class="text-red-400 hover:text-red-300 text-xs cursor-pointer">Excluir</button>
                                         </form>
                                     </div>
                                 @endif

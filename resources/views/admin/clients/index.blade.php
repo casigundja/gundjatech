@@ -61,10 +61,18 @@
                                     <a href="{{ route('admin.clients.show', $c) }}" class="text-[#E4A318] hover:underline font-bold">Perfil 360°</a>
                                     @if(Auth::user()->hasPermission('clients.manage'))
                                         <a href="{{ route('admin.clients.edit', $c) }}" class="text-gray-400 hover:text-white">Editar</a>
-                                        <form action="{{ route('admin.clients.destroy', $c) }}" method="POST" onsubmit="return confirm('Excluir cliente {{ addslashes($c->display_name) }}?');">
+                                        <form
+                                            action="{{ route('admin.clients.destroy', $c) }}"
+                                            method="POST"
+                                            data-confirm-title="Excluir cliente"
+                                            data-confirm-message="Tem certeza que deseja excluir este cliente do CRM? Esta ação remove o registro e não pode ser desfeita."
+                                            data-confirm-target="{{ $c->display_name }}{{ $c->email ? ' • ' . $c->email : '' }}"
+                                            data-confirm-button="Sim, excluir cliente"
+                                            data-confirm-tone="danger"
+                                        >
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-red-400 hover:text-red-300">Excluir</button>
+                                            <button type="submit" class="text-red-400 hover:text-red-300 cursor-pointer">Excluir</button>
                                         </form>
                                     @endif
                                 </div>

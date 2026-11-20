@@ -130,6 +130,24 @@
                                     </button>
                                 </form>
                             @endif
+                            <form
+                                action="{{ route('admin.chat.destroy', $activeConversation) }}"
+                                method="POST"
+                                data-confirm-title="Excluir atendimento"
+                                data-confirm-message="Tem certeza que deseja excluir esta conversa e todas as mensagens definitivamente do banco de dados? Essa ação não pode ser desfeita."
+                                data-confirm-target="{{ $activeName }} • {{ $activeConversation->subject }}"
+                                data-confirm-button="Sim, excluir conversa"
+                                data-confirm-tone="danger"
+                            >
+                                @csrf
+                                @method('DELETE')
+                                @if(request('status'))
+                                    <input type="hidden" name="status" value="{{ request('status') }}">
+                                @endif
+                                <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 cursor-pointer bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition">
+                                    Excluir
+                                </button>
+                            </form>
                         </div>
                     @endif
                 </div>

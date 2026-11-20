@@ -59,7 +59,7 @@
                     <tr>
                         <th class="px-6 py-4">Nº Proposta / Validade</th>
                         <th class="px-6 py-4">Título & Origem</th>
-                        <th class="px-6 py-4">Cliente</th>
+                        <th class="px-6 py-4">Cliente &amp; Contato</th>
                         <th class="px-6 py-4">Valor Total</th>
                         <th class="px-6 py-4">Status</th>
                         <th class="px-6 py-4 text-right">Ações</th>
@@ -94,8 +94,21 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-white font-semibold">{{ $q->client?->display_name ?? 'Cliente removido' }}</div>
-                                <div class="text-[11px] text-gray-400">Por: {{ $q->creator?->name ?? 'Equipe' }}</div>
+                                @php
+                                    $qName = $q->serviceRequest?->name ?: ($q->client?->display_name ?? 'Cliente removido');
+                                    $qCompany = $q->client?->company_name ?: $q->serviceRequest?->company;
+                                    $qEmail = $q->client?->email ?: $q->serviceRequest?->email;
+                                    $qPhone = $q->client?->phone ?: $q->serviceRequest?->phone;
+                                @endphp
+                                <div class="text-white font-semibold">
+                                    {{ $qName }}
+                                    @if($qCompany && strcasecmp($qCompany, $qName) !== 0)
+                                        <span class="text-[11px] font-normal text-[#E4A318]">({{ $qCompany }})</span>
+                                    @endif
+                                </div>
+                                <div class="text-[11px] text-gray-400">
+                                    {{ $qEmail ?: 'Sem e-mail' }}{{ $qPhone ? ' • ' . $qPhone : '' }}
+                                </div>
                             </td>
                             <td class="px-6 py-4">
                                 <span class="font-extrabold text-white block">R$ {{ number_format($q->total, 2, ',', '.') }}</span>

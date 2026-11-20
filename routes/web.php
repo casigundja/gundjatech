@@ -116,8 +116,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     });
     Route::middleware('permission:requests.manage')->group(function () {
         Route::post('/solicitacoes/{serviceRequest}/status', [AdminRequestController::class, 'updateStatus'])->name('requests.update-status');
+        Route::post('/solicitacoes/{serviceRequest}/cancelar', [AdminRequestController::class, 'cancel'])->name('requests.cancel');
         Route::post('/solicitacoes/{serviceRequest}/orcamento', [AdminRequestController::class, 'generateQuotation'])->name('requests.quotation');
         Route::post('/solicitacoes/{serviceRequest}/converter', [AdminRequestController::class, 'convertToProject'])->name('requests.convert');
+        Route::delete('/solicitacoes/{serviceRequest}', [AdminRequestController::class, 'destroy'])->name('requests.destroy');
     });
 
     // Quotations
@@ -209,6 +211,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/atendimento/{conversation}/toggle-ai', [AdminChatController::class, 'toggleAi'])->name('chat.toggle-ai');
         Route::post('/atendimento/{conversation}/fechar', [AdminChatController::class, 'closeConversation'])->name('chat.close');
         Route::post('/atendimento/{conversation}/reabrir', [AdminChatController::class, 'reopenConversation'])->name('chat.reopen');
+        Route::delete('/atendimento/{conversation}', [AdminChatController::class, 'destroy'])->name('chat.destroy');
     });
     Route::middleware('permission:settings.manage')->group(function () {
         Route::put('/crm-autonomo/configuracoes', [AdminAutonomousCrmController::class, 'updateSettings'])->name('crm.settings');
@@ -222,6 +225,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::middleware('permission:users.manage')->group(function () {
         Route::post('/usuarios', [AdminUserController::class, 'store'])->name('users.store');
         Route::put('/usuarios/{user}', [AdminUserController::class, 'update'])->name('users.update');
+        Route::delete('/usuarios/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
     });
 
     // RBAC Permissions Control

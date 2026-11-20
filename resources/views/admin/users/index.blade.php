@@ -50,7 +50,14 @@
                             </td>
                             <td class="px-6 py-4 text-gray-300">{{ $u->phone ?? 'Não informado' }}</td>
                             <td class="px-6 py-4">
-                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#1C1C1C] text-[#E4A318] border border-[#333333]">
+                                @php
+                                    $roleBadgeClass = match ($u->role) {
+                                        'superadmin', 'admin' => 'bg-[#F2C230]/20 text-[#F2C230] border border-[#F2C230]/40',
+                                        'client' => 'bg-white/10 text-[#D5DCEB] border border-white/15',
+                                        default => 'bg-[#121AFF]/20 text-[#93A3FF] border border-[#121AFF]/30',
+                                    };
+                                @endphp
+                                <span class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold {{ $roleBadgeClass }}">
                                     {{ $u->roleEnum()->label() }}
                                 </span>
                             </td>
@@ -59,16 +66,35 @@
                                     {{ $u->is_active ? '● Ativo' : '● Desativado' }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-right">
+                            <td class="px-6 py-4 text-right whitespace-nowrap">
                                 @if(Auth::user()->hasPermission('users.manage'))
                                     @if(! $u->isSuperAdmin() || Auth::user()->isSuperAdmin())
-                                        <button
-                                            type="button"
-                                            @click="editUser = {{ json_encode(['id' => $u->id, 'name' => $u->name, 'email' => $u->email, 'phone' => $u->phone ?? '', 'role' => $u->role, 'is_active' => (bool) $u->is_active]) }}; editModal = true"
-                                            class="text-[#E4A318] hover:underline font-bold"
-                                        >
-                                            Editar
-                                        </button>
+                                        <div class="inline-flex items-center justify-end gap-3">
+                                            <button
+                                                type="button"
+                                                @click="editUser = {{ json_encode(['id' => $u->id, 'name' => $u->name, 'email' => $u->email, 'phone' => $u->phone ?? '', 'role' => $u->role, 'is_active' => (bool) $u->is_active]) }}; editModal = true"
+                                                class="text-[#E4A318] hover:underline font-bold cursor-pointer"
+                                            >
+                                                Editar
+                                            </button>
+                                            @if($u->id !== Auth::id())
+                                                <form
+                                                    action="{{ route('admin.users.destroy', $u) }}"
+                                                    method="POST"
+                                                    data-confirm-title="Excluir usuário"
+                                                    data-confirm-message="Tem certeza que deseja excluir esta conta permanentemente? O acesso ao sistema será revogado imediatamente e esta ação não pode ser desfeita."
+                                                    data-confirm-target="{{ $u->name }} • {{ $u->email }} ({{ $u->roleEnum()->label() }})"
+                                                    data-confirm-button="Sim, excluir usuário"
+                                                    data-confirm-tone="danger"
+                                                >
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition cursor-pointer">
+                                                        Excluir
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
                                     @else
                                         <span class="text-[10px] text-gray-400 font-semibold">Protegido</span>
                                     @endif

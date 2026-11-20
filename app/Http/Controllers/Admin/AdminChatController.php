@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Client;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
@@ -301,5 +302,41 @@ class AdminChatController extends Controller
 
         return redirect()->route('admin.chat.index', ['conversation_id' => $conversation->id])
             ->with('success', 'Atendimento reaberto!');
+    }
+
+    public function destroy(Request $request, Conversation $conversation): RedirectResponse
+    {
+        $conversationId = $conversation->id;
+        $label = $conversation->visitor_name ?: ($conversation->client?->display_name ?? 'Visitante');
+        $subject = $conversation->subject;
+        $channel = $conversation->channel;
+
+        DB::transaction(function () use ($conversation): void {
+            $conversation->delete();
+        });
+
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'chat.deleted',
+            'subject_type' => Conversation::class,
+            'subject_id' => $conversationId,
+            'details' => [
+                'name' => $label,
+                'subject' => $subject,
+                'channel' => $channel,
+            ],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        if ($request->input('redirect_to') === 'crm') {
+            return redirect()->route('admin.crm.index')
+                ->with('success', "Atendimento de {$label} excluído definitivamente do banco.");
+        }
+
+        $routeParams = array_filter(['status' => $request->input('status')]);
+
+        return redirect()->route('admin.chat.index', $routeParams)
+            ->with('success', "Atendimento de {$label} excluído definitivamente do banco.");
     }
 }
