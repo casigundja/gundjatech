@@ -473,7 +473,7 @@
                     </button>
 
                     <div x-show="profileOpen" x-cloak style="z-index: 120;" class="gtb-dropdown absolute right-0 mt-2 w-56 rounded-2xl shadow-2xl py-2 z-[120] text-xs font-semibold">
-                        <a href="{{ route('account.edit') }}" class="block px-4 py-2 no-underline">Minha Conta &amp; Senha</a>
+                        <a href="{{ route('account.edit') }}" class="block px-4 py-2 no-underline">Minha Conta</a>
                         <a href="{{ route('home') }}" target="_blank" class="block px-4 py-2 no-underline">Ver Site Público &nearr;</a>
                         @if($currentUser->isAdmin() || $currentUser->hasPermission('portal.access'))
                             <a href="{{ route('portal.dashboard') }}" target="_blank" class="block px-4 py-2 no-underline">Portal do Cliente &nearr;</a>

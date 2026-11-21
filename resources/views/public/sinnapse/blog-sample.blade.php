@@ -164,7 +164,7 @@
           </span>
         </button>
         <div class="gt-pub-user-dropdown" role="menu">
-          <a href="/minha-conta" class="gt-pub-user-item" role="menuitem">Minha Conta &amp; Senha</a>
+          <a href="/minha-conta" class="gt-pub-user-item" role="menuitem">Minha Conta</a>
           @if(auth()->user()->isStaff())
             <a href="/admin" class="gt-pub-user-item" role="menuitem">Painel Admin &nearr;</a>
           @endif
