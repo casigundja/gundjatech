@@ -33,26 +33,6 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        if (config('database.default') === 'pgsql') {
-            $host = (string) config('database.connections.pgsql.host', '');
-            if (preg_match('/^db\.([a-z0-9]+)\.supabase\.co$/i', $host, $matches)) {
-                $projectRef = $matches[1];
-                $needsPooler = Cache::store('file')->remember(
-                    'supabase_ipv4_fallback_'.$projectRef,
-                    3600,
-                    static fn (): bool => @gethostbyname($host) === $host
-                );
-                if ($needsPooler) {
-                    config([
-                        'database.connections.pgsql.url' => null,
-                        'database.connections.pgsql.host' => 'aws-0-us-west-2.pooler.supabase.com',
-                        'database.connections.pgsql.username' => 'postgres.'.$projectRef,
-                        'database.connections.pgsql.sslmode' => 'require',
-                    ]);
-                }
-            }
-        }
-
         Gate::before(function (User $user, string $ability): ?bool {
             if ($user->is_active && $user->isSuperAdmin()) {
                 return true;

@@ -3,12 +3,15 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "dev": "wrangler dev",
+        "deploy": "wrangler deploy",
         "build": "vite build",
-        "dev": "vite",
+        "test": "vitest run",
         "worker:dev": "wrangler dev",
         "worker:typecheck": "tsc --noEmit",
         "worker:test": "vitest run",
-        "db:migrate:local": "wrangler d1 migrations apply DB --local"
+        "db:migrate:local": "wrangler d1 migrations apply gundjatech-db --local",
+        "db:migrate:remote": "wrangler d1 migrations apply gundjatech-db --remote"
     },
     "devDependencies": {
         "@cloudflare/workers-types": "^5.20261121.1",
