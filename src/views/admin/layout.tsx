@@ -30,8 +30,11 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <meta charset="UTF-8" />
                 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
                 <title>{title}</title>
-                <link rel="icon" type="image/svg+xml" href="/img/favicon.svg?v=gt-icon2" />
-                <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png?v=gt-icon2" />
+                <link rel="icon" type="image/svg+xml" href="/img/favicon.svg?v=gt-icon4" />
+                <link rel="icon" href="/favicon.ico?v=gt-icon4" sizes="any" />
+                <link rel="icon" href="/img/favicon-32x32.png?v=gt-icon4" type="image/png" sizes="32x32" />
+                <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png?v=gt-icon4" />
+                <meta name="theme-color" content="#063B5C" />
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Regular.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -173,7 +176,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                         <div class="h-[72px] flex items-center justify-between px-4 shrink-0">
                             <a href="/admin/dashboard" class="flex items-center gap-2.5 no-underline">
                                 <span class="gtb-brand-badge">
-                                    <img src="/img/favicon.svg?v=gt-icon2" alt="GundjaTech" class="w-5 h-5 object-contain" />
+                                    <img src="/img/favicon.svg?v=gt-icon4" alt="GundjaTech" class="w-5 h-5 object-contain" />
                                 </span>
                                 <span class="gt-font-display gtb-brand-word text-sm font-bold tracking-tight text-white">
                                     Gundja<span class="gtb-brand-tech text-[#F2C230] font-normal">Tech</span>

@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Portal do Cliente • GundjaTech')</title>
-    <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="/img/favicon.svg?v=gt-icon4">
+    <link rel="icon" href="/favicon.ico?v=gt-icon4" sizes="any">
+    <link rel="icon" href="/img/favicon-32x32.png?v=gt-icon4" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=gt-icon4" sizes="180x180">
+    <meta name="theme-color" content="#063B5C">
     <link rel="preload" href="/fonts/ZalandoSansExpanded-Regular.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">

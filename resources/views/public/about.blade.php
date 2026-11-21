@@ -13,13 +13,15 @@
 
 <meta name="google-site-verification" content="bZOTkhOfXUX0fcrGaazVUJmvwmMlSvilskqIz6tmeBs">
 
-<link rel="icon" href="/img/favicon.svg?v=gt-icon2" type="image/svg+xml">
+<link rel="icon" href="/img/favicon.svg?v=gt-icon4" type="image/svg+xml">
+    <link rel="icon" href="/favicon.ico?v=gt-icon4" sizes="any">
+    <link rel="icon" href="/img/favicon-32x32.png?v=gt-icon4" type="image/png" sizes="32x32">
 
-<link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=gt-icon2">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=gt-icon4">
 
-<link rel="manifest" href="/site.webmanifest">
+<link rel="manifest" href="/site.webmanifest?v=gt-icon4">
 
-<meta name="theme-color" content="#E4A318">
+<meta name="theme-color" content="#063B5C">
 
 <link rel="alternate" type="application/rss+xml" title="Blog da GundjaTech" href="/feed.xml">
 
