@@ -48,7 +48,7 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
             successMessage={successMessage}
             errorMessage={errorMessage}
         >
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <div class="gt-page-header">
                 <div>
                     <h1 style="font-size: 24px; font-weight: 800; color: #FFFFFF;">Gestão Financeira & Faturamento</h1>
                     <p style="font-size: 13px; color: #8CAAB9; margin-top: 4px;">
@@ -96,8 +96,8 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
 
             {/* Filtros */}
             <div class="gt-card" style="padding: 16px 20px; margin-bottom: 24px;">
-                <form method="get" action="/admin/financeiro" style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 240px;">
+                <form method="get" action="/admin/financeiro" class="gt-filter-bar">
+                    <div class="gt-filter-input">
                         <input
                             type="text"
                             name="search"
@@ -106,7 +106,7 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                             style="width: 100%; background: #032033; border: 1px solid var(--gt-border); border-radius: 8px; padding: 10px 14px; color: #FFFFFF; font-size: 13px;"
                         />
                     </div>
-                    <div style="width: 180px;">
+                    <div class="gt-filter-select">
                         <select
                             name="status"
                             style="width: 100%; background: #032033; border: 1px solid var(--gt-border); border-radius: 8px; padding: 10px 14px; color: #FFFFFF; font-size: 13px;"
@@ -117,7 +117,7 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                             <option value="canceled" selected={statusFilter === 'canceled'}>Cancelado</option>
                         </select>
                     </div>
-                    <div style="width: 160px;">
+                    <div class="gt-filter-select">
                         <select
                             name="type"
                             style="width: 100%; background: #032033; border: 1px solid var(--gt-border); border-radius: 8px; padding: 10px 14px; color: #FFFFFF; font-size: 13px;"
@@ -136,101 +136,99 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
 
             {/* Tabela de Transações */}
             <div class="gt-card" style="overflow: hidden;">
-                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
-                    <thead>
-                        <tr style="border-bottom: 1px solid var(--gt-border); background: rgba(3, 32, 51, 0.6); color: #8CAAB9; font-size: 11px; text-transform: uppercase; font-weight: 700;">
-                            <th style="padding: 16px 20px;">Fatura / Descrição</th>
-                            <th style="padding: 16px 20px;">Cliente</th>
-                            <th style="padding: 16px 20px;">Valor</th>
-                            <th style="padding: 16px 20px;">Vencimento</th>
-                            <th style="padding: 16px 20px;">Status</th>
-                            <th style="padding: 16px 20px; text-align: right;">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {transactions.length === 0 ? (
-                            <tr>
-                                <td colspan={6} style="padding: 40px; text-align: center; color: #8CAAB9;">
-                                    Nenhum lançamento financeiro localizado.
-                                </td>
-                            </tr>
-                        ) : (
-                            transactions.map((t) => {
-                                const isIncome = t.type === 'income';
-                                const statusMeta = STATUS_LABELS[t.status] || { label: t.status, badgeClass: 'gt-badge-info' };
-                                const isPending = t.status === 'pending';
+                {transactions.length === 0 ? (
+                    <div class="gt-empty-state">Nenhum lançamento financeiro localizado.</div>
+                ) : (
+                    <div class="gt-table-wrap">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid var(--gt-border); background: rgba(3, 32, 51, 0.6); color: #8CAAB9; font-size: 11px; text-transform: uppercase; font-weight: 700;">
+                                    <th style="padding: 16px 20px;">Fatura / Descrição</th>
+                                    <th style="padding: 16px 20px;">Cliente</th>
+                                    <th style="padding: 16px 20px;">Valor</th>
+                                    <th style="padding: 16px 20px;">Vencimento</th>
+                                    <th style="padding: 16px 20px;">Status</th>
+                                    <th style="padding: 16px 20px; text-align: right;">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {transactions.map((t) => {
+                                    const isIncome = t.type === 'income';
+                                    const statusMeta = STATUS_LABELS[t.status] || { label: t.status, badgeClass: 'gt-badge-info' };
+                                    const isPending = t.status === 'pending';
 
-                                return (
-                                    <tr style="border-bottom: 1px solid rgba(22, 116, 154, 0.15);">
-                                        <td style="padding: 16px 20px;">
-                                            <div style="font-weight: 700; color: #FFFFFF;">
-                                                {t.description}
-                                            </div>
-                                            <div style="font-size: 11px; color: #8CAAB9; margin-top: 2px;">
-                                                {t.invoice_number ? `NF #${t.invoice_number} • ` : ''}
-                                                {t.payment_method || 'Boleto / PIX'}
-                                            </div>
-                                        </td>
-                                        <td style="padding: 16px 20px;">
-                                            <div style="color: #FFFFFF;">{t.company || t.client_name || '—'}</div>
-                                            <div style="font-size: 11px; color: #8CAAB9;">{t.client_email || ''}</div>
-                                        </td>
-                                        <td style="padding: 16px 20px;">
-                                            <div style={`font-weight: 800; font-size: 14px; ${isIncome ? 'color: #34D399;' : 'color: #F87171;'}`}>
-                                                {isIncome ? '+ ' : '- '}
-                                                {formatCurrency(t.amount)}
-                                            </div>
-                                        </td>
-                                        <td style="padding: 16px 20px; color: #8CAAB9;">
-                                            {new Date(t.due_date).toLocaleDateString('pt-BR')}
-                                        </td>
-                                        <td style="padding: 16px 20px;">
-                                            <span class={`gt-badge ${statusMeta.badgeClass}`}>
-                                                {statusMeta.label}
-                                            </span>
-                                        </td>
-                                        <td style="padding: 16px 20px; text-align: right;">
-                                            <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                                                {isPending && (
-                                                    <form action={`/admin/financeiro/${t.id}/pagar`} method="post" style="margin: 0;">
-                                                        <button
-                                                            type="submit"
-                                                            class="gt-btn-primary"
-                                                            style="font-size: 11px; padding: 4px 10px;"
-                                                            title="Marcar como Liquidado"
-                                                        >
-                                                            ✓ Liquidar
-                                                        </button>
-                                                    </form>
-                                                )}
-                                                {isPending && (
-                                                    <form action={`/admin/financeiro/${t.id}/cancelar`} method="post" style="margin: 0;">
-                                                        <button
-                                                            type="submit"
-                                                            class="gt-btn-outline"
-                                                            style="font-size: 11px; padding: 4px 8px; color: #F87171;"
-                                                            title="Cancelar Fatura"
-                                                        >
-                                                            ✕
-                                                        </button>
-                                                    </form>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })
-                        )}
-                    </tbody>
-                </table>
+                                    return (
+                                        <tr style="border-bottom: 1px solid rgba(22, 116, 154, 0.15);">
+                                            <td style="padding: 16px 20px;">
+                                                <div style="font-weight: 700; color: #FFFFFF;">
+                                                    {t.description}
+                                                </div>
+                                                <div style="font-size: 11px; color: #8CAAB9; margin-top: 2px;">
+                                                    {t.invoice_number ? `NF #${t.invoice_number} • ` : ''}
+                                                    {t.payment_method || 'Boleto / PIX'}
+                                                </div>
+                                            </td>
+                                            <td style="padding: 16px 20px;">
+                                                <div style="color: #FFFFFF;">{t.company || t.client_name || '—'}</div>
+                                                <div style="font-size: 11px; color: #8CAAB9;">{t.client_email || ''}</div>
+                                            </td>
+                                            <td style="padding: 16px 20px; white-space: nowrap;">
+                                                <div style={`font-weight: 800; font-size: 14px; ${isIncome ? 'color: #34D399;' : 'color: #F87171;'}`}>
+                                                    {isIncome ? '+ ' : '- '}
+                                                    {formatCurrency(t.amount)}
+                                                </div>
+                                            </td>
+                                            <td style="padding: 16px 20px; color: #8CAAB9; white-space: nowrap;">
+                                                {new Date(t.due_date).toLocaleDateString('pt-BR')}
+                                            </td>
+                                            <td style="padding: 16px 20px; white-space: nowrap;">
+                                                <span class={`gt-badge ${statusMeta.badgeClass}`}>
+                                                    {statusMeta.label}
+                                                </span>
+                                            </td>
+                                            <td style="padding: 16px 20px; text-align: right; white-space: nowrap;">
+                                                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                                                    {isPending && (
+                                                        <form action={`/admin/financeiro/${t.id}/pagar`} method="post" style="margin: 0;">
+                                                            <button
+                                                                type="submit"
+                                                                class="gt-btn-primary"
+                                                                style="font-size: 11px; padding: 4px 10px;"
+                                                                title="Marcar como Liquidado"
+                                                            >
+                                                                ✓ Liquidar
+                                                            </button>
+                                                        </form>
+                                                    )}
+                                                    {isPending && (
+                                                        <form action={`/admin/financeiro/${t.id}/cancelar`} method="post" style="margin: 0;">
+                                                            <button
+                                                                type="submit"
+                                                                class="gt-btn-outline"
+                                                                style="font-size: 11px; padding: 4px 8px; color: #F87171;"
+                                                                title="Cancelar Fatura"
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        </form>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
 
             {/* Modal Nova Fatura */}
             <div
                 id="modal-nova-fatura"
-                style="display: none; position: fixed; inset: 0; background: rgba(3, 32, 51, 0.85); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 20px;"
+                style="display: none; position: fixed; inset: 0; background: rgba(3, 32, 51, 0.85); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 16px;"
             >
-                <div class="gt-card" style="width: 100%; max-width: 560px; padding: 32px; position: relative;">
+                <div class="gt-card gt-modal-card" style="max-width: 560px; padding: 32px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
                         <h2 style="font-size: 18px; font-weight: 800; color: #FFFFFF;">Lançar Nova Fatura / Cobrança</h2>
                         <button
@@ -243,7 +241,7 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                     </div>
 
                     <form action="/admin/financeiro" method="post">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                        <div class="gt-grid-2">
                             <div style="grid-column: span 2;">
                                 <label style="display: block; font-size: 12px; font-weight: 700; color: #E7F0F5; margin-bottom: 6px;">Cliente *</label>
                                 <select

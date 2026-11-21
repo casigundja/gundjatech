@@ -37,7 +37,7 @@ export const AdminDomainsView: FC<AdminDomainsProps> = ({
             successMessage={successMessage}
             errorMessage={errorMessage}
         >
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <div class="gt-page-header">
                 <div>
                     <h1 style="font-size: 24px; font-weight: 800; color: #FFFFFF;">Gestão de Domínios & Zonas DNS</h1>
                     <p style="font-size: 13px; color: #8CAAB9; margin-top: 4px;">
@@ -54,8 +54,8 @@ export const AdminDomainsView: FC<AdminDomainsProps> = ({
 
             {/* Filtros */}
             <div class="gt-card" style="padding: 16px 20px; margin-bottom: 24px;">
-                <form method="get" action="/admin/dominios" style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 240px;">
+                <form method="get" action="/admin/dominios" class="gt-filter-bar">
+                    <div class="gt-filter-input">
                         <input
                             type="text"
                             name="search"
@@ -64,7 +64,7 @@ export const AdminDomainsView: FC<AdminDomainsProps> = ({
                             style="width: 100%; background: #032033; border: 1px solid var(--gt-border); border-radius: 8px; padding: 10px 14px; color: #FFFFFF; font-size: 13px;"
                         />
                     </div>
-                    <div style="width: 200px;">
+                    <div class="gt-filter-select">
                         <select
                             name="status"
                             style="width: 100%; background: #032033; border: 1px solid var(--gt-border); border-radius: 8px; padding: 10px 14px; color: #FFFFFF; font-size: 13px;"
@@ -84,99 +84,97 @@ export const AdminDomainsView: FC<AdminDomainsProps> = ({
 
             {/* Tabela de Domínios */}
             <div class="gt-card" style="overflow: hidden;">
-                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
-                    <thead>
-                        <tr style="border-bottom: 1px solid var(--gt-border); background: rgba(3, 32, 51, 0.6); color: #8CAAB9; font-size: 11px; text-transform: uppercase; font-weight: 700;">
-                            <th style="padding: 16px 20px;">Domínio</th>
-                            <th style="padding: 16px 20px;">Cliente</th>
-                            <th style="padding: 16px 20px;">Registrador / DNS</th>
-                            <th style="padding: 16px 20px;">Expiração</th>
-                            <th style="padding: 16px 20px;">Renovação Auto</th>
-                            <th style="padding: 16px 20px;">Status</th>
-                            <th style="padding: 16px 20px; text-align: right;">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {domains.length === 0 ? (
-                            <tr>
-                                <td colspan={7} style="padding: 40px; text-align: center; color: #8CAAB9;">
-                                    Nenhum domínio gerenciado no momento.
-                                </td>
-                            </tr>
-                        ) : (
-                            domains.map((d) => {
-                                const expDate = d.expires_at ? new Date(d.expires_at) : null;
-                                const daysLeft = expDate ? Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 3600 * 24)) : null;
-                                const isExpiringSoon = daysLeft !== null && daysLeft <= 30 && daysLeft > 0;
-                                const isExpired = daysLeft !== null && daysLeft <= 0;
+                {domains.length === 0 ? (
+                    <div class="gt-empty-state">Nenhum domínio gerenciado no momento.</div>
+                ) : (
+                    <div class="gt-table-wrap">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid var(--gt-border); background: rgba(3, 32, 51, 0.6); color: #8CAAB9; font-size: 11px; text-transform: uppercase; font-weight: 700;">
+                                    <th style="padding: 16px 20px;">Domínio</th>
+                                    <th style="padding: 16px 20px;">Cliente</th>
+                                    <th style="padding: 16px 20px;">Registrador / DNS</th>
+                                    <th style="padding: 16px 20px;">Expiração</th>
+                                    <th style="padding: 16px 20px;">Renovação Auto</th>
+                                    <th style="padding: 16px 20px;">Status</th>
+                                    <th style="padding: 16px 20px; text-align: right;">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {domains.map((d) => {
+                                    const expDate = d.expires_at ? new Date(d.expires_at) : null;
+                                    const daysLeft = expDate ? Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 3600 * 24)) : null;
+                                    const isExpiringSoon = daysLeft !== null && daysLeft <= 30 && daysLeft > 0;
+                                    const isExpired = daysLeft !== null && daysLeft <= 0;
 
-                                const statusMeta = isExpired
-                                    ? STATUS_LABELS.expired
-                                    : isExpiringSoon
-                                    ? STATUS_LABELS.expiring
-                                    : STATUS_LABELS[d.status] || STATUS_LABELS.active;
+                                    const statusMeta = isExpired
+                                        ? STATUS_LABELS.expired
+                                        : isExpiringSoon
+                                        ? STATUS_LABELS.expiring
+                                        : STATUS_LABELS[d.status] || STATUS_LABELS.active;
 
-                                return (
-                                    <tr style="border-bottom: 1px solid rgba(22, 116, 154, 0.15);">
-                                        <td style="padding: 16px 20px;">
-                                            <div style="font-weight: 800; color: #FFFFFF; font-size: 14px;">
-                                                🌐 {d.domain_name}
-                                            </div>
-                                            {isExpiringSoon && (
-                                                <div style="font-size: 11px; color: #F2C230; font-weight: 700; margin-top: 2px;">
-                                                    ⚠️ Expira em {daysLeft} dias
+                                    return (
+                                        <tr style="border-bottom: 1px solid rgba(22, 116, 154, 0.15);">
+                                            <td style="padding: 16px 20px; white-space: nowrap;">
+                                                <div style="font-weight: 800; color: #FFFFFF; font-size: 14px;">
+                                                    🌐 {d.domain_name}
                                                 </div>
-                                            )}
-                                        </td>
-                                        <td style="padding: 16px 20px;">
-                                            <div style="color: #FFFFFF;">{d.company || d.client_name || '—'}</div>
-                                            <div style="font-size: 11px; color: #8CAAB9;">{d.client_email || ''}</div>
-                                        </td>
-                                        <td style="padding: 16px 20px;">
-                                            <div style="color: #FFFFFF;">{d.registrar || 'Cloudflare / Registro.br'}</div>
-                                            <div style="font-size: 11px; color: #8CAAB9;">DNS: {d.dns_provider || 'Cloudflare Edge'}</div>
-                                        </td>
-                                        <td style="padding: 16px 20px; color: #8CAAB9;">
-                                            {expDate ? expDate.toLocaleDateString('pt-BR') : '—'}
-                                        </td>
-                                        <td style="padding: 16px 20px;">
-                                            {d.auto_renew ? (
-                                                <span style="color: #34D399; font-size: 12px; font-weight: 700;">Sim (Ativa)</span>
-                                            ) : (
-                                                <span style="color: #8CAAB9; font-size: 12px;">Manual</span>
-                                            )}
-                                        </td>
-                                        <td style="padding: 16px 20px;">
-                                            <span class={`gt-badge ${statusMeta.badgeClass}`}>
-                                                {statusMeta.label}
-                                            </span>
-                                        </td>
-                                        <td style="padding: 16px 20px; text-align: right;">
-                                            <form action={`/admin/dominios/${d.id}/excluir`} method="post" style="margin: 0; display: inline-block;">
-                                                <button
-                                                    type="submit"
-                                                    class="gt-btn-outline"
-                                                    style="font-size: 11px; padding: 4px 8px; color: #F87171;"
-                                                    title="Remover monitoramento do domínio"
-                                                >
-                                                    Excluir
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                );
-                            })
-                        )}
-                    </tbody>
-                </table>
+                                                {isExpiringSoon && (
+                                                    <div style="font-size: 11px; color: #F2C230; font-weight: 700; margin-top: 2px;">
+                                                        ⚠️ Expira em {daysLeft} dias
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td style="padding: 16px 20px;">
+                                                <div style="color: #FFFFFF;">{d.company || d.client_name || '—'}</div>
+                                                <div style="font-size: 11px; color: #8CAAB9;">{d.client_email || ''}</div>
+                                            </td>
+                                            <td style="padding: 16px 20px;">
+                                                <div style="color: #FFFFFF;">{d.registrar || 'Cloudflare / Registro.br'}</div>
+                                                <div style="font-size: 11px; color: #8CAAB9;">DNS: {d.dns_provider || 'Cloudflare Edge'}</div>
+                                            </td>
+                                            <td style="padding: 16px 20px; color: #8CAAB9; white-space: nowrap;">
+                                                {expDate ? expDate.toLocaleDateString('pt-BR') : '—'}
+                                            </td>
+                                            <td style="padding: 16px 20px; white-space: nowrap;">
+                                                {d.auto_renew ? (
+                                                    <span style="color: #34D399; font-size: 12px; font-weight: 700;">Sim (Ativa)</span>
+                                                ) : (
+                                                    <span style="color: #8CAAB9; font-size: 12px;">Manual</span>
+                                                )}
+                                            </td>
+                                            <td style="padding: 16px 20px; white-space: nowrap;">
+                                                <span class={`gt-badge ${statusMeta.badgeClass}`}>
+                                                    {statusMeta.label}
+                                                </span>
+                                            </td>
+                                            <td style="padding: 16px 20px; text-align: right; white-space: nowrap;">
+                                                <form action={`/admin/dominios/${d.id}/excluir`} method="post" style="margin: 0; display: inline-block;">
+                                                    <button
+                                                        type="submit"
+                                                        class="gt-btn-outline"
+                                                        style="font-size: 11px; padding: 4px 8px; color: #F87171;"
+                                                        title="Remover monitoramento do domínio"
+                                                    >
+                                                        Excluir
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
 
             {/* Modal Novo Domínio */}
             <div
                 id="modal-novo-dominio"
-                style="display: none; position: fixed; inset: 0; background: rgba(3, 32, 51, 0.85); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 20px;"
+                style="display: none; position: fixed; inset: 0; background: rgba(3, 32, 51, 0.85); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 16px;"
             >
-                <div class="gt-card" style="width: 100%; max-width: 520px; padding: 32px; position: relative;">
+                <div class="gt-card gt-modal-card" style="max-width: 520px; padding: 32px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
                         <h2 style="font-size: 18px; font-weight: 800; color: #FFFFFF;">Cadastrar Domínio para Monitoramento</h2>
                         <button
@@ -215,7 +213,7 @@ export const AdminDomainsView: FC<AdminDomainsProps> = ({
                                 />
                             </div>
 
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div class="gt-grid-2">
                                 <div>
                                     <label style="display: block; font-size: 12px; font-weight: 700; color: #E7F0F5; margin-bottom: 6px;">Registrador</label>
                                     <input

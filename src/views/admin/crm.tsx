@@ -117,26 +117,24 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                         <p class="text-[11px] text-[#8C95AA]">O agente conversa com cada visitante, extrai escopo/prazo/orçamento, atualiza o CRM e gera rascunhos de orçamento.</p>
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs">
-                            <thead>
-                                <tr class="border-b border-white/10 text-[10.5px] uppercase tracking-wider text-[#8C95AA]">
-                                    <th class="py-2.5 px-3">Visitante / Lead</th>
-                                    <th class="py-2.5 px-3">Score</th>
-                                    <th class="py-2.5 px-3">Estágio &amp; Assunto</th>
-                                    <th class="py-2.5 px-3">Modo</th>
-                                    <th class="py-2.5 px-3 text-right">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-white/5">
-                                {conversations.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={5} class="py-10 text-center text-xs text-[#8C95AA]">
-                                            Nenhum atendimento no CRM Autônomo ainda. Assim que um visitante iniciar o chat no site, a IA assume a qualificação automaticamente aqui.
-                                        </td>
+                    {conversations.length === 0 ? (
+                        <div class="gt-empty-state">
+                            Nenhum atendimento no CRM Autônomo ainda. Assim que um visitante iniciar o chat no site, a IA assume a qualificação automaticamente aqui.
+                        </div>
+                    ) : (
+                        <div class="gt-table-wrap">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="border-b border-white/10 text-[10.5px] uppercase tracking-wider text-[#8C95AA]">
+                                        <th class="py-2.5 px-3">Visitante / Lead</th>
+                                        <th class="py-2.5 px-3">Score</th>
+                                        <th class="py-2.5 px-3">Estágio &amp; Assunto</th>
+                                        <th class="py-2.5 px-3">Modo</th>
+                                        <th class="py-2.5 px-3 text-right">Ações</th>
                                     </tr>
-                                ) : (
-                                    conversations.map((conv: any) => {
+                                </thead>
+                                <tbody class="divide-y divide-white/5">
+                                    {conversations.map((conv: any) => {
                                         const score = Number(conv.lead_score || 0);
                                         const stageLabel = STAGE_LABELS[conv.crm_stage] || conv.crm_stage || 'Qualificação';
                                         return (
@@ -185,11 +183,11 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                                                 </td>
                                             </tr>
                                         );
-                                    })
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </section>
 
                 {/* AI Configuration Panel */}

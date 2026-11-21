@@ -1183,7 +1183,7 @@ adminRoutes.get('/orcamentos', async (c) => {
             successMessage={successMessage}
             errorMessage={errorMessage}
         >
-            <div class="flex items-center justify-between">
+            <div class="gt-page-header">
                 <div>
                     <h1 class="text-xl font-extrabold text-white">Orçamentos &amp; Propostas Comerciais</h1>
                     <p class="text-xs text-[#8C95AA] mt-1">Propostas geradas manualmente e pré-orçamentos do CRM Autônomo IA.</p>
@@ -1191,42 +1191,42 @@ adminRoutes.get('/orcamentos', async (c) => {
                 <a href="/admin/solicitacoes" class="gt-btn-primary">+ Gerar a partir de Solicitação</a>
             </div>
 
-            <div class="gtb-card overflow-x-auto">
-                <table class="w-full text-left text-xs">
-                    <thead>
-                        <tr class="border-b border-white/10 text-[#8C95AA] uppercase">
-                            <th class="py-3 px-4">Código</th>
-                            <th class="py-3 px-4">Título / Cliente</th>
-                            <th class="py-3 px-4">Valor Total</th>
-                            <th class="py-3 px-4">Validade</th>
-                            <th class="py-3 px-4">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-white/5">
-                        {quotations.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} class="py-8 text-center text-[#8C95AA]">Nenhum orçamento emitido até o momento.</td>
-                            </tr>
-                        ) : (
-                            quotations.map((q: any) => (
-                                <tr>
-                                    <td class="py-3 px-4 font-mono font-bold text-[#F2C230]">{q.reference_code || q.quotation_number || `#${q.id}`}</td>
-                                    <td class="py-3 px-4">
-                                        <div class="font-bold text-white">{q.title || 'Proposta Comercial'}</div>
-                                        <div class="text-[11px] text-[#8C95AA]">{q.client_name || q.company || 'Cliente'}</div>
-                                    </td>
-                                    <td class="py-3 px-4 font-extrabold text-white">
-                                        R$ {Number(q.final_amount || q.total_amount || q.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                    </td>
-                                    <td class="py-3 px-4 text-[#8C95AA]">{q.expires_at || q.valid_until || '—'}</td>
-                                    <td class="py-3 px-4">
-                                        <span class={`gt-badge ${q.status === 'approved' ? 'gt-badge-success' : 'gt-badge-warning'}`}>{q.status}</span>
-                                    </td>
+            <div class="gtb-card" style="padding: 0; overflow: hidden;">
+                {quotations.length === 0 ? (
+                    <div class="gt-empty-state">Nenhum orçamento emitido até o momento.</div>
+                ) : (
+                    <div class="gt-table-wrap">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="border-b border-white/10 text-[#8C95AA] uppercase">
+                                    <th class="py-3 px-4">Código</th>
+                                    <th class="py-3 px-4">Título / Cliente</th>
+                                    <th class="py-3 px-4">Valor Total</th>
+                                    <th class="py-3 px-4">Validade</th>
+                                    <th class="py-3 px-4">Status</th>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            </thead>
+                            <tbody class="divide-y divide-white/5">
+                                {quotations.map((q: any) => (
+                                    <tr>
+                                        <td class="py-3 px-4 font-mono font-bold text-[#F2C230] whitespace-nowrap">{q.reference_code || q.quotation_number || `#${q.id}`}</td>
+                                        <td class="py-3 px-4">
+                                            <div class="font-bold text-white">{q.title || 'Proposta Comercial'}</div>
+                                            <div class="text-[11px] text-[#8C95AA]">{q.client_name || q.company || 'Cliente'}</div>
+                                        </td>
+                                        <td class="py-3 px-4 font-extrabold text-white whitespace-nowrap">
+                                            R$ {Number(q.final_amount || q.total_amount || q.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                        </td>
+                                        <td class="py-3 px-4 text-[#8C95AA] whitespace-nowrap">{q.expires_at || q.valid_until || '—'}</td>
+                                        <td class="py-3 px-4 whitespace-nowrap">
+                                            <span class={`gt-badge ${q.status === 'approved' ? 'gt-badge-success' : 'gt-badge-warning'}`}>{q.status}</span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </AdminLayout>
     );

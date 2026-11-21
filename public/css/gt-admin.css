@@ -1686,3 +1686,248 @@ html[data-admin-theme="light"] .gtb-notif-empty-icon {
     }
 }
 
+/* ==========================================================================
+   MOBILE & RESPONSIVE ADMIN LAYOUT SYSTEM (HEADERS, FILTERS, TABLES, MODALS)
+   ========================================================================== */
+.gt-admin-main {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+.gtb-card.overflow-x-auto {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+.gt-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.gt-page-header > div {
+    min-width: 0;
+    flex: 1 1 260px;
+}
+
+.gt-filter-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.gt-filter-input {
+    flex: 1 1 220px;
+    min-width: 0;
+}
+
+.gt-filter-select {
+    flex: 0 1 200px;
+    min-width: 0;
+}
+
+.gt-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.gt-table-wrap > table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.gt-empty-state {
+    padding: 36px 20px;
+    text-align: center;
+    color: #8CAAB9;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.gt-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.gt-grid-detail {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 24px;
+}
+
+.gt-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    gap: 20px;
+}
+
+.gt-modal-card {
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.gt-chat-layout {
+    display: flex;
+    gap: 24px;
+    height: calc(100vh - 170px);
+    min-height: 520px;
+}
+
+.gt-chat-inbox {
+    width: 380px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.gt-chat-thread {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.gt-chat-mobile-back {
+    display: none;
+}
+
+@media (max-width: 1023px) {
+    .gt-chat-layout {
+        flex-direction: column;
+        height: auto;
+        min-height: calc(100vh - 130px);
+        gap: 16px;
+    }
+
+    .gt-chat-inbox,
+    .gt-chat-thread {
+        width: 100% !important;
+        flex: none;
+    }
+
+    .gt-chat-layout[data-has-active="1"] .gt-chat-inbox {
+        display: none !important;
+    }
+
+    .gt-chat-layout[data-has-active="0"] .gt-chat-thread {
+        display: none !important;
+    }
+
+    .gt-chat-layout[data-has-active="1"] .gt-chat-thread {
+        min-height: calc(100vh - 130px);
+    }
+
+    .gt-chat-mobile-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #F2C230;
+        text-decoration: none;
+        margin-bottom: 8px;
+    }
+}
+
+@media (max-width: 767px) {
+    .gt-admin-main {
+        padding: 16px !important;
+    }
+
+    .gt-page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .gt-page-header > div {
+        flex: none;
+    }
+
+    .gt-page-header h1 {
+        font-size: 20px !important;
+        line-height: 1.25 !important;
+    }
+
+    .gt-page-header .gt-btn-primary {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .gt-filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .gt-filter-bar > *,
+    .gt-filter-input,
+    .gt-filter-select,
+    .gt-filter-bar input,
+    .gt-filter-bar select,
+    .gt-filter-bar button {
+        width: 100% !important;
+        min-width: 0 !important;
+        flex: none !important;
+    }
+
+    .gt-table-wrap > table {
+        min-width: 640px;
+    }
+
+    .gt-table-wrap > table th,
+    .gt-table-wrap > table td {
+        padding: 12px 14px !important;
+    }
+
+    .gt-grid-2,
+    .gt-grid-detail {
+        grid-template-columns: 1fr !important;
+        gap: 14px !important;
+    }
+
+    .gt-grid-2 > [style*="grid-column: span 2"] {
+        grid-column: span 1 !important;
+    }
+
+    .gt-modal-card {
+        padding: 20px !important;
+    }
+
+    .gtb-card {
+        padding: 16px;
+    }
+
+    .gtb-paired-chart {
+        padding-left: 32px;
+    }
+
+    .gtb-bars-overlay {
+        left: 36px;
+        gap: 3px;
+    }
+
+    .gtb-bar-a,
+    .gtb-bar-b {
+        width: 6px;
+    }
+
+    .gtb-month-lbl {
+        font-size: 9px;
+    }
+}
+
+

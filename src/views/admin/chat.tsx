@@ -38,9 +38,9 @@ export const AdminChatView: FC<AdminChatProps> = ({
             successMessage={successMessage}
             errorMessage={errorMessage}
         >
-            <div style="display: flex; gap: 24px; height: calc(100vh - 170px);">
+            <div class="gt-chat-layout" data-has-active={activeConversation ? '1' : '0'}>
                 {/* Coluna Esquerda: Lista de Conversas (Inbox) */}
-                <div class="gt-card" style="width: 380px; display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;">
+                <div class="gt-card gt-chat-inbox">
                     <div style="padding: 16px 20px; border-bottom: 1px solid var(--gt-border); background: #032033;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                             <h2 style="font-size: 16px; font-weight: 800; color: #FFFFFF;">Inbox de Atendimento</h2>
@@ -120,13 +120,16 @@ export const AdminChatView: FC<AdminChatProps> = ({
                 </div>
 
                 {/* Coluna Direita: Thread da Conversa Ativa */}
-                <div class="gt-card" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                <div class="gt-card gt-chat-thread">
                     {activeConversation ? (
                         <>
                             {/* Topo da Conversa */}
-                            <div style="padding: 16px 24px; border-bottom: 1px solid var(--gt-border); background: #032033; display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="padding: 14px 18px; border-bottom: 1px solid var(--gt-border); background: #032033; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;">
+                                <div style="min-width: 0;">
+                                    <a href={`/admin/atendimento?status=${statusFilter}`} class="gt-chat-mobile-back">
+                                        &larr; Voltar para Inbox
+                                    </a>
+                                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                                         <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF;">
                                             {activeConversation.visitor_name || activeConversation.visitor_company || 'Visitante Web'}
                                         </h3>
@@ -205,17 +208,17 @@ export const AdminChatView: FC<AdminChatProps> = ({
                             </div>
 
                             {/* Input de Envio de Resposta Manual */}
-                            <div style="padding: 16px 20px; border-top: 1px solid var(--gt-border); background: #041B2B;">
-                                <form action={`/admin/atendimento/${activeConversation.id}/mensagem`} method="post" style="display: flex; gap: 12px;">
+                            <div style="padding: 14px 16px; border-top: 1px solid var(--gt-border); background: #041B2B;">
+                                <form action={`/admin/atendimento/${activeConversation.id}/mensagem`} method="post" style="display: flex; flex-wrap: wrap; gap: 10px;">
                                     <input
                                         type="text"
                                         name="message"
                                         required
                                         placeholder="Digite a resposta para o cliente..."
-                                        style="flex: 1; background: #032033; border: 1px solid var(--gt-border); border-radius: 8px; padding: 12px 16px; color: #FFFFFF; font-size: 13px;"
+                                        style="flex: 1 1 200px; min-width: 0; background: #032033; border: 1px solid var(--gt-border); border-radius: 8px; padding: 12px 14px; color: #FFFFFF; font-size: 13px;"
                                     />
                                     <button type="submit" class="gt-btn-primary" style="white-space: nowrap;">
-                                        Enviar Resposta
+                                        Enviar
                                     </button>
                                 </form>
                             </div>

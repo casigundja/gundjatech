@@ -131,7 +131,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                 </div>
 
                 {/* Duas colunas: Etapas & Anexos */}
-                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+                <div class="gt-grid-detail">
                     {/* Etapas do Projeto */}
                     <div class="gt-card" style="padding: 24px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -229,7 +229,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
             successMessage={successMessage}
             errorMessage={errorMessage}
         >
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <div class="gt-page-header">
                 <div>
                     <h1 style="font-size: 24px; font-weight: 800; color: #FFFFFF;">Projetos & Gestão de Entregas</h1>
                     <p style="font-size: 13px; color: #8CAAB9; margin-top: 4px;">
@@ -246,8 +246,8 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
 
             {/* Filtros */}
             <div class="gt-card" style="padding: 16px 20px; margin-bottom: 24px;">
-                <form method="get" action="/admin/projetos" style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 240px;">
+                <form method="get" action="/admin/projetos" class="gt-filter-bar">
+                    <div class="gt-filter-input">
                         <input
                             type="text"
                             name="search"
@@ -256,7 +256,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                             style="width: 100%; background: #032033; border: 1px solid var(--gt-border); border-radius: 8px; padding: 10px 14px; color: #FFFFFF; font-size: 13px;"
                         />
                     </div>
-                    <div style="width: 200px;">
+                    <div class="gt-filter-select">
                         <select
                             name="status"
                             style="width: 100%; background: #032033; border: 1px solid var(--gt-border); border-radius: 8px; padding: 10px 14px; color: #FFFFFF; font-size: 13px;"
@@ -277,7 +277,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
             </div>
 
             {/* Grid de Cards de Projetos */}
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px;">
+            <div class="gt-cards-grid">
                 {projects.length === 0 ? (
                     <div class="gt-card" style="grid-column: 1 / -1; padding: 40px; text-align: center; color: #8CAAB9;">
                         Nenhum projeto encontrado.
@@ -338,9 +338,9 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
             {/* Modal Novo Projeto */}
             <div
                 id="modal-novo-projeto"
-                style="display: none; position: fixed; inset: 0; background: rgba(3, 32, 51, 0.85); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 20px;"
+                style="display: none; position: fixed; inset: 0; background: rgba(3, 32, 51, 0.85); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 16px;"
             >
-                <div class="gt-card" style="width: 100%; max-width: 540px; padding: 32px; position: relative;">
+                <div class="gt-card gt-modal-card" style="max-width: 540px; padding: 32px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
                         <h2 style="font-size: 18px; font-weight: 800; color: #FFFFFF;">Cadastrar Novo Projeto</h2>
                         <button
@@ -389,7 +389,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                                 />
                             </div>
 
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div class="gt-grid-2">
                                 <div>
                                     <label style="display: block; font-size: 12px; font-weight: 700; color: #E7F0F5; margin-bottom: 6px;">Data de Início</label>
                                     <input

@@ -35,15 +35,15 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                     <a href="/admin/solicitacoes" style="font-size: 13px; font-weight: 700; color: #F2C230; text-decoration: none;">&larr; Voltar para Solicitações</a>
                 </div>
 
-                <div class="gt-card" style="padding: 32px; margin-bottom: 24px;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--gt-border); padding-bottom: 20px; margin-bottom: 20px;">
+                <div class="gt-card" style="padding: 24px; margin-bottom: 24px;">
+                    <div class="gt-page-header" style="align-items: flex-start; border-bottom: 1px solid var(--gt-border); padding-bottom: 20px; margin-bottom: 20px;">
                         <div>
                             <span class="gt-badge gt-badge-warning" style="margin-bottom: 8px;">{requestDetail.status}</span>
                             <h1 style="font-size: 22px; font-weight: 800; color: #FFFFFF;">{requestDetail.service_title}</h1>
-                            <div style="font-size: 12px; color: #8CAAB9; margin-top: 4px;">Protocolo: <strong>{requestDetail.protocol}</strong> | Cliente: <strong>{requestDetail.company || requestDetail.name}</strong> ({requestDetail.email})</div>
+                            <div style="font-size: 12px; color: #8CAAB9; margin-top: 4px; word-break: break-word;">Protocolo: <strong>{requestDetail.protocol}</strong> | Cliente: <strong>{requestDetail.company || requestDetail.name}</strong> ({requestDetail.email})</div>
                         </div>
 
-                        <div style="display: flex; gap: 10px;">
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                             <form action={`/admin/solicitacoes/${requestDetail.id}/converter`} method="post">
                                 <button type="submit" class="gt-btn-primary" style="font-size: 12px;">
                                     🚀 Converter em Projeto
@@ -57,7 +57,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+                    <div class="gt-grid-detail">
                         <div>
                             <h2 style="font-size: 14px; font-weight: 800; text-transform: uppercase; color: #8CAAB9; margin-bottom: 10px;">Descrição da Demanda</h2>
                             <p style="font-size: 14px; color: #E7F0F5; line-height: 1.6; white-space: pre-wrap; padding: 18px; background: rgba(3, 32, 51, 0.6); border-radius: 12px; border: 1px solid var(--gt-border); margin-bottom: 24px;">
@@ -127,16 +127,17 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                 <p style="font-size: 13px; color: #8CAAB9; margin-top: 4px;">Analise briefings de clientes, qualifique leads e gere orçamentos formais.</p>
             </div>
 
-            <div class="gt-card" style="padding: 18px 24px; margin-bottom: 20px;">
-                <form action="/admin/solicitacoes" method="get" style="display: flex; gap: 12px;">
+            <div class="gt-card" style="padding: 16px 20px; margin-bottom: 20px;">
+                <form action="/admin/solicitacoes" method="get" class="gt-filter-bar">
                     <input
                         type="text"
                         name="search"
                         value={search}
                         placeholder="Buscar por protocolo, título ou cliente..."
-                        style="flex: 1; padding: 10px 16px; border-radius: 10px; border: 1px solid var(--gt-border); background: #032033; color: #FFFFFF; font-size: 13px;"
+                        class="gt-filter-input"
+                        style="padding: 10px 14px; border-radius: 10px; border: 1px solid var(--gt-border); background: #032033; color: #FFFFFF; font-size: 13px;"
                     />
-                    <select name="status" style="padding: 10px 14px; border-radius: 10px; border: 1px solid var(--gt-border); background: #032033; color: #FFFFFF; font-size: 13px;">
+                    <select name="status" class="gt-filter-select" style="padding: 10px 14px; border-radius: 10px; border: 1px solid var(--gt-border); background: #032033; color: #FFFFFF; font-size: 13px;">
                         <option value="">Todos os status</option>
                         <option value="new" selected={statusFilter === 'new'}>Novas</option>
                         <option value="analyzing" selected={statusFilter === 'analyzing'}>Em Análise</option>
@@ -149,45 +150,45 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
             </div>
 
             <div class="gt-card" style="overflow: hidden;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                    <thead>
-                        <tr style="background: rgba(3, 32, 51, 0.8); border-bottom: 1px solid var(--gt-border); text-align: left; color: #8CAAB9; font-size: 11px; text-transform: uppercase;">
-                            <th style="padding: 14px 20px;">Protocolo</th>
-                            <th style="padding: 14px 20px;">Demanda / Título</th>
-                            <th style="padding: 14px 20px;">Cliente / Contato</th>
-                            <th style="padding: 14px 20px;">Status</th>
-                            <th style="padding: 14px 20px; text-align: right;">Ação</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {requests.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} style="padding: 32px; text-align: center; color: #8CAAB9;">Nenhuma solicitação encontrada.</td>
-                            </tr>
-                        ) : (
-                            requests.map((r: any) => (
-                                <tr style="border-bottom: 1px solid var(--gt-border);">
-                                    <td style="padding: 14px 20px; font-weight: 700; color: #F2C230;">{r.protocol}</td>
-                                    <td style="padding: 14px 20px; font-weight: 600; color: #FFFFFF;">{r.service_title}</td>
-                                    <td style="padding: 14px 20px;">
-                                        <div style="color: #FFFFFF;">{r.company || r.name}</div>
-                                        <div style="font-size: 11px; color: #8CAAB9;">{r.email}</div>
-                                    </td>
-                                    <td style="padding: 14px 20px;">
-                                        <span class={`gt-badge ${r.status === 'approved' ? 'gt-badge-success' : r.status === 'cancelled' ? 'gt-badge-danger' : 'gt-badge-warning'}`}>
-                                            {r.status}
-                                        </span>
-                                    </td>
-                                    <td style="padding: 14px 20px; text-align: right;">
-                                        <a href={`/admin/solicitacoes/${r.id}`} class="gt-btn-outline" style="font-size: 12px; padding: 6px 12px;">
-                                            Gerenciar &rarr;
-                                        </a>
-                                    </td>
+                {requests.length === 0 ? (
+                    <div class="gt-empty-state">Nenhuma solicitação encontrada.</div>
+                ) : (
+                    <div class="gt-table-wrap">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <thead>
+                                <tr style="background: rgba(3, 32, 51, 0.8); border-bottom: 1px solid var(--gt-border); text-align: left; color: #8CAAB9; font-size: 11px; text-transform: uppercase;">
+                                    <th style="padding: 14px 20px;">Protocolo</th>
+                                    <th style="padding: 14px 20px;">Demanda / Título</th>
+                                    <th style="padding: 14px 20px;">Cliente / Contato</th>
+                                    <th style="padding: 14px 20px;">Status</th>
+                                    <th style="padding: 14px 20px; text-align: right;">Ação</th>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            </thead>
+                            <tbody>
+                                {requests.map((r: any) => (
+                                    <tr style="border-bottom: 1px solid var(--gt-border);">
+                                        <td style="padding: 14px 20px; font-weight: 700; color: #F2C230; white-space: nowrap;">{r.protocol}</td>
+                                        <td style="padding: 14px 20px; font-weight: 600; color: #FFFFFF;">{r.service_title}</td>
+                                        <td style="padding: 14px 20px;">
+                                            <div style="color: #FFFFFF;">{r.company || r.name}</div>
+                                            <div style="font-size: 11px; color: #8CAAB9;">{r.email}</div>
+                                        </td>
+                                        <td style="padding: 14px 20px; white-space: nowrap;">
+                                            <span class={`gt-badge ${r.status === 'approved' ? 'gt-badge-success' : r.status === 'cancelled' ? 'gt-badge-danger' : 'gt-badge-warning'}`}>
+                                                {r.status}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 14px 20px; text-align: right; white-space: nowrap;">
+                                            <a href={`/admin/solicitacoes/${r.id}`} class="gt-btn-outline" style="font-size: 12px; padding: 6px 12px;">
+                                                Gerenciar &rarr;
+                                            </a>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </AdminLayout>
     );

@@ -44,7 +44,7 @@ export const AdminCampaignsView: FC<AdminCampaignsProps> = ({
             successMessage={successMessage}
             errorMessage={errorMessage}
         >
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <div class="gt-page-header">
                 <div>
                     <h1 style="font-size: 24px; font-weight: 800; color: #FFFFFF;">Gestão de Campanhas de Performance & Ads</h1>
                     <p style="font-size: 13px; color: #8CAAB9; margin-top: 4px;">
@@ -85,8 +85,8 @@ export const AdminCampaignsView: FC<AdminCampaignsProps> = ({
 
             {/* Filtros */}
             <div class="gt-card" style="padding: 16px 20px; margin-bottom: 24px;">
-                <form method="get" action="/admin/campanhas" style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 240px;">
+                <form method="get" action="/admin/campanhas" class="gt-filter-bar">
+                    <div class="gt-filter-input">
                         <input
                             type="text"
                             name="search"
@@ -95,7 +95,7 @@ export const AdminCampaignsView: FC<AdminCampaignsProps> = ({
                             style="width: 100%; background: #032033; border: 1px solid var(--gt-border); border-radius: 8px; padding: 10px 14px; color: #FFFFFF; font-size: 13px;"
                         />
                     </div>
-                    <div style="width: 180px;">
+                    <div class="gt-filter-select">
                         <select
                             name="platform"
                             style="width: 100%; background: #032033; border: 1px solid var(--gt-border); border-radius: 8px; padding: 10px 14px; color: #FFFFFF; font-size: 13px;"
@@ -106,7 +106,7 @@ export const AdminCampaignsView: FC<AdminCampaignsProps> = ({
                             <option value="linkedin_ads" selected={platformFilter === 'linkedin_ads'}>LinkedIn Ads</option>
                         </select>
                     </div>
-                    <div style="width: 160px;">
+                    <div class="gt-filter-select">
                         <select
                             name="status"
                             style="width: 100%; background: #032033; border: 1px solid var(--gt-border); border-radius: 8px; padding: 10px 14px; color: #FFFFFF; font-size: 13px;"
@@ -125,7 +125,7 @@ export const AdminCampaignsView: FC<AdminCampaignsProps> = ({
             </div>
 
             {/* Grid de Campanhas */}
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px;">
+            <div class="gt-cards-grid">
                 {campaigns.length === 0 ? (
                     <div class="gt-card" style="grid-column: 1 / -1; padding: 40px; text-align: center; color: #8CAAB9;">
                         Nenhuma campanha de mídia ativa no momento.
@@ -195,9 +195,9 @@ export const AdminCampaignsView: FC<AdminCampaignsProps> = ({
             {/* Modal Nova Campanha */}
             <div
                 id="modal-nova-campanha"
-                style="display: none; position: fixed; inset: 0; background: rgba(3, 32, 51, 0.85); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 20px;"
+                style="display: none; position: fixed; inset: 0; background: rgba(3, 32, 51, 0.85); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 16px;"
             >
-                <div class="gt-card" style="width: 100%; max-width: 520px; padding: 32px; position: relative;">
+                <div class="gt-card gt-modal-card" style="max-width: 520px; padding: 32px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
                         <h2 style="font-size: 18px; font-weight: 800; color: #FFFFFF;">Cadastrar Nova Campanha de Tráfego</h2>
                         <button
@@ -236,7 +236,7 @@ export const AdminCampaignsView: FC<AdminCampaignsProps> = ({
                                 />
                             </div>
 
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div class="gt-grid-2">
                                 <div>
                                     <label style="display: block; font-size: 12px; font-weight: 700; color: #E7F0F5; margin-bottom: 6px;">Canal / Plataforma *</label>
                                     <select
