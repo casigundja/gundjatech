@@ -5,6 +5,8 @@ interface AdminSettingsProps {
     currentUser: any;
     settings: Record<string, string>;
     whatsappConfigured: boolean;
+    whatsappSyncEnabled?: boolean;
+    whatsappLastError?: string | null;
     webhookUrl: string;
     verifyToken: string;
     successMessage?: string | null;
@@ -15,6 +17,8 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
     currentUser,
     settings = {},
     whatsappConfigured,
+    whatsappSyncEnabled = true,
+    whatsappLastError = null,
     webhookUrl,
     verifyToken,
     successMessage,
@@ -146,13 +150,41 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                             <p class="text-xs text-[#8C95AA] mt-0.5">Conecte via QR Code (Z-API / Evolution) ou Meta Oficial.</p>
                         </div>
                         <span class={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
-                            whatsappConfigured
+                            !whatsappSyncEnabled
+                                ? 'bg-red-500/15 text-red-300'
+                                : whatsappConfigured
                                 ? 'bg-emerald-500/15 text-[#6EE7B7]'
                                 : 'bg-amber-500/15 text-amber-300'
                         }`}>
-                            {whatsappConfigured ? 'Conectado' : 'Pendente'}
+                            {!whatsappSyncEnabled ? 'Pausado' : whatsappConfigured ? 'Conectado' : 'Pendente'}
                         </span>
                     </div>
+
+                    {/* Switch Liga/Desliga Sincronização WhatsApp */}
+                    <div class="gtb-surface-box rounded-xl overflow-hidden">
+                        <label class="flex items-center justify-between gap-3 px-3.5 py-3 cursor-pointer hover:bg-white/[0.03] transition">
+                            <div class="min-w-0">
+                                <div class="text-xs font-bold text-white leading-tight">Sincronização WhatsApp Ativa</div>
+                                <div class="text-[10.5px] text-[#8C95AA] mt-0.5">
+                                    Desative para pausar o recebimento e respostas automáticas no WhatsApp
+                                </div>
+                            </div>
+                            <input
+                                type="checkbox"
+                                name="whatsapp_sync_enabled"
+                                value="1"
+                                checked={whatsappSyncEnabled}
+                                class="gt-switch"
+                            />
+                        </label>
+                    </div>
+
+                    {whatsappLastError && whatsappSyncEnabled && (
+                        <div class="rounded-xl p-3 bg-red-500/10 border border-red-400/30 text-[11px] text-red-300 leading-relaxed break-words">
+                            <strong class="block text-[10px] uppercase tracking-wider mb-0.5">Último erro de envio:</strong>
+                            {whatsappLastError}
+                        </div>
+                    )}
 
                     <div class="gtb-surface-box rounded-xl p-3.5 space-y-2 text-xs">
                         <div>

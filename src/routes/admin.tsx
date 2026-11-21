@@ -640,14 +640,21 @@ adminRoutes.post('/atendimento/:id/mensagem', async (c) => {
         `UPDATE conversations SET last_message_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`
     ).bind(id).run();
 
-    // Se a conversa for do canal WhatsApp, entrega a resposta humana diretamente no WhatsApp do cliente
+    // Se a conversa for do canal WhatsApp e a sincronização estiver ativa, entrega a resposta humana no WhatsApp
     try {
-        const conv = await db.prepare(
-            `SELECT channel, visitor_phone FROM conversations WHERE id = ?`
-        ).bind(id).first<{ channel?: string; visitor_phone?: string }>();
+        const syncCfg = await db.prepare(
+            `SELECT value FROM system_settings WHERE key = 'whatsapp_sync_enabled'`
+        ).first<{ value: string }>();
+        const syncActive = !syncCfg || syncCfg.value !== '0';
 
-        if (conv?.channel === 'whatsapp' && conv.visitor_phone) {
-            await sendWhatsAppTextMessage(c.env, conv.visitor_phone, message);
+        if (syncActive) {
+            const conv = await db.prepare(
+                `SELECT channel, visitor_phone FROM conversations WHERE id = ?`
+            ).bind(id).first<{ channel?: string; visitor_phone?: string }>();
+
+            if (conv?.channel === 'whatsapp' && conv.visitor_phone) {
+                await sendWhatsAppTextMessage(c.env, conv.visitor_phone, message);
+            }
         }
     } catch (waErr) {
         console.warn('[Admin Chat] Falha ao entregar resposta no WhatsApp:', waErr);
@@ -1379,12 +1386,26 @@ adminRoutes.get('/configuracoes', async (c) => {
     } catch {}
 
     const activeProvider = settingsMap.whatsapp_provider || 'zapi_omni';
+    const whatsappSyncEnabled = settingsMap.whatsapp_sync_enabled !== '0';
     const whatsappConfigured =
         activeProvider === 'zapi' || activeProvider === 'zapi_omni'
             ? Boolean(settingsMap.whatsapp_zapi_instance_id && settingsMap.whatsapp_zapi_token)
             : activeProvider === 'evolution'
             ? Boolean(settingsMap.whatsapp_evolution_url && settingsMap.whatsapp_evolution_instance && settingsMap.whatsapp_evolution_api_key)
             : Boolean((c.env.WHATSAPP_ACCESS_TOKEN || settingsMap.whatsapp_access_token) && (c.env.WHATSAPP_PHONE_NUMBER_ID || settingsMap.whatsapp_phone_number_id));
+
+    let whatsappLastError: string | null = null;
+    if (c.env?.KV_CACHE) {
+        try {
+            const rawLastSend = await c.env.KV_CACHE.get('wa:debug:last_send');
+            if (rawLastSend) {
+                const parsed = JSON.parse(rawLastSend) as { ok?: boolean; error?: string };
+                if (parsed && parsed.ok === false && parsed.error) {
+                    whatsappLastError = parsed.error;
+                }
+            }
+        } catch {}
+    }
 
     settingsMap.has_zapi_token = settingsMap.whatsapp_zapi_token ? '1' : '';
     settingsMap.has_zapi_client_token = settingsMap.whatsapp_zapi_client_token ? '1' : '';
@@ -1400,6 +1421,8 @@ adminRoutes.get('/configuracoes', async (c) => {
             currentUser={user}
             settings={settingsMap}
             whatsappConfigured={whatsappConfigured}
+            whatsappSyncEnabled={whatsappSyncEnabled}
+            whatsappLastError={whatsappLastError}
             webhookUrl={`${origin}/api/webhooks/whatsapp`}
             verifyToken={c.env.WHATSAPP_VERIFY_TOKEN || 'gundjatech_wa_verify_2026'}
             successMessage={successMessage}
@@ -1419,7 +1442,8 @@ adminRoutes.post('/configuracoes', async (c) => {
         ['company_email', String(body.company_email || '').trim(), 'general'],
         ['company_phone', String(body.company_phone || '').trim(), 'general'],
         ['company_whatsapp', String(body.company_whatsapp || '').trim(), 'general'],
-        ['company_address', String(body.company_address || '').trim(), 'general']
+        ['company_address', String(body.company_address || '').trim(), 'general'],
+        ['whatsapp_sync_enabled', body.whatsapp_sync_enabled ? '1' : '0', 'integrations']
     ];
 
     const provider = String(body.whatsapp_provider || '').trim();

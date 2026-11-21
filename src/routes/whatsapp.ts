@@ -209,6 +209,18 @@ whatsappRoutes.post('/', async (c) => {
         } catch {}
     }
 
+    // Verifica se a sincronização WhatsApp está pausada em /admin/configuracoes
+    if (c.env?.DB) {
+        try {
+            const syncCfg = await c.env.DB.prepare(
+                `SELECT value FROM system_settings WHERE key = 'whatsapp_sync_enabled'`
+            ).first<{ value: string }>();
+            if (syncCfg && syncCfg.value === '0') {
+                return c.json({ ok: true, paused: true, processed: [] });
+            }
+        } catch {}
+    }
+
     const { messages, metaStatuses } = parseIncomingWebhook(payload);
 
     if (metaStatuses.length > 0 && c.env?.KV_CACHE) {
