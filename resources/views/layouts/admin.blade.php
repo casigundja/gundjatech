@@ -9,7 +9,7 @@
     <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="stylesheet" href="/css/gt-admin.css?v=16">
+    <link rel="stylesheet" href="/css/gt-admin.css?v=17">
     <script>
         (function () {
             function applyAdminTheme(val) {
@@ -487,28 +487,103 @@
             </div>
         </header>
 
-        <!-- Flash Alerts -->
+        <!-- Flash Alerts with Auto-Dismiss & Executive Design -->
         @if(session('success'))
-            <div class="px-6 pt-3">
-                <div class="gtb-alert-success p-3.5 text-xs font-semibold rounded-2xl flex items-center gap-2.5">
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                    <span>{{ session('success') }}</span>
+            <div
+                x-data="{
+                    show: true,
+                    timer: null,
+                    startTimer() { this.timer = setTimeout(() => this.show = false, 4500); },
+                    pauseTimer() { clearTimeout(this.timer); }
+                }"
+                x-show="show"
+                x-init="startTimer()"
+                @mouseenter="pauseTimer()"
+                @mouseleave="startTimer()"
+                x-transition:leave="transition ease-out duration-300"
+                x-transition:leave-start="opacity-100 transform translate-y-0 scale-100"
+                x-transition:leave-end="opacity-0 transform -translate-y-2 scale-95"
+                class="px-4 sm:px-6 pt-3"
+            >
+                <div class="max-w-xl mx-auto gtb-card gtb-alert-card-success bg-emerald-950/40 border border-emerald-500/30 rounded-2xl shadow-xl shadow-black/20 p-3 sm:p-3.5 flex items-center justify-between gap-3 text-xs">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-8 h-8 rounded-xl bg-emerald-500/20 text-[#6EE7B7] border border-emerald-500/40 flex items-center justify-center shrink-0 gtb-alert-icon">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                        </span>
+                        <div class="min-w-0">
+                            <span class="font-bold text-white block gtb-alert-title">Sucesso!</span>
+                            <span class="text-[#D5DCEB] block truncate gtb-alert-msg">{{ session('success') }}</span>
+                        </div>
+                    </div>
+                    <button type="button" @click="show = false" class="text-[#8C95AA] hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition shrink-0 cursor-pointer gtb-alert-close" title="Fechar aviso">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
                 </div>
             </div>
         @endif
         @if(session('error'))
-            <div class="px-6 pt-3">
-                <div class="gtb-alert-error p-3.5 text-xs font-semibold rounded-2xl flex items-center gap-2.5">
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    <span>{{ session('error') }}</span>
+            <div
+                x-data="{
+                    show: true,
+                    timer: null,
+                    startTimer() { this.timer = setTimeout(() => this.show = false, 6000); },
+                    pauseTimer() { clearTimeout(this.timer); }
+                }"
+                x-show="show"
+                x-init="startTimer()"
+                @mouseenter="pauseTimer()"
+                @mouseleave="startTimer()"
+                x-transition:leave="transition ease-out duration-300"
+                x-transition:leave-start="opacity-100 transform translate-y-0 scale-100"
+                x-transition:leave-end="opacity-0 transform -translate-y-2 scale-95"
+                class="px-4 sm:px-6 pt-3"
+            >
+                <div class="max-w-xl mx-auto gtb-card gtb-alert-card-error bg-red-950/40 border border-red-500/30 rounded-2xl shadow-xl shadow-black/20 p-3 sm:p-3.5 flex items-center justify-between gap-3 text-xs">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-8 h-8 rounded-xl bg-red-500/20 text-red-300 border border-red-500/40 flex items-center justify-center shrink-0 gtb-alert-icon">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </span>
+                        <div class="min-w-0">
+                            <span class="font-bold text-white block gtb-alert-title">Atenção!</span>
+                            <span class="text-red-200 block truncate gtb-alert-msg">{{ session('error') }}</span>
+                        </div>
+                    </div>
+                    <button type="button" @click="show = false" class="text-[#8C95AA] hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition shrink-0 cursor-pointer gtb-alert-close" title="Fechar aviso">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
                 </div>
             </div>
         @endif
         @if($errors->any())
-            <div class="px-6 pt-3">
-                <div class="gtb-alert-error p-3.5 text-xs rounded-2xl space-y-1">
-                    <div class="font-bold">Verifique os campos informados:</div>
-                    <ul class="list-disc list-inside space-y-0.5">
+            <div
+                x-data="{
+                    show: true,
+                    timer: null,
+                    startTimer() { this.timer = setTimeout(() => this.show = false, 7000); },
+                    pauseTimer() { clearTimeout(this.timer); }
+                }"
+                x-show="show"
+                x-init="startTimer()"
+                @mouseenter="pauseTimer()"
+                @mouseleave="startTimer()"
+                x-transition:leave="transition ease-out duration-300"
+                x-transition:leave-start="opacity-100 transform translate-y-0 scale-100"
+                x-transition:leave-end="opacity-0 transform -translate-y-2 scale-95"
+                class="px-4 sm:px-6 pt-3"
+            >
+                <div class="max-w-xl mx-auto gtb-card gtb-alert-card-error bg-red-950/40 border border-red-500/30 rounded-2xl shadow-xl shadow-black/20 p-3.5 sm:p-4 text-xs space-y-2">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-7 h-7 rounded-lg bg-red-500/20 text-red-300 border border-red-500/40 flex items-center justify-center shrink-0 gtb-alert-icon">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            </span>
+                            <span class="font-bold text-white gtb-alert-title">Verifique os campos informados:</span>
+                        </div>
+                        <button type="button" @click="show = false" class="text-[#8C95AA] hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition shrink-0 cursor-pointer gtb-alert-close" title="Fechar aviso">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <ul class="list-disc list-inside space-y-0.5 text-red-200 pl-1 gtb-alert-list">
                         @foreach($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach

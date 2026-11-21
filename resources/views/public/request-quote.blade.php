@@ -30,13 +30,21 @@
       @csrf
 
       @if(session('error'))
-        <div class="cheio" style="background:rgba(242,46,62,.15);border:1px solid rgba(242,46,62,.4);color:#fff;padding:12px 16px;border-radius:12px;font-size:13px">
-          {{ session('error') }}
+        <div class="cheio gt-auto-alert" style="background:rgba(242,46,62,.15);border:1px solid rgba(242,46,62,.4);color:#fff;padding:12px 16px;border-radius:12px;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:12px;transition:opacity .35s ease,transform .35s ease">
+          <div style="display:flex;align-items:center;gap:10px">
+            <svg style="width:16px;height:16px;color:#f87171;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            <span>{{ session('error') }}</span>
+          </div>
+          <button type="button" onclick="this.closest('.gt-auto-alert').remove()" style="background:none;border:none;color:#fff;font-size:18px;line-height:1;cursor:pointer;opacity:0.7;padding:2px 6px" title="Fechar aviso">&times;</button>
         </div>
       @endif
 
       @if($errors->any())
-        <div class="cheio" style="background:rgba(242,46,62,.15);border:1px solid rgba(242,46,62,.4);color:#fff;padding:12px 16px;border-radius:12px;font-size:13px">
+        <div class="cheio gt-auto-alert" style="background:rgba(242,46,62,.15);border:1px solid rgba(242,46,62,.4);color:#fff;padding:12px 16px;border-radius:12px;font-size:13px;transition:opacity .35s ease,transform .35s ease">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px">
+            <strong style="color:#fecaca">Verifique os campos informados:</strong>
+            <button type="button" onclick="this.closest('.gt-auto-alert').remove()" style="background:none;border:none;color:#fff;font-size:18px;line-height:1;cursor:pointer;opacity:0.7;padding:2px 6px" title="Fechar aviso">&times;</button>
+          </div>
           <ul style="margin:0;padding-left:18px">
             @foreach($errors->all() as $error)
               <li>{{ $error }}</li>
@@ -102,4 +110,24 @@
     </form>
   </div>
 </section>
+
+<script>
+  (function () {
+    var alerts = document.querySelectorAll('.gt-auto-alert');
+    alerts.forEach(function (el) {
+      var timer = setTimeout(function () { dismiss(el); }, 5500);
+      el.addEventListener('mouseenter', function () { clearTimeout(timer); });
+      el.addEventListener('mouseleave', function () {
+        timer = setTimeout(function () { dismiss(el); }, 2500);
+      });
+    });
+    function dismiss(el) {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(-6px)';
+      setTimeout(function () {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }, 350);
+    }
+  })();
+</script>
 @endsection

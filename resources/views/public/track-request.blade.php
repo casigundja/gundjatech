@@ -22,13 +22,21 @@
 
     <div>
       @if(session('success'))
-        <div role="status" style="margin-bottom:18px;padding:14px 18px;border-radius:14px;background:rgba(16,185,129,.16);border:1px solid rgba(16,185,129,.42);color:#ecfdf5;font-size:13px;font-weight:600">
-          {{ session('success') }}
+        <div role="status" class="gt-auto-alert" style="margin-bottom:18px;padding:14px 18px;border-radius:14px;background:rgba(16,185,129,.16);border:1px solid rgba(16,185,129,.42);color:#ecfdf5;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,0.25);transition:opacity .35s ease,transform .35s ease">
+          <div style="display:flex;align-items:center;gap:10px">
+            <svg style="width:16px;height:16px;color:#34d399;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span>{{ session('success') }}</span>
+          </div>
+          <button type="button" onclick="this.closest('.gt-auto-alert').remove()" style="background:none;border:none;color:#ecfdf5;font-size:18px;line-height:1;cursor:pointer;opacity:0.7;padding:2px 6px" title="Fechar aviso">&times;</button>
         </div>
       @endif
       @if(session('error'))
-        <div role="alert" style="margin-bottom:18px;padding:14px 18px;border-radius:14px;background:rgba(242,46,62,.16);border:1px solid rgba(242,46,62,.42);color:#fff;font-size:13px;font-weight:600">
-          {{ session('error') }}
+        <div role="alert" class="gt-auto-alert" style="margin-bottom:18px;padding:14px 18px;border-radius:14px;background:rgba(242,46,62,.16);border:1px solid rgba(242,46,62,.42);color:#fff;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,0.25);transition:opacity .35s ease,transform .35s ease">
+          <div style="display:flex;align-items:center;gap:10px">
+            <svg style="width:16px;height:16px;color:#f87171;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            <span>{{ session('error') }}</span>
+          </div>
+          <button type="button" onclick="this.closest('.gt-auto-alert').remove()" style="background:none;border:none;color:#fff;font-size:18px;line-height:1;cursor:pointer;opacity:0.7;padding:2px 6px" title="Fechar aviso">&times;</button>
         </div>
       @endif
 
@@ -114,4 +122,24 @@
     </div>
   </div>
 </section>
+
+<script>
+  (function () {
+    var alerts = document.querySelectorAll('.gt-auto-alert');
+    alerts.forEach(function (el) {
+      var timer = setTimeout(function () { dismiss(el); }, 5000);
+      el.addEventListener('mouseenter', function () { clearTimeout(timer); });
+      el.addEventListener('mouseleave', function () {
+        timer = setTimeout(function () { dismiss(el); }, 2500);
+      });
+    });
+    function dismiss(el) {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(-6px)';
+      setTimeout(function () {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }, 350);
+    }
+  })();
+</script>
 @endsection

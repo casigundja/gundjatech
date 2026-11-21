@@ -8,7 +8,7 @@
     <link rel="preload" href="/fonts/ZalandoSansExpanded-Regular.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/gt-auth.css?v=9">
+    <link rel="stylesheet" href="/css/gt-auth.css?v=10">
 </head>
 <body>
     <div class="gt-auth-shell">
@@ -108,13 +108,22 @@
                 <p class="gt-card-sub">Insira seu e-mail e senha para acessar o portal</p>
 
                 @if(session('status'))
-                    <div class="gt-alert gt-alert-ok" role="status">{{ session('status') }}</div>
+                    <div class="gt-alert gt-alert-ok" role="status">
+                        <span>{{ session('status') }}</span>
+                        <button type="button" class="gt-alert-close-btn" onclick="this.parentElement.remove()" title="Fechar aviso">&times;</button>
+                    </div>
                 @endif
                 @if(session('warning'))
-                    <div class="gt-alert gt-alert-warn" role="alert">{{ session('warning') }}</div>
+                    <div class="gt-alert gt-alert-warn" role="alert">
+                        <span>{{ session('warning') }}</span>
+                        <button type="button" class="gt-alert-close-btn" onclick="this.parentElement.remove()" title="Fechar aviso">&times;</button>
+                    </div>
                 @endif
                 @if(session('error'))
-                    <div class="gt-alert gt-alert-err" role="alert">{{ session('error') }}</div>
+                    <div class="gt-alert gt-alert-err" role="alert">
+                        <span>{{ session('error') }}</span>
+                        <button type="button" class="gt-alert-close-btn" onclick="this.parentElement.remove()" title="Fechar aviso">&times;</button>
+                    </div>
                 @endif
 
                 <form action="{{ route('login') }}" method="POST" class="gt-form">
@@ -198,6 +207,24 @@
                 btn.addEventListener("click", function () {
                     input.type = input.type === "password" ? "text" : "password";
                 });
+            }
+
+            var alerts = document.querySelectorAll('.gt-alert');
+            alerts.forEach(function (el) {
+                var timer = setTimeout(function () {
+                    dismiss(el);
+                }, 4500);
+                el.addEventListener('mouseenter', function () { clearTimeout(timer); });
+                el.addEventListener('mouseleave', function () {
+                    timer = setTimeout(function () { dismiss(el); }, 2500);
+                });
+            });
+            function dismiss(el) {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(-6px)';
+                setTimeout(function () {
+                    if (el.parentNode) el.parentNode.removeChild(el);
+                }, 350);
             }
         })();
     </script>

@@ -180,28 +180,103 @@
             </div>
         </header>
 
-        <!-- Alerts -->
+        <!-- Alerts with Auto-Dismiss & Executive Design -->
         @if(session('success'))
-            <div class="px-4 sm:px-7 pt-4">
-                <div class="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl flex items-center gap-2.5">
-                    <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                    <span>{{ session('success') }}</span>
+            <div
+                x-data="{
+                    show: true,
+                    timer: null,
+                    startTimer() { this.timer = setTimeout(() => this.show = false, 4500); },
+                    pauseTimer() { clearTimeout(this.timer); }
+                }"
+                x-show="show"
+                x-init="startTimer()"
+                @mouseenter="pauseTimer()"
+                @mouseleave="startTimer()"
+                x-transition:leave="transition ease-out duration-300"
+                x-transition:leave-start="opacity-100 transform translate-y-0 scale-100"
+                x-transition:leave-end="opacity-0 transform -translate-y-2 scale-95"
+                class="px-4 sm:px-7 pt-4"
+            >
+                <div class="max-w-xl mx-auto bg-white border border-emerald-300/80 rounded-2xl shadow-xl shadow-emerald-500/10 p-3 sm:p-3.5 flex items-center justify-between gap-3 text-xs">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center shrink-0 shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                        </span>
+                        <div class="min-w-0">
+                            <span class="font-bold text-[#063B5C] block">Sucesso!</span>
+                            <span class="text-[#36576E] block truncate">{{ session('success') }}</span>
+                        </div>
+                    </div>
+                    <button type="button" @click="show = false" class="text-[#527287] hover:text-[#063B5C] hover:bg-slate-100 p-1.5 rounded-lg transition shrink-0 cursor-pointer" title="Fechar aviso">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
                 </div>
             </div>
         @endif
         @if(session('error'))
-            <div class="px-4 sm:px-7 pt-4">
-                <div class="p-3.5 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl flex items-center gap-2.5">
-                    <svg class="w-4 h-4 text-red-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    <span>{{ session('error') }}</span>
+            <div
+                x-data="{
+                    show: true,
+                    timer: null,
+                    startTimer() { this.timer = setTimeout(() => this.show = false, 6000); },
+                    pauseTimer() { clearTimeout(this.timer); }
+                }"
+                x-show="show"
+                x-init="startTimer()"
+                @mouseenter="pauseTimer()"
+                @mouseleave="startTimer()"
+                x-transition:leave="transition ease-out duration-300"
+                x-transition:leave-start="opacity-100 transform translate-y-0 scale-100"
+                x-transition:leave-end="opacity-0 transform -translate-y-2 scale-95"
+                class="px-4 sm:px-7 pt-4"
+            >
+                <div class="max-w-xl mx-auto bg-white border border-red-300/80 rounded-2xl shadow-xl shadow-red-500/10 p-3 sm:p-3.5 flex items-center justify-between gap-3 text-xs">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-8 h-8 rounded-xl bg-red-50 text-red-600 border border-red-200/80 flex items-center justify-center shrink-0 shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </span>
+                        <div class="min-w-0">
+                            <span class="font-bold text-red-900 block">Atenção!</span>
+                            <span class="text-red-700 block truncate">{{ session('error') }}</span>
+                        </div>
+                    </div>
+                    <button type="button" @click="show = false" class="text-red-400 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition shrink-0 cursor-pointer" title="Fechar aviso">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
                 </div>
             </div>
         @endif
         @if($errors->any())
-            <div class="px-4 sm:px-7 pt-4">
-                <div class="p-3.5 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl space-y-1">
-                    <div class="font-bold text-red-800">Verifique os campos informados:</div>
-                    <ul class="list-disc list-inside space-y-0.5">
+            <div
+                x-data="{
+                    show: true,
+                    timer: null,
+                    startTimer() { this.timer = setTimeout(() => this.show = false, 7000); },
+                    pauseTimer() { clearTimeout(this.timer); }
+                }"
+                x-show="show"
+                x-init="startTimer()"
+                @mouseenter="pauseTimer()"
+                @mouseleave="startTimer()"
+                x-transition:leave="transition ease-out duration-300"
+                x-transition:leave-start="opacity-100 transform translate-y-0 scale-100"
+                x-transition:leave-end="opacity-0 transform -translate-y-2 scale-95"
+                class="px-4 sm:px-7 pt-4"
+            >
+                <div class="max-w-xl mx-auto bg-white border border-red-300/80 rounded-2xl shadow-xl shadow-red-500/10 p-3.5 sm:p-4 text-xs space-y-2">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-7 h-7 rounded-lg bg-red-50 text-red-600 border border-red-200/80 flex items-center justify-center shrink-0">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            </span>
+                            <span class="font-bold text-red-900">Verifique os campos informados:</span>
+                        </div>
+                        <button type="button" @click="show = false" class="text-red-400 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition shrink-0 cursor-pointer" title="Fechar aviso">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <ul class="list-disc list-inside space-y-0.5 text-red-700 pl-1">
                         @foreach($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
