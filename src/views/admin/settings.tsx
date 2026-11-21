@@ -43,9 +43,9 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                 </div>
             </div>
 
-            <form action="/admin/configuracoes" method="post" class="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
+            <form action="/admin/configuracoes" method="post" class="gt-grid-detail items-start">
                 {/* Coluna Principal: Dados da Empresa */}
-                <section class="xl:col-span-7 gtb-card space-y-5">
+                <section class="gtb-card space-y-5 min-w-0">
                     <div>
                         <h2 class="gt-font-display text-base font-extrabold text-white">Identidade &amp; Dados da Empresa</h2>
                         <p class="text-xs text-[#8C95AA] mt-0.5">
@@ -139,7 +139,7 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                 </section>
 
                 {/* Coluna Lateral: Integração WhatsApp Cloud API */}
-                <aside class="xl:col-span-5 gtb-card space-y-4">
+                <aside class="gtb-card space-y-4 min-w-0">
                     <div class="flex items-center justify-between gap-2">
                         <div>
                             <h2 class="gt-font-display text-base font-extrabold text-white">WhatsApp Cloud API (Meta)</h2>
