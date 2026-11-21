@@ -7,6 +7,8 @@ import { getAdminDashboardStats } from '../lib/admin';
 
 import { AdminDashboardView } from '../views/admin/dashboard';
 import { AdminLayout } from '../views/admin/layout';
+import { AdminCrmView } from '../views/admin/crm';
+import { AutonomousCrmAgent } from '../services/ai-crm-agent';
 import { AdminClientsView } from '../views/admin/clients';
 import { AdminRequestsView } from '../views/admin/requests';
 import { AdminServicesView } from '../views/admin/services';
@@ -1231,15 +1233,169 @@ adminRoutes.get('/orcamentos', async (c) => {
 });
 
 adminRoutes.get('/orcamentos/novo', (c) => c.redirect('/admin/orcamentos'));
-adminRoutes.get('/crm-autonomo', (c) => c.redirect('/admin/atendimento'));
 adminRoutes.get('/permissoes', (c) => c.redirect('/admin/usuarios'));
+
+// ==========================================
+// 12. CRM AUTÔNOMO IA (/admin/crm-autonomo)
+// ==========================================
+adminRoutes.get('/crm-autonomo', async (c) => {
+    const user = c.get('user')!;
+    const db = c.env.DB;
+    const { successMessage, errorMessage } = getFlashMessages(c);
+
+    let conversations: any[] = [];
+    let settingsMap: Record<string, string> = {};
+    let aiQuotationsCount = 0;
+
+    try {
+        const convRes = await db.prepare(
+            `SELECT * FROM conversations ORDER BY updated_at DESC LIMIT 30`
+        ).all();
+        conversations = convRes.results || [];
+    } catch {}
+
+    try {
+        const setRes = await db.prepare(
+            `SELECT key, value FROM system_settings WHERE group_name = 'crm_ai'`
+        ).all<{ key: string; value: string }>();
+        for (const row of setRes.results || []) {
+            settingsMap[row.key] = row.value || '';
+        }
+    } catch {}
+
+    try {
+        const qRes = await db.prepare(
+            `SELECT COUNT(*) as total FROM quotations WHERE reference_code LIKE 'ORC-AI-%'`
+        ).first<{ total: number }>();
+        aiQuotationsCount = qRes?.total ?? 0;
+    } catch {}
+
+    const activeAutopilotCount = conversations.filter((x) => x.ai_enabled && x.status !== 'closed').length;
+    const qualifyingCount = conversations.filter((x) => x.status !== 'closed' && ['new', 'greeting', 'discovery', 'qualifying', 'qualification'].includes(String(x.crm_stage || ''))).length;
+    const handoffCount = conversations.filter((x) => x.status === 'waiting_staff' || x.crm_stage === 'handoff_human').length;
+
+    return c.html(
+        <AdminCrmView
+            currentUser={user}
+            conversations={conversations}
+            settings={settingsMap}
+            stats={{
+                activeAutopilotCount,
+                qualifyingCount,
+                aiQuotationsCount,
+                handoffCount
+            }}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        />
+    );
+});
+
+adminRoutes.post('/crm-autonomo/configuracoes', async (c) => {
+    const db = c.env.DB;
+    const body = await getRequestBody(c);
+
+    const pairs: Array<[string, string]> = [
+        ['crm_ai_enabled', body.crm_ai_enabled ? '1' : '0'],
+        ['crm_ai_auto_draft_quotation', body.crm_ai_auto_draft_quotation ? '1' : '0'],
+        ['crm_ai_agent_name', String(body.crm_ai_agent_name || 'Assistente IA GundjaTech').trim()],
+        ['crm_ai_provider', String(body.crm_ai_provider || 'workers_ai').trim()],
+        ['crm_ai_system_prompt', String(body.crm_ai_system_prompt || '').trim()]
+    ];
+
+    try {
+        for (const [key, value] of pairs) {
+            await db.prepare(
+                `INSERT INTO system_settings (key, value, type, group_name, created_at, updated_at)
+                 VALUES (?, ?, 'string', 'crm_ai', datetime('now'), datetime('now'))
+                 ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`
+            ).bind(key, value).run();
+        }
+    } catch {}
+
+    return c.redirect('/admin/crm-autonomo?success=Configurações do CRM Autônomo IA salvas com sucesso');
+});
+
+adminRoutes.post('/crm-autonomo/testar', async (c) => {
+    try {
+        const agent = new AutonomousCrmAgent(c.env);
+        const testReply = await agent.handleIncomingMessage(0, 'Olá, quero um orçamento para um site institucional.', 'Teste Diretoria');
+        const preview = String(testReply?.message || 'Conexão IA validada!').slice(0, 90);
+        return c.redirect(`/admin/crm-autonomo?success=${encodeURIComponent('Conexão IA OK: ' + preview)}`);
+    } catch (err: any) {
+        return c.redirect(`/admin/crm-autonomo?error=${encodeURIComponent(err?.message || 'Falha ao testar IA')}`);
+    }
+});
+
+// ==========================================
+// 13. RESUMO EM TEMPO REAL & MENSAGENS (SOM & NOTIFICAÇÕES)
+// ==========================================
+adminRoutes.get('/atendimento/:id/mensagens', async (c) => {
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+    const afterId = Number(c.req.query('after_id') || 0);
+
+    try {
+        const query = afterId > 0
+            ? `SELECT id, sender_type, message, is_ai, created_at FROM conversation_messages WHERE conversation_id = ? AND id > ? ORDER BY id ASC`
+            : `SELECT id, sender_type, message, is_ai, created_at FROM conversation_messages WHERE conversation_id = ? ORDER BY id ASC`;
+        const stmt = afterId > 0 ? db.prepare(query).bind(id, afterId) : db.prepare(query).bind(id);
+        const res = await stmt.all();
+        return c.json({ ok: true, messages: res.results || [] });
+    } catch {
+        return c.json({ ok: true, messages: [] });
+    }
+});
+
 adminRoutes.get('/atendimento/resumo', async (c) => {
     const db = c.env.DB;
     const stats = await getAdminDashboardStats(db, 30);
+
+    let latestConversationId = 0;
+    let latestClientMessageId = 0;
+    let latestRequestId = 0;
+    const notifications: any[] = [];
+
+    try {
+        const cRow = await db.prepare(`SELECT MAX(id) as max_id FROM conversations`).first<{ max_id: number }>();
+        latestConversationId = cRow?.max_id ?? 0;
+
+        const mRow = await db.prepare(`SELECT MAX(id) as max_id FROM conversation_messages WHERE sender_type IN ('client', 'visitor')`).first<{ max_id: number }>();
+        latestClientMessageId = mRow?.max_id ?? 0;
+
+        const rRow = await db.prepare(`SELECT MAX(id) as max_id FROM service_requests`).first<{ max_id: number }>();
+        latestRequestId = rRow?.max_id ?? 0;
+
+        for (const req of (stats.recentRequests || []).slice(0, 3)) {
+            notifications.push({
+                key: `request:${req.id}`,
+                type: 'request',
+                title: req.service_title || req.title || `Solicitação ${req.protocol}`,
+                subtitle: `${req.protocol || ''} • ${req.name || 'Cliente'}`,
+                time: String(req.created_at || '').slice(11, 16),
+                url: `/admin/solicitacoes/${req.id}`
+            });
+        }
+        for (const conv of (stats.recentConversations || []).slice(0, 3)) {
+            notifications.push({
+                key: `chat:${conv.id}`,
+                type: 'chat',
+                title: `Chat • ${conv.visitor_name || 'Visitante'}`,
+                subtitle: conv.subject || 'Atendimento aberto',
+                time: String(conv.updated_at || '').slice(11, 16),
+                url: `/admin/atendimento?id=${conv.id}`
+            });
+        }
+    } catch {}
+
     return c.json({
         ok: true,
         pending_requests: stats.pendingRequests,
         open_chats: stats.openConversations,
-        total_notifications: stats.pendingRequests + stats.openConversations
+        total_notifications: stats.pendingRequests + stats.openConversations,
+        latest_conversation_id: latestConversationId,
+        latest_client_message_id: latestClientMessageId,
+        latest_request_id: latestRequestId,
+        notifications
     });
 });

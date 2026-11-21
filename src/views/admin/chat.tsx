@@ -169,7 +169,7 @@ export const AdminChatView: FC<AdminChatProps> = ({
                             </div>
 
                             {/* Mensagens com Rolagem */}
-                            <div style="flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; background: #032033;">
+                            <div id="admin-chat-messages" data-conv-id={activeConversation.id} data-last-id={messages.length > 0 ? messages[messages.length - 1].id : 0} style="flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; background: #032033;">
                                 {messages.length === 0 ? (
                                     <div style="margin: auto; text-align: center; color: #8CAAB9; font-size: 13px;">
                                         Nenhuma mensagem registrada nesta conversa.
@@ -231,6 +231,47 @@ export const AdminChatView: FC<AdminChatProps> = ({
                     )}
                 </div>
             </div>
+            {activeConversation && (
+                <script dangerouslySetInnerHTML={{ __html: `
+                    (function () {
+                        var box = document.getElementById('admin-chat-messages');
+                        if (!box) return;
+                        box.scrollTop = box.scrollHeight;
+                        var convId = box.dataset.convId;
+                        var lastId = parseInt(box.dataset.lastId || '0', 10) || 0;
+                        async function pollAdminChat() {
+                            try {
+                                var r = await fetch('/admin/atendimento/' + convId + '/mensagens?after_id=' + lastId, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
+                                if (!r.ok) return;
+                                var d = await r.json();
+                                if (d && d.ok && Array.isArray(d.messages) && d.messages.length > 0) {
+                                    var hasClientMsg = false;
+                                    d.messages.forEach(function (m) {
+                                        if (m.id > lastId) lastId = m.id;
+                                        var isClient = m.sender_type === 'visitor' || m.sender_type === 'client';
+                                        if (isClient) hasClientMsg = true;
+                                        var wrap = document.createElement('div');
+                                        wrap.style.cssText = 'display:flex;flex-direction:column;align-items:' + (isClient ? 'flex-start' : 'flex-end') + ';';
+                                        var bubble = document.createElement('div');
+                                        bubble.style.cssText = 'max-width:75%;padding:12px 16px;border-radius:12px;font-size:13px;line-height:1.5;color:#fff;' + (isClient ? 'background:#063B5C;' : (m.is_ai ? 'background:#04263D;border:1px solid rgba(242,194,48,0.4);' : 'background:#16749A;'));
+                                        bubble.textContent = m.message;
+                                        wrap.appendChild(bubble);
+                                        box.appendChild(wrap);
+                                    });
+                                    box.scrollTop = box.scrollHeight;
+                                    if (hasClientMsg && window.GT_AdminNotify) {
+                                        window.GT_AdminNotify.playChime();
+                                    }
+                                }
+                            } catch (e) {
+                            } finally {
+                                setTimeout(pollAdminChat, 4000);
+                            }
+                        }
+                        setTimeout(pollAdminChat, 4000);
+                    })();
+                ` }} />
+            )}
         </AdminLayout>
     );
 };

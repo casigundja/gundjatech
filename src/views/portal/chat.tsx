@@ -41,7 +41,7 @@ export const PortalChatView: FC<PortalChatProps> = ({
                     <span class="gt-badge gt-badge-success">Chat Ativo</span>
                 </div>
 
-                <div id="portal-messages" style="flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 14px; background: #FAFDFE;">
+                <div id="portal-messages" data-conv-id={conversation?.id || 0} data-last-id={messages.length > 0 ? messages[messages.length - 1].id : 0} style="flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 14px; background: #FAFDFE;">
                     {messages.length === 0 ? (
                         <div style="text-align: center; color: #8CAAB9; margin: auto;">
                             <div style="font-size: 32px; margin-bottom: 8px;">👋</div>
@@ -81,6 +81,62 @@ export const PortalChatView: FC<PortalChatProps> = ({
                     </form>
                 </div>
             </div>
+            <script dangerouslySetInnerHTML={{ __html: `
+                (function () {
+                    var box = document.getElementById('portal-messages');
+                    if (!box) return;
+                    box.scrollTop = box.scrollHeight;
+                    var convId = box.dataset.convId;
+                    if (!convId || convId === '0') return;
+                    var lastId = parseInt(box.dataset.lastId || '0', 10) || 0;
+                    function playPortalChime() {
+                        try {
+                            var Ctx = window.AudioContext || window.webkitAudioContext;
+                            if (!Ctx) return;
+                            var ctx = new Ctx();
+                            var osc = ctx.createOscillator();
+                            var gain = ctx.createGain();
+                            osc.type = 'sine';
+                            osc.frequency.setValueAtTime(880, ctx.currentTime);
+                            gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.start();
+                            osc.stop(ctx.currentTime + 0.24);
+                        } catch (e) {}
+                    }
+                    async function pollPortalChat() {
+                        try {
+                            var r = await fetch('/portal/atendimento/' + convId + '/mensagens?after_id=' + lastId, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
+                            if (!r.ok) return;
+                            var d = await r.json();
+                            var list = (d && Array.isArray(d.messages)) ? d.messages : [];
+                            if (list.length > 0) {
+                                var hasStaff = false;
+                                list.forEach(function (m) {
+                                    if (m.id > lastId) lastId = m.id;
+                                    var isMe = m.sender_type === 'client' || m.sender_type === 'user';
+                                    if (!isMe) hasStaff = true;
+                                    var wrap = document.createElement('div');
+                                    wrap.style.cssText = 'display:flex;flex-direction:column;align-items:' + (isMe ? 'flex-end' : 'flex-start') + ';';
+                                    var b = document.createElement('div');
+                                    b.style.cssText = 'max-width:75%;padding:12px 16px;border-radius:14px;font-size:13px;line-height:1.5;' + (isMe ? 'background:#063B5C;color:#fff;' : 'background:#fff;color:#063B5C;border:1px solid #CFE0EB;');
+                                    b.textContent = m.message;
+                                    wrap.appendChild(b);
+                                    box.appendChild(wrap);
+                                });
+                                box.scrollTop = box.scrollHeight;
+                                if (hasStaff) playPortalChime();
+                            }
+                        } catch (e) {
+                        } finally {
+                            setTimeout(pollPortalChat, 5000);
+                        }
+                    }
+                    setTimeout(pollPortalChat, 5000);
+                })();
+            ` }} />
         </PortalLayout>
     );
 };
