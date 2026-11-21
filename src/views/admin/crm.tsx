@@ -207,15 +207,15 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                     )}
                 </section>
 
-                {/* AI Configuration Panel */}
-                <aside class="xl:col-span-4 gtb-card gtb-kpi-gold space-y-5">
-                    <div class="flex items-start gap-3">
-                        <span class="gtb-icon-box mt-0.5">
+                {/* AI Configuration Panel (Compact Executive Card) */}
+                <aside class="xl:col-span-4 gtb-card gtb-kpi-gold !p-4 sm:!p-5 space-y-3.5">
+                    <div class="flex items-center gap-3">
+                        <span class="gtb-icon-box">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                         </span>
                         <div class="min-w-0 flex-1">
-                            <div class="flex items-center justify-between gap-2 flex-wrap">
-                                <h2 class="gt-font-display text-base font-extrabold text-white">Agente IA</h2>
+                            <div class="flex items-center justify-between gap-2">
+                                <h2 class="gt-font-display text-[15px] font-extrabold text-white leading-tight">Agente IA</h2>
                                 <span class={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
                                     aiEnabled
                                         ? 'bg-emerald-500/15 text-[#6EE7B7]'
@@ -225,119 +225,131 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                                     {aiEnabled ? 'Online' : 'Pausado'}
                                 </span>
                             </div>
-                            <p class="text-[11.5px] leading-relaxed text-[#8C95AA] mt-1">
-                                Cascata inteligente: Google Gemini + Cloudflare Workers AI no chat e WhatsApp.
+                            <p class="text-[11px] text-[#8C95AA] truncate mt-0.5">
+                                Gemini + Cloudflare Workers AI (Site &amp; WhatsApp)
                             </p>
                         </div>
                     </div>
 
-                    <form action="/admin/crm-autonomo/configuracoes" method="post" class="space-y-4 text-xs">
-                        {/* Bloco de Automações com Switches Modernos */}
-                        <div class="gtb-surface-box rounded-2xl divide-y divide-white/10 overflow-hidden">
-                            <label class="flex items-center justify-between gap-3 px-4 py-3.5 cursor-pointer hover:bg-white/[0.03] transition">
+                    <form id="gt-crm-config-form" action="/admin/crm-autonomo/configuracoes" method="post" class="space-y-3 text-xs">
+                        {/* Bloco Compacto de Switches */}
+                        <div class="gtb-surface-box rounded-xl divide-y divide-white/10 overflow-hidden">
+                            <label class="flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer hover:bg-white/[0.03] transition">
                                 <div class="min-w-0">
-                                    <div class="text-[13px] font-bold text-white leading-tight">Piloto Automático Ativo</div>
-                                    <div class="text-[11px] text-[#8C95AA] mt-0.5">Responder leads no chat do site e WhatsApp</div>
+                                    <div class="text-xs font-bold text-white leading-tight">Piloto Automático Ativo</div>
+                                    <div class="text-[10.5px] text-[#8C95AA]">Responder leads no chat e WhatsApp</div>
                                 </div>
                                 <input type="checkbox" name="crm_ai_enabled" value="1" checked={aiEnabled} class="gt-switch" />
                             </label>
 
-                            <label class="flex items-center justify-between gap-3 px-4 py-3.5 cursor-pointer hover:bg-white/[0.03] transition">
+                            <label class="flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer hover:bg-white/[0.03] transition">
                                 <div class="min-w-0">
-                                    <div class="text-[13px] font-bold text-white leading-tight">Auto-gerar Pré-Orçamento</div>
-                                    <div class="text-[11px] text-[#8C95AA] mt-0.5">Criar rascunho em /admin/orcamentos ao qualificar</div>
+                                    <div class="text-xs font-bold text-white leading-tight">Auto-gerar Pré-Orçamento</div>
+                                    <div class="text-[10.5px] text-[#8C95AA]">Criar rascunho ao qualificar lead</div>
                                 </div>
                                 <input type="checkbox" name="crm_ai_auto_draft_quotation" value="1" checked={autoDraft} class="gt-switch" />
                             </label>
                         </div>
 
-                        {/* Identidade & Motor */}
-                        <div class="space-y-3.5">
+                        {/* Linha 1: Nome + Motor */}
+                        <div class="gt-grid-2 !gap-2.5">
                             <div>
-                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Nome do Assistente</label>
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Nome do Assistente</label>
                                 <input
                                     type="text"
                                     name="crm_ai_agent_name"
                                     value={agentName}
-                                    class="w-full rounded-xl px-3.5 py-2.5 text-[13px]"
+                                    class="w-full rounded-xl px-3 py-2 text-xs"
                                 />
                             </div>
 
                             <div>
-                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Motor / Provedor de IA</label>
-                                <select name="crm_ai_provider" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]">
-                                    <option value="auto" selected={provider === 'auto'}>Automático (Gemini + Fallback Workers AI)</option>
-                                    <option value="gemini" selected={provider === 'gemini'}>Google Gemini (Primário + Fallback Workers AI)</option>
-                                    <option value="workers_ai" selected={provider === 'workers_ai'}>Cloudflare Workers AI (Edge Nativo)</option>
-                                    <option value="openai" selected={provider === 'openai'}>OpenAI (Primário + Fallback Workers AI)</option>
-                                    <option value="local" selected={provider === 'local'}>Motor Comercial Local</option>
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Motor de IA</label>
+                                <select name="crm_ai_provider" class="w-full rounded-xl px-3 py-2 text-xs">
+                                    <option value="auto" selected={provider === 'auto'}>Automático (Gemini + Edge)</option>
+                                    <option value="gemini" selected={provider === 'gemini'}>Google Gemini (Primário)</option>
+                                    <option value="workers_ai" selected={provider === 'workers_ai'}>Workers AI (Edge Nativo)</option>
+                                    <option value="openai" selected={provider === 'openai'}>OpenAI (Primário)</option>
+                                    <option value="local" selected={provider === 'local'}>Motor Local</option>
                                 </select>
                             </div>
+                        </div>
 
-                            <div class="gt-grid-2 !gap-3">
-                                <div>
-                                    <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Modelo LLM</label>
-                                    <input
-                                        type="text"
-                                        name="crm_ai_model"
-                                        value={model}
-                                        placeholder="gemini-2.5-flash"
-                                        class="w-full rounded-xl px-3 py-2.5 text-[12.5px] font-mono"
-                                    />
-                                </div>
-
-                                <div>
-                                    <div class="flex items-center justify-between gap-1 mb-1.5">
-                                        <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Chave API</label>
-                                        {hasApiKey && (
-                                            <span class="text-[10px] font-extrabold text-[#6EE7B7]">✓ Ativa</span>
-                                        )}
-                                    </div>
-                                    <div class="relative">
-                                        <input
-                                            id="gt-crm-api-key"
-                                            type="password"
-                                            name="crm_ai_api_key"
-                                            autocomplete="off"
-                                            placeholder={hasApiKey ? '••••••••••••' : 'AIza... / sk-...'}
-                                            class="w-full rounded-xl pl-3 pr-9 py-2.5 text-[12.5px] font-mono"
-                                        />
-                                        <button
-                                            type="button"
-                                            aria-label="Mostrar ou ocultar chave"
-                                            onclick="var i=document.getElementById('gt-crm-api-key');if(i){i.type=i.type==='password'?'text':'password';}"
-                                            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8C95AA] hover:text-[#F2C230] bg-transparent border-0 cursor-pointer p-1"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                        </button>
-                                    </div>
-                                </div>
+                        {/* Linha 2: Modelo + Chave API */}
+                        <div class="gt-grid-2 !gap-2.5">
+                            <div>
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Modelo LLM</label>
+                                <input
+                                    type="text"
+                                    name="crm_ai_model"
+                                    value={model}
+                                    placeholder="gemini-2.5-flash"
+                                    class="w-full rounded-xl px-3 py-2 text-xs font-mono"
+                                />
                             </div>
 
                             <div>
-                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Diretrizes Comerciais &amp; Tom de Voz</label>
-                                <textarea
-                                    name="crm_ai_system_prompt"
-                                    rows={5}
-                                    class="w-full rounded-xl px-3.5 py-2.5 text-[12.5px] leading-relaxed"
-                                >{systemPrompt}</textarea>
+                                <div class="flex items-center justify-between gap-1 mb-1">
+                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Chave API</label>
+                                    {hasApiKey && (
+                                        <span class="text-[9.5px] font-extrabold text-[#6EE7B7]">✓ Ativa</span>
+                                    )}
+                                </div>
+                                <div class="relative">
+                                    <input
+                                        id="gt-crm-api-key"
+                                        type="password"
+                                        name="crm_ai_api_key"
+                                        autocomplete="off"
+                                        placeholder={hasApiKey ? '••••••••••••' : 'AIza... / sk-...'}
+                                        style="padding-left: 12px; padding-right: 34px;"
+                                        class="w-full rounded-xl py-2 text-xs font-mono"
+                                    />
+                                    <button
+                                        type="button"
+                                        aria-label="Mostrar ou ocultar chave"
+                                        onclick="var i=document.getElementById('gt-crm-api-key');if(i){i.type=i.type==='password'?'text':'password';}"
+                                        class="absolute right-2 top-1/2 -translate-y-1/2 text-[#8C95AA] hover:text-[#F2C230] bg-transparent border-0 cursor-pointer p-1"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="pt-1">
-                            <button type="submit" class="btn-primary w-full flex items-center justify-center gap-2 py-3 text-[13px]">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7"/></svg>
-                                <span>Salvar Configurações do CRM</span>
-                            </button>
+                        <div>
+                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Diretrizes Comerciais &amp; Tom de Voz</label>
+                            <textarea
+                                name="crm_ai_system_prompt"
+                                rows={3}
+                                class="w-full rounded-xl px-3 py-2 text-xs leading-relaxed"
+                            >{systemPrompt}</textarea>
                         </div>
                     </form>
 
-                    <form action="/admin/crm-autonomo/testar" method="post" class="pt-3 border-t border-white/10">
-                        <button type="submit" class="gt-btn-outline w-full flex items-center justify-center gap-2 py-2.5 text-[12.5px]">
-                            <svg class="w-4 h-4 text-[#F2C230]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                            <span>Testar Conexão com a IA Agora</span>
+                    {/* Ações lado a lado (altura enxuta + feedback visual ao clicar) */}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                        <button
+                            type="submit"
+                            form="gt-crm-config-form"
+                            data-loading-text="Salvando..."
+                            class="btn-primary w-full flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs"
+                        >
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7"/></svg>
+                            <span>Salvar Configurações</span>
                         </button>
-                    </form>
+
+                        <form action="/admin/crm-autonomo/testar" method="post" class="m-0">
+                            <button
+                                type="submit"
+                                data-loading-text="Testando IA..."
+                                class="gt-btn-outline w-full flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs"
+                            >
+                                <svg class="w-3.5 h-3.5 text-[#F2C230]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                <span>Testar IA Agora</span>
+                            </button>
+                        </form>
+                    </div>
                 </aside>
             </div>
         </AdminLayout>

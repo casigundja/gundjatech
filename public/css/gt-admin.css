@@ -1435,6 +1435,47 @@ html[data-admin-theme="light"] body.gt-admin-boost input[type="checkbox"].gt-swi
     background: #F2C230 !important;
 }
 
+/* ==========================================================================
+   INTERACTIVE BUTTON FEEDBACK & GLOBAL PROCESSING SPINNER
+   ========================================================================== */
+@keyframes gtBtnSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+body.gt-admin-boost button,
+body.gt-admin-boost .btn-primary,
+body.gt-admin-boost .gt-btn-primary,
+body.gt-admin-boost .gt-btn-outline,
+body.gt-admin-boost .btn-secondary {
+    transition: transform 0.12s ease, opacity 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+body.gt-admin-boost button:active:not(:disabled),
+body.gt-admin-boost .btn-primary:active,
+body.gt-admin-boost .gt-btn-primary:active,
+body.gt-admin-boost .gt-btn-outline:active {
+    transform: scale(0.97) !important;
+}
+
+.gt-btn-loading {
+    pointer-events: none !important;
+    opacity: 0.88 !important;
+    cursor: wait !important;
+}
+
+.gt-btn-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    animation: gtBtnSpin 0.65s linear infinite;
+    flex-shrink: 0;
+}
+
 html[data-admin-theme="light"] body.gt-admin-boost main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select, textarea) {
     background-color: #FFFFFF !important;
     border: 1px solid #BDD2DF !important;

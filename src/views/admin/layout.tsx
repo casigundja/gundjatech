@@ -39,7 +39,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
-                <link rel="stylesheet" href="/css/gt-admin.css?v=23" />
+                <link rel="stylesheet" href="/css/gt-admin.css?v=24" />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
@@ -737,6 +737,18 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             start();
                         });
                     })();
+
+                    // Feedback visual imediato (spinner + "Processando...") em qualquer submit do painel
+                    document.addEventListener('submit', function (ev) {
+                        var form = ev.target;
+                        if (!form || form.tagName !== 'FORM') return;
+                        var btn = ev.submitter || form.querySelector('button[type="submit"], button:not([type])');
+                        if (!btn || btn.classList.contains('gt-btn-loading')) return;
+                        var label = btn.getAttribute('data-loading-text') || 'Processando...';
+                        btn.classList.add('gt-btn-loading');
+                        btn.setAttribute('aria-busy', 'true');
+                        btn.innerHTML = '<span class="gt-btn-spinner" aria-hidden="true"></span><span>' + label + '</span>';
+                    }, true);
 
                     checkGlobalUpdates();
                 })();
