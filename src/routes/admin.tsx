@@ -1370,11 +1370,21 @@ adminRoutes.get('/configuracoes', async (c) => {
         }
     } catch {}
 
-    const whatsappConfigured = Boolean(
-        (c.env.WHATSAPP_ACCESS_TOKEN || settingsMap.whatsapp_access_token) &&
-        (c.env.WHATSAPP_PHONE_NUMBER_ID || settingsMap.whatsapp_phone_number_id)
-    );
+    const activeProvider = settingsMap.whatsapp_provider || 'zapi';
+    const whatsappConfigured =
+        activeProvider === 'zapi'
+            ? Boolean(settingsMap.whatsapp_zapi_instance_id && settingsMap.whatsapp_zapi_token)
+            : activeProvider === 'evolution'
+            ? Boolean(settingsMap.whatsapp_evolution_url && settingsMap.whatsapp_evolution_instance && settingsMap.whatsapp_evolution_api_key)
+            : Boolean((c.env.WHATSAPP_ACCESS_TOKEN || settingsMap.whatsapp_access_token) && (c.env.WHATSAPP_PHONE_NUMBER_ID || settingsMap.whatsapp_phone_number_id));
+
+    settingsMap.has_zapi_token = settingsMap.whatsapp_zapi_token ? '1' : '';
+    settingsMap.has_zapi_client_token = settingsMap.whatsapp_zapi_client_token ? '1' : '';
+    settingsMap.has_evolution_key = settingsMap.whatsapp_evolution_api_key ? '1' : '';
     delete settingsMap.whatsapp_access_token;
+    delete settingsMap.whatsapp_zapi_token;
+    delete settingsMap.whatsapp_zapi_client_token;
+    delete settingsMap.whatsapp_evolution_api_key;
 
     const origin = new URL(c.req.url).origin;
     return c.html(
@@ -1404,13 +1414,23 @@ adminRoutes.post('/configuracoes', async (c) => {
         ['company_address', String(body.company_address || '').trim(), 'general']
     ];
 
-    const phoneId = String(body.whatsapp_phone_number_id || '').trim();
-    if (phoneId) {
-        pairs.push(['whatsapp_phone_number_id', phoneId, 'integrations']);
+    const provider = String(body.whatsapp_provider || '').trim();
+    if (provider === 'zapi' || provider === 'evolution' || provider === 'meta') {
+        pairs.push(['whatsapp_provider', provider, 'integrations']);
     }
-    const waToken = String(body.whatsapp_access_token || '').trim();
-    if (waToken) {
-        pairs.push(['whatsapp_access_token', waToken, 'integrations']);
+
+    const optionalSecrets: Array<[string, string]> = [
+        ['whatsapp_phone_number_id', String(body.whatsapp_phone_number_id || '').trim()],
+        ['whatsapp_access_token', String(body.whatsapp_access_token || '').trim()],
+        ['whatsapp_zapi_instance_id', String(body.whatsapp_zapi_instance_id || '').trim()],
+        ['whatsapp_zapi_token', String(body.whatsapp_zapi_token || '').trim()],
+        ['whatsapp_zapi_client_token', String(body.whatsapp_zapi_client_token || '').trim()],
+        ['whatsapp_evolution_url', String(body.whatsapp_evolution_url || '').trim()],
+        ['whatsapp_evolution_instance', String(body.whatsapp_evolution_instance || '').trim()],
+        ['whatsapp_evolution_api_key', String(body.whatsapp_evolution_api_key || '').trim()]
+    ];
+    for (const [k, v] of optionalSecrets) {
+        if (v) pairs.push([k, v, 'integrations']);
     }
 
     try {

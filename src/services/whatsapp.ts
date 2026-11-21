@@ -1,7 +1,10 @@
 import type { Env } from '../types/env';
 
+export type WhatsAppProvider = 'meta' | 'zapi' | 'evolution';
+
 export interface WhatsAppSendResult {
     ok: boolean;
+    provider?: WhatsAppProvider;
     messageId?: string;
     error?: string;
 }
@@ -12,8 +15,6 @@ export function normalizeWhatsAppPhone(phone: string): string {
 
 function getBrazilPhoneVariants(digits: string): string[] {
     const variants = [digits];
-    // Meta frequentemente entrega celulares do Brasil (55 + DDD + 8 dígitos) sem o 9º dígito,
-    // enquanto a lista permitida no modo teste usa 13 dígitos (55 + DDD + 9 + 8 dígitos).
     if (digits.startsWith('55') && digits.length === 12) {
         variants.push(`${digits.slice(0, 4)}9${digits.slice(4)}`);
     } else if (digits.startsWith('55') && digits.length === 13 && digits[4] === '9') {
@@ -22,54 +23,138 @@ function getBrazilPhoneVariants(digits: string): string[] {
     return variants;
 }
 
-async function resolveWhatsAppCredentials(env: Env): Promise<{
-    accessToken: string;
-    phoneNumberId: string;
-    apiVersion: string;
-}> {
-    let accessToken = (env.WHATSAPP_ACCESS_TOKEN || '').trim();
-    let phoneNumberId = (env.WHATSAPP_PHONE_NUMBER_ID || '').trim();
-    const apiVersion = (env.WHATSAPP_API_VERSION || 'v21.0').trim();
+interface ResolvedWhatsAppConfig {
+    provider: WhatsAppProvider;
+    // Meta Cloud API
+    metaAccessToken: string;
+    metaPhoneNumberId: string;
+    metaApiVersion: string;
+    // Z-API (QR Code)
+    zapiInstanceId: string;
+    zapiToken: string;
+    zapiClientToken: string;
+    // Evolution API (QR Code)
+    evolutionBaseUrl: string;
+    evolutionInstance: string;
+    evolutionApiKey: string;
+}
 
-    if ((!accessToken || !phoneNumberId) && env?.DB) {
+async function resolveWhatsAppConfig(env: Env): Promise<ResolvedWhatsAppConfig> {
+    const cfg: ResolvedWhatsAppConfig = {
+        provider: 'meta',
+        metaAccessToken: (env.WHATSAPP_ACCESS_TOKEN || '').trim(),
+        metaPhoneNumberId: (env.WHATSAPP_PHONE_NUMBER_ID || '').trim(),
+        metaApiVersion: (env.WHATSAPP_API_VERSION || 'v21.0').trim(),
+        zapiInstanceId: '',
+        zapiToken: '',
+        zapiClientToken: '',
+        evolutionBaseUrl: '',
+        evolutionInstance: '',
+        evolutionApiKey: ''
+    };
+
+    if (env?.DB) {
         try {
             const rows = await env.DB.prepare(
-                `SELECT key, value FROM system_settings WHERE key IN ('whatsapp_access_token', 'whatsapp_phone_number_id')`
+                `SELECT key, value FROM system_settings WHERE key IN (
+                    'whatsapp_provider',
+                    'whatsapp_access_token',
+                    'whatsapp_phone_number_id',
+                    'whatsapp_zapi_instance_id',
+                    'whatsapp_zapi_token',
+                    'whatsapp_zapi_client_token',
+                    'whatsapp_evolution_url',
+                    'whatsapp_evolution_instance',
+                    'whatsapp_evolution_api_key'
+                )`
             ).all<{ key: string; value: string }>();
 
             for (const row of rows.results || []) {
-                if (row.key === 'whatsapp_access_token' && !accessToken && row.value?.trim()) {
-                    accessToken = row.value.trim();
+                const val = String(row.value || '').trim();
+                if (!val) continue;
+                if (row.key === 'whatsapp_provider' && (val === 'zapi' || val === 'evolution' || val === 'meta')) {
+                    cfg.provider = val;
                 }
-                if (row.key === 'whatsapp_phone_number_id' && !phoneNumberId && row.value?.trim()) {
-                    phoneNumberId = row.value.trim();
-                }
+                if (row.key === 'whatsapp_access_token') cfg.metaAccessToken = val;
+                if (row.key === 'whatsapp_phone_number_id') cfg.metaPhoneNumberId = val;
+                if (row.key === 'whatsapp_zapi_instance_id') cfg.zapiInstanceId = val;
+                if (row.key === 'whatsapp_zapi_token') cfg.zapiToken = val;
+                if (row.key === 'whatsapp_zapi_client_token') cfg.zapiClientToken = val;
+                if (row.key === 'whatsapp_evolution_url') cfg.evolutionBaseUrl = val.replace(/\/+$/, '');
+                if (row.key === 'whatsapp_evolution_instance') cfg.evolutionInstance = val;
+                if (row.key === 'whatsapp_evolution_api_key') cfg.evolutionApiKey = val;
             }
         } catch {}
     }
 
-    return { accessToken, phoneNumberId, apiVersion };
+    return cfg;
 }
 
-export async function sendWhatsAppTextMessage(
-    env: Env,
-    toPhone: string,
-    bodyText: string
-): Promise<WhatsAppSendResult> {
-    const to = normalizeWhatsAppPhone(toPhone);
-    const body = String(bodyText || '').trim();
-
-    if (!to || !body) {
-        return { ok: false, error: 'Número de destino ou mensagem inválidos.' };
+async function sendViaZApi(cfg: ResolvedWhatsAppConfig, to: string, body: string): Promise<WhatsAppSendResult> {
+    if (!cfg.zapiInstanceId || !cfg.zapiToken) {
+        return { ok: false, provider: 'zapi', error: 'Credenciais Z-API não configuradas (Instance ID / Token).' };
     }
 
-    const { accessToken, phoneNumberId, apiVersion } = await resolveWhatsAppCredentials(env);
-    if (!accessToken || !phoneNumberId) {
-        console.warn('[WhatsApp] Credenciais não configuradas (WHATSAPP_ACCESS_TOKEN / WHATSAPP_PHONE_NUMBER_ID).');
-        return { ok: false, error: 'Credenciais da Meta WhatsApp Cloud API não configuradas.' };
+    try {
+        const url = `https://api.z-api.io/instances/${encodeURIComponent(cfg.zapiInstanceId)}/token/${encodeURIComponent(cfg.zapiToken)}/send-text`;
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (cfg.zapiClientToken) {
+            headers['Client-Token'] = cfg.zapiClientToken;
+        }
+
+        const res = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ phone: to, message: body.slice(0, 4096) })
+        });
+
+        const payload = (await res.json().catch(() => ({}))) as { messageId?: string; zaapId?: string; error?: string; message?: string };
+        if (!res.ok) {
+            return { ok: false, provider: 'zapi', error: payload?.error || payload?.message || `HTTP ${res.status}` };
+        }
+
+        return { ok: true, provider: 'zapi', messageId: payload?.messageId || payload?.zaapId };
+    } catch (err) {
+        return { ok: false, provider: 'zapi', error: err instanceof Error ? err.message : 'Erro de rede Z-API' };
+    }
+}
+
+async function sendViaEvolution(cfg: ResolvedWhatsAppConfig, to: string, body: string): Promise<WhatsAppSendResult> {
+    if (!cfg.evolutionBaseUrl || !cfg.evolutionInstance || !cfg.evolutionApiKey) {
+        return { ok: false, provider: 'evolution', error: 'Credenciais Evolution API não configuradas (URL / Instância / API Key).' };
     }
 
-    const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
+    try {
+        const url = `${cfg.evolutionBaseUrl}/message/sendText/${encodeURIComponent(cfg.evolutionInstance)}`;
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                apikey: cfg.evolutionApiKey
+            },
+            body: JSON.stringify({
+                number: to,
+                text: body.slice(0, 4096)
+            })
+        });
+
+        const payload = (await res.json().catch(() => ({}))) as { key?: { id?: string }; message?: string; error?: string };
+        if (!res.ok) {
+            return { ok: false, provider: 'evolution', error: payload?.error || payload?.message || `HTTP ${res.status}` };
+        }
+
+        return { ok: true, provider: 'evolution', messageId: payload?.key?.id };
+    } catch (err) {
+        return { ok: false, provider: 'evolution', error: err instanceof Error ? err.message : 'Erro de rede Evolution API' };
+    }
+}
+
+async function sendViaMeta(cfg: ResolvedWhatsAppConfig, to: string, body: string): Promise<WhatsAppSendResult> {
+    if (!cfg.metaAccessToken || !cfg.metaPhoneNumberId) {
+        return { ok: false, provider: 'meta', error: 'Credenciais da Meta WhatsApp Cloud API não configuradas.' };
+    }
+
+    const url = `https://graph.facebook.com/${cfg.metaApiVersion}/${cfg.metaPhoneNumberId}/messages`;
     const candidates = getBrazilPhoneVariants(to);
     let lastError = 'Falha ao enviar mensagem WhatsApp.';
 
@@ -78,7 +163,7 @@ export async function sendWhatsAppTextMessage(
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${accessToken}`,
+                    Authorization: `Bearer ${cfg.metaAccessToken}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
@@ -101,26 +186,48 @@ export async function sendWhatsAppTextMessage(
             if (response.ok) {
                 return {
                     ok: true,
+                    provider: 'meta',
                     messageId: payload?.messages?.[0]?.id
                 };
             }
 
             lastError = payload?.error?.message || `HTTP ${response.status}`;
-            console.error(`[WhatsApp] Falha ao enviar para ${recipient}:`, lastError);
-
-            // Só tenta a variante com/sem 9º dígito se o erro for de destinatário não permitido/inválido
             const code = payload?.error?.code;
             if (code !== 131030 && code !== 131026 && code !== 100) {
                 break;
             }
         } catch (err) {
             lastError = err instanceof Error ? err.message : 'Erro de rede ao enviar mensagem WhatsApp';
-            console.error('[WhatsApp] Exceção ao enviar mensagem:', lastError);
             break;
         }
     }
 
-    return { ok: false, error: lastError };
+    return { ok: false, provider: 'meta', error: lastError };
+}
+
+export async function sendWhatsAppTextMessage(
+    env: Env,
+    toPhone: string,
+    bodyText: string,
+    preferredProvider?: WhatsAppProvider
+): Promise<WhatsAppSendResult> {
+    const to = normalizeWhatsAppPhone(toPhone);
+    const body = String(bodyText || '').trim();
+
+    if (!to || !body) {
+        return { ok: false, error: 'Número de destino ou mensagem inválidos.' };
+    }
+
+    const cfg = await resolveWhatsAppConfig(env);
+    const provider = preferredProvider || cfg.provider;
+
+    if (provider === 'zapi') {
+        return sendViaZApi(cfg, to, body);
+    }
+    if (provider === 'evolution') {
+        return sendViaEvolution(cfg, to, body);
+    }
+    return sendViaMeta(cfg, to, body);
 }
 
 export async function markWhatsAppMessageRead(env: Env, messageId: string): Promise<void> {
@@ -128,16 +235,16 @@ export async function markWhatsAppMessageRead(env: Env, messageId: string): Prom
         return;
     }
 
-    const { accessToken, phoneNumberId, apiVersion } = await resolveWhatsAppCredentials(env);
-    if (!accessToken || !phoneNumberId) {
+    const cfg = await resolveWhatsAppConfig(env);
+    if (cfg.provider !== 'meta' || !cfg.metaAccessToken || !cfg.metaPhoneNumberId) {
         return;
     }
 
     try {
-        await fetch(`https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`, {
+        await fetch(`https://graph.facebook.com/${cfg.metaApiVersion}/${cfg.metaPhoneNumberId}/messages`, {
             method: 'POST',
             headers: {
-                Authorization: `Bearer ${accessToken}`,
+                Authorization: `Bearer ${cfg.metaAccessToken}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({

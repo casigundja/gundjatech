@@ -119,4 +119,68 @@ describe('Integração Meta WhatsApp Cloud API & CRM Autônomo', () => {
         expect(dupData.ok).toBe(true);
         expect(dupData.processed).toHaveLength(0);
     });
+
+    it('deve receber mensagem via Z-API (QR Code), acionar a IA e responder pela Z-API', async () => {
+        const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            new Response(JSON.stringify({ messageId: 'zapi.msg.1' }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+            })
+        );
+
+        const mockEnv = {
+            DB: {
+                prepare: (sql: string) => ({
+                    bind: () => ({
+                        first: async () => null,
+                        all: async () => ({ results: [] }),
+                        run: async () => ({ meta: { last_row_id: 77 } })
+                    }),
+                    first: async () => null,
+                    all: async () => ({
+                        results: sql.includes('whatsapp_zapi_instance_id')
+                            ? [
+                                { key: 'whatsapp_provider', value: 'zapi' },
+                                { key: 'whatsapp_zapi_instance_id', value: 'INST123' },
+                                { key: 'whatsapp_zapi_token', value: 'TOK456' },
+                                { key: 'whatsapp_zapi_client_token', value: 'CLI789' }
+                            ]
+                            : []
+                    }),
+                    run: async () => ({ meta: { last_row_id: 77 } })
+                })
+            }
+        } as any;
+
+        const zapiPayload = {
+            instanceId: 'INST123',
+            messageId: 'ZAPI-MSG-001',
+            phone: '5519953248420',
+            fromMe: false,
+            isGroup: false,
+            senderName: 'Casimiro Gundja',
+            text: { message: 'Olá, quero orçamento para um sistema web' }
+        };
+
+        const res = await app.request(
+            '/api/webhooks/whatsapp',
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(zapiPayload)
+            },
+            mockEnv
+        );
+
+        expect(res.status).toBe(200);
+        const data = (await res.json()) as { ok: boolean; processed: Array<{ provider: string; replied: boolean }> };
+        expect(data.ok).toBe(true);
+        expect(data.processed).toHaveLength(1);
+        expect(data.processed[0].provider).toBe('zapi');
+        expect(data.processed[0].replied).toBe(true);
+        expect(fetchMock).toHaveBeenCalledWith(
+            'https://api.z-api.io/instances/INST123/token/TOK456/send-text',
+            expect.objectContaining({ method: 'POST' })
+        );
+    });
 });
