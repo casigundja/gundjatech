@@ -1427,6 +1427,209 @@ html[data-admin-theme="light"] .gtb-toast-body {
 }
 
 /* ==========================================================================
+   FLASH TOAST NOTIFICATIONS (Auto-dismiss 5s + Progress Bar — Dark & Light)
+   ========================================================================== */
+@keyframes gtToastSlideIn {
+    0% {
+        opacity: 0;
+        transform: translate3d(24px, -6px, 0) scale(0.97);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+}
+
+@keyframes gtToastProgress {
+    from {
+        transform: scaleX(1);
+    }
+    to {
+        transform: scaleX(0);
+    }
+}
+
+.gt-flash-toast-stack {
+    position: fixed;
+    top: 84px;
+    right: 20px;
+    z-index: 150;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(390px, calc(100vw - 24px));
+    pointer-events: none;
+}
+
+.gt-flash-toast {
+    pointer-events: auto;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px 16px;
+    border-radius: 16px;
+    background: linear-gradient(155deg, #0A253B 0%, #061A2B 100%);
+    border: 1px solid rgba(231, 240, 245, 0.16);
+    box-shadow: 0 20px 44px -14px rgba(0, 0, 0, 0.72), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    animation: gtToastSlideIn 0.28s cubic-bezier(0.16, 0.84, 0.3, 1) forwards;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.gt-flash-toast.is-leaving {
+    opacity: 0;
+    transform: translate3d(24px, 0, 0) scale(0.96);
+}
+
+.gt-flash-toast--success {
+    border-color: rgba(52, 211, 153, 0.42);
+}
+
+.gt-flash-toast--error {
+    border-color: rgba(248, 113, 113, 0.45);
+}
+
+.gt-flash-toast__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.gt-flash-toast--success .gt-flash-toast__icon {
+    background: rgba(16, 185, 129, 0.16);
+    border: 1px solid rgba(52, 211, 153, 0.38);
+    color: #34D399;
+}
+
+.gt-flash-toast--error .gt-flash-toast__icon {
+    background: rgba(239, 68, 68, 0.16);
+    border: 1px solid rgba(248, 113, 113, 0.38);
+    color: #F87171;
+}
+
+.gt-flash-toast__content {
+    flex: 1;
+    min-width: 0;
+}
+
+.gt-flash-toast__title {
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #FFFFFF;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+}
+
+.gt-flash-toast__msg {
+    margin-top: 3px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #C7DBE8;
+    word-break: break-word;
+}
+
+.gt-flash-toast__close {
+    background: transparent;
+    border: 0;
+    color: #8CAAB9;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.gt-flash-toast__close:hover {
+    background: rgba(231, 240, 245, 0.10);
+    color: #FFFFFF;
+}
+
+.gt-flash-toast__bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    transform-origin: left center;
+    animation: gtToastProgress 5s linear forwards;
+}
+
+.gt-flash-toast:hover .gt-flash-toast__bar {
+    animation-play-state: paused;
+}
+
+.gt-flash-toast--success .gt-flash-toast__bar {
+    background: linear-gradient(90deg, #10B981 0%, #F2C230 100%);
+}
+
+.gt-flash-toast--error .gt-flash-toast__bar {
+    background: linear-gradient(90deg, #EF4444 0%, #F2C230 100%);
+}
+
+html[data-admin-theme="light"] .gt-flash-toast {
+    background: #FFFFFF !important;
+    box-shadow: 0 18px 40px -14px rgba(6, 59, 92, 0.24), 0 4px 12px rgba(6, 59, 92, 0.08) !important;
+}
+
+html[data-admin-theme="light"] .gt-flash-toast--success {
+    border-color: #6EE7B7 !important;
+}
+
+html[data-admin-theme="light"] .gt-flash-toast--error {
+    border-color: #FCA5A5 !important;
+}
+
+html[data-admin-theme="light"] .gt-flash-toast--success .gt-flash-toast__icon {
+    background: #ECFDF5 !important;
+    border-color: #A7F3D0 !important;
+    color: #059669 !important;
+}
+
+html[data-admin-theme="light"] .gt-flash-toast--error .gt-flash-toast__icon {
+    background: #FEF2F2 !important;
+    border-color: #FECACA !important;
+    color: #DC2626 !important;
+}
+
+html[data-admin-theme="light"] .gt-flash-toast__title {
+    color: #063B5C !important;
+}
+
+html[data-admin-theme="light"] .gt-flash-toast__msg {
+    color: #3E5C71 !important;
+}
+
+html[data-admin-theme="light"] .gt-flash-toast__close {
+    color: #5C7A90 !important;
+}
+
+html[data-admin-theme="light"] .gt-flash-toast__close:hover {
+    background: #EEF5F9 !important;
+    color: #063B5C !important;
+}
+
+@media (max-width: 767px) {
+    .gt-flash-toast-stack {
+        top: 70px;
+        right: 12px;
+        left: 12px;
+        width: auto;
+    }
+}
+
+/* ==========================================================================
    EXECUTIVE CONFIRMATION MODAL (Replaces native window.confirm everywhere)
    ========================================================================== */
 @keyframes gtbConfirmIn {

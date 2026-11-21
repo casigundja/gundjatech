@@ -79,6 +79,20 @@ whatsappRoutes.post('/', async (c) => {
             const value = change?.value || {};
             const messages = Array.isArray(value.messages) ? value.messages : [];
             const contacts = Array.isArray(value.contacts) ? value.contacts : [];
+            const statuses = Array.isArray(value.statuses) ? value.statuses : [];
+
+            // Registra status de entrega / falhas retornadas pela Meta para diagnóstico
+            if (statuses.length > 0 && c.env?.KV_CACHE) {
+                try {
+                    const lastStatus = statuses[statuses.length - 1];
+                    console.log('[WhatsApp Status]', JSON.stringify(lastStatus));
+                    await c.env.KV_CACHE.put(
+                        'wa:debug:last_status',
+                        JSON.stringify({ at: new Date().toISOString(), status: lastStatus }),
+                        { expirationTtl: 86400 }
+                    );
+                } catch {}
+            }
 
             for (const msg of messages) {
                 const messageId = String(msg?.id || '').trim();
@@ -195,6 +209,21 @@ whatsappRoutes.post('/', async (c) => {
                     if (aiReply?.message) {
                         const sendRes = await sendWhatsAppTextMessage(c.env, fromPhone, aiReply.message);
                         replied = sendRes.ok;
+                        if (c.env?.KV_CACHE) {
+                            try {
+                                await c.env.KV_CACHE.put(
+                                    'wa:debug:last_send',
+                                    JSON.stringify({
+                                        at: new Date().toISOString(),
+                                        to: fromPhone,
+                                        ok: sendRes.ok,
+                                        messageId: sendRes.messageId || null,
+                                        error: sendRes.error || null
+                                    }),
+                                    { expirationTtl: 86400 }
+                                );
+                            } catch {}
+                        }
                     }
                 }
 

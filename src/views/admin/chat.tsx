@@ -90,7 +90,7 @@ export const AdminChatView: FC<AdminChatProps> = ({
                                         style={`display: block; padding: 16px 20px; border-bottom: 1px solid rgba(22, 116, 154, 0.15); text-decoration: none; transition: background 0.15s ease; ${isSelected ? 'background: rgba(242, 194, 48, 0.08); border-left: 4px solid #F2C230;' : 'background: transparent;'}`}
                                     >
                                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-                                            <span style="font-size: 14px; font-weight: 700; color: #FFFFFF;">
+                                            <span class="text-white" style="font-size: 14px; font-weight: 700;">
                                                 {clientName}
                                             </span>
                                             {c.lead_score > 0 && (

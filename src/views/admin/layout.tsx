@@ -39,7 +39,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
-                <link rel="stylesheet" href="/css/gt-admin.css?v=20" />
+                <link rel="stylesheet" href="/css/gt-admin.css?v=21" />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
@@ -439,12 +439,46 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                         </div>
                     </header>
 
+                    {/* Flash Toast Notifications (Auto-dismiss 5s) */}
+                    {(successMessage || errorMessage) && (
+                        <div id="gt-flash-toast-stack" class="gt-flash-toast-stack" role="status" aria-live="polite">
+                            {successMessage && (
+                                <div class="gt-flash-toast gt-flash-toast--success" data-auto-dismiss="5000">
+                                    <span class="gt-flash-toast__icon" aria-hidden="true">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                    </span>
+                                    <div class="gt-flash-toast__content">
+                                        <div class="gt-flash-toast__title">Operação concluída</div>
+                                        <div class="gt-flash-toast__msg">{successMessage}</div>
+                                    </div>
+                                    <button type="button" class="gt-flash-toast__close" aria-label="Fechar notificação" onclick="var t=this.closest('.gt-flash-toast');if(t){t.classList.add('is-leaving');setTimeout(function(){t.remove();},250);}">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                    <span class="gt-flash-toast__bar"></span>
+                                </div>
+                            )}
+                            {errorMessage && (
+                                <div class="gt-flash-toast gt-flash-toast--error" data-auto-dismiss="6500">
+                                    <span class="gt-flash-toast__icon" aria-hidden="true">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                                    </span>
+                                    <div class="gt-flash-toast__content">
+                                        <div class="gt-flash-toast__title">Atenção</div>
+                                        <div class="gt-flash-toast__msg">{errorMessage}</div>
+                                    </div>
+                                    <button type="button" class="gt-flash-toast__close" aria-label="Fechar notificação" onclick="var t=this.closest('.gt-flash-toast');if(t){t.classList.add('is-leaving');setTimeout(function(){t.remove();},250);}">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                    <span class="gt-flash-toast__bar" style="animation-duration: 6.5s;"></span>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* Live Real-Time Toast Notification Stack (Sound + Visual Alert) */}
                     <div id="gt-live-toast-stack" class="fixed bottom-5 right-5 z-[100] w-80 max-w-[calc(100vw-2rem)] space-y-2.5 pointer-events-none"></div>
 
                     <main class="gt-admin-main flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-7 space-y-6">
-                        {successMessage && <div class="gt-alert-success">✓ {successMessage}</div>}
-                        {errorMessage && <div class="gt-alert-error">✕ {errorMessage}</div>}
                         {children}
                     </main>
                 </div>
@@ -658,6 +692,44 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             setTimeout(checkGlobalUpdates, 6000);
                         }
                     }
+
+                    // Auto-dismiss dos toasts de feedback (?success= / ?error=) + limpeza da URL
+                    (function initFlashToasts() {
+                        var toasts = document.querySelectorAll('#gt-flash-toast-stack .gt-flash-toast');
+                        if (!toasts.length) return;
+                        try {
+                            var url = new URL(window.location.href);
+                            if (url.searchParams.has('success') || url.searchParams.has('error')) {
+                                url.searchParams.delete('success');
+                                url.searchParams.delete('error');
+                                window.history.replaceState({}, '', url.pathname + (url.search ? url.search : '') + url.hash);
+                            }
+                        } catch (e) {}
+                        toasts.forEach(function (toast) {
+                            var remaining = parseInt(toast.getAttribute('data-auto-dismiss') || '5000', 10);
+                            var startedAt = Date.now();
+                            var timer = null;
+                            function dismiss() {
+                                toast.classList.add('is-leaving');
+                                setTimeout(function () { toast.remove(); }, 260);
+                            }
+                            function start() {
+                                startedAt = Date.now();
+                                timer = setTimeout(dismiss, Math.max(400, remaining));
+                            }
+                            toast.addEventListener('mouseenter', function () {
+                                if (timer) {
+                                    clearTimeout(timer);
+                                    timer = null;
+                                    remaining -= (Date.now() - startedAt);
+                                }
+                            });
+                            toast.addEventListener('mouseleave', function () {
+                                if (!timer && remaining > 0) start();
+                            });
+                            start();
+                        });
+                    })();
 
                     checkGlobalUpdates();
                 })();
