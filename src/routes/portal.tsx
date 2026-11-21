@@ -3,6 +3,7 @@ import { Env, AppVariables } from '../types/env';
 import { requireAuth } from '../middleware/auth';
 import { getRequestBody } from '../lib/request';
 import { ensureClientProfile, getPortalDashboard } from '../lib/client-portal';
+import { AutonomousCrmAgent } from '../services/ai-crm-agent';
 import { PortalDashboardView } from '../views/portal/dashboard';
 import { PortalProjectsView } from '../views/portal/projects';
 import { PortalQuotationsView } from '../views/portal/quotations';
@@ -471,12 +472,28 @@ portalRoutes.post('/atendimento/:id/mensagem', async (c) => {
         'UPDATE conversations SET status = "waiting_staff", last_message_at = datetime("now"), updated_at = datetime("now") WHERE id = ?'
     ).bind(convId).run();
 
+    // Se a conversa estiver com Piloto IA ativo (e IA global ativa), responde automaticamente
+    try {
+        const conv = await db.prepare('SELECT ai_enabled FROM conversations WHERE id = ?').bind(convId).first<{ ai_enabled?: number }>();
+        let globalAiEnabled = true;
+        try {
+            const cfg = await db.prepare(`SELECT value FROM system_settings WHERE key = 'crm_ai_enabled'`).first<{ value: string }>();
+            if (cfg && cfg.value === '0') globalAiEnabled = false;
+        } catch {}
+
+        if (globalAiEnabled && (conv ? Boolean(conv.ai_enabled ?? 1) : true)) {
+            const agent = new AutonomousCrmAgent(c.env);
+            await agent.handleIncomingMessage(convId, message, client.name);
+        }
+    } catch {}
+
     return c.redirect('/portal/atendimento?success=Mensagem+enviada+com+sucesso!');
 });
 
 portalRoutes.get('/atendimento/:id/mensagens', async (c) => {
     const { db, client } = await getClientContext(c);
     const convId = Number(c.req.param('id'));
+    const afterId = Number(c.req.query('after_id') || 0);
 
     const conv = await db.prepare(
         'SELECT id FROM conversations WHERE id = ? AND client_id = ?'
@@ -486,9 +503,11 @@ portalRoutes.get('/atendimento/:id/mensagens', async (c) => {
         return c.json({ error: 'Acesso não autorizado' }, 403);
     }
 
-    const messages = await db.prepare(
-        'SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY created_at ASC'
-    ).bind(convId).all();
+    const query = afterId > 0
+        ? 'SELECT * FROM conversation_messages WHERE conversation_id = ? AND id > ? ORDER BY id ASC'
+        : 'SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY id ASC';
+    const stmt = afterId > 0 ? db.prepare(query).bind(convId, afterId) : db.prepare(query).bind(convId);
+    const messages = await stmt.all();
 
     return c.json({ messages: messages.results || [] });
 });

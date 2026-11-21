@@ -38,9 +38,20 @@ chatRoutes.post('/start', async (c) => {
     const protocol = `CHAT-${dateStr}-${randomChars}`;
 
     let conversationId = 1;
+    let clientMsgId = 1;
+    let globalAiEnabled = true;
 
     try {
         if (c.env?.DB) {
+            try {
+                const aiCfg = await c.env.DB.prepare(
+                    `SELECT value FROM system_settings WHERE key = 'crm_ai_enabled'`
+                ).first<{ value: string }>();
+                if (aiCfg && aiCfg.value === '0') {
+                    globalAiEnabled = false;
+                }
+            } catch {}
+
             // 1. Cria ou atualiza cliente
             let client = await c.env.DB.prepare(
                 `SELECT id FROM clients WHERE lower(email) = ?`
@@ -58,42 +69,50 @@ chatRoutes.post('/start', async (c) => {
             }
 
             // 2. Cria solicitação de atendimento vinculada
-            const reqRes = await c.env.DB.prepare(
-                `INSERT INTO service_requests (client_id, title, description, tracking_code, status, internal_notes, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, 'new', ?, datetime('now'), datetime('now'))`
+            await c.env.DB.prepare(
+                `INSERT INTO service_requests (protocol, tracking_code, client_id, name, email, phone, title, service_title, description, status, internal_notes, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, datetime('now'), datetime('now'))`
             ).bind(
+                protocol,
+                protocol,
                 clientId,
+                nome,
+                email,
+                telefone || null,
+                assunto || `Chat do Site • ${nome}`,
                 assunto || `Chat do Site • ${nome}`,
                 mensagem,
-                protocol,
                 `Canal: Chat Online | Tema: ${tema}`
             ).run();
 
-            const requestId = Number(reqRes.meta.last_row_id);
-
             // 3. Cria conversa de chat
             const convRes = await c.env.DB.prepare(
-                `INSERT INTO conversations (session_id, client_id, visitor_name, visitor_email, visitor_phone, status, ai_enabled, crm_stage, lead_score, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, 'waiting_staff', 1, 'new', 15, datetime('now'), datetime('now'))`
-            ).bind(visitorToken, clientId, nome, email, telefone || null).run();
+                `INSERT INTO conversations (session_id, client_id, subject, channel, visitor_name, visitor_email, visitor_phone, status, ai_enabled, crm_stage, lead_score, last_message_at, created_at, updated_at)
+                 VALUES (?, ?, ?, 'website_chat', ?, ?, ?, 'open', ?, 'qualifying', 15, datetime('now'), datetime('now'), datetime('now'))`
+            ).bind(visitorToken, clientId, assunto || `Chat • ${nome}`, nome, email, telefone || null, globalAiEnabled ? 1 : 0).run();
 
             conversationId = Number(convRes.meta.last_row_id);
 
             // 4. Salva a mensagem inicial do visitante
-            await c.env.DB.prepare(
+            const msgRes = await c.env.DB.prepare(
                 `INSERT INTO conversation_messages (conversation_id, sender_type, message, is_ai, created_at, updated_at)
                  VALUES (?, 'client', ?, 0, datetime('now'), datetime('now'))`
             ).bind(conversationId, mensagem).run();
+            clientMsgId = Number(msgRes.meta.last_row_id) || 1;
         }
     } catch (err) {
         console.error('Erro ao persistir chat:', err);
     }
 
-    // 5. Agente de IA autônomo gera a resposta
-    const agent = new AutonomousCrmAgent(c.env);
-    const aiReply = await agent.handleIncomingMessage(conversationId, mensagem, nome);
+    // 5. Agente de IA autônomo gera a resposta se habilitado
+    let aiReply = null;
+    if (globalAiEnabled) {
+        const agent = new AutonomousCrmAgent(c.env);
+        aiReply = await agent.handleIncomingMessage(conversationId, mensagem, nome);
+    }
 
     const initialMessage = {
+        id: clientMsgId,
         sender_type: 'client',
         sender_name: nome,
         message: mensagem,
@@ -106,11 +125,11 @@ chatRoutes.post('/start', async (c) => {
         conversation_id: conversationId,
         visitor_token: visitorToken,
         protocol,
-        status: 'waiting_staff',
-        ai_enabled: true,
-        crm_stage: 'new',
+        status: 'open',
+        ai_enabled: globalAiEnabled,
+        crm_stage: 'qualifying',
         ai_reply: aiReply,
-        messages: [initialMessage, aiReply]
+        messages: aiReply ? [initialMessage, aiReply] : [initialMessage]
     }, 201);
 });
 
@@ -126,33 +145,63 @@ chatRoutes.post('/message', async (c) => {
         return c.json({ ok: false, error: 'Parâmetros inválidos' }, 422);
     }
 
-    let conversation: { id: number; status: string; visitor_name: string | null } | null = null;
+    let conversation: { id: number; status: string; visitor_name: string | null; ai_enabled?: number } | null = null;
+    let globalAiEnabled = true;
+
     try {
         if (c.env?.DB) {
             conversation = await c.env.DB.prepare(
-                `SELECT id, status, visitor_name FROM conversations WHERE session_id = ?`
-            ).bind(visitorToken).first<{ id: number; status: string; visitor_name: string | null }>();
+                `SELECT id, status, visitor_name, ai_enabled FROM conversations WHERE session_id = ?`
+            ).bind(visitorToken).first<{ id: number; status: string; visitor_name: string | null; ai_enabled?: number }>();
+
+            try {
+                const aiCfg = await c.env.DB.prepare(
+                    `SELECT value FROM system_settings WHERE key = 'crm_ai_enabled'`
+                ).first<{ value: string }>();
+                if (aiCfg && aiCfg.value === '0') {
+                    globalAiEnabled = false;
+                }
+            } catch {}
         }
     } catch {}
+
+    if (conversation && conversation.status === 'closed') {
+        return c.json({
+            ok: false,
+            status: 'closed',
+            message: 'Este atendimento foi encerrado pela equipe.'
+        }, 409);
+    }
 
     const convId = conversation?.id || 1;
     const visitorName = conversation?.visitor_name || 'Visitante';
+    let clientMsgId = Date.now();
 
     try {
         if (c.env?.DB) {
-            await c.env.DB.prepare(
+            const msgRes = await c.env.DB.prepare(
                 `INSERT INTO conversation_messages (conversation_id, sender_type, message, is_ai, created_at, updated_at)
                  VALUES (?, 'client', ?, 0, datetime('now'), datetime('now'))`
             ).bind(convId, message).run();
+            clientMsgId = Number(msgRes.meta.last_row_id) || clientMsgId;
+
+            await c.env.DB.prepare(
+                `UPDATE conversations SET last_message_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`
+            ).bind(convId).run();
         }
     } catch {}
 
-    const agent = new AutonomousCrmAgent(c.env);
-    const aiReply = await agent.handleIncomingMessage(convId, message, visitorName);
+    const shouldRunAi = globalAiEnabled && (conversation ? Boolean(conversation.ai_enabled ?? 1) : true);
+    let aiReply = null;
+    if (shouldRunAi) {
+        const agent = new AutonomousCrmAgent(c.env);
+        aiReply = await agent.handleIncomingMessage(convId, message, visitorName);
+    }
 
     return c.json({
         ok: true,
         message: {
+            id: clientMsgId,
             sender_type: 'client',
             sender_name: visitorName,
             message,
@@ -160,7 +209,7 @@ chatRoutes.post('/message', async (c) => {
             created_at: new Date().toISOString()
         },
         ai_reply: aiReply,
-        status: conversation?.status || 'waiting_staff'
+        status: conversation?.status || 'open'
     });
 });
 
@@ -175,6 +224,7 @@ chatRoutes.get('/messages', async (c) => {
         return c.json({ ok: false, error: 'Token obrigatório' }, 422);
     }
 
+    let convStatus = 'open';
     let messages: Array<{ id: number; sender_type: string; message: string; is_ai: number; created_at: string }> = [];
     try {
         if (c.env?.DB) {
@@ -183,6 +233,7 @@ chatRoutes.get('/messages', async (c) => {
             ).bind(token).first<{ id: number; status: string }>();
 
             if (conv) {
+                convStatus = conv.status || 'open';
                 const query = afterId > 0
                     ? `SELECT id, sender_type, message, is_ai, created_at FROM conversation_messages WHERE conversation_id = ? AND id > ? ORDER BY id ASC`
                     : `SELECT id, sender_type, message, is_ai, created_at FROM conversation_messages WHERE conversation_id = ? ORDER BY id ASC`;
@@ -199,9 +250,11 @@ chatRoutes.get('/messages', async (c) => {
 
     return c.json({
         ok: true,
+        status: convStatus,
         messages: messages.map((m) => ({
             id: m.id,
-            sender_type: m.sender_type,
+            sender_type: m.sender_type === 'client' || m.sender_type === 'visitor' ? 'client' : 'staff',
+            sender_name: m.sender_type === 'client' || m.sender_type === 'visitor' ? '' : (m.is_ai ? 'Assistente IA GundjaTech' : 'Equipe GundjaTech'),
             message: m.message,
             is_ai: Boolean(m.is_ai),
             created_at: m.created_at

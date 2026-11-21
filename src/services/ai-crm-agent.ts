@@ -41,34 +41,60 @@ export class AutonomousCrmAgent {
             console.warn('Erro ao carregar histórico no D1:', err);
         }
 
-        const systemPrompt = `Você é o consultor comercial e especialista de soluções da GundjaTech, empresa de alta performance digital, desenvolvimento de websites corporativos, sistemas web sob medida, infraestrutura Cloudflare e cibersegurança.
-Suas respostas devem ser corteses, altamente profissionais, persuasivas e sucintas (máximo 3 parágrafos) em português do Brasil.
+        let systemPrompt = `Você é o consultor comercial e especialista de soluções da GundjaTech, empresa de alta performance digital, desenvolvimento de websites corporativos, sistemas web sob medida, infraestrutura Cloudflare e cibersegurança.
+Suas respostas devem ser corteses, altamente profissionais, persuasivas e sucintas (máximo 3 frases) em português do Brasil.
 Seu objetivo é acolher o visitante, diagnosticar o desafio técnico dele e orientá-lo a informar detalhes para envio de proposta técnica formal.`;
+
+        let agentName = 'Assistente IA GundjaTech';
+
+        try {
+            if (this.env?.DB) {
+                const cfgRows = await this.env.DB.prepare(
+                    `SELECT key, value FROM system_settings WHERE key IN ('crm_ai_system_prompt', 'crm_ai_agent_name')`
+                ).all<{ key: string; value: string }>();
+                for (const row of cfgRows.results || []) {
+                    if (row.key === 'crm_ai_system_prompt' && row.value?.trim()) {
+                        systemPrompt = row.value.trim();
+                    }
+                    if (row.key === 'crm_ai_agent_name' && row.value?.trim()) {
+                        agentName = row.value.trim();
+                    }
+                }
+            }
+        } catch {}
 
         let reply = '';
 
-        // 2. Provedor Primário: Cloudflare Workers AI (Llama 3.3 70B Instruct no Edge)
+        // 2. Provedor Primário: Cloudflare Workers AI no Edge (Llama 3.3 70B FP8 Fast -> Llama 3.1 8B)
         if (this.env?.AI) {
-            try {
-                const promptMessages = [
-                    { role: 'system', content: systemPrompt },
-                    ...history.map((h) => ({
-                        role: h.sender_type === 'client' ? 'user' : 'assistant',
-                        content: h.message
-                    })),
-                    { role: 'user', content: visitorMessage }
-                ];
+            const promptMessages = [
+                { role: 'system', content: systemPrompt },
+                ...history.map((h) => ({
+                    role: h.sender_type === 'client' ? 'user' : 'assistant',
+                    content: h.message
+                })),
+                { role: 'user', content: visitorMessage }
+            ];
 
-                const aiResponse = await this.env.AI.run('@cf/meta/llama-3.3-70b-instruct', {
-                    messages: promptMessages,
-                    max_tokens: 350
-                }) as { response?: string };
+            const candidateModels = [
+                '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+                '@cf/meta/llama-3.1-8b-instruct'
+            ];
 
-                if (aiResponse?.response) {
-                    reply = aiResponse.response.trim();
+            for (const modelId of candidateModels) {
+                if (reply) break;
+                try {
+                    const aiResponse = await this.env.AI.run(modelId as any, {
+                        messages: promptMessages,
+                        max_tokens: 300
+                    }) as { response?: string };
+
+                    if (aiResponse?.response) {
+                        reply = aiResponse.response.trim();
+                    }
+                } catch (err) {
+                    console.warn(`Workers AI (${modelId}) falhou, tentando próximo:`, err);
                 }
-            } catch (err) {
-                console.warn('Workers AI indisponível ou em fallback, tentando provedores externos:', err);
             }
         }
 
