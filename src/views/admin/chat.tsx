@@ -12,12 +12,16 @@ interface AdminChatProps {
 }
 
 const STAGE_LABELS: Record<string, string> = {
+    new: 'Novo Lead',
     greeting: 'Boas-vindas',
     discovery: 'Diagnóstico',
+    qualifying: 'Qualificação',
     qualification: 'Qualificação',
     scheduling: 'Agendamento',
     proposal: 'Proposta',
+    proposal_ready: 'Proposta Pronta',
     support: 'Suporte',
+    handoff_human: 'Handoff Humano',
     closed: 'Encerrado'
 };
 
@@ -30,183 +34,261 @@ export const AdminChatView: FC<AdminChatProps> = ({
     successMessage,
     errorMessage
 }) => {
+    const activeName = activeConversation
+        ? activeConversation.visitor_name || activeConversation.visitor_company || 'Visitante Web'
+        : '';
+    const activeStage = activeConversation
+        ? STAGE_LABELS[activeConversation.crm_stage] || activeConversation.crm_stage || 'Novo Lead'
+        : '';
+    const activeScore = Number(activeConversation?.lead_score || 0);
+
     return (
         <AdminLayout
-            title="CRM & Atendimento ao Vivo • Painel Administrativo"
+            title="Atendimento & Chat ao Vivo • Painel Administrativo"
             activeNav="chat"
             currentUser={currentUser}
             successMessage={successMessage}
             errorMessage={errorMessage}
         >
-            <div class="gt-chat-layout" data-has-active={activeConversation ? '1' : '0'}>
+            {/* Top Filter Pill Bar (Modern Executive Style — Dark & Light) */}
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex flex-wrap items-center gap-2">
+                    <a
+                        href="/admin/atendimento?status=all"
+                        class={`px-3.5 py-1.5 rounded-xl text-xs font-bold no-underline transition ${
+                            statusFilter === 'all'
+                                ? 'btn-primary shadow-sm'
+                                : 'gtb-ctrl-btn !h-auto !py-1.5'
+                        }`}
+                    >
+                        Todas
+                    </a>
+                    <a
+                        href="/admin/atendimento?status=open"
+                        class={`px-3.5 py-1.5 rounded-xl text-xs font-bold no-underline transition ${
+                            statusFilter === 'open'
+                                ? 'btn-primary shadow-sm'
+                                : 'gtb-ctrl-btn !h-auto !py-1.5'
+                        }`}
+                    >
+                        Abertas
+                    </a>
+                    <a
+                        href="/admin/atendimento?status=closed"
+                        class={`px-3.5 py-1.5 rounded-xl text-xs font-bold no-underline transition ${
+                            statusFilter === 'closed'
+                                ? 'btn-primary shadow-sm'
+                                : 'gtb-ctrl-btn !h-auto !py-1.5'
+                        }`}
+                    >
+                        Encerradas
+                    </a>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <a href="/admin/crm-autonomo" class="gtb-ctrl-btn">
+                        <span>Configurar Agente IA</span>
+                        <svg class="w-3.5 h-3.5 text-[#F2C230]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+            </div>
+
+            {/* Unified Modern Split Chat Workspace */}
+            <div class="gtb-card !p-0 gt-chat-layout !gap-0" data-has-active={activeConversation ? '1' : '0'}>
                 {/* Coluna Esquerda: Lista de Conversas (Inbox) */}
-                <div class="gt-card gt-chat-inbox">
-                    <div style="padding: 16px 20px; border-bottom: 1px solid var(--gt-border); background: #032033;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                            <h2 style="font-size: 16px; font-weight: 800; color: #FFFFFF;">Inbox de Atendimento</h2>
-                            <span class="gt-badge gt-badge-info">{conversations.length} conversas</span>
-                        </div>
-                        {/* Filtros de Status */}
-                        <div style="display: flex; gap: 6px;">
-                            <a
-                                href="/admin/atendimento?status=open"
-                                class={`gt-btn-outline ${statusFilter === 'open' ? 'active' : ''}`}
-                                style={`flex: 1; text-align: center; font-size: 11px; padding: 6px 0; text-decoration: none; ${statusFilter === 'open' ? 'background: #063B5C; color: #F2C230; border-color: #F2C230;' : ''}`}
-                            >
-                                Abertas
-                            </a>
-                            <a
-                                href="/admin/atendimento?status=closed"
-                                class={`gt-btn-outline ${statusFilter === 'closed' ? 'active' : ''}`}
-                                style={`flex: 1; text-align: center; font-size: 11px; padding: 6px 0; text-decoration: none; ${statusFilter === 'closed' ? 'background: #063B5C; color: #F2C230; border-color: #F2C230;' : ''}`}
-                            >
-                                Encerradas
-                            </a>
-                            <a
-                                href="/admin/atendimento?status=all"
-                                class={`gt-btn-outline ${statusFilter === 'all' ? 'active' : ''}`}
-                                style={`flex: 1; text-align: center; font-size: 11px; padding: 6px 0; text-decoration: none; ${statusFilter === 'all' ? 'background: #063B5C; color: #F2C230; border-color: #F2C230;' : ''}`}
-                            >
-                                Todas
-                            </a>
-                        </div>
+                <aside class="gtb-chat-sidebar gt-chat-inbox border-r">
+                    <div class="px-5 py-3.5 border-b border-white/10 flex items-center justify-between gap-2 shrink-0">
+                        <span class="text-[11px] font-extrabold uppercase tracking-wider text-white">
+                            Inbox de Atendimento ({conversations.length})
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#34D399]">
+                            <span class="w-2 h-2 rounded-full bg-[#34D399] animate-pulse"></span>
+                            Ao vivo
+                        </span>
                     </div>
 
-                    {/* Lista com Scroll */}
-                    <div style="flex: 1; overflow-y: auto;">
+                    <div class="flex-1 overflow-y-auto divide-y divide-white/5">
                         {conversations.length === 0 ? (
-                            <div style="padding: 40px 20px; text-align: center; color: #8CAAB9; font-size: 13px;">
+                            <div class="gt-empty-state">
                                 Nenhuma conversa nesta visualização.
                             </div>
                         ) : (
                             conversations.map((c) => {
                                 const isSelected = activeConversation?.id === c.id;
-                                const stageText = STAGE_LABELS[c.crm_stage] || c.crm_stage || 'Geral';
+                                const stageText = STAGE_LABELS[c.crm_stage] || c.crm_stage || 'Novo Lead';
                                 const clientName = c.visitor_name || c.visitor_company || `Sessão #${c.id}`;
+                                const timeStr = c.last_message_at
+                                    ? new Date(c.last_message_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                                    : '';
 
                                 return (
                                     <a
                                         href={`/admin/atendimento?id=${c.id}&status=${statusFilter}`}
-                                        style={`display: block; padding: 16px 20px; border-bottom: 1px solid rgba(22, 116, 154, 0.15); text-decoration: none; transition: background 0.15s ease; ${isSelected ? 'background: rgba(242, 194, 48, 0.08); border-left: 4px solid #F2C230;' : 'background: transparent;'}`}
+                                        class={`gtb-chat-item block px-4 py-3.5 no-underline transition ${isSelected ? 'is-active' : ''}`}
                                     >
-                                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-                                            <span class="text-white" style="font-size: 14px; font-weight: 700;">
+                                        <div class="flex items-center justify-between gap-2 mb-1">
+                                            <span class="text-[13px] font-extrabold text-white truncate">
                                                 {clientName}
                                             </span>
-                                            {c.lead_score > 0 && (
-                                                <span class="gt-badge" style="background: rgba(242, 194, 48, 0.15); color: #F2C230; font-size: 10px;">
-                                                    Score {c.lead_score}
+                                            {timeStr && (
+                                                <span class="text-[10.5px] text-[#8C95AA] shrink-0 font-semibold">
+                                                    {timeStr}
                                                 </span>
                                             )}
                                         </div>
 
-                                        <div style="font-size: 12px; color: #8CAAB9; margin-bottom: 8px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
-                                            {c.visitor_objective || c.visitor_email || 'Visitante no site'}
+                                        <div class="text-[11.5px] text-[#8C95AA] truncate mb-2">
+                                            {c.visitor_objective || c.subject || c.visitor_email || 'Atendimento ao vivo'}
                                         </div>
 
-                                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; gap: 6px; flex-wrap: wrap;">
-                                            <span style="color: #16749A; font-weight: 600;">
-                                                {c.ai_enabled ? '🤖 IA Ativa' : '👤 Humano'}
-                                            </span>
-                                            <div style="display: flex; align-items: center; gap: 6px;">
-                                                {c.channel === 'whatsapp' && (
-                                                    <span class="gt-badge gt-badge-success" style="font-size: 10px;">
-                                                        WhatsApp
+                                        <div class="flex items-center justify-between gap-1.5 flex-wrap">
+                                            <div class="flex items-center gap-1.5">
+                                                {c.ai_enabled ? (
+                                                    <span class="px-2 py-0.5 rounded-md bg-[#F2C230]/15 text-[#F2C230] text-[10px] font-extrabold">
+                                                        IA
+                                                    </span>
+                                                ) : (
+                                                    <span class="px-2 py-0.5 rounded-md bg-white/10 text-[#D5DCEB] text-[10px] font-bold">
+                                                        Humano
                                                     </span>
                                                 )}
-                                                <span class="gt-badge gt-badge-info" style="font-size: 10px;">
-                                                    {stageText}
-                                                </span>
+                                                {c.channel === 'whatsapp' ? (
+                                                    <span class="px-2 py-0.5 rounded-md bg-emerald-500/15 text-[#6EE7B7] text-[10px] font-extrabold">
+                                                        WhatsApp
+                                                    </span>
+                                                ) : (
+                                                    <span class="px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-300 text-[10px] font-bold">
+                                                        Site
+                                                    </span>
+                                                )}
                                             </div>
+                                            <span class="text-[10px] font-bold text-[#8C95AA]">
+                                                {stageText}
+                                            </span>
                                         </div>
                                     </a>
                                 );
                             })
                         )}
                     </div>
-                </div>
+                </aside>
 
                 {/* Coluna Direita: Thread da Conversa Ativa */}
-                <div class="gt-card gt-chat-thread">
+                <section class="gtb-chat-main gt-chat-thread">
                     {activeConversation ? (
                         <>
                             {/* Topo da Conversa */}
-                            <div style="padding: 14px 18px; border-bottom: 1px solid var(--gt-border); background: #032033; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;">
-                                <div style="min-width: 0;">
+                            <div class="gtb-chat-header px-5 py-3.5 border-b flex flex-wrap items-center justify-between gap-3 shrink-0">
+                                <div class="min-w-0">
                                     <a href={`/admin/atendimento?status=${statusFilter}`} class="gt-chat-mobile-back">
-                                        &larr; Voltar para Inbox
+                                        &larr; Voltar para Conversas
                                     </a>
-                                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                                        <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF;">
-                                            {activeConversation.visitor_name || activeConversation.visitor_company || 'Visitante Web'}
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <h3 class="text-[15px] font-extrabold text-white truncate">
+                                            {activeName}
                                         </h3>
-                                        <span class={`gt-badge ${activeConversation.status === 'open' ? 'gt-badge-success' : 'gt-badge-danger'}`}>
-                                            {activeConversation.status === 'open' ? 'Aberta' : 'Encerrada'}
+                                        <span class={`px-2 py-0.5 rounded-md text-[10px] font-extrabold ${
+                                            activeConversation.status === 'open'
+                                                ? 'bg-emerald-500/15 text-[#6EE7B7]'
+                                                : 'bg-red-500/15 text-red-300'
+                                        }`}>
+                                            {activeConversation.status === 'open' ? 'Aberto' : 'Encerrado'}
+                                        </span>
+                                        <span class={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                                            activeConversation.channel === 'whatsapp'
+                                                ? 'bg-emerald-500/15 text-[#6EE7B7]'
+                                                : 'bg-sky-500/15 text-sky-300'
+                                        }`}>
+                                            {activeConversation.channel === 'whatsapp' ? 'WhatsApp Oficial' : 'Chat do Site'}
                                         </span>
                                     </div>
-                                    <div style="font-size: 12px; color: #8CAAB9; margin-top: 4px;">
-                                        {activeConversation.visitor_email && <span>{activeConversation.visitor_email} &bull; </span>}
-                                        {activeConversation.visitor_phone && <span>{activeConversation.visitor_phone} &bull; </span>}
-                                        {activeConversation.visitor_company && <span>Empresa: {activeConversation.visitor_company} &bull; </span>}
-                                        <span>Etapa: <strong>{STAGE_LABELS[activeConversation.crm_stage] || activeConversation.crm_stage}</strong></span>
+                                    <div class="text-[11.5px] text-[#8C95AA] mt-0.5 truncate">
+                                        {activeConversation.visitor_phone && <span>{activeConversation.visitor_phone} • </span>}
+                                        {activeConversation.visitor_email && !String(activeConversation.visitor_email).endsWith('.local') && (
+                                            <span>{activeConversation.visitor_email} • </span>
+                                        )}
+                                        <span>{activeConversation.subject || 'Atendimento Comercial'}</span>
                                     </div>
                                 </div>
 
-                                <div style="display: flex; gap: 10px; align-items: center;">
-                                    {/* Toggle IA Autônoma */}
-                                    <form action={`/admin/atendimento/${activeConversation.id}/toggle-ai`} method="post" style="margin: 0;">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <form action={`/admin/atendimento/${activeConversation.id}/toggle-ai`} method="post" class="m-0">
                                         <button
                                             type="submit"
-                                            class="gt-btn-outline"
-                                            style={`font-size: 12px; ${activeConversation.ai_enabled ? 'border-color: #F2C230; color: #F2C230;' : ''}`}
-                                            title={activeConversation.ai_enabled ? 'Pausar IA e assumir controle manual' : 'Reativar atendimento autônomo por IA'}
+                                            class={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition ${
+                                                activeConversation.ai_enabled
+                                                    ? 'bg-[#F2C230]/15 border border-[#F2C230]/40 text-[#F2C230]'
+                                                    : 'gt-btn-outline !py-1.5 !px-3 !text-xs'
+                                            }`}
                                         >
-                                            {activeConversation.ai_enabled ? '🤖 IA Ativa (Pausar)' : '👤 Manual (Ativar IA)'}
+                                            {activeConversation.ai_enabled ? 'Assumir (Pausar IA)' : 'Reativar IA'}
                                         </button>
                                     </form>
 
-                                    {/* Fechar ou Reabrir */}
                                     <form
                                         action={`/admin/atendimento/${activeConversation.id}/${activeConversation.status === 'open' ? 'fechar' : 'reabrir'}`}
                                         method="post"
-                                        style="margin: 0;"
+                                        class="m-0"
                                     >
-                                        <button type="submit" class="gt-btn-outline" style="font-size: 12px;">
-                                            {activeConversation.status === 'open' ? 'Encerrar' : 'Reabrir'}
+                                        <button type="submit" class="gt-btn-outline !py-1.5 !px-3 !text-xs">
+                                            {activeConversation.status === 'open' ? 'Encerrar Atendimento' : 'Reabrir'}
                                         </button>
                                     </form>
                                 </div>
                             </div>
 
+                            {/* Sub-barra de Inteligência CRM */}
+                            <div class="gtb-ai-bar px-5 py-2 flex flex-wrap items-center gap-2 text-[11px] shrink-0">
+                                <span class="px-2.5 py-0.5 rounded-full bg-[#F2C230]/15 border border-[#F2C230]/35 text-[#F2C230] font-extrabold">
+                                    {activeConversation.ai_enabled ? 'Piloto Automático IA' : 'Atendimento Humano'}
+                                </span>
+                                <span class="px-2.5 py-0.5 rounded-full bg-sky-500/15 border border-sky-400/30 text-sky-300 font-bold">
+                                    {activeStage} · Score {activeScore}/100
+                                </span>
+                            </div>
+
                             {/* Mensagens com Rolagem */}
-                            <div id="admin-chat-messages" data-conv-id={activeConversation.id} data-last-id={messages.length > 0 ? messages[messages.length - 1].id : 0} style="flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; background: #032033;">
+                            <div
+                                id="admin-chat-messages"
+                                data-conv-id={activeConversation.id}
+                                data-last-id={messages.length > 0 ? messages[messages.length - 1].id : 0}
+                                class="flex-1 overflow-y-auto p-5 space-y-4"
+                            >
                                 {messages.length === 0 ? (
-                                    <div style="margin: auto; text-align: center; color: #8CAAB9; font-size: 13px;">
+                                    <div class="gt-empty-state">
                                         Nenhuma mensagem registrada nesta conversa.
                                     </div>
                                 ) : (
                                     messages.map((m) => {
                                         const isClient = m.sender_type === 'visitor' || m.sender_type === 'client';
                                         const isAi = !!m.is_ai;
+                                        const senderLabel = isClient
+                                            ? activeName
+                                            : isAi
+                                            ? 'Assistente IA GundjaTech'
+                                            : `${currentUser?.name || 'Equipe'} (Atendimento)`;
+                                        const msgTime = m.created_at
+                                            ? new Date(m.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+                                            : '';
 
                                         return (
-                                            <div style={`display: flex; flex-direction: column; align-items: ${isClient ? 'flex-start' : 'flex-end'};`}>
-                                                <div style="font-size: 11px; color: #8CAAB9; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-                                                    <span>{isClient ? (activeConversation.visitor_name || 'Visitante') : (isAi ? '🤖 IA Gundja CRM' : 'Equipe Staff')}</span>
-                                                    <span>&bull;</span>
-                                                    <span>{new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-                                                </div>
-
+                                            <div class={`flex flex-col ${isClient ? 'items-start' : 'items-end'}`}>
                                                 <div
-                                                    style={`max-width: 75%; padding: 12px 16px; border-radius: 12px; font-size: 13px; line-height: 1.5; ${
+                                                    class={`max-w-[78%] sm:max-w-[70%] px-4 py-3 rounded-2xl text-[13px] leading-relaxed ${
                                                         isClient
-                                                            ? 'background: #063B5C; color: #FFFFFF; border-bottom-left-radius: 2px;'
-                                                            : isAi
-                                                            ? 'background: #04263D; border: 1px solid rgba(242, 194, 48, 0.4); color: #FFFFFF; border-bottom-right-radius: 2px;'
-                                                            : 'background: #16749A; color: #FFFFFF; border-bottom-right-radius: 2px;'
+                                                            ? 'gtb-chat-bubble-client rounded-tl-xs'
+                                                            : 'gtb-chat-bubble-staff rounded-tr-xs'
                                                     }`}
                                                 >
-                                                    {m.message}
+                                                    <div class={`text-[10.5px] font-bold mb-1 ${isClient ? 'text-[#8C95AA]' : 'opacity-80'}`}>
+                                                        {senderLabel}
+                                                    </div>
+                                                    <div class="whitespace-pre-wrap break-words">{m.message}</div>
+                                                    {msgTime && (
+                                                        <div class={`text-[10px] mt-1.5 text-right ${isClient ? 'text-[#8C95AA]' : 'opacity-75'}`}>
+                                                            {msgTime}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         );
@@ -214,33 +296,36 @@ export const AdminChatView: FC<AdminChatProps> = ({
                                 )}
                             </div>
 
-                            {/* Input de Envio de Resposta Manual */}
-                            <div style="padding: 14px 16px; border-top: 1px solid var(--gt-border); background: #041B2B;">
-                                <form action={`/admin/atendimento/${activeConversation.id}/mensagem`} method="post" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            {/* Composer de Resposta Manual */}
+                            <div class="gtb-chat-composer px-4 py-3 border-t shrink-0">
+                                <form action={`/admin/atendimento/${activeConversation.id}/mensagem`} method="post" class="flex items-center gap-2.5">
                                     <input
                                         type="text"
                                         name="message"
                                         required
-                                        placeholder="Digite a resposta para o cliente..."
-                                        style="flex: 1 1 200px; min-width: 0; background: #032033; border: 1px solid var(--gt-border); border-radius: 8px; padding: 12px 14px; color: #FFFFFF; font-size: 13px;"
+                                        placeholder="Digite sua resposta em tempo real..."
+                                        class="flex-1 min-w-0 rounded-xl px-4 py-2.5 text-[13px]"
                                     />
-                                    <button type="submit" class="gt-btn-primary" style="white-space: nowrap;">
+                                    <button type="submit" class="btn-primary px-5 py-2.5 text-xs shrink-0">
                                         Enviar
                                     </button>
                                 </form>
                             </div>
                         </>
                     ) : (
-                        <div style="margin: auto; text-align: center; color: #8CAAB9; padding: 40px;">
-                            <div style="font-size: 40px; margin-bottom: 16px;">💬</div>
-                            <h3 style="font-size: 18px; font-weight: 700; color: #FFFFFF; margin-bottom: 8px;">Central de Atendimento ao Vivo</h3>
-                            <p style="font-size: 13px; max-width: 400px; line-height: 1.5;">
-                                Selecione uma conversa na lista à esquerda para acompanhar em tempo real, intervir nas respostas da IA ou assumir o atendimento.
+                        <div class="m-auto text-center px-6 py-12 max-w-md">
+                            <div class="gtb-notif-empty-icon mx-auto mb-4">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                            </div>
+                            <h3 class="gt-font-display text-base font-extrabold text-white mb-1.5">Central de Atendimento ao Vivo</h3>
+                            <p class="text-xs text-[#8C95AA] leading-relaxed">
+                                Selecione uma conversa à esquerda para acompanhar o atendimento do site e do WhatsApp em tempo real, pausar a IA ou responder diretamente ao cliente.
                             </p>
                         </div>
                     )}
-                </div>
+                </section>
             </div>
+
             {activeConversation && (
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
@@ -261,9 +346,9 @@ export const AdminChatView: FC<AdminChatProps> = ({
                                         var isClient = m.sender_type === 'visitor' || m.sender_type === 'client';
                                         if (isClient) hasClientMsg = true;
                                         var wrap = document.createElement('div');
-                                        wrap.style.cssText = 'display:flex;flex-direction:column;align-items:' + (isClient ? 'flex-start' : 'flex-end') + ';';
+                                        wrap.className = 'flex flex-col ' + (isClient ? 'items-start' : 'items-end');
                                         var bubble = document.createElement('div');
-                                        bubble.style.cssText = 'max-width:75%;padding:12px 16px;border-radius:12px;font-size:13px;line-height:1.5;color:#fff;' + (isClient ? 'background:#063B5C;' : (m.is_ai ? 'background:#04263D;border:1px solid rgba(242,194,48,0.4);' : 'background:#16749A;'));
+                                        bubble.className = 'max-w-[78%] sm:max-w-[70%] px-4 py-3 rounded-2xl text-[13px] leading-relaxed ' + (isClient ? 'gtb-chat-bubble-client rounded-tl-xs' : 'gtb-chat-bubble-staff rounded-tr-xs');
                                         bubble.textContent = m.message;
                                         wrap.appendChild(bubble);
                                         box.appendChild(wrap);

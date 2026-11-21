@@ -160,10 +160,17 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                                                         <div class="h-full rounded-full" style={`width: ${Math.min(100, score)}%; background: linear-gradient(90deg, #F2C230 0%, #34D399 100%);`}></div>
                                                     </div>
                                                 </td>
-                                                <td class="py-3 px-3 align-top max-w-xs">
-                                                    <span class="inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold mb-1 bg-[#16749A]/25 text-[#38BDF8]">
-                                                        {stageLabel}
-                                                    </span>
+                                                <td class="py-3.5 px-3 align-top max-w-xs">
+                                                    <div class="flex items-center gap-1.5 flex-wrap mb-1">
+                                                        <span class="inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#16749A]/25 text-[#38BDF8]">
+                                                            {stageLabel}
+                                                        </span>
+                                                        {conv.channel === 'whatsapp' && (
+                                                            <span class="inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-[#6EE7B7]">
+                                                                WhatsApp
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <p class="text-[11px] text-[#D5DCEB] leading-snug">{conv.subject || 'Atendimento Web'}</p>
                                                 </td>
                                                 <td class="py-3 px-3 align-top whitespace-nowrap">
