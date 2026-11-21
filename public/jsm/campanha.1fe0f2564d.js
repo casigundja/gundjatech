@@ -413,7 +413,168 @@
             });
         }
 
+        function getAuthUser() {
+            if (window.GT_AUTH_USER && window.GT_AUTH_USER.name) {
+                return window.GT_AUTH_USER;
+            }
+            var authEl = document.querySelector(".gt-pub-user");
+            if (authEl) {
+                var nameEl = authEl.querySelector(".gt-pub-user-name");
+                var emailEl = authEl.querySelector(".gt-pub-user-email");
+                var name = authEl.dataset.userName || (nameEl ? nameEl.textContent.trim() : "");
+                var email = authEl.dataset.userEmail || (emailEl ? emailEl.textContent.trim() : "");
+                var phone = authEl.dataset.userPhone || "";
+                if (name) {
+                    return { name: name, email: email, phone: phone };
+                }
+            }
+            return null;
+        }
+
+        function proceedToConnectChat(phone) {
+            visitorData.tel = phone || visitorData.tel || "";
+            setSession("snp_lead", "1");
+
+            var isCorp = !/@(gmail|googlemail|hotmail|outlook|live|msn|yahoo|ymail|icloud|me|bol|uol|terra|ig|globo|aol|proton|protonmail|zoho)\./i.test(visitorData.email);
+            setSession("snp_wq_dados", JSON.stringify({
+                nome: visitorData.nomeCompleto,
+                email: visitorData.email,
+                telefone: visitorData.tel,
+                empresa: "",
+                site: "",
+                origem: "chat"
+            }));
+            setSession("snp_wq", JSON.stringify(isCorp ? "Q" : "F"));
+
+            var choicesSummary = (visitorData.escolhas || []).join(" > ") || L("Atendimento Online");
+            var initialMsg = visitorData.mensagemLivre
+                ? visitorData.mensagemLivre
+                : (L("Interesse informado no chat: ") + choicesSummary);
+
+            var pendingTyping = document.createElement("div");
+            pendingTyping.className = "msg-digitando";
+            pendingTyping.innerHTML = "<i></i><i></i><i></i>";
+            chatMessagesEl.appendChild(pendingTyping);
+            scrollChatBottom();
+
+            fetch("/api/chat/start", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: JSON.stringify({
+                    nome: visitorData.nomeCompleto || visitorData.nome,
+                    email: visitorData.email,
+                    telefone: visitorData.tel,
+                    assunto: choicesSummary,
+                    mensagem: initialMsg,
+                    tema: isSecurityTheme ? "seguranca" : "geral"
+                })
+            })
+                .then(function (resp) {
+                    return resp.json().catch(function () { return { ok: false }; }).then(function (parsed) {
+                        return resp.ok ? parsed : { ok: false };
+                    });
+                })
+                .then(function (data) {
+                    pendingTyping.remove();
+                    if (!data || !data.ok || !data.visitor_token) {
+                        sendBotMessages([L("Houve uma instabilidade ao conectar o chat agora. Tente enviar novamente ou fale direto no WhatsApp.")], function () {
+                            renderOptions([
+                                { texto: L("Tentar conectar novamente"), acao: startLeadCaptureFlow },
+                                { texto: L("Falar agora no WhatsApp"), link: WA_URL + "?text=" + encodeURIComponent(copy.whats.replace("{n}", visitorData.nome)) }
+                            ]);
+                        });
+                        return;
+                    }
+
+                    var lastId = 0;
+                    var aiMsgId = data.ai_reply ? data.ai_reply.id : null;
+                    (data.messages || []).forEach(function (m) {
+                        if (m.id !== aiMsgId) {
+                            renderedMsgIds[m.id] = true;
+                        }
+                        if (m.id > lastId) { lastId = m.id; }
+                    });
+                    closedHandled = false;
+                    liveSession = {
+                        token: data.visitor_token,
+                        conversationId: data.conversation_id,
+                        protocol: data.protocol || null,
+                        lastId: lastId
+                    };
+                    saveLiveSession();
+
+                    var confirmLines = [];
+                    if (data.protocol) {
+                        confirmLines.push(L("Atendimento conectado! Protocolo: ") + data.protocol + ".");
+                    } else {
+                        confirmLines.push(copy.fim);
+                    }
+                    if (data.ai_reply && data.ai_reply.message) {
+                        renderedMsgIds[data.ai_reply.id] = true;
+                        confirmLines.push(data.ai_reply.message);
+                    } else {
+                        confirmLines.push(L("Nossa equipe já recebeu sua mensagem no painel. Pode enviar mais detalhes abaixo!"));
+                    }
+                    startPollingLiveMessages();
+
+                    sendBotMessages(confirmLines, function () {
+                        enableLiveChatInput();
+                        renderOptions([
+                            { texto: L("Falar agora no WhatsApp"), link: WA_URL + "?text=" + encodeURIComponent(copy.whats.replace("{n}", visitorData.nome)) },
+                            { texto: copy.verTxt, acao: function () { scrollToTargetSection(); } }
+                        ]);
+                    });
+                })
+                .catch(function () {
+                    pendingTyping.remove();
+                    sendBotMessages([L("Sem conexão no momento. Tente novamente ou chame diretamente no WhatsApp.")], function () {
+                        renderOptions([
+                            { texto: L("Falar agora no WhatsApp"), link: WA_URL + "?text=" + encodeURIComponent(copy.whats.replace("{n}", visitorData.nome)) }
+                        ]);
+                    });
+                });
+        }
+
         function startLeadCaptureFlow(fromFreeText) {
+            var authUser = getAuthUser();
+
+            if (authUser && authUser.name) {
+                visitorData.nomeCompleto = authUser.name;
+                visitorData.nome = authUser.name.split(" ")[0];
+                if (authUser.email) { visitorData.email = authUser.email.toLowerCase(); }
+                if (authUser.phone) { visitorData.tel = authUser.phone; }
+
+                var introAck = fromFreeText === true
+                    ? (L("Perfeito, ") + visitorData.nome + L("! Recebi sua mensagem."))
+                    : copy.oferta;
+
+                if (visitorData.tel && visitorData.email) {
+                    sendBotMessages([introAck, L("Conectando seu atendimento em tempo real com nossa equipe...")], function () {
+                        proceedToConnectChat(visitorData.tel);
+                    });
+                    return;
+                }
+
+                if (visitorData.email) {
+                    askInput([introAck, L("Prazer em te ver por aqui, ") + visitorData.nome + L("! Qual é o seu WhatsApp com DDD para conectarmos seu atendimento?")], "tel", function (phone) {
+                        proceedToConnectChat(phone);
+                    });
+                    return;
+                }
+
+                askInput([introAck, L("Prazer em te ver por aqui, ") + visitorData.nome + L("! Qual é o seu e-mail corporativo?")], "email", function (email) {
+                    visitorData.email = email.toLowerCase();
+                    askInput(L("Obrigado! E qual é o seu WhatsApp com DDD?"), "tel", function (phone) {
+                        proceedToConnectChat(phone);
+                    });
+                });
+                return;
+            }
+
             var introPrompts = fromFreeText === true
                 ? [L("Perfeito, recebi sua mensagem! Para conectarmos seu atendimento em tempo real, como posso te chamar?")]
                 : [copy.oferta, L("Como posso te chamar?")];
@@ -426,111 +587,7 @@
                     visitorData.email = email.toLowerCase();
 
                     askInput(L("Obrigado! E qual é o seu WhatsApp com DDD?"), "tel", function (phone) {
-                        visitorData.tel = phone;
-                        setSession("snp_lead", "1");
-
-                        var isCorp = !/@(gmail|googlemail|hotmail|outlook|live|msn|yahoo|ymail|icloud|me|bol|uol|terra|ig|globo|aol|proton|protonmail|zoho)\./i.test(visitorData.email);
-                        setSession("snp_wq_dados", JSON.stringify({
-                            nome: visitorData.nomeCompleto,
-                            email: visitorData.email,
-                            telefone: phone,
-                            empresa: "",
-                            site: "",
-                            origem: "chat"
-                        }));
-                        setSession("snp_wq", JSON.stringify(isCorp ? "Q" : "F"));
-
-                        var choicesSummary = (visitorData.escolhas || []).join(" > ") || L("Atendimento Online");
-                        var initialMsg = visitorData.mensagemLivre
-                            ? visitorData.mensagemLivre
-                            : (L("Interesse informado no chat: ") + choicesSummary);
-
-                        var pendingTyping = document.createElement("div");
-                        pendingTyping.className = "msg-digitando";
-                        pendingTyping.innerHTML = "<i></i><i></i><i></i>";
-                        chatMessagesEl.appendChild(pendingTyping);
-                        scrollChatBottom();
-
-                        fetch("/api/chat/start", {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                "Accept": "application/json",
-                                "X-Requested-With": "XMLHttpRequest"
-                            },
-                            body: JSON.stringify({
-                                nome: visitorData.nomeCompleto || visitorData.nome,
-                                email: visitorData.email,
-                                telefone: phone,
-                                assunto: choicesSummary,
-                                mensagem: initialMsg,
-                                tema: isSecurityTheme ? "seguranca" : "geral"
-                            })
-                        })
-                            .then(function (resp) {
-                                return resp.json().catch(function () { return { ok: false }; }).then(function (parsed) {
-                                    return resp.ok ? parsed : { ok: false };
-                                });
-                            })
-                            .then(function (data) {
-                                pendingTyping.remove();
-                                if (!data || !data.ok || !data.visitor_token) {
-                                    sendBotMessages([L("Houve uma instabilidade ao conectar o chat agora. Tente enviar novamente ou fale direto no WhatsApp.")], function () {
-                                        renderOptions([
-                                            { texto: L("Tentar conectar novamente"), acao: startLeadCaptureFlow },
-                                            { texto: L("Falar agora no WhatsApp"), link: WA_URL + "?text=" + encodeURIComponent(copy.whats.replace("{n}", visitorData.nome)) }
-                                        ]);
-                                    });
-                                    return;
-                                }
-
-                                var lastId = 0;
-                                var aiMsgId = data.ai_reply ? data.ai_reply.id : null;
-                                (data.messages || []).forEach(function (m) {
-                                    if (m.id !== aiMsgId) {
-                                        renderedMsgIds[m.id] = true;
-                                    }
-                                    if (m.id > lastId) { lastId = m.id; }
-                                });
-                                closedHandled = false;
-                                liveSession = {
-                                    token: data.visitor_token,
-                                    conversationId: data.conversation_id,
-                                    protocol: data.protocol || null,
-                                    lastId: lastId
-                                };
-                                saveLiveSession();
-
-                                var confirmLines = [];
-                                if (data.protocol) {
-                                    confirmLines.push(L("Atendimento conectado! Protocolo: ") + data.protocol + ".");
-                                } else {
-                                    confirmLines.push(copy.fim);
-                                }
-                                if (data.ai_reply && data.ai_reply.message) {
-                                    renderedMsgIds[data.ai_reply.id] = true;
-                                    confirmLines.push(data.ai_reply.message);
-                                } else {
-                                    confirmLines.push(L("Nossa equipe já recebeu sua mensagem no painel. Pode enviar mais detalhes abaixo!"));
-                                }
-                                startPollingLiveMessages();
-
-                                sendBotMessages(confirmLines, function () {
-                                    enableLiveChatInput();
-                                    renderOptions([
-                                        { texto: L("Falar agora no WhatsApp"), link: WA_URL + "?text=" + encodeURIComponent(copy.whats.replace("{n}", visitorData.nome)) },
-                                        { texto: copy.verTxt, acao: function () { scrollToTargetSection(); } }
-                                    ]);
-                                });
-                            })
-                            .catch(function () {
-                                pendingTyping.remove();
-                                sendBotMessages([L("Sem conexão no momento. Tente novamente ou chame diretamente no WhatsApp.")], function () {
-                                    renderOptions([
-                                        { texto: L("Falar agora no WhatsApp"), link: WA_URL + "?text=" + encodeURIComponent(copy.whats.replace("{n}", visitorData.nome)) }
-                                    ]);
-                                });
-                            });
+                        proceedToConnectChat(phone);
                     });
                 });
             });
@@ -671,7 +728,11 @@
                 chatStarted = true;
                 enableFreeTextInput();
                 pushDataLayer("chat_aberto");
-                sendBotMessages([L("Oi! Aqui é da GundjaTech."), copy.ola], function () {
+                var authUser = getAuthUser();
+                var greeting = authUser && authUser.name
+                    ? (L("Oi, ") + (authUser.name.split(" ")[0]) + L("! Aqui é da GundjaTech."))
+                    : L("Oi! Aqui é da GundjaTech.");
+                sendBotMessages([greeting, copy.ola], function () {
                     renderOptions([
                         { texto: copy.op1, acao: startLeadCaptureFlow },
                         { texto: copy.op2, acao: isSecurityTheme ? startEmergencyFlow : startLeadCaptureFlow },

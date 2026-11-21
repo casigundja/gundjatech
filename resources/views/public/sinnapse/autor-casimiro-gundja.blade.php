@@ -135,7 +135,7 @@
 
     @endverbatim
     @auth
-      <div class="gt-pub-user">
+      <div class="gt-pub-user" data-user-name="{{ auth()->user()->name }}" data-user-email="{{ auth()->user()->email }}" data-user-phone="{{ auth()->user()->phone ?? (auth()->user()->client?->phone ?? '') }}">
         <button
           type="button"
           class="gt-pub-user-btn"
@@ -165,7 +165,13 @@
           </form>
         </div>
       </div>
-      <script>if(!window.__gtPubUserInit){window.__gtPubUserInit=1;document.addEventListener('click',function(e){document.querySelectorAll('.gt-pub-user.is-open').forEach(function(el){if(!el.contains(e.target)){el.classList.remove('is-open');var b=el.querySelector('.gt-pub-user-btn');if(b)b.setAttribute('aria-expanded','false');}});});document.addEventListener('keydown',function(e){if(e.key==='Escape'){document.querySelectorAll('.gt-pub-user.is-open').forEach(function(el){el.classList.remove('is-open');var b=el.querySelector('.gt-pub-user-btn');if(b)b.setAttribute('aria-expanded','false');});}});}</script>
+      <script>
+        window.GT_AUTH_USER = {
+          name: {{ Js::from(auth()->user()->name) }},
+          email: {{ Js::from(auth()->user()->email) }},
+          phone: {{ Js::from(auth()->user()->phone ?? (auth()->user()->client?->phone ?? '')) }}
+        };
+        if(!window.__gtPubUserInit){window.__gtPubUserInit=1;document.addEventListener('click',function(e){document.querySelectorAll('.gt-pub-user.is-open').forEach(function(el){if(!el.contains(e.target)){el.classList.remove('is-open');var b=el.querySelector('.gt-pub-user-btn');if(b)b.setAttribute('aria-expanded','false');}});});document.addEventListener('keydown',function(e){if(e.key==='Escape'){document.querySelectorAll('.gt-pub-user.is-open').forEach(function(el){el.classList.remove('is-open');var b=el.querySelector('.gt-pub-user-btn');if(b)b.setAttribute('aria-expanded','false');});}});}</script>
     @else
       <a href="/login" class="topo-acesso" aria-label="Entrar no sistema"><span>Entrar no sistema</span></a>
     @endauth
@@ -477,7 +483,7 @@
 
 <script defer src="/jsm/main.ac8b157f35.js?v=gt-live2"></script>
 
-<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live7"></script>
+<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live8"></script>
 
 <script defer src="/jsm/animacoes.b868b7f2df.js"></script>
 
