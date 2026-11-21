@@ -329,14 +329,22 @@ adminRoutes.post('/solicitacoes/:id/converter', async (c) => {
         }
     }
 
-    // Cria o projeto
-    const projectName = req.service_title || req.title || `Projeto • ${req.company || req.name}`;
-    const projectDesc = req.briefing || req.description || 'Projeto iniciado via solicitação web';
+    // Cria o projeto (preenchendo title, name e slug obrigatórios no D1)
+    const projectName = String(req.service_title || req.title || `Projeto • ${req.company || req.name || 'Cliente'}`).trim();
+    const projectDesc = String(req.briefing || req.description || 'Projeto iniciado via solicitação web').trim();
+    const baseSlug = projectName
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+        .slice(0, 48) || 'projeto';
+    const projectSlug = `${baseSlug}-${Date.now().toString(36)}`;
 
     await db.prepare(
-        `INSERT INTO projects (client_id, name, description, status, priority, start_date, created_at, updated_at)
-         VALUES (?, ?, ?, 'planning', 'high', date('now'), datetime('now'), datetime('now'))`
-    ).bind(clientId, projectName, projectDesc).run();
+        `INSERT INTO projects (client_id, name, title, slug, description, status, priority, progress_percentage, start_date, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, 'planning', 'high', 0, date('now'), datetime('now'), datetime('now'))`
+    ).bind(clientId, projectName, projectName, projectSlug, projectDesc).run();
 
     // Atualiza solicitação para approved
     await db.prepare(
