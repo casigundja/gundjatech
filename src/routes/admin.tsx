@@ -14,6 +14,7 @@ import { AdminRequestsView } from '../views/admin/requests';
 import { AdminServicesView } from '../views/admin/services';
 import { AdminUsersView } from '../views/admin/users';
 import { AdminSettingsView } from '../views/admin/settings';
+import { AdminQuotationsView } from '../views/admin/quotations';
 import { sendWhatsAppTextMessage } from '../services/whatsapp';
 import { AdminChatView } from '../views/admin/chat';
 import { AdminProjectsView } from '../views/admin/projects';
@@ -1187,82 +1188,224 @@ adminRoutes.post('/campanhas/:id/toggle', async (c) => {
 });
 
 // ==========================================
-// 11. ORÇAMENTOS, CRM AUTÔNOMO IA & PERMISSÕES RBAC
+// 11. ORÇAMENTOS & PROPOSTAS COMERCIAIS
 // ==========================================
 adminRoutes.get('/orcamentos', async (c) => {
     const user = c.get('user')!;
     const db = c.env.DB;
     const { successMessage, errorMessage } = getFlashMessages(c);
+    const search = (c.req.query('search') || '').trim();
+    const statusFilter = (c.req.query('status') || '').trim();
+
+    let query = `
+        SELECT q.*, cl.name as client_name, cl.company, cl.email as client_email
+        FROM quotations q
+        LEFT JOIN clients cl ON q.client_id = cl.id
+        WHERE 1=1
+    `;
+    const params: any[] = [];
+
+    if (search) {
+        query += ` AND (q.reference_code LIKE ? OR q.title LIKE ? OR cl.name LIKE ? OR cl.company LIKE ?)`;
+        const term = `%${search}%`;
+        params.push(term, term, term, term);
+    }
+    if (statusFilter) {
+        query += ` AND q.status = ?`;
+        params.push(statusFilter);
+    }
+    query += ` ORDER BY q.id DESC`;
 
     let quotations: any[] = [];
+    let clients: any[] = [];
     try {
-        const res = await db.prepare(
-            `SELECT q.*, c.name as client_name, c.company
-             FROM quotations q
-             LEFT JOIN clients c ON q.client_id = c.id
-             ORDER BY q.id DESC`
-        ).all();
+        const res = await db.prepare(query).bind(...params).all();
         quotations = res.results || [];
     } catch {}
 
+    try {
+        const clientsRes = await db.prepare('SELECT id, name, company FROM clients ORDER BY name ASC').all();
+        clients = clientsRes.results || [];
+    } catch {}
+
     return c.html(
-        <AdminLayout
-            title="Orçamentos & Propostas • Painel Administrativo GundjaTech"
-            activeNav="quotations"
+        <AdminQuotationsView
             currentUser={user}
+            quotations={quotations}
+            clients={clients}
+            search={search}
+            statusFilter={statusFilter}
             successMessage={successMessage}
             errorMessage={errorMessage}
-        >
-            <div class="gt-page-header">
-                <div>
-                    <h1 class="text-xl font-extrabold text-white">Orçamentos &amp; Propostas Comerciais</h1>
-                    <p class="text-xs text-[#8C95AA] mt-1">Propostas geradas manualmente e pré-orçamentos do CRM Autônomo IA.</p>
-                </div>
-                <a href="/admin/solicitacoes" class="gt-btn-primary">+ Gerar a partir de Solicitação</a>
-            </div>
-
-            <div class="gtb-card" style="padding: 0; overflow: hidden;">
-                {quotations.length === 0 ? (
-                    <div class="gt-empty-state">Nenhum orçamento emitido até o momento.</div>
-                ) : (
-                    <div class="gt-table-wrap">
-                        <table class="w-full text-left text-xs">
-                            <thead>
-                                <tr class="border-b border-white/10 text-[#8C95AA] uppercase">
-                                    <th class="py-3 px-4">Código</th>
-                                    <th class="py-3 px-4">Título / Cliente</th>
-                                    <th class="py-3 px-4">Valor Total</th>
-                                    <th class="py-3 px-4">Validade</th>
-                                    <th class="py-3 px-4">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-white/5">
-                                {quotations.map((q: any) => (
-                                    <tr>
-                                        <td class="py-3 px-4 font-mono font-bold text-[#F2C230] whitespace-nowrap">{q.reference_code || q.quotation_number || `#${q.id}`}</td>
-                                        <td class="py-3 px-4">
-                                            <div class="font-bold text-white">{q.title || 'Proposta Comercial'}</div>
-                                            <div class="text-[11px] text-[#8C95AA]">{q.client_name || q.company || 'Cliente'}</div>
-                                        </td>
-                                        <td class="py-3 px-4 font-extrabold text-white whitespace-nowrap">
-                                            R$ {Number(q.final_amount || q.total_amount || q.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                        </td>
-                                        <td class="py-3 px-4 text-[#8C95AA] whitespace-nowrap">{q.expires_at || q.valid_until || '—'}</td>
-                                        <td class="py-3 px-4 whitespace-nowrap">
-                                            <span class={`gt-badge ${q.status === 'approved' ? 'gt-badge-success' : 'gt-badge-warning'}`}>{q.status}</span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
-        </AdminLayout>
+        />
     );
 });
 
 adminRoutes.get('/orcamentos/novo', (c) => c.redirect('/admin/orcamentos'));
+
+adminRoutes.post('/orcamentos', async (c) => {
+    const db = c.env.DB;
+    const body = await c.req.parseBody();
+    const clientId = Number(body['client_id'] || 0);
+    const title = String(body['title'] || '').trim();
+    const totalAmount = Math.max(0, Number(body['total_amount'] || 0));
+    const discountAmount = Math.max(0, Number(body['discount_amount'] || 0));
+    const finalAmount = Math.max(0, totalAmount - discountAmount);
+    const statusRaw = String(body['status'] || 'draft').trim();
+    const allowedStatuses = ['draft', 'sent', 'approved', 'rejected', 'expired'];
+    const status = allowedStatuses.includes(statusRaw) ? statusRaw : 'draft';
+    const expiresAt = String(body['expires_at'] || '').trim() || null;
+    const notes = String(body['notes'] || '').trim() || null;
+
+    if (!clientId || !title) {
+        return c.redirect('/admin/orcamentos?error=Selecione um cliente e informe o título da proposta.');
+    }
+
+    const now = new Date();
+    const ymd = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const referenceCode = `ORC-${ymd}-${rand}`;
+
+    const result = await db.prepare(
+        `INSERT INTO quotations (client_id, title, reference_code, total_amount, discount_amount, final_amount, status, expires_at, notes, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+    ).bind(clientId, title, referenceCode, totalAmount, discountAmount, finalAmount, status, expiresAt, notes).run();
+
+    const newId = result.meta?.last_row_id;
+    if (newId) {
+        return c.redirect(`/admin/orcamentos/${newId}?success=Orçamento ${encodeURIComponent(referenceCode)} criado com sucesso!`);
+    }
+    return c.redirect('/admin/orcamentos?success=Orçamento criado com sucesso!');
+});
+
+adminRoutes.get('/orcamentos/:id', async (c) => {
+    const user = c.get('user')!;
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+    const { successMessage, errorMessage } = getFlashMessages(c);
+
+    if (!id) {
+        return c.redirect('/admin/orcamentos');
+    }
+
+    const quotationDetail = await db.prepare(
+        `SELECT q.*, cl.name as client_name, cl.company, cl.email as client_email
+         FROM quotations q
+         LEFT JOIN clients cl ON q.client_id = cl.id
+         WHERE q.id = ?`
+    ).bind(id).first();
+
+    if (!quotationDetail) {
+        return c.redirect('/admin/orcamentos?error=Orçamento não encontrado.');
+    }
+
+    return c.html(
+        <AdminQuotationsView
+            currentUser={user}
+            quotationDetail={quotationDetail}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        />
+    );
+});
+
+adminRoutes.post('/orcamentos/:id', async (c) => {
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+    const body = await c.req.parseBody();
+
+    const title = String(body['title'] || '').trim();
+    const totalAmount = Math.max(0, Number(body['total_amount'] || 0));
+    const discountAmount = Math.max(0, Number(body['discount_amount'] || 0));
+    const finalAmount = Math.max(0, totalAmount - discountAmount);
+    const statusRaw = String(body['status'] || 'draft').trim();
+    const allowedStatuses = ['draft', 'sent', 'approved', 'rejected', 'expired'];
+    const status = allowedStatuses.includes(statusRaw) ? statusRaw : 'draft';
+    const expiresAt = String(body['expires_at'] || '').trim() || null;
+    const notes = String(body['notes'] || '').trim() || null;
+
+    if (!title) {
+        return c.redirect(`/admin/orcamentos/${id}?error=O título da proposta é obrigatório.`);
+    }
+
+    await db.prepare(
+        `UPDATE quotations
+         SET title = ?, total_amount = ?, discount_amount = ?, final_amount = ?, status = ?, expires_at = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`
+    ).bind(title, totalAmount, discountAmount, finalAmount, status, expiresAt, notes, id).run();
+
+    return c.redirect(`/admin/orcamentos/${id}?success=Proposta atualizada com sucesso!`);
+});
+
+adminRoutes.post('/orcamentos/:id/status', async (c) => {
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+    const body = await c.req.parseBody();
+    const status = String(body['status'] || '').trim();
+    const allowedStatuses = ['draft', 'sent', 'approved', 'rejected', 'expired'];
+
+    if (!allowedStatuses.includes(status)) {
+        return c.redirect(`/admin/orcamentos/${id}?error=Status inválido.`);
+    }
+
+    await db.prepare(
+        `UPDATE quotations SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+    ).bind(status, id).run();
+
+    const labels: Record<string, string> = {
+        draft: 'Rascunho',
+        sent: 'Enviado ao cliente',
+        approved: 'Aprovado',
+        rejected: 'Recusado',
+        expired: 'Expirado'
+    };
+
+    const referer = c.req.header('referer') || '';
+    const backUrl = referer.includes(`/admin/orcamentos/${id}`) ? `/admin/orcamentos/${id}` : '/admin/orcamentos';
+    return c.redirect(`${backUrl}?success=Status atualizado para ${encodeURIComponent(labels[status] || status)}!`);
+});
+
+adminRoutes.post('/orcamentos/:id/converter-projeto', async (c) => {
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+
+    const quotation = await db.prepare('SELECT * FROM quotations WHERE id = ?').bind(id).first<any>();
+    if (!quotation) {
+        return c.redirect('/admin/orcamentos?error=Orçamento não encontrado.');
+    }
+
+    const projectName = String(quotation.title || `Projeto #${quotation.reference_code || id}`).trim();
+    const baseSlug = projectName
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 48) || 'projeto';
+    const projectSlug = `${baseSlug}-${Date.now().toString(36)}`;
+    const description = quotation.notes
+        ? `Originado do orçamento ${quotation.reference_code} (Valor: R$ ${Number(quotation.final_amount || quotation.total_amount || 0).toFixed(2)}).\n\n${quotation.notes}`
+        : `Projeto originado do orçamento ${quotation.reference_code}.`;
+
+    await db.prepare(
+        `INSERT INTO projects (client_id, name, title, slug, description, status, priority, progress_percentage, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, 'planning', 'high', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+    ).bind(quotation.client_id, projectName, projectName, projectSlug, description).run();
+
+    await db.prepare(
+        `UPDATE quotations SET status = 'approved', updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+    ).bind(id).run();
+
+    return c.redirect('/admin/projetos?success=Orçamento aprovado e convertido em Projeto com sucesso!');
+});
+
+adminRoutes.post('/orcamentos/:id/excluir', async (c) => {
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+    await db.prepare('DELETE FROM quotations WHERE id = ?').bind(id).run();
+    return c.redirect('/admin/orcamentos?success=Orçamento excluído com sucesso.');
+});
+
 adminRoutes.get('/permissoes', (c) => c.redirect('/admin/usuarios'));
 
 // ==========================================
