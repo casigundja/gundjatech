@@ -39,7 +39,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
-                <link rel="stylesheet" href="/css/gt-admin.css?v=24" />
+                <link rel="stylesheet" href="/css/gt-admin.css?v=25" />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
@@ -485,7 +485,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                     {/* Live Real-Time Toast Notification Stack (Sound + Visual Alert) */}
                     <div id="gt-live-toast-stack" class="fixed bottom-5 right-5 z-[100] w-80 max-w-[calc(100vw-2rem)] space-y-2.5 pointer-events-none"></div>
 
-                    <main class="gt-admin-main flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-7 space-y-6">
+                    <main class="gt-admin-main flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5 space-y-4">
                         {children}
                     </main>
                 </div>

@@ -545,12 +545,12 @@ body.gt-admin-boost main select.gtb-ctrl-select {
 /* Paired Vertical Bar Chart */
 .gtb-paired-chart {
     position: relative;
-    height: 230px;
+    height: 182px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     padding-left: 38px;
-    padding-bottom: 24px;
+    padding-bottom: 22px;
 }
 
 .gtb-grid-line {
