@@ -1,0 +1,48 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gundjatech",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-20",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "gundjatech-db",
+      "database_id": "2ad2cdde-bf3c-4823-9af3-87a20efda364",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "KV_SESSIONS",
+      "id": "ce53cdd0e1aa420d8879f1e701adab2d"
+    },
+    {
+      "binding": "KV_CACHE",
+      "id": "4bc47911eb4e46cfb396848d8caed1d0"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "UPLOADS_BUCKET",
+      "bucket_name": "gundjatech-uploads"
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "triggers": {
+    "crons": [
+      "0 3 * * *"
+    ]
+  },
+  "observability": {
+    "enabled": true
+  }
+}

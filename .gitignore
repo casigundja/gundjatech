@@ -29,3 +29,6 @@ Thumbs.db
 *.pyc
 /gundjatech
 /database/*.sqlite
+/.wrangler
+.dev.vars
+

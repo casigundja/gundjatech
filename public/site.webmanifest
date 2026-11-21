@@ -9,12 +9,12 @@
   "lang": "pt-BR",
   "icons": [
     {
-      "src": "/img/apple-touch-icon.png",
+      "src": "/img/apple-touch-icon.png?v=gt-icon2",
       "sizes": "180x180",
       "type": "image/png"
     },
     {
-      "src": "/img/favicon.svg",
+      "src": "/img/favicon.svg?v=gt-icon2",
       "sizes": "any",
       "type": "image/svg+xml"
     }

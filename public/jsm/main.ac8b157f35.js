@@ -355,15 +355,36 @@
     var moreBtn = qs(".js-mais");
     var moreMenu = qs("#menu-mais");
     if (moreBtn && moreMenu) {
-        moreBtn.addEventListener("click", function () {
+        moreBtn.addEventListener("click", function (ev) {
+            ev.stopPropagation();
             var open = moreMenu.classList.toggle("on");
             moreBtn.setAttribute("aria-expanded", open ? "true" : "false");
         });
         qsa("a", moreMenu).forEach(function (link) {
-            link.addEventListener("click", function () {
+            link.addEventListener("click", function (ev) {
+                var href = link.getAttribute("href") || "";
                 moreMenu.classList.remove("on");
                 moreBtn.setAttribute("aria-expanded", "false");
+                if (href.charAt(0) === "#" && href.length > 1) {
+                    var targetId = href.slice(1);
+                    var target = document.getElementById(targetId)
+                        || (targetId === "diag-titulo" ? qs(".diag") : null)
+                        || (targetId === "faq-titulo" ? qs(".hm-faq, .faq-lista") : null)
+                        || (targetId === "contato" ? qs("#contato, .hm-contato, .diag") : null)
+                        || qs(href);
+                    if (target) {
+                        ev.preventDefault();
+                        target.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+                        if (history.replaceState) { history.replaceState(null, "", href); }
+                    }
+                }
             });
+        });
+        document.addEventListener("click", function (ev) {
+            if (moreMenu.classList.contains("on") && !moreMenu.contains(ev.target) && !moreBtn.contains(ev.target)) {
+                moreMenu.classList.remove("on");
+                moreBtn.setAttribute("aria-expanded", "false");
+            }
         });
         document.addEventListener("keydown", function (ev) {
             if (ev.key === "Escape") {
@@ -372,6 +393,32 @@
             }
         });
     }
+
+    // Universal Mobile Autoplay Enforcer for Background & Card Videos
+    var bgVideos = qsa("video[autoplay], .s2 video, .s2-bg, .s2-prova video, .cs-hero-video");
+    function forcePlayVideo(vid) {
+        if (!vid || reducedMotion) { return; }
+        vid.muted = true;
+        vid.defaultMuted = true;
+        vid.playsInline = true;
+        vid.setAttribute("muted", "");
+        vid.setAttribute("playsinline", "");
+        vid.setAttribute("webkit-playsinline", "");
+        vid.setAttribute("autoplay", "");
+        if (vid.paused) {
+            var p = vid.play();
+            if (p && p.catch) { p.catch(function () {}); }
+        }
+    }
+    bgVideos.forEach(forcePlayVideo);
+    observe(bgVideos, function (vid, visible) {
+        if (visible) { forcePlayVideo(vid); }
+    }, { threshold: 0.1 });
+    ["touchstart", "pointerdown", "scroll", "click"].forEach(function (evName) {
+        window.addEventListener(evName, function () {
+            bgVideos.forEach(forcePlayVideo);
+        }, { once: true, passive: true });
+    });
 
     var toTopBtn = qs(".js-topo");
     if (toTopBtn) {

@@ -1,6 +1,6 @@
 @extends($layout)
 
-@section('title', 'Minha Conta & Segurança')
+@section('title', 'Minha Conta')
 
 @section('content')
 <div class="max-w-4xl mx-auto space-y-6">
@@ -11,7 +11,7 @@
                     {{ substr($user->name, 0, 2) }}
                 </div>
                 <div>
-                    <h1 class="text-xl font-extrabold text-[#063B5C]">Minha Conta &amp; Segurança</h1>
+                    <h1 class="text-xl font-extrabold text-[#063B5C]">Minha Conta</h1>
                     <p class="text-sm text-[#4F687B]">Atualize seus dados cadastrais e proteja seu acesso ao Portal do Cliente.</p>
                 </div>
             </div>
@@ -24,7 +24,7 @@
                     {{ substr($user->name, 0, 2) }}
                 </div>
                 <div>
-                    <h1 class="text-xl font-extrabold text-white">Minha Conta &amp; Segurança</h1>
+                    <h1 class="text-xl font-extrabold text-white">Minha Conta</h1>
                     <p class="text-sm text-gray-400">{{ $user->email }} &bull; {{ $user->role_label }}</p>
                 </div>
             </div>

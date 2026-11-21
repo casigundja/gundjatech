@@ -49,6 +49,11 @@
 
     function updateDock() {
         if (!dock) { return; }
+        var moreMenuEl = qs("#menu-mais");
+        if (moreMenuEl && moreMenuEl.classList.contains("on")) {
+            dock.classList.remove("recolhida");
+            return;
+        }
         var threshold = hero ? 0.6 * hero.offsetHeight : 400;
         var vh = window.innerHeight;
         var overlaps = dockObstructions.some(function (el) {

@@ -1,0 +1,494 @@
+import { Hono } from 'hono';
+import { Env, AppVariables } from '../types/env';
+import { requireAuth } from '../middleware/auth';
+import { getRequestBody } from '../lib/request';
+import { ensureClientProfile, getPortalDashboard } from '../lib/client-portal';
+import { PortalDashboardView } from '../views/portal/dashboard';
+import { PortalProjectsView } from '../views/portal/projects';
+import { PortalQuotationsView } from '../views/portal/quotations';
+import { PortalRequestsView } from '../views/portal/requests';
+import { PortalDomainsView } from '../views/portal/domains';
+import { PortalFinanceView } from '../views/portal/finance';
+import { PortalCampaignsView } from '../views/portal/campaigns';
+import { PortalChatView } from '../views/portal/chat';
+
+export const portalRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
+
+// Exige autenticação em todas as rotas do portal
+portalRoutes.use('*', requireAuth);
+
+// Helper para obter o client associado ao usuário logado
+async function getClientContext(c: any) {
+    const user = c.get('user');
+    const db = c.env.DB;
+    if (!db) {
+        throw new Error('Banco de dados D1 não inicializado.');
+    }
+    const client = await ensureClientProfile(db, user);
+    return { user, db, client };
+}
+
+const handleDashboard = async (c: any) => {
+    const { user, db, client } = await getClientContext(c);
+    const summary = await getPortalDashboard(db, client.id);
+
+    const successMessage = c.req.query('success');
+    const errorMessage = c.req.query('error');
+
+    return c.html(
+        <PortalDashboardView
+            currentUser={user}
+            client={client}
+            summary={summary}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        />
+    );
+};
+
+// 1. Dashboard / Resumo (atende /portal, /portal/ e /portal/dashboard)
+portalRoutes.get('/', handleDashboard);
+portalRoutes.get('', handleDashboard);
+portalRoutes.get('/dashboard', handleDashboard);
+
+// 2. Projetos
+portalRoutes.get('/projetos', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+
+    const projectsRes = await db.prepare(
+        'SELECT * FROM projects WHERE client_id = ? ORDER BY created_at DESC'
+    ).bind(client.id).all();
+
+    return c.html(
+        <PortalProjectsView
+            currentUser={user}
+            clientName={client.company || client.name}
+            projects={projectsRes.results || []}
+            successMessage={c.req.query('success')}
+            errorMessage={c.req.query('error')}
+        />
+    );
+});
+
+portalRoutes.get('/projetos/:id', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+    const projectId = Number(c.req.param('id'));
+
+    const project = await db.prepare(
+        'SELECT * FROM projects WHERE id = ? AND client_id = ?'
+    ).bind(projectId, client.id).first();
+
+    if (!project) {
+        return c.text('Projeto não encontrado ou acesso não autorizado.', 404);
+    }
+
+    const stages = await db.prepare(
+        'SELECT * FROM project_stages WHERE project_id = ? ORDER BY sort_order ASC, id ASC'
+    ).bind(projectId).all();
+
+    const attachments = await db.prepare(
+        'SELECT * FROM project_attachments WHERE project_id = ? AND is_client_visible = 1'
+    ).bind(projectId).all();
+
+    return c.html(
+        <PortalProjectsView
+            currentUser={user}
+            clientName={client.company || client.name}
+            projects={[]}
+            projectDetail={project}
+            stages={stages.results || []}
+            attachments={attachments.results || []}
+            successMessage={c.req.query('success')}
+            errorMessage={c.req.query('error')}
+        />
+    );
+});
+
+// 3. Orçamentos
+portalRoutes.get('/orcamentos', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+
+    const quotes = await db.prepare(
+        'SELECT * FROM quotations WHERE client_id = ? AND status != "draft" ORDER BY created_at DESC'
+    ).bind(client.id).all();
+
+    return c.html(
+        <PortalQuotationsView
+            currentUser={user}
+            clientName={client.company || client.name}
+            quotations={quotes.results || []}
+            successMessage={c.req.query('success')}
+            errorMessage={c.req.query('error')}
+        />
+    );
+});
+
+portalRoutes.get('/orcamentos/:id', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+    const quoteId = Number(c.req.param('id'));
+
+    const quote = await db.prepare(
+        'SELECT * FROM quotations WHERE id = ? AND client_id = ?'
+    ).bind(quoteId, client.id).first();
+
+    if (!quote) {
+        return c.text('Orçamento não encontrado.', 404);
+    }
+
+    const items = await db.prepare(
+        'SELECT * FROM quotation_items WHERE quotation_id = ?'
+    ).bind(quoteId).all();
+
+    return c.html(
+        <PortalQuotationsView
+            currentUser={user}
+            clientName={client.company || client.name}
+            quotations={[]}
+            quotationDetail={quote}
+            items={items.results || []}
+            successMessage={c.req.query('success')}
+            errorMessage={c.req.query('error')}
+        />
+    );
+});
+
+portalRoutes.post('/orcamentos/:id/aprovar', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+    const quoteId = Number(c.req.param('id'));
+
+    const quote = (await db.prepare(
+        'SELECT * FROM quotations WHERE id = ? AND client_id = ?'
+    ).bind(quoteId, client.id).first()) as any;
+
+    if (!quote || quote.status !== 'sent') {
+        return c.redirect('/portal/orcamentos?error=Or%C3%A7amento+n%C3%A3o+dispon%C3%ADvel+para+aprova%C3%A7%C3%A3o.');
+    }
+
+    // Atualiza status do orçamento
+    await db.prepare(
+        'UPDATE quotations SET status = "approved", updated_at = datetime("now") WHERE id = ?'
+    ).bind(quoteId).run();
+
+    // Se estiver associado a uma service_request, atualiza a solicitação também
+    if (quote.service_request_id) {
+        await db.prepare(
+            'UPDATE service_requests SET status = "approved", updated_at = datetime("now") WHERE id = ?'
+        ).bind(quote.service_request_id).run();
+
+        await db.prepare(
+            `INSERT INTO request_status_histories (service_request_id, old_status, new_status, comment, user_id, created_at, updated_at)
+             VALUES (?, 'quotation_sent', 'approved', 'Orçamento aprovado pelo cliente via Portal do Cliente!', ?, datetime('now'), datetime('now'))`
+        ).bind(quote.service_request_id, user.id).run();
+    }
+
+    // Registra log de auditoria
+    await db.prepare(
+        `INSERT INTO activity_logs (user_id, action, subject_type, subject_id, details, created_at, updated_at)
+         VALUES (?, 'portal.quotation_approved', 'Quotation', ?, ?, datetime('now'), datetime('now'))`
+    ).bind(user.id, quoteId, JSON.stringify({ reference: quote.reference_code })).run();
+
+    return c.redirect('/portal/orcamentos?success=Or%C3%A7amento+aprovado+com+sucesso!+Nossa+equipe+iniciar%C3%A1+o+projeto.');
+});
+
+portalRoutes.post('/orcamentos/:id/recusar', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+    const quoteId = Number(c.req.param('id'));
+
+    const quote = (await db.prepare(
+        'SELECT * FROM quotations WHERE id = ? AND client_id = ?'
+    ).bind(quoteId, client.id).first()) as any;
+
+    if (!quote || quote.status !== 'sent') {
+        return c.redirect('/portal/orcamentos?error=Or%C3%A7amento+n%C3%A3o+dispon%C3%ADvel+para+recusa.');
+    }
+
+    await db.prepare(
+        'UPDATE quotations SET status = "rejected", updated_at = datetime("now") WHERE id = ?'
+    ).bind(quoteId).run();
+
+    return c.redirect('/portal/orcamentos?success=Proposta+recusada.+Nossa+equipe+entrar%C3%A1+em+contato+para+reajuste.');
+});
+
+// 4. Solicitações
+portalRoutes.get('/solicitacoes', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+
+    const requests = await db.prepare(
+        'SELECT * FROM service_requests WHERE client_id = ? ORDER BY created_at DESC'
+    ).bind(client.id).all();
+
+    return c.html(
+        <PortalRequestsView
+            currentUser={user}
+            clientName={client.company || client.name}
+            requests={requests.results || []}
+            successMessage={c.req.query('success')}
+            errorMessage={c.req.query('error')}
+        />
+    );
+});
+
+portalRoutes.get('/solicitacoes/nova', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+
+    const services = await db.prepare(
+        'SELECT * FROM services WHERE is_active = 1 ORDER BY name ASC'
+    ).all();
+
+    return c.html(
+        <PortalRequestsView
+            currentUser={user}
+            clientName={client.company || client.name}
+            services={services.results || []}
+            isCreate={true}
+            successMessage={c.req.query('success')}
+            errorMessage={c.req.query('error')}
+        />
+    );
+});
+
+portalRoutes.post('/solicitacoes', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+    const body = await getRequestBody(c);
+
+    const serviceId = Number(body.service_id);
+    const title = String(body.title || '').trim();
+    const description = String(body.description || '').trim();
+    const estimatedBudget = body.estimated_budget ? Number(body.estimated_budget) : null;
+    const desiredDeadline = body.desired_deadline ? String(body.desired_deadline) : null;
+
+    if (!title || !description) {
+        return c.redirect('/portal/solicitacoes/nova?error=T%C3%ADtulo+e+descri%C3%A7%C3%A3o+s%C3%A3o+obrigat%C3%B3rios.');
+    }
+
+    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const protocol = `GNDJ-${dateStr}-${randomSuffix}`;
+
+    const insertRes = await db.prepare(
+        `INSERT INTO service_requests (
+            protocol, client_id, user_id, service_id, name, company, email, phone,
+            service_title, description, estimated_budget, desired_deadline, status,
+            created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', datetime('now'), datetime('now'))`
+    ).bind(
+        protocol,
+        client.id,
+        user.id,
+        serviceId || null,
+        user.name,
+        client.company || user.name,
+        user.email,
+        user.phone || null,
+        title,
+        description,
+        estimatedBudget,
+        desiredDeadline
+    ).run();
+
+    const newReqId = Number(insertRes.meta.last_row_id);
+
+    await db.prepare(
+        `INSERT INTO request_status_histories (service_request_id, old_status, new_status, comment, user_id, created_at, updated_at)
+         VALUES (?, NULL, 'new', 'Solicitação aberta diretamente pelo Portal do Cliente.', ?, datetime('now'), datetime('now'))`
+    ).bind(newReqId, user.id).run();
+
+    return c.redirect(`/portal/solicitacoes/${newReqId}?success=Solicita%C3%A7%C3%A3o+criada+com+sucesso!+Protocolo:+${protocol}`);
+});
+
+portalRoutes.get('/solicitacoes/:id', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+    const reqId = Number(c.req.param('id'));
+
+    const request = await db.prepare(
+        'SELECT * FROM service_requests WHERE id = ? AND client_id = ?'
+    ).bind(reqId, client.id).first();
+
+    if (!request) {
+        return c.text('Solicitação não encontrada.', 404);
+    }
+
+    const history = await db.prepare(
+        'SELECT * FROM request_status_histories WHERE service_request_id = ? ORDER BY created_at DESC'
+    ).bind(reqId).all();
+
+    return c.html(
+        <PortalRequestsView
+            currentUser={user}
+            clientName={client.company || client.name}
+            requestDetail={request}
+            history={history.results || []}
+            successMessage={c.req.query('success')}
+            errorMessage={c.req.query('error')}
+        />
+    );
+});
+
+// 5. Domínios
+portalRoutes.get('/dominios', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+
+    const domains = await db.prepare(
+        'SELECT * FROM domains WHERE client_id = ? ORDER BY expires_at ASC'
+    ).bind(client.id).all();
+
+    return c.html(
+        <PortalDomainsView
+            currentUser={user}
+            clientName={client.company || client.name}
+            domains={domains.results || []}
+            successMessage={c.req.query('success')}
+            errorMessage={c.req.query('error')}
+        />
+    );
+});
+
+portalRoutes.post('/dominios/:id/renovacao', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+    const domainId = Number(c.req.param('id'));
+
+    const domain = (await db.prepare(
+        'SELECT * FROM domains WHERE id = ? AND client_id = ?'
+    ).bind(domainId, client.id).first()) as any;
+
+    if (!domain) {
+        return c.redirect('/portal/dominios?error=Dom%C3%ADnio+n%C3%A3o+encontrado.');
+    }
+
+    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const protocol = `REN-${dateStr}-${randomSuffix}`;
+
+    await db.prepare(
+        `INSERT INTO service_requests (
+            protocol, client_id, user_id, service_title, description, status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, 'new', datetime('now'), datetime('now'))`
+    ).bind(
+        protocol,
+        client.id,
+        user.id,
+        `Renovação de Domínio: ${domain.domain_name}`,
+        `Solicitação de renovação anual do domínio ${domain.domain_name} via Portal do Cliente.`
+    ).run();
+
+    return c.redirect(`/portal/dominios?success=Solicita%C3%A7%C3%A3o+de+renova%C3%A7%C3%A3o+registrada+(Protocolo+${protocol})!`);
+});
+
+// 6. Financeiro
+portalRoutes.get('/financeiro', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+
+    const txs = await db.prepare(
+        'SELECT * FROM financial_transactions WHERE client_id = ? ORDER BY due_date DESC'
+    ).bind(client.id).all();
+
+    return c.html(
+        <PortalFinanceView
+            currentUser={user}
+            clientName={client.company || client.name}
+            transactions={txs.results || []}
+            successMessage={c.req.query('success')}
+            errorMessage={c.req.query('error')}
+        />
+    );
+});
+
+// 7. Campanhas
+portalRoutes.get('/campanhas', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+
+    const campaigns = await db.prepare(
+        'SELECT * FROM advertising_campaigns WHERE client_id = ? ORDER BY created_at DESC'
+    ).bind(client.id).all();
+
+    return c.html(
+        <PortalCampaignsView
+            currentUser={user}
+            clientName={client.company || client.name}
+            campaigns={campaigns.results || []}
+            successMessage={c.req.query('success')}
+            errorMessage={c.req.query('error')}
+        />
+    );
+});
+
+// 8. Falar com Atendimento (Chat Interno do Portal)
+portalRoutes.get('/atendimento', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+
+    let conversation = (await db.prepare(
+        'SELECT * FROM conversations WHERE client_id = ? AND channel = "web_chat" AND status IN ("open", "waiting_client", "waiting_staff") ORDER BY updated_at DESC LIMIT 1'
+    ).bind(client.id).first()) as any;
+
+    if (!conversation) {
+        const createRes = await db.prepare(
+            `INSERT INTO conversations (client_id, subject, channel, status, ai_enabled, crm_stage, lead_score, created_at, updated_at)
+             VALUES (?, ?, 'web_chat', 'open', 1, 'active_client', 50, datetime('now'), datetime('now'))`
+        ).bind(client.id, `Atendimento Geral ${client.company || client.name}`).run();
+
+        const convId = Number(createRes.meta.last_row_id);
+        conversation = {
+            id: convId,
+            client_id: client.id,
+            subject: `Atendimento Geral ${client.company || client.name}`,
+            channel: 'web_chat',
+            status: 'open'
+        };
+    }
+
+    const messagesRes = await db.prepare(
+        'SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY created_at ASC'
+    ).bind(conversation.id).all();
+
+    return c.html(
+        <PortalChatView
+            currentUser={user}
+            clientName={client.company || client.name}
+            conversation={conversation}
+            messages={messagesRes.results || []}
+            successMessage={c.req.query('success')}
+            errorMessage={c.req.query('error')}
+        />
+    );
+});
+
+portalRoutes.post('/atendimento/:id/mensagem', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+    const convId = Number(c.req.param('id'));
+    const body = await getRequestBody(c);
+    const message = String(body.message || '').trim();
+
+    if (!message) {
+        return c.redirect('/portal/atendimento');
+    }
+
+    await db.prepare(
+        `INSERT INTO conversation_messages (conversation_id, sender_type, sender_id, message, is_ai, created_at, updated_at)
+         VALUES (?, 'client', ?, ?, 0, datetime('now'), datetime('now'))`
+    ).bind(convId, user.id, message).run();
+
+    await db.prepare(
+        'UPDATE conversations SET status = "waiting_staff", last_message_at = datetime("now"), updated_at = datetime("now") WHERE id = ?'
+    ).bind(convId).run();
+
+    return c.redirect('/portal/atendimento?success=Mensagem+enviada+com+sucesso!');
+});
+
+portalRoutes.get('/atendimento/:id/mensagens', async (c) => {
+    const { db, client } = await getClientContext(c);
+    const convId = Number(c.req.param('id'));
+
+    const conv = await db.prepare(
+        'SELECT id FROM conversations WHERE id = ? AND client_id = ?'
+    ).bind(convId, client.id).first();
+
+    if (!conv) {
+        return c.json({ error: 'Acesso não autorizado' }, 403);
+    }
+
+    const messages = await db.prepare(
+        'SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY created_at ASC'
+    ).bind(convId).all();
+
+    return c.json({ messages: messages.results || [] });
+});

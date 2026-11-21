@@ -26101,3 +26101,23 @@ form.enviado .ok p,
         padding: 3px;
     }
 }
+
+/* === GUNDJATECH MOBILE & VIDEO AUTOPLAY FIXES === */
+.chatbox{pointer-events:none!important}
+.chatbox .chat-btn,.chatbox .chat-painel,.chatbox .chat-convite.on{pointer-events:auto!important}
+.chatbox .chat-convite:not(.on){display:none!important;pointer-events:none!important}
+.menu-mais{z-index:85!important}
+.menu-mais.on{opacity:1!important;pointer-events:auto!important}
+.menu-mais a{display:block!important;pointer-events:auto!important;position:relative;z-index:86}
+.hm3:not(.hm3-estatico){height:210vh!important}
+.hm3:not(.hm3-estatico):not(.sem-3d) .hm3-pin{background:#fff url(/img/home/cerebro-desktop.webp?v=gt-mix1) center/auto 100% no-repeat}
+.hm3:not(.hm3-ativo) .hm3-canvas{opacity:0}
+video::-webkit-media-controls,video::-webkit-media-controls-panel,video::-webkit-media-controls-play-button,video::-webkit-media-controls-start-playback-button{display:none!important;-webkit-appearance:none!important;opacity:0!important;pointer-events:none!important}
+.vb-videos video{background-size:cover;background-position:center;background-repeat:no-repeat}
+@media (max-width:991px){.hm-car:not(.aberto) .hm-c .hm-c-video{opacity:1!important;transform:none!important}}
+
+@media (max-width:640px){
+  .topo-acesso{width:38px;height:38px;min-height:38px;padding:0!important;justify-content:center;border-radius:999px}
+  .topo-acesso svg{width:18px;height:18px;color:#FFFFFF}
+  .pg-home .topo-fixo:not(.rolou) .topo-acesso svg,.pg-claro .topo-fixo:not(.rolou) .topo-acesso svg{color:#0B0E1A}
+}

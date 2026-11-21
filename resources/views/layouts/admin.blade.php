@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Painel Administrativo • GundjaTech')</title>
-    <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="/img/favicon.svg?v=gt-icon2">
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png?v=gt-icon2">
     <link rel="preload" href="/fonts/ZalandoSansExpanded-Regular.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="stylesheet" href="/css/gt-admin.css?v=17">
+    <link rel="stylesheet" href="/css/gt-admin.css?v=18">
     <script>
         (function () {
             function applyAdminTheme(val) {
@@ -274,22 +275,22 @@
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
         <!-- Top Header Bar (Title on left; Search + KBD + Theme Pill + Bell + User Profile on right) -->
         <header class="gtb-topbar relative z-[80]" style="position: relative; z-index: 80;">
-            <div class="flex items-center gap-3 min-w-0">
-                <button @click="sidebarOpen = !sidebarOpen" class="gtb-mobile-toggle gtb-icon-btn rounded-xl" aria-label="Abrir menu">
+            <div class="gtb-topbar-left flex items-center gap-2 sm:gap-3 min-w-0 shrink-0 md:shrink">
+                <button @click="sidebarOpen = !sidebarOpen" class="gtb-mobile-toggle gtb-icon-btn rounded-xl shrink-0" aria-label="Abrir menu">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
-                <h1 class="gt-font-display gtb-topbar-title text-lg sm:text-xl font-bold tracking-tight truncate">
+                <h1 class="gt-font-display gtb-topbar-title hidden md:block text-lg sm:text-xl font-bold tracking-tight truncate">
                     @yield('header_title', 'Dashboard')
                 </h1>
             </div>
 
-            <div class="flex items-center gap-3 shrink-0">
+            <div class="gtb-topbar-right flex items-center justify-end gap-1.5 sm:gap-3 flex-1 md:flex-initial min-w-0">
                 <!-- Search Box with ⌘ F Pill -->
                 @if($currentUser->hasPermission('requests.view'))
-                    <form action="{{ route('admin.requests.index') }}" method="GET" class="gtb-search-box hidden md:flex">
+                    <form action="{{ route('admin.requests.index') }}" method="GET" class="gtb-search-box flex-1 md:flex-initial min-w-0">
                         <svg class="w-4 h-4 text-[#8C95AA] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                         <input type="text" name="search" value="{{ request('search') }}" placeholder="Pesquisar demandas, clientes..." aria-label="Pesquisar">
-                        <span class="gtb-kbd-pill">⌘ F</span>
+                        <span class="gtb-kbd-pill hidden lg:inline-flex">⌘ F</span>
                     </form>
                 @endif
 

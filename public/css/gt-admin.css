@@ -1599,3 +1599,90 @@ html[data-admin-theme="light"] .gtb-notif-empty-icon {
     border-color: #F2C230;
     box-shadow: 0 8px 18px -8px rgba(6, 59, 92, 0.25);
 }
+
+/* ==========================================================================
+   MOBILE TOPBAR & SEARCH BAR RESPONSIVENESS
+   ========================================================================== */
+@media (max-width: 767px) {
+    .gtb-topbar {
+        height: 62px;
+        padding: 0 10px !important;
+        gap: 6px !important;
+    }
+
+    .gtb-topbar-left {
+        flex-shrink: 0 !important;
+    }
+
+    .gtb-topbar-title {
+        display: none !important;
+    }
+
+    .gtb-mobile-toggle {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .gtb-topbar-right {
+        flex: 1 1 0% !important;
+        min-width: 0 !important;
+        gap: 6px !important;
+        justify-content: flex-end !important;
+    }
+
+    .gtb-search-box {
+        flex: 1 1 0% !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        height: 36px !important;
+        padding: 0 10px !important;
+        gap: 6px !important;
+    }
+
+    .gtb-search-box input {
+        min-width: 0 !important;
+        width: 100% !important;
+        font-size: 12px !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .gtb-kbd-pill {
+        display: none !important;
+    }
+
+    .gtb-theme-switch {
+        height: 34px !important;
+        padding: 2px !important;
+        gap: 2px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .gtb-theme-orb {
+        width: 26px !important;
+        height: 26px !important;
+    }
+
+    .gtb-topbar-right .gtb-icon-btn {
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .gtb-notif-panel {
+        right: -40px !important;
+        width: calc(100vw - 20px) !important;
+        max-width: 22rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .gtb-topbar-right:has(.gtb-search-box:focus-within) .gtb-theme-switch,
+    .gtb-topbar-right:has(.gtb-search-box:focus-within) #gt-topbar-sound-btn {
+        display: none !important;
+    }
+}
+

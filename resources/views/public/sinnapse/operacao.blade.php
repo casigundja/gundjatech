@@ -13,9 +13,9 @@
 
 <meta name="google-site-verification" content="bZOTkhOfXUX0fcrGaazVUJmvwmMlSvilskqIz6tmeBs">
 
-<link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/img/favicon.svg?v=gt-icon2" type="image/svg+xml">
 
-<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=gt-icon2">
 
 <link rel="manifest" href="/site.webmanifest">
 
@@ -41,7 +41,7 @@
 
 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossorigin>
 
-<link rel="stylesheet" href="/css/sinnapse-interna.css?v=gt-hdr7">
+<link rel="stylesheet" href="/css/sinnapse-interna.css?v=gt-mob2">
 
 <meta property="og:site_name" content="GundjaTech">
 
@@ -183,7 +183,7 @@
         };
         if(!window.__gtPubUserInit){window.__gtPubUserInit=1;document.addEventListener('click',function(e){document.querySelectorAll('.gt-pub-user.is-open').forEach(function(el){if(!el.contains(e.target)){el.classList.remove('is-open');var b=el.querySelector('.gt-pub-user-btn');if(b)b.setAttribute('aria-expanded','false');}});});document.addEventListener('keydown',function(e){if(e.key==='Escape'){document.querySelectorAll('.gt-pub-user.is-open').forEach(function(el){el.classList.remove('is-open');var b=el.querySelector('.gt-pub-user-btn');if(b)b.setAttribute('aria-expanded','false');});}});}</script>
     @else
-      <a href="/login" class="topo-acesso" aria-label="Entrar no sistema"><span>Entrar no sistema</span></a>
+      <a href="/login" class="topo-acesso" aria-label="Entrar no sistema"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 19c0-3.3 2.7-5 7-5s7 1.7 7 5"/></svg><span>Entrar no sistema</span></a>
     @endauth
     @verbatim
 
@@ -541,9 +541,9 @@
 
 
 
-<script defer src="/jsm/main.ac8b157f35.js?v=gt-live2"></script>
+<script defer src="/jsm/main.ac8b157f35.js?v=gt-mob2"></script>
 
-<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live8"></script>
+<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-mob2"></script>
 
 <script defer src="/jsm/animacoes.b868b7f2df.js"></script>
 

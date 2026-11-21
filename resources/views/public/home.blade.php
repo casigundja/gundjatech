@@ -13,9 +13,9 @@
 
 <meta name="google-site-verification" content="bZOTkhOfXUX0fcrGaazVUJmvwmMlSvilskqIz6tmeBs">
 
-<link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/img/favicon.svg?v=gt-icon2" type="image/svg+xml">
 
-<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=gt-icon2">
 
 <link rel="manifest" href="/site.webmanifest">
 
@@ -33,9 +33,8 @@
 
 <link rel="preload" href="/fonts/ZalandoSansExpanded-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
 
-<link rel="preload" href="/img/home/cerebro-mobile.webp?v=gt-y2" as="image" media="(max-width: 767px)">
 
-<link rel="stylesheet" href="/css/sinnapse.css?v=gt-hdr7">
+<link rel="stylesheet" href="/css/sinnapse.css?v=gt-mob2">
 
 <meta property="og:site_name" content="GundjaTech">
 
@@ -183,7 +182,7 @@
         };
         if(!window.__gtPubUserInit){window.__gtPubUserInit=1;document.addEventListener('click',function(e){document.querySelectorAll('.gt-pub-user.is-open').forEach(function(el){if(!el.contains(e.target)){el.classList.remove('is-open');var b=el.querySelector('.gt-pub-user-btn');if(b)b.setAttribute('aria-expanded','false');}});});document.addEventListener('keydown',function(e){if(e.key==='Escape'){document.querySelectorAll('.gt-pub-user.is-open').forEach(function(el){el.classList.remove('is-open');var b=el.querySelector('.gt-pub-user-btn');if(b)b.setAttribute('aria-expanded','false');});}});}</script>
     @else
-      <a href="/login" class="topo-acesso" aria-label="Entrar no sistema"><span>Entrar no sistema</span></a>
+      <a href="/login" class="topo-acesso" aria-label="Entrar no sistema"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 19c0-3.3 2.7-5 7-5s7 1.7 7 5"/></svg><span>Entrar no sistema</span></a>
     @endauth
     @verbatim
 
@@ -277,7 +276,7 @@
 
         <article class="hm-c" data-i="0" style="background-image:url(/img/projetos/capa-klasse.webp)">
 
-          <video class="hm-c-video" src="/video/projeto-klasse.webm" poster="/video/poster-klasse.webp" muted loop playsinline preload="metadata" aria-hidden="true"></video>
+          <video class="hm-c-video" src="/video/projeto-klasse.mp4" poster="/video/poster-klasse.webp" autoplay muted loop playsinline webkit-playsinline preload="auto" aria-hidden="true"></video>
 
           <div class="hm-c-sombra"></div>
 
@@ -299,7 +298,7 @@
 
         <article class="hm-c" data-i="1" style="background-image:url(/img/projetos/capa-instituto-paraiso-do-saber.webp)">
 
-          <video class="hm-c-video" src="/video/projeto-instituto-paraiso-do-saber.webm" poster="/video/poster-instituto-paraiso-do-saber.webp" muted loop playsinline preload="metadata" aria-hidden="true"></video>
+          <video class="hm-c-video" src="/video/projeto-instituto-paraiso-do-saber.mp4" poster="/video/poster-instituto-paraiso-do-saber.webp" autoplay muted loop playsinline webkit-playsinline preload="auto" aria-hidden="true"></video>
 
           <div class="hm-c-sombra"></div>
 
@@ -321,7 +320,7 @@
 
         <article class="hm-c" data-i="2" style="background-image:url(/img/projetos/capa-cotech-contabilidade.webp)">
 
-          <video class="hm-c-video" src="/video/projeto-cotech-contabilidade.webm" poster="/video/poster-cotech-contabilidade.webp" muted loop playsinline preload="metadata" aria-hidden="true"></video>
+          <video class="hm-c-video" src="/video/projeto-cotech-contabilidade.mp4" poster="/video/poster-cotech-contabilidade.webp" autoplay muted loop playsinline webkit-playsinline preload="auto" aria-hidden="true"></video>
 
           <div class="hm-c-sombra"></div>
 
@@ -462,7 +461,7 @@
 
       <a class="s2-b s2-seo s2-vidro" href="#" data-servico="SEO">
 
-        <video class="s2-bg" src="/video/blur2.mp4" muted autoplay loop playsinline aria-hidden="true"></video>
+        <video class="s2-bg" src="/video/blur2.mp4" muted autoplay loop playsinline webkit-playsinline aria-hidden="true"></video>
 
         <div class="s2-rep"><h3>SEO</h3><p class="sv-rot"><span>Visibilidade</span><span>Resultados</span><span>Crescimento</span></p></div>
 
@@ -494,7 +493,7 @@
 
       <div class="s2-b s2-prova" role="group" aria-label="GundjaTech em números">
 
-        <video src="/video/blur.mp4" muted autoplay loop playsinline aria-hidden="true"></video>
+        <video src="/video/blur.mp4" muted autoplay loop playsinline webkit-playsinline aria-hidden="true"></video>
 
         <div class="s2-prova-txt"><b><span class="js-s2-conta" data-alvo="500">0</span>+</b><small>sites entregues</small>
 
@@ -506,7 +505,7 @@
 
       <a class="s2-b s2-operacao s2-azul-escuro" href="/servicos/gestao-de-trafego-pago">
 
-        <video class="s2-bg" src="/video/blur3.mp4" muted autoplay loop playsinline aria-hidden="true"></video>
+        <video class="s2-bg" src="/video/blur3.mp4" muted autoplay loop playsinline webkit-playsinline aria-hidden="true"></video>
 
         <div class="s2-rep"><h3>Operação<br>de sites</h3><p class="s2-letras js-letras" data-palavras="Disponibilidade|Hospedagem segura|Backup automático">Disponibilidade</p></div>
 
@@ -530,7 +529,7 @@
 
       <a class="s2-b s2-mkt s2-vidro" href="#" data-servico="Marketing digital">
 
-        <video class="s2-bg" src="/video/blur2.mp4" muted autoplay loop playsinline aria-hidden="true"></video>
+        <video class="s2-bg" src="/video/blur2.mp4" muted autoplay loop playsinline webkit-playsinline aria-hidden="true"></video>
 
         <div class="s2-rep"><h3>Marketing digital</h3><p class="sv-rot"><span>Experiência internacional</span><span>Foco em resultados</span><span>Inteligência de dados</span></p></div>
 
@@ -858,17 +857,17 @@
 
 
 
-<script defer src="/jsm/main.ac8b157f35.js?v=gt-live2"></script>
+<script defer src="/jsm/main.ac8b157f35.js?v=gt-mob2"></script>
 
-<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live8"></script>
+<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-mob2"></script>
 
 <script defer src="/jsm/animacoes.b868b7f2df.js"></script>
 
-<script defer src="/jsm/cerebro.63667b0ddd.js?v=gt-mix1"></script>
+<script defer src="/jsm/cerebro.63667b0ddd.js?v=gt-mob2"></script>
 
 <script defer src="/jsm/home.bbf8393a7a.js"></script>
 
-<script defer src="/jsm/home-projetos.29ae62d6c4.js?v=gt-cases1"></script>
+<script defer src="/jsm/home-projetos.29ae62d6c4.js?v=gt-mob2"></script>
 
 <script defer src="/jsm/home-time.eb2870faee.js"></script>
 

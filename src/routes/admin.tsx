@@ -1,0 +1,1132 @@
+import { Hono } from 'hono';
+import { Env, AppVariables } from '../types/env';
+import { requireAuth, requireStaff } from '../middleware/auth';
+import { getRequestBody } from '../lib/request';
+import { hashPassword } from '../lib/password';
+import { getAdminDashboardStats } from '../lib/admin';
+
+import { AdminDashboardView } from '../views/admin/dashboard';
+import { AdminClientsView } from '../views/admin/clients';
+import { AdminRequestsView } from '../views/admin/requests';
+import { AdminServicesView } from '../views/admin/services';
+import { AdminUsersView } from '../views/admin/users';
+import { AdminChatView } from '../views/admin/chat';
+import { AdminProjectsView } from '../views/admin/projects';
+import { AdminFinanceView } from '../views/admin/finance';
+import { AdminDomainsView } from '../views/admin/domains';
+import { AdminCampaignsView } from '../views/admin/campaigns';
+import { sendInvoiceNoticeEmail } from '../lib/email';
+
+export const adminRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
+
+// Protege todas as rotas do admin exigindo login e perfil staff
+adminRoutes.use('*', requireAuth, requireStaff);
+
+// Helper para obter mensagens de feedback
+function getFlashMessages(c: any) {
+    return {
+        successMessage: c.req.query('success') || null,
+        errorMessage: c.req.query('error') || null
+    };
+}
+
+// ==========================================
+// 1. DASHBOARD EXECUTIVO
+// ==========================================
+const handleDashboard = async (c: any) => {
+    const user = c.get('user');
+    const db = c.env.DB;
+    const { successMessage, errorMessage } = getFlashMessages(c);
+
+    const stats = await getAdminDashboardStats(db);
+
+    return c.html(
+        <AdminDashboardView
+            currentUser={user}
+            stats={stats}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        />
+    );
+};
+
+adminRoutes.get('', handleDashboard);
+adminRoutes.get('/', handleDashboard);
+adminRoutes.get('/dashboard', handleDashboard);
+
+// ==========================================
+// 2. CLIENTES & EMPRESAS
+// ==========================================
+adminRoutes.get('/clientes', async (c) => {
+    const user = c.get('user');
+    const db = c.env.DB;
+    const { successMessage, errorMessage } = getFlashMessages(c);
+
+    const search = (c.req.query('search') || '').trim();
+    const statusFilter = (c.req.query('status') || '').trim();
+
+    let query = `SELECT * FROM clients WHERE 1=1`;
+    const params: any[] = [];
+
+    if (search) {
+        query += ` AND (name LIKE ? OR company LIKE ? OR email LIKE ? OR phone LIKE ?)`;
+        const s = `%${search}%`;
+        params.push(s, s, s, s);
+    }
+
+    if (statusFilter) {
+        query += ` AND status = ?`;
+        params.push(statusFilter);
+    }
+
+    query += ` ORDER BY created_at DESC`;
+
+    const stmt = db.prepare(query);
+    const clients = (await (params.length ? stmt.bind(...params) : stmt).all()).results || [];
+
+    return c.html(
+        <AdminClientsView
+            currentUser={user}
+            clients={clients}
+            search={search}
+            statusFilter={statusFilter}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        />
+    );
+});
+
+adminRoutes.get('/clientes/novo', async (c) => {
+    const user = c.get('user');
+    const { successMessage, errorMessage } = getFlashMessages(c);
+
+    return c.html(
+        <AdminClientsView
+            currentUser={user}
+            clients={[]}
+            isCreate={true}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        />
+    );
+});
+
+adminRoutes.post('/clientes', async (c) => {
+    const db = c.env.DB;
+    const body = await getRequestBody(c);
+
+    const name = String(body.name || '').trim();
+    const company = String(body.company || '').trim() || null;
+    const trade_name = String(body.trade_name || '').trim() || null;
+    const email = String(body.email || '').trim().toLowerCase();
+    const phone = String(body.phone || '').trim() || null;
+    const document = String(body.document || body.tax_id || '').trim() || null;
+    const segment = String(body.segment || '').trim() || null;
+    const status = String(body.status || 'lead').trim();
+    const notes = String(body.notes || '').trim() || null;
+
+    if (!name || !email) {
+        return c.redirect('/admin/clientes?error=Nome e E-mail são obrigatórios');
+    }
+
+    try {
+        await db.prepare(
+            `INSERT INTO clients (name, company, trade_name, email, phone, document, segment, status, notes, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+        ).bind(name, company, trade_name, email, phone, document, segment, status, notes).run();
+
+        return c.redirect('/admin/clientes?success=Cliente cadastrado com sucesso');
+    } catch (err: any) {
+        return c.redirect(`/admin/clientes?error=${encodeURIComponent(err.message || 'Erro ao cadastrar cliente')}`);
+    }
+});
+
+adminRoutes.post('/clientes/:id/excluir', async (c) => {
+    const db = c.env.DB;
+    const id = c.req.param('id');
+
+    await db.prepare(`DELETE FROM clients WHERE id = ?`).bind(id).run();
+    return c.redirect('/admin/clientes?success=Cliente removido com sucesso');
+});
+
+// ==========================================
+// 3. SOLICITAÇÕES & LEADS (CRM PIPELINE)
+// ==========================================
+adminRoutes.get('/solicitacoes', async (c) => {
+    const user = c.get('user');
+    const db = c.env.DB;
+    const { successMessage, errorMessage } = getFlashMessages(c);
+
+    const search = (c.req.query('search') || '').trim();
+    const statusFilter = (c.req.query('status') || '').trim();
+
+    let query = `SELECT * FROM service_requests WHERE 1=1`;
+    const params: any[] = [];
+
+    if (search) {
+        query += ` AND (protocol LIKE ? OR name LIKE ? OR company LIKE ? OR email LIKE ? OR service_title LIKE ?)`;
+        const s = `%${search}%`;
+        params.push(s, s, s, s, s);
+    }
+
+    if (statusFilter) {
+        query += ` AND status = ?`;
+        params.push(statusFilter);
+    }
+
+    query += ` ORDER BY created_at DESC`;
+
+    const stmt = db.prepare(query);
+    const requests = (await (params.length ? stmt.bind(...params) : stmt).all()).results || [];
+
+    return c.html(
+        <AdminRequestsView
+            currentUser={user}
+            requests={requests}
+            search={search}
+            statusFilter={statusFilter}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        />
+    );
+});
+
+adminRoutes.get('/solicitacoes/:id', async (c) => {
+    const user = c.get('user');
+    const db = c.env.DB;
+    const id = c.req.param('id');
+    const { successMessage, errorMessage } = getFlashMessages(c);
+
+    const requestDetail = await db.prepare(
+        `SELECT * FROM service_requests WHERE id = ?`
+    ).bind(id).first();
+
+    if (!requestDetail) {
+        return c.redirect('/admin/solicitacoes?error=Solicitação não encontrada');
+    }
+
+    const history = (await db.prepare(
+        `SELECT h.*, u.name as user_name 
+         FROM service_request_history h 
+         LEFT JOIN users u ON h.user_id = u.id 
+         WHERE h.service_request_id = ? 
+         ORDER BY h.created_at DESC`
+    ).bind(id).all()).results || [];
+
+    return c.html(
+        <AdminRequestsView
+            currentUser={user}
+            requests={[]}
+            requestDetail={requestDetail}
+            history={history}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        />
+    );
+});
+
+adminRoutes.post('/solicitacoes/:id/status', async (c) => {
+    const user = c.get('user')!;
+    const db = c.env.DB;
+    const id = c.req.param('id');
+    const body = await getRequestBody(c);
+
+    const newStatus = String(body.status || '').trim();
+    const notes = String(body.notes || body.comment || '').trim() || null;
+
+    if (!newStatus) {
+        return c.redirect(`/admin/solicitacoes/${id}?error=Status inválido`);
+    }
+
+    const current = await db.prepare(`SELECT status FROM service_requests WHERE id = ?`).bind(id).first<{ status: string }>();
+    if (!current) {
+        return c.redirect('/admin/solicitacoes?error=Solicitação não encontrada');
+    }
+
+    await db.prepare(
+        `UPDATE service_requests SET status = ?, updated_at = datetime('now') WHERE id = ?`
+    ).bind(newStatus, id).run();
+
+    await db.prepare(
+        `INSERT INTO service_request_history (service_request_id, user_id, action, from_status, to_status, notes, created_at)
+         VALUES (?, ?, 'status_change', ?, ?, ?, datetime('now'))`
+    ).bind(id, user.id, current.status, newStatus, notes).run();
+
+    return c.redirect(`/admin/solicitacoes/${id}?success=Status atualizado com sucesso`);
+});
+
+adminRoutes.post('/solicitacoes/:id/cancelar', async (c) => {
+    const user = c.get('user')!;
+    const db = c.env.DB;
+    const id = c.req.param('id');
+
+    const current = await db.prepare(`SELECT status FROM service_requests WHERE id = ?`).bind(id).first<{ status: string }>();
+    if (!current) {
+        return c.redirect('/admin/solicitacoes?error=Solicitação não encontrada');
+    }
+
+    await db.prepare(
+        `UPDATE service_requests SET status = 'cancelled', updated_at = datetime('now') WHERE id = ?`
+    ).bind(id).run();
+
+    await db.prepare(
+        `INSERT INTO service_request_history (service_request_id, user_id, action, from_status, to_status, notes, created_at)
+         VALUES (?, ?, 'cancelled', ?, 'cancelled', 'Solicitação cancelada pela administração', datetime('now'))`
+    ).bind(id, user.id, current.status).run();
+
+    return c.redirect(`/admin/solicitacoes/${id}?success=Solicitação cancelada`);
+});
+
+adminRoutes.post('/solicitacoes/:id/converter', async (c) => {
+    const user = c.get('user')!;
+    const db = c.env.DB;
+    const id = c.req.param('id');
+
+    const req = await db.prepare(`SELECT * FROM service_requests WHERE id = ?`).bind(id).first<any>();
+    if (!req) {
+        return c.redirect('/admin/solicitacoes?error=Solicitação não encontrada');
+    }
+
+    // Garante que existe cliente associado
+    let clientId = req.client_id;
+    if (!clientId) {
+        const existingClient = await db.prepare(`SELECT id FROM clients WHERE lower(email) = lower(?)`).bind(req.email).first<{ id: number }>();
+        if (existingClient) {
+            clientId = existingClient.id;
+        } else {
+            const insClient = await db.prepare(
+                `INSERT INTO clients (name, company, email, phone, status, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, 'active', datetime('now'), datetime('now'))`
+            ).bind(req.name, req.company, req.email, req.phone).run();
+            clientId = insClient.meta.last_row_id;
+        }
+    }
+
+    // Cria o projeto
+    const projectName = req.service_title || req.title || `Projeto • ${req.company || req.name}`;
+    const projectDesc = req.briefing || req.description || 'Projeto iniciado via solicitação web';
+
+    await db.prepare(
+        `INSERT INTO projects (client_id, name, description, status, priority, start_date, created_at, updated_at)
+         VALUES (?, ?, ?, 'planning', 'high', date('now'), datetime('now'), datetime('now'))`
+    ).bind(clientId, projectName, projectDesc).run();
+
+    // Atualiza solicitação para approved
+    await db.prepare(
+        `UPDATE service_requests SET status = 'approved', client_id = ?, updated_at = datetime('now') WHERE id = ?`
+    ).bind(clientId, id).run();
+
+    // Histórico
+    await db.prepare(
+        `INSERT INTO service_request_history (service_request_id, user_id, action, from_status, to_status, notes, created_at)
+         VALUES (?, ?, 'converted_to_project', ?, 'approved', 'Convertido em Projeto pela administração', datetime('now'))`
+    ).bind(id, user.id, req.status).run();
+
+    return c.redirect(`/admin/solicitacoes/${id}?success=Solicitação convertida em Projeto com sucesso!`);
+});
+
+// ==========================================
+// 4. PACOTES DE SERVIÇOS & CATÁLOGO
+// ==========================================
+const DEFAULT_CATEGORIES = [
+    { id: 'sites', name: 'Websites & Portais' },
+    { id: 'ecommerce', name: 'E-commerce B2B/B2C' },
+    { id: 'software', name: 'Software & SaaS Edge' },
+    { id: 'infra', name: 'Infra & Cloudflare' }
+];
+
+adminRoutes.get('/servicos', async (c) => {
+    const user = c.get('user');
+    const db = c.env.DB;
+    const { successMessage, errorMessage } = getFlashMessages(c);
+
+    const search = (c.req.query('search') || '').trim();
+    const categoryFilter = (c.req.query('category') || '').trim();
+
+    let query = `SELECT * FROM services WHERE 1=1`;
+    const params: any[] = [];
+
+    if (search) {
+        query += ` AND (title LIKE ? OR summary LIKE ?)`;
+        const s = `%${search}%`;
+        params.push(s, s);
+    }
+
+    if (categoryFilter) {
+        query += ` AND category = ?`;
+        params.push(categoryFilter);
+    }
+
+    query += ` ORDER BY order_position ASC, created_at DESC`;
+
+    const stmt = db.prepare(query);
+    const services = (await (params.length ? stmt.bind(...params) : stmt).all()).results || [];
+
+    return c.html(
+        <AdminServicesView
+            currentUser={user}
+            services={services}
+            categories={DEFAULT_CATEGORIES}
+            isCreate={false}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        />
+    );
+});
+
+adminRoutes.get('/servicos/novo', async (c) => {
+    const user = c.get('user');
+    const { successMessage, errorMessage } = getFlashMessages(c);
+
+    return c.html(
+        <AdminServicesView
+            currentUser={user}
+            services={[]}
+            categories={DEFAULT_CATEGORIES}
+            isCreate={true}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        />
+    );
+});
+
+adminRoutes.post('/servicos', async (c) => {
+    const db = c.env.DB;
+    const body = await getRequestBody(c);
+
+    const title = String(body.title || body.name || '').trim();
+    let slug = String(body.slug || '').trim().toLowerCase();
+    const category = String(body.category || body.category_id || 'sites').trim();
+    const price = Number(body.price || body.base_price) || 0;
+    const summary = String(body.summary || body.short_description || '').trim() || null;
+    const description = String(body.description || '').trim() || null;
+    const is_active = body.is_active === '0' || body.is_active === 0 ? 0 : 1;
+    const is_featured = body.is_featured === '1' || body.is_featured === 1 ? 1 : 0;
+
+    if (!title) {
+        return c.redirect('/admin/servicos?error=Título do serviço é obrigatório');
+    }
+
+    if (!slug) {
+        slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    }
+
+    try {
+        await db.prepare(
+            `INSERT INTO services (title, slug, category, price, summary, description, is_active, is_featured, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+        ).bind(title, slug, category, price, summary, description, is_active, is_featured).run();
+
+        return c.redirect('/admin/servicos?success=Pacote de serviço cadastrado com sucesso');
+    } catch (err: any) {
+        return c.redirect(`/admin/servicos?error=${encodeURIComponent(err.message || 'Erro ao salvar serviço')}`);
+    }
+});
+
+const toggleServiceHandler = async (c: any) => {
+    const db = c.env.DB;
+    const id = c.req.param('id');
+
+    await db.prepare(
+        `UPDATE services SET is_active = CASE WHEN is_active = 1 THEN 0 ELSE 1 END, updated_at = datetime('now') WHERE id = ?`
+    ).bind(id).run();
+
+    return c.redirect('/admin/servicos?success=Status do serviço atualizado');
+};
+
+adminRoutes.post('/servicos/:id/toggle', toggleServiceHandler);
+adminRoutes.post('/servicos/:id/excluir', toggleServiceHandler);
+
+// ==========================================
+// 5. EQUIPE & USUÁRIOS (RBAC)
+// ==========================================
+adminRoutes.get('/usuarios', async (c) => {
+    const user = c.get('user');
+    const db = c.env.DB;
+    const { successMessage, errorMessage } = getFlashMessages(c);
+
+    const search = (c.req.query('search') || '').trim();
+    const roleFilter = (c.req.query('role') || '').trim();
+
+    let query = `SELECT id, name, email, role, phone, company, is_active, created_at FROM users WHERE 1=1`;
+    const params: any[] = [];
+
+    if (search) {
+        query += ` AND (name LIKE ? OR email LIKE ? OR company LIKE ?)`;
+        const s = `%${search}%`;
+        params.push(s, s, s);
+    }
+
+    if (roleFilter) {
+        query += ` AND role = ?`;
+        params.push(roleFilter);
+    }
+
+    query += ` ORDER BY created_at DESC`;
+
+    const stmt = db.prepare(query);
+    const users = (await (params.length ? stmt.bind(...params) : stmt).all()).results || [];
+
+    return c.html(
+        <AdminUsersView
+            currentUser={user}
+            users={users}
+            search={search}
+            roleFilter={roleFilter}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        />
+    );
+});
+
+adminRoutes.post('/usuarios', async (c) => {
+    const db = c.env.DB;
+    const body = await getRequestBody(c);
+
+    const name = String(body.name || '').trim();
+    const email = String(body.email || '').trim().toLowerCase();
+    const phone = String(body.phone || '').trim() || null;
+    const role = String(body.role || 'client').trim();
+    const company = String(body.company || '').trim() || null;
+    const password = String(body.password || '');
+
+    if (!name || !email || !password) {
+        return c.redirect('/admin/usuarios?error=Nome, E-mail e Senha são obrigatórios');
+    }
+
+    if (password.length < 8) {
+        return c.redirect('/admin/usuarios?error=A senha deve ter no mínimo 8 caracteres');
+    }
+
+    const existing = await db.prepare(`SELECT id FROM users WHERE lower(email) = lower(?)`).bind(email).first();
+    if (existing) {
+        return c.redirect('/admin/usuarios?error=Já existe um usuário cadastrado com este e-mail');
+    }
+
+    const hashedPassword = await hashPassword(password);
+
+    await db.prepare(
+        `INSERT INTO users (name, email, phone, role, company, password, is_active, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, 1, datetime('now'), datetime('now'))`
+    ).bind(name, email, phone, role, company, hashedPassword).run();
+
+    return c.redirect('/admin/usuarios?success=Novo usuário cadastrado com sucesso');
+});
+
+adminRoutes.post('/usuarios/:id/status', async (c) => {
+    const db = c.env.DB;
+    const id = c.req.param('id');
+    const body = await getRequestBody(c);
+
+    const isActive = body.is_active === '1' || body.is_active === 1 ? 1 : 0;
+
+    await db.prepare(
+        `UPDATE users SET is_active = ?, updated_at = datetime('now') WHERE id = ?`
+    ).bind(isActive, id).run();
+
+    return c.redirect('/admin/usuarios?success=Status do usuário atualizado com sucesso');
+});
+
+// ==========================================
+// 6. CENTRAL DE ATENDIMENTO CRM & CHAT AO VIVO
+// ==========================================
+adminRoutes.get('/atendimento', async (c) => {
+    const user = c.get('user');
+    const db = c.env.DB;
+    const { successMessage, errorMessage } = getFlashMessages(c);
+
+    const statusFilter = c.req.query('status') || 'open';
+    const activeId = c.req.query('id');
+
+    let convQuery = `SELECT * FROM conversations WHERE 1=1`;
+    const params: any[] = [];
+
+    if (statusFilter === 'open') {
+        convQuery += ` AND status = 'open'`;
+    } else if (statusFilter === 'closed') {
+        convQuery += ` AND status = 'closed'`;
+    }
+
+    convQuery += ` ORDER BY last_message_at DESC, created_at DESC`;
+
+    const stmt = db.prepare(convQuery);
+    const conversations = (await (params.length ? stmt.bind(...params) : stmt).all()).results || [];
+
+    let activeConversation: any = null;
+    let messages: any[] = [];
+
+    if (activeId) {
+        activeConversation = await db.prepare(`SELECT * FROM conversations WHERE id = ?`).bind(activeId).first();
+        if (activeConversation) {
+            messages = (await db.prepare(
+                `SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY created_at ASC`
+            ).bind(activeId).all()).results || [];
+        }
+    } else if (conversations.length > 0) {
+        // Seleciona a primeira automaticamente
+        activeConversation = conversations[0];
+        messages = (await db.prepare(
+            `SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY created_at ASC`
+        ).bind(activeConversation.id).all()).results || [];
+    }
+
+    return c.html(
+        <AdminChatView
+            currentUser={user}
+            conversations={conversations}
+            activeConversation={activeConversation}
+            messages={messages}
+            statusFilter={statusFilter}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        />
+    );
+});
+
+adminRoutes.post('/atendimento/:id/mensagem', async (c) => {
+    const user = c.get('user')!;
+    const db = c.env.DB;
+    const id = c.req.param('id');
+    const body = await getRequestBody(c);
+
+    const message = String(body.message || '').trim();
+    if (!message) {
+        return c.redirect(`/admin/atendimento?id=${id}&error=Mensagem não pode ser vazia`);
+    }
+
+    // Insere resposta do atendente humano
+    await db.prepare(
+        `INSERT INTO conversation_messages (conversation_id, sender_type, sender_id, message, is_ai, created_at, updated_at)
+         VALUES (?, 'staff', ?, ?, 0, datetime('now'), datetime('now'))`
+    ).bind(id, user.id, message).run();
+
+    // Atualiza conversa
+    await db.prepare(
+        `UPDATE conversations SET last_message_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`
+    ).bind(id).run();
+
+    return c.redirect(`/admin/atendimento?id=${id}&success=Mensagem enviada com sucesso`);
+});
+
+adminRoutes.post('/atendimento/:id/toggle-ai', async (c) => {
+    const db = c.env.DB;
+    const id = c.req.param('id');
+
+    await db.prepare(
+        `UPDATE conversations SET ai_enabled = CASE WHEN ai_enabled = 1 THEN 0 ELSE 1 END, updated_at = datetime('now') WHERE id = ?`
+    ).bind(id).run();
+
+    return c.redirect(`/admin/atendimento?id=${id}&success=Status da IA autônoma atualizado`);
+});
+
+adminRoutes.post('/atendimento/:id/fechar', async (c) => {
+    const db = c.env.DB;
+    const id = c.req.param('id');
+
+    await db.prepare(
+        `UPDATE conversations SET status = 'closed', closed_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`
+    ).bind(id).run();
+
+    return c.redirect(`/admin/atendimento?id=${id}&success=Conversa encerrada`);
+});
+
+adminRoutes.post('/atendimento/:id/reabrir', async (c) => {
+    const db = c.env.DB;
+    const id = c.req.param('id');
+
+    await db.prepare(
+        `UPDATE conversations SET status = 'open', closed_at = NULL, updated_at = datetime('now') WHERE id = ?`
+    ).bind(id).run();
+
+    return c.redirect(`/admin/atendimento?id=${id}&success=Conversa reaberta com sucesso`);
+});
+
+// ==========================================
+// 7. GESTÃO AVANÇADA DE PROJETOS & ENTREGAS
+// ==========================================
+adminRoutes.get('/projetos', async (c) => {
+    const user = c.get('user');
+    const db = c.env.DB;
+    const { successMessage, errorMessage } = getFlashMessages(c);
+
+    const search = (c.req.query('search') || '').trim();
+    const statusFilter = (c.req.query('status') || '').trim();
+
+    let query = `
+        SELECT p.*, c.name as client_name, c.company
+        FROM projects p
+        LEFT JOIN clients c ON p.client_id = c.id
+        WHERE 1=1
+    `;
+    const params: any[] = [];
+
+    if (search) {
+        query += ` AND (p.title LIKE ? OR c.name LIKE ? OR c.company LIKE ?)`;
+        const s = `%${search}%`;
+        params.push(s, s, s);
+    }
+
+    if (statusFilter) {
+        query += ` AND p.status = ?`;
+        params.push(statusFilter);
+    }
+
+    query += ` ORDER BY p.created_at DESC`;
+
+    const stmt = db.prepare(query);
+    const projects = (await (params.length ? stmt.bind(...params) : stmt).all()).results || [];
+
+    const clients = (await db.prepare(`SELECT id, name, company FROM clients ORDER BY company ASC, name ASC`).all()).results || [];
+
+    return c.html(
+        <AdminProjectsView
+            currentUser={user}
+            projects={projects}
+            clients={clients}
+            search={search}
+            statusFilter={statusFilter}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        />
+    );
+});
+
+adminRoutes.post('/projetos', async (c) => {
+    const db = c.env.DB;
+    const body = await getRequestBody(c);
+
+    const clientId = Number(body.client_id);
+    const title = String(body.title || '').trim();
+    const description = String(body.description || '').trim() || null;
+    const startDate = String(body.start_date || '').trim() || null;
+    const expectedEndDate = String(body.expected_end_date || '').trim() || null;
+
+    if (!clientId || !title) {
+        return c.redirect('/admin/projetos?error=Cliente e Título são obrigatórios');
+    }
+
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + Date.now();
+
+    try {
+        await db.prepare(
+            `INSERT INTO projects (client_id, title, slug, description, status, progress_percentage, start_date, expected_end_date, created_at, updated_at)
+             VALUES (?, ?, ?, ?, 'planning', 0, ?, ?, datetime('now'), datetime('now'))`
+        ).bind(clientId, title, slug, description, startDate, expectedEndDate).run();
+
+        return c.redirect('/admin/projetos?success=Projeto cadastrado com sucesso');
+    } catch (err: any) {
+        return c.redirect(`/admin/projetos?error=${encodeURIComponent(err.message || 'Erro ao criar projeto')}`);
+    }
+});
+
+adminRoutes.get('/projetos/:id', async (c) => {
+    const user = c.get('user');
+    const db = c.env.DB;
+    const id = c.req.param('id');
+    const { successMessage, errorMessage } = getFlashMessages(c);
+
+    const projectDetail = await db.prepare(
+        `SELECT p.*, c.name as client_name, c.company, c.email as client_email
+         FROM projects p
+         LEFT JOIN clients c ON p.client_id = c.id
+         WHERE p.id = ?`
+    ).bind(id).first();
+
+    if (!projectDetail) {
+        return c.redirect('/admin/projetos?error=Projeto não encontrado');
+    }
+
+    const stages = (await db.prepare(
+        `SELECT * FROM project_stages WHERE project_id = ? ORDER BY sort_order ASC, id ASC`
+    ).bind(id).all()).results || [];
+
+    const attachments = (await db.prepare(
+        `SELECT * FROM project_attachments WHERE project_id = ? ORDER BY created_at DESC`
+    ).bind(id).all()).results || [];
+
+    return c.html(
+        <AdminProjectsView
+            currentUser={user}
+            projects={[]}
+            projectDetail={projectDetail}
+            stages={stages}
+            attachments={attachments}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        />
+    );
+});
+
+adminRoutes.post('/projetos/:id', async (c) => {
+    const db = c.env.DB;
+    const id = c.req.param('id');
+    const body = await getRequestBody(c);
+
+    const status = String(body.status || 'planning').trim();
+    const progress = Math.min(100, Math.max(0, Number(body.progress_percentage) || 0));
+    const startDate = String(body.start_date || '').trim() || null;
+    const expectedEndDate = String(body.expected_end_date || '').trim() || null;
+
+    await db.prepare(
+        `UPDATE projects 
+         SET status = ?, progress_percentage = ?, start_date = ?, expected_end_date = ?, updated_at = datetime('now')
+         WHERE id = ?`
+    ).bind(status, progress, startDate, expectedEndDate, id).run();
+
+    return c.redirect(`/admin/projetos/${id}?success=Projeto atualizado com sucesso`);
+});
+
+adminRoutes.post('/projetos/:id/etapas', async (c) => {
+    const db = c.env.DB;
+    const id = c.req.param('id');
+    const body = await getRequestBody(c);
+
+    const title = String(body.title || '').trim();
+    if (!title) {
+        return c.redirect(`/admin/projetos/${id}?error=Título da etapa é obrigatório`);
+    }
+
+    await db.prepare(
+        `INSERT INTO project_stages (project_id, title, status, sort_order, created_at, updated_at)
+         VALUES (?, ?, 'pending', 0, datetime('now'), datetime('now'))`
+    ).bind(id, title).run();
+
+    return c.redirect(`/admin/projetos/${id}?success=Etapa adicionada com sucesso`);
+});
+
+adminRoutes.post('/projetos/:id/etapas/:stageId/toggle', async (c) => {
+    const db = c.env.DB;
+    const id = c.req.param('id');
+    const stageId = c.req.param('stageId');
+
+    const current = await db.prepare(`SELECT status FROM project_stages WHERE id = ?`).bind(stageId).first<{ status: string }>();
+    const nextStatus = current?.status === 'completed' ? 'pending' : 'completed';
+
+    await db.prepare(
+        `UPDATE project_stages 
+         SET status = ?, completed_at = CASE WHEN ? = 'completed' THEN datetime('now') ELSE NULL END, updated_at = datetime('now')
+         WHERE id = ?`
+    ).bind(nextStatus, nextStatus, stageId).run();
+
+    return c.redirect(`/admin/projetos/${id}?success=Status da etapa atualizado`);
+});
+
+// ==========================================
+// 8. FATURAS & GESTÃO FINANCEIRA
+// ==========================================
+adminRoutes.get('/financeiro', async (c) => {
+    const user = c.get('user');
+    const db = c.env.DB;
+    const { successMessage, errorMessage } = getFlashMessages(c);
+
+    const search = (c.req.query('search') || '').trim();
+    const statusFilter = (c.req.query('status') || '').trim();
+    const typeFilter = (c.req.query('type') || '').trim();
+
+    // Métricas financeiras
+    const totalInvoicedRow = await db.prepare(
+        `SELECT SUM(amount) as val FROM financial_transactions WHERE type = 'income' AND status != 'canceled'`
+    ).first<{ val: number }>();
+
+    const totalReceivedRow = await db.prepare(
+        `SELECT SUM(amount) as val FROM financial_transactions WHERE type = 'income' AND status = 'paid'`
+    ).first<{ val: number }>();
+
+    const totalPendingRow = await db.prepare(
+        `SELECT SUM(amount) as val FROM financial_transactions WHERE type = 'income' AND status = 'pending'`
+    ).first<{ val: number }>();
+
+    const totalOverdueRow = await db.prepare(
+        `SELECT SUM(amount) as val FROM financial_transactions WHERE type = 'income' AND status = 'pending' AND due_date < date('now')`
+    ).first<{ val: number }>();
+
+    let query = `
+        SELECT t.*, c.name as client_name, c.company, c.email as client_email
+        FROM financial_transactions t
+        LEFT JOIN clients c ON t.client_id = c.id
+        WHERE 1=1
+    `;
+    const params: any[] = [];
+
+    if (search) {
+        query += ` AND (t.description LIKE ? OR t.invoice_number LIKE ? OR c.name LIKE ? OR c.company LIKE ?)`;
+        const s = `%${search}%`;
+        params.push(s, s, s, s);
+    }
+
+    if (statusFilter) {
+        query += ` AND t.status = ?`;
+        params.push(statusFilter);
+    }
+
+    if (typeFilter) {
+        query += ` AND t.type = ?`;
+        params.push(typeFilter);
+    }
+
+    query += ` ORDER BY t.due_date DESC, t.created_at DESC`;
+
+    const stmt = db.prepare(query);
+    const transactions = (await (params.length ? stmt.bind(...params) : stmt).all()).results || [];
+
+    const clients = (await db.prepare(`SELECT id, name, company FROM clients ORDER BY company ASC, name ASC`).all()).results || [];
+
+    return c.html(
+        <AdminFinanceView
+            currentUser={user}
+            transactions={transactions}
+            clients={clients}
+            metrics={{
+                totalInvoiced: totalInvoicedRow?.val || 0,
+                totalReceived: totalReceivedRow?.val || 0,
+                totalPending: totalPendingRow?.val || 0,
+                totalOverdue: totalOverdueRow?.val || 0
+            }}
+            statusFilter={statusFilter}
+            typeFilter={typeFilter}
+            search={search}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        />
+    );
+});
+
+adminRoutes.post('/financeiro', async (c) => {
+    const db = c.env.DB;
+    const body = await getRequestBody(c);
+
+    const clientId = Number(body.client_id);
+    const description = String(body.description || '').trim();
+    const amount = Number(body.amount);
+    const dueDate = String(body.due_date || '').trim();
+    const paymentMethod = String(body.payment_method || 'PIX').trim();
+    const invoiceNumber = String(body.invoice_number || '').trim() || null;
+
+    if (!clientId || !description || !amount || !dueDate) {
+        return c.redirect('/admin/financeiro?error=Preencha todos os campos obrigatórios');
+    }
+
+    await db.prepare(
+        `INSERT INTO financial_transactions (client_id, type, category, description, amount, status, due_date, payment_method, invoice_number, created_at, updated_at)
+         VALUES (?, 'income', 'contract', ?, ?, 'pending', ?, ?, ?, datetime('now'), datetime('now'))`
+    ).bind(clientId, description, amount, dueDate, paymentMethod, invoiceNumber).run();
+
+    try {
+        const client = await db.prepare(`SELECT name, email FROM clients WHERE id = ?`).bind(clientId).first<{ name: string; email: string }>();
+        if (client && client.email) {
+            await sendInvoiceNoticeEmail(c.env, client.email, client.name, {
+                description,
+                amount,
+                dueDate,
+                invoiceNumber: invoiceNumber || undefined
+            });
+        }
+    } catch (mailErr) {
+        console.error('Erro ao despachar e-mail de fatura:', mailErr);
+    }
+
+    return c.redirect('/admin/financeiro?success=Fatura cadastrada com sucesso');
+});
+
+adminRoutes.post('/financeiro/:id/pagar', async (c) => {
+    const db = c.env.DB;
+    const id = c.req.param('id');
+
+    await db.prepare(
+        `UPDATE financial_transactions SET status = 'paid', paid_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`
+    ).bind(id).run();
+
+    return c.redirect('/admin/financeiro?success=Fatura liquidada com sucesso');
+});
+
+adminRoutes.post('/financeiro/:id/cancelar', async (c) => {
+    const db = c.env.DB;
+    const id = c.req.param('id');
+
+    await db.prepare(
+        `UPDATE financial_transactions SET status = 'canceled', updated_at = datetime('now') WHERE id = ?`
+    ).bind(id).run();
+
+    return c.redirect('/admin/financeiro?success=Fatura cancelada');
+});
+
+// ==========================================
+// 9. DOMÍNIOS & ZONAS DNS
+// ==========================================
+adminRoutes.get('/dominios', async (c) => {
+    const user = c.get('user');
+    const db = c.env.DB;
+    const { successMessage, errorMessage } = getFlashMessages(c);
+
+    const search = (c.req.query('search') || '').trim();
+    const statusFilter = (c.req.query('status') || '').trim();
+
+    let query = `
+        SELECT d.*, c.name as client_name, c.company, c.email as client_email
+        FROM domains d
+        LEFT JOIN clients c ON d.client_id = c.id
+        WHERE 1=1
+    `;
+    const params: any[] = [];
+
+    if (search) {
+        query += ` AND (d.domain_name LIKE ? OR c.name LIKE ? OR c.company LIKE ?)`;
+        const s = `%${search}%`;
+        params.push(s, s, s);
+    }
+
+    if (statusFilter) {
+        query += ` AND d.status = ?`;
+        params.push(statusFilter);
+    }
+
+    query += ` ORDER BY d.expires_at ASC`;
+
+    const stmt = db.prepare(query);
+    const domains = (await (params.length ? stmt.bind(...params) : stmt).all()).results || [];
+
+    const clients = (await db.prepare(`SELECT id, name, company FROM clients ORDER BY company ASC, name ASC`).all()).results || [];
+
+    return c.html(
+        <AdminDomainsView
+            currentUser={user}
+            domains={domains}
+            clients={clients}
+            search={search}
+            statusFilter={statusFilter}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        />
+    );
+});
+
+adminRoutes.post('/dominios', async (c) => {
+    const db = c.env.DB;
+    const body = await getRequestBody(c);
+
+    const clientId = Number(body.client_id);
+    const domainName = String(body.domain_name || '').trim().toLowerCase();
+    const registrar = String(body.registrar || 'Cloudflare / Registro.br').trim();
+    const expiresAt = String(body.expires_at || '').trim() || null;
+    const autoRenew = body.auto_renew === '1' || body.auto_renew === 1 ? 1 : 0;
+
+    if (!clientId || !domainName) {
+        return c.redirect('/admin/dominios?error=Cliente e Nome do Domínio são obrigatórios');
+    }
+
+    try {
+        await db.prepare(
+            `INSERT INTO domains (client_id, domain_name, registrar, expires_at, auto_renew, status, dns_provider, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, 'active', 'Cloudflare Edge', datetime('now'), datetime('now'))`
+        ).bind(clientId, domainName, registrar, expiresAt, autoRenew).run();
+
+        return c.redirect('/admin/dominios?success=Domínio cadastrado para monitoramento');
+    } catch (err: any) {
+        return c.redirect(`/admin/dominios?error=${encodeURIComponent(err.message || 'Erro ao cadastrar domínio')}`);
+    }
+});
+
+adminRoutes.post('/dominios/:id/excluir', async (c) => {
+    const db = c.env.DB;
+    const id = c.req.param('id');
+
+    await db.prepare(`DELETE FROM domains WHERE id = ?`).bind(id).run();
+    return c.redirect('/admin/dominios?success=Domínio removido');
+});
+
+// ==========================================
+// 10. CAMPANHAS DE PERFORMANCE & ADS
+// ==========================================
+adminRoutes.get('/campanhas', async (c) => {
+    const user = c.get('user');
+    const db = c.env.DB;
+    const { successMessage, errorMessage } = getFlashMessages(c);
+
+    const search = (c.req.query('search') || '').trim();
+    const platformFilter = (c.req.query('platform') || '').trim();
+    const statusFilter = (c.req.query('status') || '').trim();
+
+    const budgetRow = await db.prepare(
+        `SELECT SUM(budget) as total_budget, SUM(spent_amount) as total_spent FROM advertising_campaigns`
+    ).first<{ total_budget: number; total_spent: number }>();
+
+    let query = `
+        SELECT a.*, c.name as client_name, c.company
+        FROM advertising_campaigns a
+        LEFT JOIN clients c ON a.client_id = c.id
+        WHERE 1=1
+    `;
+    const params: any[] = [];
+
+    if (search) {
+        query += ` AND (a.name LIKE ? OR c.name LIKE ? OR c.company LIKE ?)`;
+        const s = `%${search}%`;
+        params.push(s, s, s);
+    }
+
+    if (platformFilter) {
+        query += ` AND a.platform = ?`;
+        params.push(platformFilter);
+    }
+
+    if (statusFilter) {
+        query += ` AND a.status = ?`;
+        params.push(statusFilter);
+    }
+
+    query += ` ORDER BY a.created_at DESC`;
+
+    const stmt = db.prepare(query);
+    const campaigns = (await (params.length ? stmt.bind(...params) : stmt).all()).results || [];
+
+    const clients = (await db.prepare(`SELECT id, name, company FROM clients ORDER BY company ASC, name ASC`).all()).results || [];
+
+    return c.html(
+        <AdminCampaignsView
+            currentUser={user}
+            campaigns={campaigns}
+            clients={clients}
+            totalBudget={budgetRow?.total_budget || 0}
+            totalSpent={budgetRow?.total_spent || 0}
+            search={search}
+            platformFilter={platformFilter}
+            statusFilter={statusFilter}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        />
+    );
+});
+
+adminRoutes.post('/campanhas', async (c) => {
+    const db = c.env.DB;
+    const body = await getRequestBody(c);
+
+    const clientId = Number(body.client_id);
+    const name = String(body.name || '').trim();
+    const platform = String(body.platform || 'google_ads').trim();
+    const budget = Number(body.budget) || 0;
+
+    if (!clientId || !name) {
+        return c.redirect('/admin/campanhas?error=Cliente e Nome da Campanha são obrigatórios');
+    }
+
+    await db.prepare(
+        `INSERT INTO advertising_campaigns (client_id, name, platform, budget, spent_amount, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, 0, 'active', datetime('now'), datetime('now'))`
+    ).bind(clientId, name, platform, budget).run();
+
+    return c.redirect('/admin/campanhas?success=Campanha cadastrada com sucesso');
+});
+
+adminRoutes.post('/campanhas/:id/toggle', async (c) => {
+    const db = c.env.DB;
+    const id = c.req.param('id');
+
+    await db.prepare(
+        `UPDATE advertising_campaigns 
+         SET status = CASE WHEN status = 'active' THEN 'paused' ELSE 'active' END, updated_at = datetime('now')
+         WHERE id = ?`
+    ).bind(id).run();
+
+    return c.redirect('/admin/campanhas?success=Status da campanha alterado');
+});

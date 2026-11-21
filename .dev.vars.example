@@ -1,0 +1,16 @@
+# Variáveis de Ambiente para Desenvolvimento Local no Cloudflare Workers (wrangler dev)
+# Copie este arquivo para .dev.vars e preencha suas chaves locais:
+# cp .dev.vars.example .dev.vars
+
+ENVIRONMENT="local"
+APP_URL="http://localhost:8787"
+
+# Segredo criptográfico para assinatura HMAC-SHA256 dos cookies de sessão (mínimo 32 bytes)
+SESSION_SECRET="dev_secret_key_gundjatech_local_32bytes_hmac_sha256"
+
+# API HTTP de E-mails Transacionais (Resend) - opcional em dev (ativa fallback mock se vazio)
+RESEND_API_KEY=""
+
+# Fallbacks opcionais de Inteligência Artificial (caso Workers AI não esteja ativo localmente)
+GEMINI_API_KEY=""
+OPENAI_API_KEY=""
