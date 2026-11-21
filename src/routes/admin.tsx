@@ -6,6 +6,7 @@ import { hashPassword } from '../lib/password';
 import { getAdminDashboardStats } from '../lib/admin';
 
 import { AdminDashboardView } from '../views/admin/dashboard';
+import { AdminLayout } from '../views/admin/layout';
 import { AdminClientsView } from '../views/admin/clients';
 import { AdminRequestsView } from '../views/admin/requests';
 import { AdminServicesView } from '../views/admin/services';
@@ -53,6 +54,28 @@ const handleDashboard = async (c: any) => {
 adminRoutes.get('', handleDashboard);
 adminRoutes.get('/', handleDashboard);
 adminRoutes.get('/dashboard', handleDashboard);
+
+adminRoutes.get('/relatorio/exportar', async (c) => {
+    const db = c.env.DB;
+    const period = Number(c.req.query('period') || 30);
+    const stats = await getAdminDashboardStats(db, period);
+    const csvLines = [
+        'Metrica,Valor',
+        `"Clientes Totais",${stats.totalClients}`,
+        `"Clientes Ativos",${stats.activeClients}`,
+        `"Leads",${stats.leadClients}`,
+        `"Solicitacoes Totais",${stats.totalRequests}`,
+        `"Solicitacoes Pendentes",${stats.pendingRequests}`,
+        `"Projetos Ativos",${stats.activeProjects}`,
+        `"Orcamentos Emitidos",${stats.totalQuotations}`,
+        `"Orcamentos Aprovados",${stats.approvedQuotations}`,
+        `"Receita Recebida (R$)",${stats.monthlyRevenue}`,
+        `"A Receber (R$)",${stats.pendingReceivables}`
+    ];
+    c.header('Content-Type', 'text/csv; charset=utf-8');
+    c.header('Content-Disposition', `attachment; filename="relatorio-gundjatech-${period}d.csv"`);
+    return c.body(csvLines.join('\n'));
+});
 
 // ==========================================
 // 2. CLIENTES & EMPRESAS
@@ -1129,4 +1152,94 @@ adminRoutes.post('/campanhas/:id/toggle', async (c) => {
     ).bind(id).run();
 
     return c.redirect('/admin/campanhas?success=Status da campanha alterado');
+});
+
+// ==========================================
+// 11. ORÇAMENTOS, CRM AUTÔNOMO IA & PERMISSÕES RBAC
+// ==========================================
+adminRoutes.get('/orcamentos', async (c) => {
+    const user = c.get('user')!;
+    const db = c.env.DB;
+    const { successMessage, errorMessage } = getFlashMessages(c);
+
+    let quotations: any[] = [];
+    try {
+        const res = await db.prepare(
+            `SELECT q.*, c.name as client_name, c.company
+             FROM quotations q
+             LEFT JOIN clients c ON q.client_id = c.id
+             ORDER BY q.id DESC`
+        ).all();
+        quotations = res.results || [];
+    } catch {}
+
+    return c.html(
+        <AdminLayout
+            title="Orçamentos & Propostas • Painel Administrativo GundjaTech"
+            activeNav="quotations"
+            currentUser={user}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        >
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-xl font-extrabold text-white">Orçamentos &amp; Propostas Comerciais</h1>
+                    <p class="text-xs text-[#8C95AA] mt-1">Propostas geradas manualmente e pré-orçamentos do CRM Autônomo IA.</p>
+                </div>
+                <a href="/admin/solicitacoes" class="gt-btn-primary">+ Gerar a partir de Solicitação</a>
+            </div>
+
+            <div class="gtb-card overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="border-b border-white/10 text-[#8C95AA] uppercase">
+                            <th class="py-3 px-4">Código</th>
+                            <th class="py-3 px-4">Título / Cliente</th>
+                            <th class="py-3 px-4">Valor Total</th>
+                            <th class="py-3 px-4">Validade</th>
+                            <th class="py-3 px-4">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        {quotations.length === 0 ? (
+                            <tr>
+                                <td colSpan={5} class="py-8 text-center text-[#8C95AA]">Nenhum orçamento emitido até o momento.</td>
+                            </tr>
+                        ) : (
+                            quotations.map((q: any) => (
+                                <tr>
+                                    <td class="py-3 px-4 font-mono font-bold text-[#F2C230]">{q.reference_code || q.quotation_number || `#${q.id}`}</td>
+                                    <td class="py-3 px-4">
+                                        <div class="font-bold text-white">{q.title || 'Proposta Comercial'}</div>
+                                        <div class="text-[11px] text-[#8C95AA]">{q.client_name || q.company || 'Cliente'}</div>
+                                    </td>
+                                    <td class="py-3 px-4 font-extrabold text-white">
+                                        R$ {Number(q.final_amount || q.total_amount || q.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    </td>
+                                    <td class="py-3 px-4 text-[#8C95AA]">{q.expires_at || q.valid_until || '—'}</td>
+                                    <td class="py-3 px-4">
+                                        <span class={`gt-badge ${q.status === 'approved' ? 'gt-badge-success' : 'gt-badge-warning'}`}>{q.status}</span>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </AdminLayout>
+    );
+});
+
+adminRoutes.get('/orcamentos/novo', (c) => c.redirect('/admin/orcamentos'));
+adminRoutes.get('/crm-autonomo', (c) => c.redirect('/admin/atendimento'));
+adminRoutes.get('/permissoes', (c) => c.redirect('/admin/usuarios'));
+adminRoutes.get('/atendimento/resumo', async (c) => {
+    const db = c.env.DB;
+    const stats = await getAdminDashboardStats(db, 30);
+    return c.json({
+        ok: true,
+        pending_requests: stats.pendingRequests,
+        open_chats: stats.openConversations,
+        total_notifications: stats.pendingRequests + stats.openConversations
+    });
 });
