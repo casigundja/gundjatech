@@ -208,105 +208,133 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                 </section>
 
                 {/* AI Configuration Panel */}
-                <aside class="xl:col-span-4 gtb-card space-y-5">
-                    <div class="space-y-1">
-                        <div class="flex items-center justify-between gap-2">
-                            <h2 class="gt-font-display text-base font-extrabold text-white">Configurações do Agente IA</h2>
-                            <span class="gtb-badge-pill">IA + WHATSAPP</span>
+                <aside class="xl:col-span-4 gtb-card gtb-kpi-gold space-y-5">
+                    <div class="flex items-start gap-3">
+                        <span class="gtb-icon-box mt-0.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center justify-between gap-2 flex-wrap">
+                                <h2 class="gt-font-display text-base font-extrabold text-white">Agente IA</h2>
+                                <span class={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                                    aiEnabled
+                                        ? 'bg-emerald-500/15 text-[#6EE7B7]'
+                                        : 'bg-red-500/15 text-red-300'
+                                }`}>
+                                    <span class={`w-1.5 h-1.5 rounded-full ${aiEnabled ? 'bg-[#34D399]' : 'bg-red-400'}`}></span>
+                                    {aiEnabled ? 'Online' : 'Pausado'}
+                                </span>
+                            </div>
+                            <p class="text-[11.5px] leading-relaxed text-[#8C95AA] mt-1">
+                                Cascata inteligente: Google Gemini + Cloudflare Workers AI no chat e WhatsApp.
+                            </p>
                         </div>
-                        <p class="text-xs leading-relaxed text-[#8C95AA]">
-                            Opera em cascata automática: usa Google Gemini quando há chave cadastrada e Cloudflare Workers AI como fallback no edge.
-                        </p>
                     </div>
 
                     <form action="/admin/crm-autonomo/configuracoes" method="post" class="space-y-4 text-xs">
-                        <div class="space-y-2.5">
-                            <label class="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-white/[0.03] border border-white/10 cursor-pointer hover:border-[#F2C230]/40 transition">
+                        {/* Bloco de Automações com Switches Modernos */}
+                        <div class="gtb-surface-box rounded-2xl divide-y divide-white/10 overflow-hidden">
+                            <label class="flex items-center justify-between gap-3 px-4 py-3.5 cursor-pointer hover:bg-white/[0.03] transition">
                                 <div class="min-w-0">
                                     <div class="text-[13px] font-bold text-white leading-tight">Piloto Automático Ativo</div>
-                                    <div class="text-[11px] text-[#8C95AA] mt-0.5">Responder novos leads no chat do site e WhatsApp</div>
+                                    <div class="text-[11px] text-[#8C95AA] mt-0.5">Responder leads no chat do site e WhatsApp</div>
                                 </div>
-                                <input type="checkbox" name="crm_ai_enabled" value="1" checked={aiEnabled} class="w-4 h-4 accent-[#F2C230] shrink-0" />
+                                <input type="checkbox" name="crm_ai_enabled" value="1" checked={aiEnabled} class="gt-switch" />
                             </label>
 
-                            <label class="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-white/[0.03] border border-white/10 cursor-pointer hover:border-[#F2C230]/40 transition">
+                            <label class="flex items-center justify-between gap-3 px-4 py-3.5 cursor-pointer hover:bg-white/[0.03] transition">
                                 <div class="min-w-0">
                                     <div class="text-[13px] font-bold text-white leading-tight">Auto-gerar Pré-Orçamento</div>
                                     <div class="text-[11px] text-[#8C95AA] mt-0.5">Criar rascunho em /admin/orcamentos ao qualificar</div>
                                 </div>
-                                <input type="checkbox" name="crm_ai_auto_draft_quotation" value="1" checked={autoDraft} class="w-4 h-4 accent-[#F2C230] shrink-0" />
+                                <input type="checkbox" name="crm_ai_auto_draft_quotation" value="1" checked={autoDraft} class="gt-switch" />
                             </label>
                         </div>
 
-                        <div>
-                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Nome do Assistente no Chat</label>
-                            <input
-                                type="text"
-                                name="crm_ai_agent_name"
-                                value={agentName}
-                                class="w-full rounded-xl bg-[#0D1322] border border-white/10 px-3.5 py-2.5 text-white text-[13px]"
-                            />
-                        </div>
-
-                        <div>
-                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Motor / Provedor de IA</label>
-                            <select name="crm_ai_provider" class="w-full rounded-xl bg-[#0D1322] border border-white/10 px-3.5 py-2.5 text-white text-[13px]">
-                                <option value="auto" selected={provider === 'auto'}>Automático (Gemini + Fallback Workers AI)</option>
-                                <option value="gemini" selected={provider === 'gemini'}>Google Gemini (Primário + Fallback Workers AI)</option>
-                                <option value="workers_ai" selected={provider === 'workers_ai'}>Cloudflare Workers AI (Edge Nativo)</option>
-                                <option value="openai" selected={provider === 'openai'}>OpenAI (Primário + Fallback Workers AI)</option>
-                                <option value="local" selected={provider === 'local'}>Motor Comercial Local</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Modelo LLM (Opcional)</label>
-                            <input
-                                type="text"
-                                name="crm_ai_model"
-                                value={model}
-                                placeholder="gemini-2.5-flash"
-                                class="w-full rounded-xl bg-[#0D1322] border border-white/10 px-3.5 py-2.5 text-white text-[13px] font-mono"
-                            />
-                        </div>
-
-                        <div>
-                            <div class="flex items-center justify-between gap-2 mb-1.5">
-                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Chave de API (Gemini ou OpenAI)</label>
-                                {hasApiKey && (
-                                    <span class="px-2 py-0.5 rounded-full bg-emerald-500/15 text-[#6EE7B7] text-[10px] font-bold">
-                                        ✓ Chave ativa
-                                    </span>
-                                )}
+                        {/* Identidade & Motor */}
+                        <div class="space-y-3.5">
+                            <div>
+                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Nome do Assistente</label>
+                                <input
+                                    type="text"
+                                    name="crm_ai_agent_name"
+                                    value={agentName}
+                                    class="w-full rounded-xl px-3.5 py-2.5 text-[13px]"
+                                />
                             </div>
-                            <input
-                                type="password"
-                                name="crm_ai_api_key"
-                                autocomplete="off"
-                                placeholder={hasApiKey ? 'Deixe em branco para manter a chave atual' : 'AIza... (Gemini AI Studio) ou sk-... (OpenAI)'}
-                                class="w-full rounded-xl bg-[#0D1322] border border-white/10 px-3.5 py-2.5 text-white text-[13px] font-mono"
-                            />
+
+                            <div>
+                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Motor / Provedor de IA</label>
+                                <select name="crm_ai_provider" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]">
+                                    <option value="auto" selected={provider === 'auto'}>Automático (Gemini + Fallback Workers AI)</option>
+                                    <option value="gemini" selected={provider === 'gemini'}>Google Gemini (Primário + Fallback Workers AI)</option>
+                                    <option value="workers_ai" selected={provider === 'workers_ai'}>Cloudflare Workers AI (Edge Nativo)</option>
+                                    <option value="openai" selected={provider === 'openai'}>OpenAI (Primário + Fallback Workers AI)</option>
+                                    <option value="local" selected={provider === 'local'}>Motor Comercial Local</option>
+                                </select>
+                            </div>
+
+                            <div class="gt-grid-2 !gap-3">
+                                <div>
+                                    <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Modelo LLM</label>
+                                    <input
+                                        type="text"
+                                        name="crm_ai_model"
+                                        value={model}
+                                        placeholder="gemini-2.5-flash"
+                                        class="w-full rounded-xl px-3 py-2.5 text-[12.5px] font-mono"
+                                    />
+                                </div>
+
+                                <div>
+                                    <div class="flex items-center justify-between gap-1 mb-1.5">
+                                        <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Chave API</label>
+                                        {hasApiKey && (
+                                            <span class="text-[10px] font-extrabold text-[#6EE7B7]">✓ Ativa</span>
+                                        )}
+                                    </div>
+                                    <div class="relative">
+                                        <input
+                                            id="gt-crm-api-key"
+                                            type="password"
+                                            name="crm_ai_api_key"
+                                            autocomplete="off"
+                                            placeholder={hasApiKey ? '••••••••••••' : 'AIza... / sk-...'}
+                                            class="w-full rounded-xl pl-3 pr-9 py-2.5 text-[12.5px] font-mono"
+                                        />
+                                        <button
+                                            type="button"
+                                            aria-label="Mostrar ou ocultar chave"
+                                            onclick="var i=document.getElementById('gt-crm-api-key');if(i){i.type=i.type==='password'?'text':'password';}"
+                                            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8C95AA] hover:text-[#F2C230] bg-transparent border-0 cursor-pointer p-1"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Diretrizes Comerciais &amp; Tom de Voz</label>
+                                <textarea
+                                    name="crm_ai_system_prompt"
+                                    rows={5}
+                                    class="w-full rounded-xl px-3.5 py-2.5 text-[12.5px] leading-relaxed"
+                                >{systemPrompt}</textarea>
+                            </div>
                         </div>
 
-                        <div>
-                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Diretrizes Comerciais &amp; Tom de Voz</label>
-                            <textarea
-                                name="crm_ai_system_prompt"
-                                rows={5}
-                                class="w-full rounded-xl bg-[#0D1322] border border-white/10 px-3.5 py-2.5 text-white text-[13px] leading-relaxed"
-                            >{systemPrompt}</textarea>
-                        </div>
-
-                        <div class="pt-1 space-y-2.5">
-                            <button type="submit" class="gt-btn-primary w-full justify-center py-3 text-[13px]">
-                                Salvar Configurações do CRM Autônomo
+                        <div class="pt-1">
+                            <button type="submit" class="btn-primary w-full flex items-center justify-center gap-2 py-3 text-[13px]">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7"/></svg>
+                                <span>Salvar Configurações do CRM</span>
                             </button>
                         </div>
                     </form>
 
                     <form action="/admin/crm-autonomo/testar" method="post" class="pt-3 border-t border-white/10">
-                        <button type="submit" class="gt-btn-outline w-full flex items-center justify-center gap-2 py-2.5 text-[13px]">
-                            <span>⚡</span>
+                        <button type="submit" class="gt-btn-outline w-full flex items-center justify-center gap-2 py-2.5 text-[12.5px]">
+                            <svg class="w-4 h-4 text-[#F2C230]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                             <span>Testar Conexão com a IA Agora</span>
                         </button>
                     </form>

@@ -1376,6 +1376,65 @@ body.gt-admin-boost main table tbody tr:hover {
     background-color: rgba(22, 116, 154, 0.08);
 }
 
+/* ==========================================================================
+   MODERN PILL TOGGLE SWITCHES (Dark & Light Mode — Paleta 3 GundjaTech)
+   ========================================================================== */
+body.gt-admin-boost input[type="checkbox"].gt-switch {
+    position: relative;
+    width: 42px !important;
+    height: 24px !important;
+    border-radius: 999px !important;
+    background: rgba(231, 240, 245, 0.16) !important;
+    border: 1px solid rgba(231, 240, 245, 0.24) !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.28) !important;
+    transition: background-color 0.2s ease, border-color 0.2s ease !important;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+body.gt-admin-boost input[type="checkbox"].gt-switch::before {
+    content: "" !important;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    transform: translateX(0) !important;
+    transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.15), background-color 0.2s ease !important;
+}
+
+body.gt-admin-boost input[type="checkbox"].gt-switch:checked {
+    background: linear-gradient(135deg, #F8CE4A 0%, #F2C230 100%) !important;
+    border-color: #F2C230 !important;
+    box-shadow: 0 4px 12px -2px rgba(242, 194, 48, 0.48) !important;
+}
+
+body.gt-admin-boost input[type="checkbox"].gt-switch:checked::before {
+    transform: translateX(18px) !important;
+    background: #063B5C !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost input[type="checkbox"].gt-switch {
+    background: #D2E1EC !important;
+    border-color: #B8CEDD !important;
+    box-shadow: inset 0 1px 3px rgba(6, 59, 92, 0.14) !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost input[type="checkbox"].gt-switch:checked {
+    background: linear-gradient(135deg, #063B5C 0%, #16749A 100%) !important;
+    border-color: #063B5C !important;
+    box-shadow: 0 4px 12px -2px rgba(6, 59, 92, 0.28) !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost input[type="checkbox"].gt-switch:checked::before {
+    background: #F2C230 !important;
+}
+
 html[data-admin-theme="light"] body.gt-admin-boost main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select, textarea) {
     background-color: #FFFFFF !important;
     border: 1px solid #BDD2DF !important;
