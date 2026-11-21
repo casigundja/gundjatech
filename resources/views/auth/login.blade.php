@@ -8,7 +8,7 @@
     <link rel="preload" href="/fonts/ZalandoSansExpanded-Regular.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/gt-auth.css?v=10">
+    <link rel="stylesheet" href="/css/gt-auth.css?v=11">
 </head>
 <body>
     <div class="gt-auth-shell">
@@ -179,7 +179,16 @@
                         <a href="{{ route('password.request') }}" class="gt-forgot">Esqueceu a senha?</a>
                     </div>
 
-                    <button type="submit" class="gt-btn-submit">Entrar no portal</button>
+                    <button type="submit" class="gt-btn-submit" id="loginSubmitBtn">
+                        <span class="gt-btn-spinner" aria-hidden="true"></span>
+                        <span class="gt-btn-label">Entrar no portal</span>
+                        <span class="gt-btn-arrow" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M5 12h14"/>
+                                <path d="m12 5 7 7-7 7"/>
+                            </svg>
+                        </span>
+                    </button>
                 </form>
             </section>
 
@@ -194,6 +203,17 @@
             if (btn && input) {
                 btn.addEventListener("click", function () {
                     input.type = input.type === "password" ? "text" : "password";
+                });
+            }
+
+            var form = document.querySelector(".gt-form");
+            var submitBtn = document.getElementById("loginSubmitBtn");
+            if (form && submitBtn) {
+                form.addEventListener("submit", function () {
+                    if (submitBtn.classList.contains("is-loading")) return;
+                    submitBtn.classList.add("is-loading");
+                    var lbl = submitBtn.querySelector(".gt-btn-label");
+                    if (lbl) lbl.textContent = "Autenticando...";
                 });
             }
 

@@ -836,31 +836,137 @@ html, body {
 
 /* Primary GundjaTech Golden Yellow CTA (Official Paleta 3 — #F2C230 + #063B5C 800) */
 .gt-btn-submit {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
     width: 100%;
-    height: 48px;
-    margin-top: 4px;
-    border: 0;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #F8CE4A 0%, #F2C230 55%, #E0B020 100%);
+    height: 50px;
+    margin-top: 6px;
+    padding: 0 20px;
+    border: 1px solid rgba(6, 59, 92, .12);
+    border-radius: 12px;
+    background: linear-gradient(135deg, #FAD65E 0%, #F2C230 52%, #E0B020 100%);
     color: #063B5C;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 14.5px;
     font-weight: 800;
-    letter-spacing: -.01em;
+    letter-spacing: -.015em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
     cursor: pointer;
-    box-shadow: 0 12px 26px -8px rgba(242, 194, 48, .50);
-    transition: background .18s ease, transform .15s ease, box-shadow .18s ease, filter .16s ease;
+    box-shadow:
+        0 10px 24px -8px rgba(242, 194, 48, .58),
+        0 2px 6px rgba(6, 59, 92, .08),
+        inset 0 1px 0 rgba(255, 255, 255, .58);
+    transition:
+        transform .18s cubic-bezier(.22, 1, .36, 1),
+        box-shadow .22s cubic-bezier(.22, 1, .36, 1),
+        background .2s ease,
+        filter .18s ease;
+}
+
+.gt-btn-submit::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(
+        112deg,
+        transparent 18%,
+        rgba(255, 255, 255, .48) 48%,
+        transparent 76%
+    );
+    transform: translateX(-130%) skewX(-18deg);
+    transition: transform .65s cubic-bezier(.22, 1, .36, 1);
+    pointer-events: none;
 }
 
 .gt-btn-submit:hover {
-    filter: brightness(1.03);
-    background: #E0B020;
-    box-shadow: 0 16px 32px -8px rgba(242, 194, 48, .62);
-    transform: translateY(-1px);
+    background: linear-gradient(135deg, #FFE074 0%, #F2C230 46%, #E0B020 100%);
+    box-shadow:
+        0 16px 32px -8px rgba(242, 194, 48, .72),
+        0 6px 14px -4px rgba(6, 59, 92, .14),
+        inset 0 1px 0 rgba(255, 255, 255, .72);
+    transform: translateY(-2px);
+}
+
+.gt-btn-submit:hover::before {
+    transform: translateX(130%) skewX(-18deg);
 }
 
 .gt-btn-submit:active {
-    transform: translateY(0);
+    transform: translateY(0) scale(.985);
+    box-shadow:
+        0 6px 16px -6px rgba(242, 194, 48, .52),
+        inset 0 2px 4px rgba(6, 59, 92, .14);
+}
+
+.gt-btn-submit:focus-visible {
+    outline: none;
+    box-shadow:
+        0 0 0 3px #FFFFFF,
+        0 0 0 5.5px #063B5C,
+        0 12px 26px -8px rgba(242, 194, 48, .58);
+}
+
+.gt-btn-submit .gt-btn-arrow {
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    background: rgba(6, 59, 92, .10);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .22s cubic-bezier(.22, 1, .36, 1), background .2s ease;
+    flex-shrink: 0;
+}
+
+.gt-btn-submit .gt-btn-arrow svg {
+    width: 14px;
+    height: 14px;
+    stroke: #063B5C;
+    transition: transform .22s cubic-bezier(.22, 1, .36, 1);
+}
+
+.gt-btn-submit:hover .gt-btn-arrow {
+    background: rgba(6, 59, 92, .16);
+    transform: translateX(3px);
+}
+
+.gt-btn-submit:hover .gt-btn-arrow svg {
+    transform: translateX(1px);
+}
+
+.gt-btn-submit .gt-btn-spinner {
+    display: none;
+    width: 16px;
+    height: 16px;
+    border: 2.2px solid rgba(6, 59, 92, .25);
+    border-top-color: #063B5C;
+    border-radius: 50%;
+    animation: gtSpin .7s linear infinite;
+}
+
+.gt-btn-submit.is-loading {
+    pointer-events: none;
+    opacity: .92;
+    transform: none;
+}
+
+.gt-btn-submit.is-loading .gt-btn-arrow {
+    display: none;
+}
+
+.gt-btn-submit.is-loading .gt-btn-spinner {
+    display: inline-block;
+}
+
+@keyframes gtSpin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Divider "ou" */
