@@ -911,34 +911,6 @@ html, body {
         0 12px 26px -8px rgba(242, 194, 48, .58);
 }
 
-.gt-btn-submit .gt-btn-arrow {
-    width: 24px;
-    height: 24px;
-    border-radius: 7px;
-    background: rgba(6, 59, 92, .10);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform .22s cubic-bezier(.22, 1, .36, 1), background .2s ease;
-    flex-shrink: 0;
-}
-
-.gt-btn-submit .gt-btn-arrow svg {
-    width: 14px;
-    height: 14px;
-    stroke: #063B5C;
-    transition: transform .22s cubic-bezier(.22, 1, .36, 1);
-}
-
-.gt-btn-submit:hover .gt-btn-arrow {
-    background: rgba(6, 59, 92, .16);
-    transform: translateX(3px);
-}
-
-.gt-btn-submit:hover .gt-btn-arrow svg {
-    transform: translateX(1px);
-}
-
 .gt-btn-submit .gt-btn-spinner {
     display: none;
     width: 16px;
@@ -953,10 +925,6 @@ html, body {
     pointer-events: none;
     opacity: .92;
     transform: none;
-}
-
-.gt-btn-submit.is-loading .gt-btn-arrow {
-    display: none;
 }
 
 .gt-btn-submit.is-loading .gt-btn-spinner {
