@@ -1299,8 +1299,81 @@ html[data-admin-theme="light"] body.gt-admin-boost main table thead {
     background-color: #EEF5F9 !important;
 }
 
+html[data-admin-theme="light"] body.gt-admin-boost main table thead tr {
+    background: #EEF5F9 !important;
+    border-bottom-color: #CFE0EB !important;
+}
+
 html[data-admin-theme="light"] body.gt-admin-boost main table thead th {
     color: #063B5C !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost main table tbody tr {
+    border-bottom-color: #E2EDF4 !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost main table tbody tr:hover {
+    background-color: #F6FAFC !important;
+}
+
+/* Light Mode — Inline Style Harmonization for Legacy Admin Views */
+html[data-admin-theme="light"] body.gt-admin-boost main [style*="color: #FFFFFF"]:not(.gt-btn-primary):not(.btn-primary):not(.gt-badge),
+html[data-admin-theme="light"] body.gt-admin-boost main [style*="color: #fff"]:not(.gt-btn-primary):not(.btn-primary):not(.gt-badge),
+html[data-admin-theme="light"] body.gt-admin-boost main [style*="color: #E7F0F5"]:not(.gt-btn-primary):not(.btn-primary):not(.gt-badge),
+html[data-admin-theme="light"] body.gt-admin-boost main [style*="color: #B5D1E2"]:not(.gt-btn-primary):not(.btn-primary):not(.gt-badge) {
+    color: #063B5C !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost main [style*="color: #8CAAB9"] {
+    color: #4A687D !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost main [style*="color: #F2C230"]:not(.gt-btn-primary):not(.btn-primary) {
+    color: #9A6B00 !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost main [style*="color: #34D399"] {
+    color: #047857 !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost main [style*="color: #F87171"] {
+    color: #DC2626 !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost main [style*="background: #032033"]:not(input):not(select):not(textarea),
+html[data-admin-theme="light"] body.gt-admin-boost main [style*="background: rgba(3, 32, 51"]:not(input):not(select):not(textarea),
+html[data-admin-theme="light"] body.gt-admin-boost main [style*="background: #041B2B"]:not(input):not(select):not(textarea) {
+    background: #F4F8FB !important;
+    border-color: #D2E1EC !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-success {
+    background: #DCFCE7 !important;
+    color: #065F46 !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-warning {
+    background: #FEF3C7 !important;
+    color: #92400E !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-info {
+    background: #E0F2FE !important;
+    color: #075985 !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-danger {
+    background: #FEE2E2 !important;
+    color: #991B1B !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost .gt-empty-state {
+    color: #4A687D !important;
+}
+
+/* Dark Mode — Table Row Hover & Surface Polish */
+body.gt-admin-boost main table tbody tr:hover {
+    background-color: rgba(22, 116, 154, 0.08);
 }
 
 html[data-admin-theme="light"] body.gt-admin-boost main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select, textarea) {

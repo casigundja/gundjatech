@@ -13,6 +13,7 @@ import { AdminClientsView } from '../views/admin/clients';
 import { AdminRequestsView } from '../views/admin/requests';
 import { AdminServicesView } from '../views/admin/services';
 import { AdminUsersView } from '../views/admin/users';
+import { AdminSettingsView } from '../views/admin/settings';
 import { sendWhatsAppTextMessage } from '../services/whatsapp';
 import { AdminChatView } from '../views/admin/chat';
 import { AdminProjectsView } from '../views/admin/projects';
@@ -1351,6 +1352,78 @@ adminRoutes.post('/crm-autonomo/testar', async (c) => {
     } catch (err: any) {
         return c.redirect(`/admin/crm-autonomo?error=${encodeURIComponent(err?.message || 'Falha ao testar IA')}`);
     }
+});
+
+// ==========================================
+// 12B. CONFIGURAÇÕES GERAIS (/admin/configuracoes)
+// ==========================================
+adminRoutes.get('/configuracoes', async (c) => {
+    const user = c.get('user')!;
+    const db = c.env.DB;
+    const { successMessage, errorMessage } = getFlashMessages(c);
+
+    const settingsMap: Record<string, string> = {};
+    try {
+        const res = await db.prepare(`SELECT key, value FROM system_settings`).all<{ key: string; value: string }>();
+        for (const row of res.results || []) {
+            settingsMap[row.key] = row.value || '';
+        }
+    } catch {}
+
+    const whatsappConfigured = Boolean(
+        (c.env.WHATSAPP_ACCESS_TOKEN || settingsMap.whatsapp_access_token) &&
+        (c.env.WHATSAPP_PHONE_NUMBER_ID || settingsMap.whatsapp_phone_number_id)
+    );
+    delete settingsMap.whatsapp_access_token;
+
+    const origin = new URL(c.req.url).origin;
+    return c.html(
+        <AdminSettingsView
+            currentUser={user}
+            settings={settingsMap}
+            whatsappConfigured={whatsappConfigured}
+            webhookUrl={`${origin}/api/webhooks/whatsapp`}
+            verifyToken={c.env.WHATSAPP_VERIFY_TOKEN || 'gundjatech_wa_verify_2026'}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        />
+    );
+});
+
+adminRoutes.post('/configuracoes', async (c) => {
+    const db = c.env.DB;
+    const body = await getRequestBody(c);
+
+    const pairs: Array<[string, string, string]> = [
+        ['company_name', String(body.company_name || 'GundjaTech').trim(), 'general'],
+        ['company_cnpj', String(body.company_cnpj || '').trim(), 'general'],
+        ['company_slogan', String(body.company_slogan || '').trim(), 'general'],
+        ['company_email', String(body.company_email || '').trim(), 'general'],
+        ['company_phone', String(body.company_phone || '').trim(), 'general'],
+        ['company_whatsapp', String(body.company_whatsapp || '').trim(), 'general'],
+        ['company_address', String(body.company_address || '').trim(), 'general']
+    ];
+
+    const phoneId = String(body.whatsapp_phone_number_id || '').trim();
+    if (phoneId) {
+        pairs.push(['whatsapp_phone_number_id', phoneId, 'integrations']);
+    }
+    const waToken = String(body.whatsapp_access_token || '').trim();
+    if (waToken) {
+        pairs.push(['whatsapp_access_token', waToken, 'integrations']);
+    }
+
+    try {
+        for (const [key, value, groupName] of pairs) {
+            await db.prepare(
+                `INSERT INTO system_settings (key, value, type, group_name, created_at, updated_at)
+                 VALUES (?, ?, 'string', ?, datetime('now'), datetime('now'))
+                 ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`
+            ).bind(key, value, groupName).run();
+        }
+    } catch {}
+
+    return c.redirect('/admin/configuracoes?success=Configurações gerais salvas com sucesso');
 });
 
 // ==========================================

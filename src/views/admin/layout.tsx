@@ -39,7 +39,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
-                <link rel="stylesheet" href="/css/gt-admin.css?v=21" />
+                <link rel="stylesheet" href="/css/gt-admin.css?v=22" />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
@@ -287,6 +287,13 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                         <span>Suporte &amp; Chat</span>
                                     </div>
                                     <span id="gt-sidebar-chats-badge" class="gtb-count-circle hidden">0</span>
+                                </a>
+
+                                <a href="/admin/configuracoes" class={`gtb-nav-item ${activeNav === 'settings' ? 'is-active' : ''}`} title="Configurações">
+                                    <div class="flex items-center gap-3">
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                                        <span>Configurações</span>
+                                    </div>
                                 </a>
                             </div>
                         </nav>
