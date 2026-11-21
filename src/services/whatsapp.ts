@@ -1,6 +1,6 @@
 import type { Env } from '../types/env';
 
-export type WhatsAppProvider = 'meta' | 'zapi' | 'evolution';
+export type WhatsAppProvider = 'meta' | 'zapi' | 'zapi_omni' | 'evolution';
 
 export interface WhatsAppSendResult {
     ok: boolean;
@@ -72,7 +72,7 @@ async function resolveWhatsAppConfig(env: Env): Promise<ResolvedWhatsAppConfig> 
             for (const row of rows.results || []) {
                 const val = String(row.value || '').trim();
                 if (!val) continue;
-                if (row.key === 'whatsapp_provider' && (val === 'zapi' || val === 'evolution' || val === 'meta')) {
+                if (row.key === 'whatsapp_provider' && (val === 'zapi' || val === 'zapi_omni' || val === 'evolution' || val === 'meta')) {
                     cfg.provider = val;
                 }
                 if (row.key === 'whatsapp_access_token') cfg.metaAccessToken = val;
@@ -88,6 +88,47 @@ async function resolveWhatsAppConfig(env: Env): Promise<ResolvedWhatsAppConfig> 
     }
 
     return cfg;
+}
+
+async function sendViaZApiOmni(cfg: ResolvedWhatsAppConfig, to: string, body: string): Promise<WhatsAppSendResult> {
+    if (!cfg.zapiInstanceId || !cfg.zapiToken) {
+        return { ok: false, provider: 'zapi_omni', error: 'Credenciais Z-API Omni não configuradas (ID do canal / Token).' };
+    }
+
+    try {
+        const channelId = cfg.zapiInstanceId.includes('/channels/')
+            ? cfg.zapiInstanceId.split('/channels/')[1].split('/')[0]
+            : cfg.zapiInstanceId;
+        const url = `https://api.omni.z-api.io/v1/channels/${encodeURIComponent(channelId)}/messages`;
+        const headers: Record<string, string> = {
+            Authorization: `Bearer ${cfg.zapiToken}`,
+            'Content-Type': 'application/json'
+        };
+        if (cfg.zapiClientToken) {
+            headers['Client-Token'] = cfg.zapiClientToken;
+        }
+
+        const res = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                recipient: { identifier: to },
+                content: {
+                    type: 'TEXT',
+                    body: { message: body.slice(0, 4096) }
+                }
+            })
+        });
+
+        const payload = (await res.json().catch(() => ({}))) as { id?: string; _id?: string; messageId?: string; error?: string; message?: string };
+        if (!res.ok) {
+            return { ok: false, provider: 'zapi_omni', error: payload?.error || payload?.message || `HTTP ${res.status}` };
+        }
+
+        return { ok: true, provider: 'zapi_omni', messageId: payload?.id || payload?._id || payload?.messageId };
+    } catch (err) {
+        return { ok: false, provider: 'zapi_omni', error: err instanceof Error ? err.message : 'Erro de rede Z-API Omni' };
+    }
 }
 
 async function sendViaZApi(cfg: ResolvedWhatsAppConfig, to: string, body: string): Promise<WhatsAppSendResult> {
@@ -221,6 +262,9 @@ export async function sendWhatsAppTextMessage(
     const cfg = await resolveWhatsAppConfig(env);
     const provider = preferredProvider || cfg.provider;
 
+    if (provider === 'zapi_omni') {
+        return sendViaZApiOmni(cfg, to, body);
+    }
     if (provider === 'zapi') {
         return sendViaZApi(cfg, to, body);
     }

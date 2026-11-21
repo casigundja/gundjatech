@@ -1370,9 +1370,9 @@ adminRoutes.get('/configuracoes', async (c) => {
         }
     } catch {}
 
-    const activeProvider = settingsMap.whatsapp_provider || 'zapi';
+    const activeProvider = settingsMap.whatsapp_provider || 'zapi_omni';
     const whatsappConfigured =
-        activeProvider === 'zapi'
+        activeProvider === 'zapi' || activeProvider === 'zapi_omni'
             ? Boolean(settingsMap.whatsapp_zapi_instance_id && settingsMap.whatsapp_zapi_token)
             : activeProvider === 'evolution'
             ? Boolean(settingsMap.whatsapp_evolution_url && settingsMap.whatsapp_evolution_instance && settingsMap.whatsapp_evolution_api_key)
@@ -1415,7 +1415,7 @@ adminRoutes.post('/configuracoes', async (c) => {
     ];
 
     const provider = String(body.whatsapp_provider || '').trim();
-    if (provider === 'zapi' || provider === 'evolution' || provider === 'meta') {
+    if (provider === 'zapi' || provider === 'zapi_omni' || provider === 'evolution' || provider === 'meta') {
         pairs.push(['whatsapp_provider', provider, 'integrations']);
     }
 

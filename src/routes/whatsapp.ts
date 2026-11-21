@@ -38,7 +38,42 @@ function parseIncomingWebhook(payload: any): {
     const messages: NormalizedIncomingMessage[] = [];
     const metaStatuses: any[] = [];
 
-    // 1. Z-API Webhook Format (QR Code)
+    // 0. Z-API Omni v1 Webhook Format (api.omni.z-api.io)
+    const omniType = String(payload?.type || payload?.event || '').toLowerCase();
+    if (payload && (payload.channelId || omniType === 'message.received')) {
+        const msgObj = payload.data?.message || payload.message || payload.data || {};
+        const contactObj = payload.data?.contact || payload.contact || {};
+        const isFromMe = Boolean(msgObj.fromMe || payload.data?.fromMe || msgObj.direction === 'outbound');
+        const isGroup = Boolean(msgObj.isGroup || payload.data?.isGroup || String(msgObj.from || '').endsWith('@g.us'));
+
+        if (!isFromMe && !isGroup && (omniType === 'message.received' || omniType === 'received' || !omniType || msgObj.text || msgObj.content || msgObj.body)) {
+            const fromPhone = normalizeWhatsAppPhone(
+                contactObj.phone || contactObj.identifier || msgObj.from || payload.data?.from || ''
+            );
+            const text = String(
+                msgObj.text?.body ||
+                msgObj.text?.message ||
+                msgObj.content?.body?.message ||
+                msgObj.content?.text?.body ||
+                msgObj.body?.message ||
+                (typeof msgObj.body === 'string' ? msgObj.body : '') ||
+                (typeof msgObj.text === 'string' ? msgObj.text : '') ||
+                ''
+            ).trim();
+            if (fromPhone && text) {
+                messages.push({
+                    provider: 'zapi_omni',
+                    messageId: String(msgObj._id || msgObj.id || msgObj.messageId || payload.eventId || '').trim(),
+                    fromPhone,
+                    contactName: String(contactObj.name || msgObj.senderName || `WhatsApp ${fromPhone}`).trim(),
+                    text
+                });
+            }
+        }
+        return { messages, metaStatuses };
+    }
+
+    // 1. Z-API Legado Webhook Format (QR Code)
     if (payload && (payload.instanceId || payload.type === 'ReceivedCallback') && payload.phone) {
         if (!payload.fromMe && !payload.isGroup) {
             const fromPhone = normalizeWhatsAppPhone(payload.phone);
@@ -157,6 +192,16 @@ whatsappRoutes.post('/', async (c) => {
         payload = await c.req.json();
     } catch {
         return c.json({ ok: false, error: 'Invalid JSON payload' }, 400);
+    }
+
+    if (c.env?.KV_CACHE) {
+        try {
+            await c.env.KV_CACHE.put(
+                'wa:debug:last_incoming',
+                JSON.stringify({ at: new Date().toISOString(), payload }).slice(0, 4000),
+                { expirationTtl: 3600 }
+            );
+        } catch {}
     }
 
     const { messages, metaStatuses } = parseIncomingWebhook(payload);

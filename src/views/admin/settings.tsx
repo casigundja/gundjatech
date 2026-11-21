@@ -170,39 +170,40 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                         <select
                             id="gt-wa-provider-select"
                             name="whatsapp_provider"
-                            onchange="document.querySelectorAll('[data-wa-pane]').forEach(function(el){el.style.display=el.getAttribute('data-wa-pane')===this.value?'block':'none';}.bind(this))"
+                            onchange="var v=this.value==='zapi_omni'?'zapi':this.value;document.querySelectorAll('[data-wa-pane]').forEach(function(el){el.style.display=el.getAttribute('data-wa-pane')===v?'block':'none';})"
                             class="w-full rounded-xl px-3.5 py-2.5 text-[13px]"
                         >
-                            <option value="zapi" selected={(settings.whatsapp_provider || 'zapi') === 'zapi'}>Z-API (QR Code — Recomendado / Rápido)</option>
+                            <option value="zapi_omni" selected={(settings.whatsapp_provider || 'zapi_omni') === 'zapi_omni'}>Z-API Omni (QR Code — api.omni.z-api.io)</option>
+                            <option value="zapi" selected={settings.whatsapp_provider === 'zapi'}>Z-API Clássico (QR Code — api.z-api.io)</option>
                             <option value="evolution" selected={settings.whatsapp_provider === 'evolution'}>Evolution API v2 (QR Code / Self-Hosted)</option>
                             <option value="meta" selected={settings.whatsapp_provider === 'meta'}>Meta WhatsApp Cloud API (Oficial)</option>
                         </select>
                     </div>
 
-                    {/* Campos Z-API */}
-                    <div data-wa-pane="zapi" style={`display: ${(settings.whatsapp_provider || 'zapi') === 'zapi' ? 'block' : 'none'};`} class="space-y-3">
+                    {/* Campos Z-API / Z-API Omni */}
+                    <div data-wa-pane="zapi" style={`display: ${(settings.whatsapp_provider || 'zapi_omni') === 'zapi_omni' || settings.whatsapp_provider === 'zapi' ? 'block' : 'none'};`} class="space-y-3">
                         <div>
-                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Z-API Instance ID</label>
+                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">ID do Canal / Instance ID</label>
                             <input
                                 type="text"
                                 name="whatsapp_zapi_instance_id"
                                 value={settings.whatsapp_zapi_instance_id || ''}
-                                placeholder="Ex: 3D8A9F..."
+                                placeholder="Ex: 01A20068C3327BE580..."
                                 class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
                             />
                         </div>
                         <div>
-                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Z-API Token da Instância</label>
+                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Token do Canal / Instância</label>
                             <input
                                 type="password"
                                 name="whatsapp_zapi_token"
                                 autocomplete="off"
-                                placeholder={settings.has_zapi_token ? '•••••••• (salvo — deixe vazio para manter)' : 'Cole o Token da instância'}
+                                placeholder={settings.has_zapi_token ? '•••••••• (salvo — deixe vazio para manter)' : 'Ex: C8CC3D...'}
                                 class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
                             />
                         </div>
                         <div>
-                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Z-API Client-Token (Segurança da Conta)</label>
+                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Client-Token (Opcional — apenas Z-API Clássico)</label>
                             <input
                                 type="password"
                                 name="whatsapp_zapi_client_token"
