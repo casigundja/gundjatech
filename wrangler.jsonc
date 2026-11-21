@@ -6,6 +6,10 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
+  "vars": {
+    "APP_ENV": "production",
+    "SESSION_SECRET": "gundjatech_prod_hmac_key_PU1bNMoz8jVmKIWiC650bGnL2FljkKJ3w3W2JcD1Myk"
+  },
   "assets": {
     "directory": "./public",
     "binding": "ASSETS"
