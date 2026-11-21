@@ -35,9 +35,9 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Regular.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-                <link rel="stylesheet" href="/build/assets/app-DaNuWIIs.css" />
+                <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
                 <link rel="stylesheet" href="/css/gt-admin.css?v=18" />
-                <script src="/build/assets/app-6maz6CTJ.js" defer></script>
+                <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
                         function applyAdminTheme(val) {
