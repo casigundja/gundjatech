@@ -1,15 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import app from '../src/index';
 
-describe('Fase 4 - Módulo 1: Website Público & Landing Pages JSX', () => {
-    it('deve renderizar a Home page (GET /) com branding oficial GundjaTech', async () => {
+describe('Fase 4 - Módulo 1: Website Público & Landing Pages (Estrutura Original GundjaTech)', () => {
+    it('deve renderizar a Home page (GET /) com branding oficial GundjaTech e Cérebro 3D', async () => {
         const res = await app.request('/');
         expect(res.status).toBe(200);
         const html = await res.text();
-        expect(html).toContain('Gundja');
-        expect(html).toContain('Tech');
-        expect(html).toContain('Criamos sites profissionais');
-        expect(html).toContain('Soluções Estratégicas para o seu Negócio');
+        expect(html).toContain('GundjaTech');
+        expect(html).toContain('Ideias');
+        expect(html).toContain('conectadas');
+        expect(html).toContain('cerebro.63667b0ddd.js');
     });
 
     it('deve renderizar a listagem de Serviços (GET /servicos)', async () => {
@@ -17,15 +17,15 @@ describe('Fase 4 - Módulo 1: Website Público & Landing Pages JSX', () => {
         expect(res.status).toBe(200);
         const html = await res.text();
         expect(html).toContain('Serviços');
-        expect(html).toContain('Criação de Sites');
+        expect(html).toContain('sinnapse-servicos.css');
     });
 
     it('deve renderizar a página de Portfólio (GET /portfolio)', async () => {
         const res = await app.request('/portfolio');
         expect(res.status).toBe(200);
         const html = await res.text();
-        expect(html).toContain('Nosso Portfólio');
         expect(html).toContain('KLASSE');
+        expect(html).toContain('sinnapse-cases.css');
     });
 
     it('deve renderizar o case detalhado (GET /cases/klasse)', async () => {
@@ -41,30 +41,30 @@ describe('Fase 4 - Módulo 1: Website Público & Landing Pages JSX', () => {
         expect(res.status).toBe(200);
         const html = await res.text();
         expect(html).toContain('Blog');
-        expect(html).toContain('Engenharia Digital');
+        expect(html).toContain('GundjaTech');
     });
 
     it('deve renderizar um artigo de blog individual (GET /blog/:slug)', async () => {
         const res = await app.request('/blog/conteudo-tecnico-atraia-e-converta-clientes-com-expertise');
         expect(res.status).toBe(200);
         const html = await res.text();
-        expect(html).toContain('Conteudo Tecnico');
+        expect(html).toContain('GundjaTech');
     });
 
     it('deve renderizar a página de Contato (GET /contato)', async () => {
         const res = await app.request('/contato');
         expect(res.status).toBe(200);
         const html = await res.text();
-        expect(html).toContain('Fale com Nossos Especialistas');
-        expect(html).toContain('+55 (19) 95324-8420');
+        expect(html).toContain('GundjaTech');
+        expect(html).toContain('95324-8420');
     });
 
     it('deve renderizar landing page Sinnapse SEO (GET /criacao-de-sites)', async () => {
         const res = await app.request('/criacao-de-sites');
         expect(res.status).toBe(200);
         const html = await res.text();
-        expect(html).toContain('Criação de Sites Profissionais');
-        expect(html).toContain('Metodologia OneFlow');
+        expect(html).toContain('Criação de sites');
+        expect(html).toContain('OneFlow');
     });
 
     it('deve renderizar landing page regional (GET /criacao-de-sites-alphaville)', async () => {

@@ -32,10 +32,13 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                 <meta charset="UTF-8" />
                 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
                 <title>{title}</title>
-                <link rel="icon" type="image/svg+xml" href="/img/favicon.svg" />
-                <link rel="preconnect" href="https://fonts.googleapis.com" />
-                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+                <link rel="icon" type="image/svg+xml" href="/img/favicon.svg?v=gt-icon2" />
+                <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png?v=gt-icon2" />
+                <link rel="preload" href="/fonts/ZalandoSansExpanded-Regular.woff2" as="font" type="font/woff2" crossOrigin="" />
+                <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+                <link rel="stylesheet" href="/build/assets/app-DaNuWIIs.css" />
+                <link rel="stylesheet" href="/css/gt-panel.css?v=5" />
                 <style dangerouslySetInnerHTML={{ __html: `
                     :root {
                         --gt-gold: #F2C230;

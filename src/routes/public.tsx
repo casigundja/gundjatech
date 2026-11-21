@@ -1,52 +1,152 @@
 import { Hono } from 'hono';
 import { Env, AppVariables } from '../types/env';
-import { HomeView } from '../views/home';
-import { ServicesListView } from '../views/services';
-import { PortfolioView } from '../views/portfolio';
-import { BlogListView, BlogPostView } from '../views/blog';
-import { ContactView } from '../views/contact';
-import { SinnapseLandingView } from '../views/sinnapse';
-import { RequestQuoteView } from '../views/request-quote';
-import { TrackRequestView } from '../views/track-request';
+import { renderPublicBladePage, renderPublicLayoutShell } from '../views/public-blade-templates';
 import { getRequestBody } from '../lib/request';
 import { sendQuoteConfirmationEmail, sendNewLeadStaffNotification } from '../lib/email';
 
 export const publicRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
+function escapeHtml(str: unknown): string {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
 // ----------------------------------------------------
-// SOLICITAR ORÇAMENTO
+// SOLICITAR ORÇAMENTO (Estrutura idêntica a resources/views/public/request-quote.blade.php)
 // ----------------------------------------------------
 publicRoutes.get('/solicitar-orcamento', async (c) => {
     const user = c.get('user');
     const serviceIdParam = c.req.query('service_id');
     const selectedServiceId = serviceIdParam ? parseInt(serviceIdParam, 10) : null;
+    const errorMsg = c.req.query('error');
 
-    let services: Array<{ id: number; name: string; slug: string }> = [];
+    let services: Array<{ id: number; name: string; slug: string; category?: string | null; price_starting_at?: number | null }> = [];
     try {
         if (c.env?.DB) {
             const res = await c.env.DB.prepare(
-                `SELECT id, name, slug FROM services WHERE is_active = 1 ORDER BY sort_order ASC`
-            ).all<{ id: number; name: string; slug: string }>();
+                `SELECT id, COALESCE(name, title) AS name, slug, category, COALESCE(price_starting_at, base_price, price, 0) AS price_starting_at
+                 FROM services WHERE is_active = 1 ORDER BY sort_order ASC, id ASC`
+            ).all<{ id: number; name: string; slug: string; category?: string | null; price_starting_at?: number | null }>();
             services = res.results || [];
         }
     } catch {}
 
     if (services.length === 0) {
         services = [
-            { id: 1, name: 'Criação de Sites', slug: 'criacao-de-sites' },
-            { id: 2, name: 'Desenvolvimento Sob Medida', slug: 'desenvolvimento-de-sites' },
-            { id: 3, name: 'WordPress & WooCommerce', slug: 'criacao-de-sites-wordpress' },
-            { id: 4, name: 'Cibersegurança & DNS', slug: 'ciberseguranca' },
-            { id: 5, name: 'Gestão de Tráfego Pago', slug: 'gestao-de-trafego-pago' }
+            { id: 1, name: 'Criação de Sites', slug: 'criacao-de-sites', category: 'Sites', price_starting_at: 6500 },
+            { id: 2, name: 'Desenvolvimento Sob Medida', slug: 'desenvolvimento-de-sites', category: 'Sistemas', price_starting_at: 9800 },
+            { id: 3, name: 'WordPress & WooCommerce', slug: 'criacao-de-sites-wordpress', category: 'Sites', price_starting_at: 4800 },
+            { id: 4, name: 'Cibersegurança & DNS', slug: 'ciberseguranca', category: 'Segurança', price_starting_at: 2800 },
+            { id: 5, name: 'Operação & Sustentação Contínua', slug: 'operacao-de-sites', category: 'Operação', price_starting_at: 1500 }
         ];
     }
 
+    const optionsHtml = services
+        .map((s) => {
+            const sel = selectedServiceId === s.id ? 'selected' : '';
+            const priceFmt = Number(s.price_starting_at || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return `<option value="${s.id}" style="color:#000" ${sel}>[${escapeHtml(s.category || 'Geral')}] ${escapeHtml(s.name)} — A partir de R$ ${priceFmt}</option>`;
+        })
+        .join('\n');
+
+    const errorBanner = errorMsg
+        ? `<div class="cheio gt-auto-alert" style="background:rgba(242,46,62,.15);border:1px solid rgba(242,46,62,.4);color:#fff;padding:12px 16px;border-radius:12px;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+             <span>${escapeHtml(errorMsg)}</span>
+             <button type="button" onclick="this.closest('.gt-auto-alert').remove()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer">&times;</button>
+           </div>`
+        : '';
+
+    const contentHtml = `
+<section class="hm-contato ct-topo" id="orcamento" aria-labelledby="orcamento-titulo">
+  <div class="container hm-contato-grid">
+    <div class="hm-contato-txt">
+      <p class="ct-kicker">Orçamento &amp; Diagnóstico GundjaTech</p>
+      <h1 id="orcamento-titulo">Solicite seu Orçamento — <em>proposta sob medida</em></h1>
+      <p>Conte o que você precisa. Nosso sistema gera um protocolo único imediato e um diretor da GundjaTech responde em até 4 horas úteis.</p>
+
+      <ul class="hm-contato-canais">
+        <li>
+          <a class="ct-whats-destaque" href="https://wa.me/5519953248420">
+            <svg><use href="#i-whats"/></svg>
+            <span><small>Prefere conversar agora?</small>Chamar no WhatsApp</span>
+          </a>
+        </li>
+        <li>
+          <a href="/acompanhar-solicitacao">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <span><small>Já possui protocolo?</small>Acompanhar solicitação</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <form action="/solicitar-orcamento" method="POST" enctype="multipart/form-data" class="form hm-form">
+      ${errorBanner}
+
+      <label class="campo">Nome completo*
+        <input type="text" name="contact_name" autocomplete="name" value="${escapeHtml(user?.name || '')}" required>
+      </label>
+
+      <label class="campo">Empresa
+        <input type="text" name="company_name" autocomplete="organization" value="">
+      </label>
+
+      <label class="campo">E-mail corporativo*
+        <input type="email" name="email" autocomplete="email" value="${escapeHtml(user?.email || '')}" required>
+      </label>
+
+      <label class="campo">Telefone / WhatsApp*
+        <input type="tel" name="phone" autocomplete="tel" placeholder="(11) 90000-0000" value="" required>
+      </label>
+
+      <label class="campo cheio">Serviço desejado*
+        <select name="service_id" required style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:12px 14px;color:#fff;font:inherit;margin-top:6px">
+          <option value="" style="color:#000">Selecione o serviço...</option>
+          ${optionsHtml}
+        </select>
+      </label>
+
+      <label class="campo cheio">Título resumido do projeto*
+        <input type="text" name="title" placeholder="Ex.: Criação de site institucional ou loja virtual" required>
+      </label>
+
+      <label class="campo">Orçamento estimado (R$)
+        <input type="number" step="0.01" name="estimated_budget" placeholder="Ex.: 15000">
+      </label>
+
+      <label class="campo">Prazo desejado
+        <input type="date" name="desired_deadline">
+      </label>
+
+      <label class="campo cheio">Descrição do projeto*
+        <textarea name="description" rows="4" placeholder="Conte um pouco sobre os objetivos, funcionalidades e referências do projeto" required></textarea>
+      </label>
+
+      <div class="cheio hm-form-acoes">
+        <label class="hm-anexo">
+          <input type="file" name="attachment" class="js-anexo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m21 11-8.5 8.5a5 5 0 0 1-7-7L14 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7"/></svg>
+          <span class="js-anexo-nome">Anexar briefing (opcional)</span>
+        </label>
+
+        <button type="submit" class="btn">Enviar solicitação <svg><use href="#i-seta"/></svg></button>
+      </div>
+
+      <p class="cheio hm-lgpd">Seus dados são usados só para responder à sua solicitação (LGPD).</p>
+    </form>
+  </div>
+</section>`;
+
     return c.html(
-        <RequestQuoteView
-            currentUser={user}
-            services={services}
-            selectedServiceId={selectedServiceId}
-        />
+        renderPublicLayoutShell({
+            title: 'Solicitar Orçamento | GundjaTech',
+            url: '/solicitar-orcamento',
+            user,
+            contentHtml
+        })
     );
 });
 
@@ -69,14 +169,12 @@ publicRoutes.post('/solicitar-orcamento', async (c) => {
         return c.redirect('/solicitar-orcamento?error=Preencha+todos+os+campos+obrigatórios');
     }
 
-    // Gera protocolo único com formato oficial
     const randomChars = Math.random().toString(36).substring(2, 6).toUpperCase();
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const protocol = `GNDJ-${dateStr}-${randomChars}`;
 
     try {
         if (c.env?.DB) {
-            // 1. Cria ou recupera cliente
             let client = await c.env.DB.prepare(
                 `SELECT id FROM clients WHERE lower(email) = ?`
             ).bind(email).first<{ id: number }>();
@@ -92,30 +190,34 @@ publicRoutes.post('/solicitar-orcamento', async (c) => {
                 clientId = client.id;
             }
 
-            // 2. Cria service request
             const reqRes = await c.env.DB.prepare(
-                `INSERT INTO service_requests (client_id, service_id, title, description, estimated_budget, deadline, status, tracking_code, internal_notes, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, 'new', ?, ?, datetime('now'), datetime('now'))`
+                `INSERT INTO service_requests (protocol, tracking_code, client_id, service_id, name, company, email, phone, title, service_title, description, estimated_budget, deadline, desired_deadline, status, internal_notes, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, datetime('now'), datetime('now'))`
             ).bind(
+                protocol,
+                protocol,
                 clientId,
                 serviceId,
+                contactName,
+                companyName || null,
+                email,
+                phone,
+                title,
                 title,
                 description,
                 budget,
                 deadline,
-                protocol,
+                deadline,
                 `Contato: ${contactName} | Tel: ${phone} | Empresa: ${companyName}`
             ).run();
 
             const requestId = Number(reqRes.meta.last_row_id);
 
-            // 3. Registra histórico inicial
             await c.env.DB.prepare(
-                `INSERT INTO request_status_histories (service_request_id, status_from, status_to, notes, created_at, updated_at)
-                 VALUES (?, NULL, 'new', 'Solicitação registrada através do portal online.', datetime('now'), datetime('now'))`
+                `INSERT INTO request_status_histories (service_request_id, status_from, status_to, new_status, notes, comment, created_at, updated_at)
+                 VALUES (?, NULL, 'new', 'new', 'Solicitação registrada através do portal online.', 'Solicitação registrada através do portal online.', datetime('now'), datetime('now'))`
             ).bind(requestId).run();
 
-            // 4. Se houver anexo, faz streaming seguro para o R2 Bucket
             const file = body.attachment;
             if (file instanceof File && file.size > 0 && c.env?.UPLOADS_BUCKET) {
                 const fileKey = `attachments/${protocol}/${file.name}`;
@@ -130,7 +232,6 @@ publicRoutes.post('/solicitar-orcamento', async (c) => {
                 ).bind(requestId, file.name, fileKey, file.size, file.type).run();
             }
 
-            // Envio de e-mails transacionais
             await sendQuoteConfirmationEmail(c.env, email, contactName, protocol, title);
             await sendNewLeadStaffNotification(c.env, {
                 name: contactName,
@@ -157,7 +258,7 @@ publicRoutes.post('/solicitar-orcamento', async (c) => {
 });
 
 // ----------------------------------------------------
-// ACOMPANHAR SOLICITAÇÃO
+// ACOMPANHAR SOLICITAÇÃO (Estrutura idêntica a resources/views/public/track-request.blade.php)
 // ----------------------------------------------------
 publicRoutes.get('/acompanhar-solicitacao', async (c) => {
     const user = c.get('user');
@@ -166,8 +267,10 @@ publicRoutes.get('/acompanhar-solicitacao', async (c) => {
     let serviceRequest: {
         id: number;
         title: string;
+        service_title?: string | null;
         description: string;
         tracking_code: string;
+        protocol?: string | null;
         status: string;
         created_at: string;
         estimated_budget?: number | null;
@@ -179,21 +282,13 @@ publicRoutes.get('/acompanhar-solicitacao', async (c) => {
         try {
             if (c.env?.DB) {
                 serviceRequest = await c.env.DB.prepare(
-                    `SELECT id, title, description, tracking_code, status, estimated_budget, created_at
-                     FROM service_requests WHERE tracking_code = ?`
-                ).bind(protocol).first<{
-                    id: number;
-                    title: string;
-                    description: string;
-                    tracking_code: string;
-                    status: string;
-                    created_at: string;
-                    estimated_budget?: number | null;
-                }>();
+                    `SELECT id, COALESCE(service_title, title) AS title, description, COALESCE(protocol, tracking_code) AS tracking_code, status, estimated_budget, created_at
+                     FROM service_requests WHERE tracking_code = ? OR protocol = ?`
+                ).bind(protocol, protocol).first();
 
                 if (serviceRequest) {
                     const histRes = await c.env.DB.prepare(
-                        `SELECT status_to, notes, created_at
+                        `SELECT COALESCE(status_to, new_status) AS status_to, COALESCE(notes, comment) AS notes, created_at
                          FROM request_status_histories
                          WHERE service_request_id = ? ORDER BY id ASC`
                     ).bind(serviceRequest.id).all<{ status_to: string; notes: string | null; created_at: string }>();
@@ -204,411 +299,369 @@ publicRoutes.get('/acompanhar-solicitacao', async (c) => {
         } catch {}
     }
 
+    const statusLabels: Record<string, string> = {
+        new: 'Nova Solicitação',
+        pending: 'Em Análise Inicial',
+        analyzing: 'Em Análise Técnica',
+        awaiting_info: 'Aguardando Informações',
+        waiting_info: 'Aguardando Informações',
+        quotation_sent: 'Orçamento Enviado',
+        quoted: 'Orçamento Enviado',
+        awaiting_approval: 'Aguardando Aprovação',
+        approved: 'Aprovada',
+        in_progress: 'Em Execução / Projeto',
+        completed: 'Concluída com Sucesso',
+        cancelled: 'Cancelada'
+    };
+
+    let rightColumnHtml = '';
+    if (serviceRequest) {
+        const histHtml = histories
+            .map(
+                (h) => `
+                <div>
+                  <small style="color:#8F9BB7;font-size:11px">${escapeHtml(h.created_at)}</small>
+                  <div style="color:#fff;font-weight:700;font-size:14px;margin-top:2px">
+                    Status: ${escapeHtml(statusLabels[h.status_to] || h.status_to)}
+                  </div>
+                  ${h.notes ? `<p style="color:#A9B1CC;font-size:13px;margin-top:4px">${escapeHtml(h.notes)}</p>` : ''}
+                </div>`
+            )
+            .join('');
+
+        rightColumnHtml = `
+        <div class="form hm-form" style="display:block">
+          <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:12px;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.12)">
+            <div>
+              <small style="color:#8F9BB7;font-family:monospace;font-size:12px">Protocolo: ${escapeHtml(serviceRequest.tracking_code)}</small>
+              <h2 style="font-size:22px;color:#fff;margin-top:4px">${escapeHtml(serviceRequest.title)}</h2>
+              <p style="font-size:13px;color:#A9B1CC;margin-top:4px">
+                Aberto em ${escapeHtml(serviceRequest.created_at)}
+              </p>
+            </div>
+            <span style="background:rgba(228,163,24,.22);border:1px solid rgba(228,163,24,.45);color:#fff;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700">
+              ${escapeHtml(statusLabels[serviceRequest.status] || serviceRequest.status)}
+            </span>
+          </div>
+          <div style="margin-top:18px">
+            <p style="color:#A9B1CC;font-size:13px;line-height:1.6">${escapeHtml(serviceRequest.description)}</p>
+          </div>
+          <div style="margin-top:24px">
+            <h3 style="color:#fff;font-size:15px;margin-bottom:14px">Histórico de Movimentações</h3>
+            <div style="border-left:2px solid rgba(255,255,255,.15);padding-left:18px;display:grid;gap:16px">
+              ${histHtml || `<div style="color:#A9B1CC;font-size:13px">Solicitação registrada em ${escapeHtml(serviceRequest.created_at)}.</div>`}
+            </div>
+          </div>
+        </div>`;
+    } else if (protocol) {
+        rightColumnHtml = `
+        <div class="form hm-form" style="display:block;text-align:center;padding:40px 24px">
+          <h3 style="color:#fff;font-size:18px">Nenhuma solicitação encontrada</h3>
+          <p style="color:#A9B1CC;font-size:14px;margin-top:8px">
+            Verifique se o código de protocolo informado (<strong>${escapeHtml(protocol)}</strong>) está correto.
+          </p>
+        </div>`;
+    } else {
+        rightColumnHtml = `
+        <div class="form hm-form" style="display:block;padding:36px 28px">
+          <h3 style="color:#fff;font-size:18px">Precisa de um novo orçamento?</h3>
+          <p style="color:#A9B1CC;font-size:14px;margin-top:8px;margin-bottom:20px">
+            Envie os detalhes do seu projeto e receba seu protocolo de atendimento na hora.
+          </p>
+          <a href="/solicitar-orcamento" class="btn">Solicitar orçamento <svg><use href="#i-seta"/></svg></a>
+        </div>`;
+    }
+
+    const contentHtml = `
+<section class="hm-contato ct-topo" id="acompanhar" aria-labelledby="acompanhar-titulo">
+  <div class="container hm-contato-grid">
+    <div class="hm-contato-txt">
+      <p class="ct-kicker">Rastreabilidade GundjaTech</p>
+      <h1 id="acompanhar-titulo">Acompanhar Solicitação — <em>protocolo em tempo real</em></h1>
+      <p>Informe o número do protocolo gerado na sua solicitação para consultar o status técnico, histórico de etapas e propostas emitidas.</p>
+
+      <form action="/acompanhar-solicitacao" method="GET" class="form hm-form" style="margin-top:24px;padding:24px">
+        <label class="campo cheio">Número do protocolo*
+          <input type="text" name="protocol" value="${escapeHtml(protocol || '')}" placeholder="Ex: GNDJ-20261121-AB12" required style="font-family:monospace;text-transform:uppercase">
+        </label>
+        <div class="cheio hm-form-acoes">
+          <button type="submit" class="btn">Consultar protocolo <svg><use href="#i-seta"/></svg></button>
+        </div>
+      </form>
+    </div>
+
+    <div>
+      ${rightColumnHtml}
+    </div>
+  </div>
+</section>`;
+
     return c.html(
-        <TrackRequestView
-            currentUser={user}
-            protocol={protocol}
-            serviceRequest={serviceRequest}
-            histories={histories}
-        />
+        renderPublicLayoutShell({
+            title: 'Acompanhar Solicitação | GundjaTech',
+            url: '/acompanhar-solicitacao',
+            user,
+            contentHtml
+        })
     );
 });
 
 // ----------------------------------------------------
-// API RÁPIDA DE CAPTAÇÃO DE LEADS (Honeypot + Antispam)
+// API RÁPIDA DE CAPTAÇÃO DE LEADS & WHATSAPP (Idêntico ao PublicController.php)
 // ----------------------------------------------------
 publicRoutes.post('/api/lead', async (c) => {
     const body = await getRequestBody(c);
 
-    // Honeypot antispam idêntico ao Laravel
     if (body.sobrenome_hp) {
         return c.json({ ok: true });
     }
 
     const email = String(body.email || '').trim().toLowerCase();
-    const nome = String(body.nome || '').trim();
+    const nome = String(body.nome || '').trim() || 'Lead do Site';
     const telefone = String(body.telefone || '').trim();
     const empresa = String(body.empresa || '').trim();
+    const site = String(body.site || '').trim();
+    const origem = String(body.origem || 'site').trim();
+    const campanha = String(body.campanha || '').trim();
+    const mensagem = String(body.mensagem || '').trim();
+    const pagina = String(body.pagina || '').trim();
 
     if (!email) {
         return c.json({ error: 'Email obrigatório' }, 422);
     }
 
+    const randomChars = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const protocol = `GNDJ-${dateStr}-${randomChars}`;
+
     try {
         if (c.env?.DB) {
+            let client = await c.env.DB.prepare(
+                `SELECT id FROM clients WHERE lower(email) = ?`
+            ).bind(email).first<{ id: number }>();
+
+            let clientId: number;
+            if (!client) {
+                const res = await c.env.DB.prepare(
+                    `INSERT INTO clients (name, email, phone, company, status, is_active, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, 'lead', 1, datetime('now'), datetime('now'))`
+                ).bind(nome, email, telefone || null, empresa || null).run();
+                clientId = Number(res.meta.last_row_id);
+            } else {
+                clientId = client.id;
+            }
+
+            const detailsParts = [
+                site ? `Site: ${site}` : '',
+                campanha ? `Campanha: ${campanha}` : '',
+                mensagem,
+                pagina ? `Página: ${pagina}` : ''
+            ].filter(Boolean);
+            const description = detailsParts.join(' | ') || 'Solicitação de diagnóstico recebida pelo site GundjaTech.';
+
+            const reqRes = await c.env.DB.prepare(
+                `INSERT INTO service_requests (protocol, tracking_code, client_id, name, company, email, phone, title, service_title, description, status, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', datetime('now'), datetime('now'))`
+            ).bind(
+                protocol,
+                protocol,
+                clientId,
+                nome,
+                empresa || null,
+                email,
+                telefone || null,
+                `Solicitação Digital (${origem})`,
+                `Solicitação Digital (${origem})`,
+                description
+            ).run();
+
+            const requestId = Number(reqRes.meta.last_row_id);
+
             await c.env.DB.prepare(
-                `INSERT INTO clients (name, email, phone, company, status, is_active, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, 'lead', 1, datetime('now'), datetime('now'))`
-            ).bind(nome || 'Lead Rápido', email, telefone || null, empresa || null).run();
-        }
-    } catch {}
+                `INSERT INTO request_status_histories (service_request_id, status_from, status_to, new_status, notes, comment, created_at, updated_at)
+                 VALUES (?, NULL, 'new', 'new', ?, ?, datetime('now'), datetime('now'))`
+            ).bind(
+                requestId,
+                `Lead recebido automaticamente via formulário (${origem}).`,
+                `Lead recebido automaticamente via formulário (${origem}).`
+            ).run();
 
-    return c.json({ ok: true, message: 'Lead captado com sucesso!' });
-});
-
-// ----------------------------------------------------
-// HOME
-// ----------------------------------------------------
-publicRoutes.get('/', async (c) => {
-    const user = c.get('user');
-
-    // 1. Busca categorias e serviços no D1
-    let categories: Array<{ id: number; name: string; slug: string; description: string | null }> = [];
-    try {
-        const catRows = await c.env.DB.prepare(
-            `SELECT id, name, slug, description FROM service_categories WHERE is_active = 1 ORDER BY sort_order ASC`
-        ).all<{ id: number; name: string; slug: string; description: string | null }>();
-        categories = catRows.results || [];
-    } catch {}
-
-    // 2. Busca projetos em destaque no D1
-    let featuredProjects: Array<{ id: number; title: string; slug: string; client_name: string | null; summary: string | null; category: string | null }> = [];
-    try {
-        const projRows = await c.env.DB.prepare(
-            `SELECT id, title, slug, client_name, summary, category FROM portfolio_projects WHERE is_featured = 1 ORDER BY sort_order ASC LIMIT 6`
-        ).all<{ id: number; title: string; slug: string; client_name: string | null; summary: string | null; category: string | null }>();
-        featuredProjects = projRows.results || [];
-    } catch {}
-
-    // 3. Busca posts recentes do blog no D1
-    let latestPosts: Array<{ id: number; title: string; slug: string; summary: string | null; published_at: string | null }> = [];
-    try {
-        const postRows = await c.env.DB.prepare(
-            `SELECT id, title, slug, summary, published_at FROM blog_posts WHERE status = 'published' ORDER BY published_at DESC LIMIT 3`
-        ).all<{ id: number; title: string; slug: string; summary: string | null; published_at: string | null }>();
-        latestPosts = postRows.results || [];
-    } catch {}
-
-    return c.html(
-        <HomeView
-            currentUser={user}
-            categories={categories}
-            featuredProjects={featuredProjects}
-            latestPosts={latestPosts}
-        />
-    );
-});
-
-// ----------------------------------------------------
-// SERVIÇOS
-// ----------------------------------------------------
-publicRoutes.get('/servicos', async (c) => {
-    const user = c.get('user');
-
-    let services: Array<{
-        id: number;
-        name: string;
-        slug: string;
-        summary: string | null;
-        description: string | null;
-        price_starting_at: number | null;
-    }> = [];
-
-    try {
-        const res = await c.env.DB.prepare(
-            `SELECT id, name, slug, summary, description, price_starting_at FROM services WHERE is_active = 1 ORDER BY sort_order ASC`
-        ).all<{ id: number; name: string; slug: string; summary: string | null; description: string | null; price_starting_at: number | null }>();
-        services = res.results || [];
-    } catch {}
-
-    // Fallback de catálogo se ainda não houver dados populados
-    if (services.length === 0) {
-        services = [
-            { id: 1, name: 'Criação de Sites', slug: 'criacao-de-sites', summary: 'Sites corporativos e institucionais de alta conversão.', description: 'Desenvolvimento exclusivo com foco em velocidade e SEO.', price_starting_at: 4500 },
-            { id: 2, name: 'Desenvolvimento Sob Medida', slug: 'desenvolvimento-de-sites', summary: 'Plataformas web e sistemas empresariais.', description: 'Aplicações personalizadas para o fluxo da sua empresa.', price_starting_at: 9800 },
-            { id: 3, name: 'WordPress & Elementor Pro', slug: 'criacao-de-sites-wordpress', summary: 'Websites fáceis de editar sem dependência técnica.', description: 'Treinamento completo e arquitetura segura contra invasões.', price_starting_at: 3800 },
-            { id: 4, name: 'Cibersegurança & DNS', slug: 'ciberseguranca', summary: 'Proteção contra ataques, SSL e conformidade LGPD.', description: 'Infraestrutura blindada em nuvem para seu domínio.', price_starting_at: 1800 },
-            { id: 5, name: 'Gestão de Tráfego Pago', slug: 'gestao-de-trafego-pago', summary: 'Google Ads e Meta Ads com foco em ROI real.', description: 'Campanhas orientadas a leads qualificados.', price_starting_at: 2500 }
-        ];
-    }
-
-    return c.html(<ServicesListView currentUser={user} services={services} />);
-});
-
-// ----------------------------------------------------
-// PORTFÓLIO & CASES
-// ----------------------------------------------------
-publicRoutes.get('/portfolio', async (c) => {
-    const user = c.get('user');
-
-    let projects: Array<{
-        id: number;
-        title: string;
-        slug: string;
-        client_name: string | null;
-        summary: string | null;
-        category: string | null;
-    }> = [];
-
-    try {
-        const res = await c.env.DB.prepare(
-            `SELECT id, title, slug, client_name, summary, category FROM portfolio_projects ORDER BY sort_order ASC`
-        ).all<{ id: number; title: string; slug: string; client_name: string | null; summary: string | null; category: string | null }>();
-        projects = res.results || [];
-    } catch {}
-
-    if (projects.length === 0) {
-        projects = [
-            { id: 1, title: 'Plataforma Escolar KLASSE', slug: 'klasse', client_name: 'KLASSE', summary: 'Gestão integrada de escolas particulares com portal do aluno e financeiro.', category: 'Educação' },
-            { id: 2, title: 'Portal do Instituto Paraíso do Saber', slug: 'instituto-paraiso-do-saber', client_name: 'Instituto Paraíso do Saber', summary: 'Portal institucional para matrículas e apresentação pedagógica.', category: 'Educação' },
-            { id: 3, title: 'Cotech Contabilidade Empresarial', slug: 'cotech-contabilidade', client_name: 'Cotech Contabilidade', summary: 'Redesign digital e captação de clientes B2B.', category: 'B2B & Finanças' }
-        ];
-    }
-
-    return c.html(<PortfolioView currentUser={user} projects={projects} />);
-});
-
-publicRoutes.get('/cases/:slug', (c) => {
-    const slug = c.req.param('slug');
-    const user = c.get('user');
-
-    const casesMap: Record<string, { title: string; client: string; category: string; description: string }> = {
-        'klasse': {
-            title: 'KLASSE • Ecossistema Digital de Gestão Escolar',
-            client: 'KLASSE',
-            category: 'Educação & Tecnologia',
-            description: 'Desenvolvimento de portal institucional e sistema web robusto para atendimento a milhares de alunos, responsáveis e professores.'
-        },
-        'instituto-paraiso-do-saber': {
-            title: 'Instituto Paraíso do Saber • Portal Institucional',
-            client: 'Instituto Paraíso do Saber',
-            category: 'Educação',
-            description: 'Novo site focado em conversão de matrículas, velocidade de carregamento e identidade visual acolhedora.'
-        },
-        'cotech-contabilidade': {
-            title: 'Cotech Contabilidade • Presença Digital B2B',
-            client: 'Cotech Contabilidade',
-            category: 'Serviços B2B',
-            description: 'Arquitetura de conversão focada em geração de leads para abertura de empresas e assessoria contábil.'
-        }
-    };
-
-    const caseData = casesMap[slug];
-    if (!caseData) {
-        return c.redirect('/portfolio');
-    }
-
-    return c.html(
-        <SinnapseLandingView
-            title={`${caseData.title} • GundjaTech`}
-            description={caseData.description}
-            h1={caseData.title}
-            subtitle={caseData.description}
-            badgeText={`Case de Sucesso • ${caseData.category}`}
-            currentUser={user}
-        />
-    );
-});
-
-// ----------------------------------------------------
-// BLOG
-// ----------------------------------------------------
-publicRoutes.get('/blog', async (c) => {
-    const user = c.get('user');
-
-    let posts: Array<{ id: number; title: string; slug: string; summary: string | null; published_at: string | null }> = [];
-    try {
-        const res = await c.env.DB.prepare(
-            `SELECT id, title, slug, summary, published_at FROM blog_posts WHERE status = 'published' ORDER BY published_at DESC`
-        ).all<{ id: number; title: string; slug: string; summary: string | null; published_at: string | null }>();
-        posts = res.results || [];
-    } catch {}
-
-    if (posts.length === 0) {
-        posts = [
-            { id: 1, title: 'Conteúdo Técnico: Atraia e Converta Clientes com Expertise', slug: 'conteudo-tecnico-atraia-e-converta-clientes-com-expertise', summary: 'Como o marketing de autoridade e o conteúdo especializado aceleram vendas B2B.', published_at: '2026-11-15' },
-            { id: 2, title: 'Área do Cliente: Como Criar uma Conta de Usuário Perfeita', slug: 'area-do-cliente-como-criar-uma-conta-de-usuario-perfeita', summary: 'Boas práticas de UX, retenção e segurança para portais de clientes.', published_at: '2026-11-10' },
-            { id: 3, title: 'Entenda o que é uma Aplicação Web Sob Medida', slug: 'entenda-o-que-e-aplicacao-web', summary: 'Diferenças cruciais entre sites institucionais simples e sistemas web escaláveis.', published_at: '2026-11-05' }
-        ];
-    }
-
-    return c.html(<BlogListView currentUser={user} posts={posts} />);
-});
-
-publicRoutes.get('/blog/:slug', async (c) => {
-    const slug = c.req.param('slug');
-    const user = c.get('user');
-
-    let post: { id: number; title: string; slug: string; summary: string | null; content: string; published_at: string | null } | null = null;
-
-    try {
-        if (c.env?.DB) {
-            post = await c.env.DB.prepare(
-                `SELECT id, title, slug, summary, content, published_at FROM blog_posts WHERE slug = ?`
-            )
-                .bind(slug)
-                .first<{ id: number; title: string; slug: string; summary: string | null; content: string; published_at: string | null }>();
-
-            if (post) {
-                await c.env.DB.prepare(`UPDATE blog_posts SET views_count = views_count + 1 WHERE id = ?`).bind(post.id).run();
+            const file = body.arquivo;
+            if (file instanceof File && file.size > 0 && c.env?.UPLOADS_BUCKET) {
+                const fileKey = `attachments/${protocol}/${file.name}`;
+                const arrayBuffer = await file.arrayBuffer();
+                await c.env.UPLOADS_BUCKET.put(fileKey, arrayBuffer, {
+                    httpMetadata: { contentType: file.type }
+                });
+                await c.env.DB.prepare(
+                    `INSERT INTO request_attachments (service_request_id, file_name, file_path, file_size, mime_type, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+                ).bind(requestId, file.name, fileKey, file.size, file.type).run();
             }
         }
     } catch {}
 
-    if (!post) {
-        // Fallback para artigos estáticos
-        post = {
-            id: 99,
-            title: slug.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
-            slug,
-            summary: 'Artigo técnico sobre engenharia digital e melhores práticas de desenvolvimento.',
-            content: '<p>Este artigo explora as melhores práticas e padrões de engenharia recomendados pela GundjaTech para projetos de alto impacto no mercado corporativo.</p>',
-            published_at: new Date().toISOString()
-        };
+    return c.json({
+        ok: true,
+        protocol,
+        track_url: `/acompanhar-solicitacao?protocol=${protocol}`,
+        message: 'Lead captado com sucesso!'
+    });
+});
+
+publicRoutes.post('/api/whatsapp', async (c) => {
+    const body = await getRequestBody(c);
+    const email = String(body.email || '').trim().toLowerCase();
+    const nome = String(body.nome || '').trim() || 'Contato WhatsApp';
+    const telefone = String(body.telefone || '').trim();
+    const empresa = String(body.empresa || '').trim();
+    const site = String(body.site || '').trim();
+
+    const randomChars = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const protocol = email ? `WPP-${dateStr}-${randomChars}` : null;
+
+    try {
+        if (c.env?.DB && email && protocol) {
+            let client = await c.env.DB.prepare(`SELECT id FROM clients WHERE lower(email) = ?`).bind(email).first<{ id: number }>();
+            let clientId: number;
+            if (!client) {
+                const res = await c.env.DB.prepare(
+                    `INSERT INTO clients (name, email, phone, company, status, is_active, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, 'lead', 1, datetime('now'), datetime('now'))`
+                ).bind(nome, email, telefone || null, empresa || null).run();
+                clientId = Number(res.meta.last_row_id);
+            } else {
+                clientId = client.id;
+            }
+
+            await c.env.DB.prepare(
+                `INSERT INTO service_requests (protocol, tracking_code, client_id, name, company, email, phone, title, service_title, description, status, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, 'Contato via WhatsApp do Site', 'Contato via WhatsApp do Site', ?, 'new', datetime('now'), datetime('now'))`
+            ).bind(
+                protocol,
+                protocol,
+                clientId,
+                nome,
+                empresa || null,
+                email,
+                telefone || null,
+                `Qualificação WhatsApp${site ? ` | Site: ${site}` : ''}`
+            ).run();
+        }
+    } catch {}
+
+    return c.json({
+        ok: true,
+        protocol,
+        track_url: protocol ? `/acompanhar-solicitacao?protocol=${protocol}` : null
+    });
+});
+
+// ----------------------------------------------------
+// TODAS AS 19 PÁGINAS PÚBLICAS REAIS DO BLADE (Idênticas ao Render)
+// ----------------------------------------------------
+publicRoutes.get('/', (c) => c.html(renderPublicBladePage('home', c.get('user'))));
+publicRoutes.get('/sobre', (c) => c.html(renderPublicBladePage('about', c.get('user'))));
+publicRoutes.get('/sobre-nos', (c) => c.html(renderPublicBladePage('about', c.get('user'))));
+publicRoutes.get('/servicos', (c) => c.html(renderPublicBladePage('services', c.get('user'))));
+
+const sinnapseServiceMap: Record<string, string> = {
+    'criacao-de-sites': 'criacao-de-sites',
+    'gerenciamento-de-dominios': 'ciberseguranca',
+    'ciberseguranca': 'ciberseguranca',
+    'gestao-de-trafego-pago': 'operacao',
+    'operacao': 'operacao',
+    'desenvolvimento-de-sites': 'desenvolvimento-de-sites',
+    'criacao-de-sites-wordpress': 'criacao-de-sites-wordpress',
+    'criacao-de-sites-alphaville': 'criacao-de-sites-alphaville',
+    'quanto-custa-um-site': 'quanto-custa-um-site'
+};
+
+publicRoutes.get('/servicos/:slug', (c) => {
+    const slug = c.req.param('slug');
+    const viewKey = sinnapseServiceMap[slug] || 'services';
+    return c.html(renderPublicBladePage(viewKey, c.get('user')));
+});
+
+publicRoutes.get('/portfolio', (c) => c.html(renderPublicBladePage('portfolio', c.get('user'))));
+publicRoutes.get('/cases', (c) => c.html(renderPublicBladePage('portfolio', c.get('user'))));
+
+const caseMap: Record<string, string> = {
+    'klasse': 'case-klasse',
+    'instituto-paraiso-do-saber': 'case-instituto-paraiso-do-saber',
+    'cotech-contabilidade': 'case-cotech-contabilidade'
+};
+
+publicRoutes.get('/cases/:slug', (c) => {
+    const slug = c.req.param('slug');
+    const viewKey = caseMap[slug];
+    if (!viewKey) {
+        return c.redirect('/portfolio');
     }
-
-    return c.html(<BlogPostView currentUser={user} post={post} />);
+    return c.html(renderPublicBladePage(viewKey, c.get('user')));
 });
 
-// ----------------------------------------------------
-// CONTATO
-// ----------------------------------------------------
-publicRoutes.get('/contato', (c) => {
-    return c.html(<ContactView currentUser={c.get('user')} />);
+publicRoutes.get('/portfolio/:slug', (c) => {
+    const slug = c.req.param('slug');
+    const viewKey = caseMap[slug];
+    if (!viewKey) {
+        return c.redirect('/portfolio');
+    }
+    return c.html(renderPublicBladePage(viewKey, c.get('user')));
 });
+
+publicRoutes.get('/blog', (c) => c.html(renderPublicBladePage('blog', c.get('user'))));
+publicRoutes.get('/blog/:slug', (c) => c.html(renderPublicBladePage('blog-sample', c.get('user'))));
+
+publicRoutes.get('/contato', (c) => c.html(renderPublicBladePage('contact', c.get('user'))));
 
 publicRoutes.post('/contato', async (c) => {
     const body = await getRequestBody(c);
-    const name = String(body.name || '').trim();
+    const name = String(body.name || body.nome || '').trim();
     const email = String(body.email || '').trim().toLowerCase();
-    const phone = String(body.phone || '').trim();
-    const message = String(body.message || '').trim();
+    const phone = String(body.phone || body.telefone || '').trim();
+    const message = String(body.message || body.mensagem || '').trim();
 
     if (!name || !email || !message) {
         return c.json({ error: 'Preencha todos os campos obrigatórios.' }, 422);
     }
 
-    // Salva solicitação no D1
     try {
         const trackingCode = 'GT-' + Math.floor(100000 + Math.random() * 900000);
-        await c.env.DB.prepare(
-            `INSERT INTO service_requests (title, description, tracking_code, status, internal_notes, created_at, updated_at)
-             VALUES (?, ?, ?, 'pending', ?, datetime('now'), datetime('now'))`
-        )
-            .bind(
-                `Contato via Site: ${name}`,
-                `Mensagem: ${message}\nEmail: ${email}\nTelefone: ${phone}`,
+        if (c.env?.DB) {
+            await c.env.DB.prepare(
+                `INSERT INTO service_requests (protocol, tracking_code, name, email, phone, title, service_title, description, status, internal_notes, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new', 'Origem: Formulário de Contato Web', datetime('now'), datetime('now'))`
+            ).bind(
                 trackingCode,
-                `Origem: Formulário de Contato Web`
-            )
-            .run();
+                trackingCode,
+                name,
+                email,
+                phone || null,
+                `Contato via Site: ${name}`,
+                `Contato via Site: ${name}`,
+                `Mensagem: ${message}\nEmail: ${email}\nTelefone: ${phone}`
+            ).run();
+        }
     } catch {}
 
-    return c.html(`
-        <body style="font-family: sans-serif; background: #063B5C; color: #fff; text-align: center; padding: 80px 20px;">
-            <h2 style="color: #F2C230; font-size: 28px;">Mensagem Recebida com Sucesso!</h2>
-            <p style="color: #E7F0F5; margin: 16px 0 24px; font-size: 16px;">Obrigado, ${name}. Nossa diretoria técnica responderá em até 4 horas úteis.</p>
-            <a href="/" style="background: #F2C230; color: #063B5C; font-weight: bold; padding: 12px 24px; border-radius: 8px; text-decoration: none;">Voltar ao Início</a>
-        </body>
-    `);
+    return c.redirect('/contato?status=sent');
 });
 
-// ----------------------------------------------------
-// PÁGINAS SINNAPSE DE ALTA CONVERSÃO & SEO
-// ----------------------------------------------------
-publicRoutes.get('/criacao-de-sites', (c) => {
-    return c.html(
-        <SinnapseLandingView
-            title="Criação de Sites Profissionais e Corporativos • GundjaTech"
-            description="Empresa especializada em criação de sites de alta performance, design exclusivo e SEO preparado para o Google e inteligência artificial."
-            h1="Criação de Sites Profissionais para Empresas que Querem Crescer"
-            subtitle="Layout exclusivo sob medida, velocidade de carregamento e código otimizado para gerar mais contatos e negócios."
-            badgeText="Metodologia OneFlow • 100% de Entrega no Prazo"
-            currentUser={c.get('user')}
-        />
-    );
-});
+publicRoutes.get('/criacao-de-sites', (c) => c.html(renderPublicBladePage('criacao-de-sites', c.get('user'))));
+publicRoutes.get('/criacao-de-sites-alphaville', (c) => c.html(renderPublicBladePage('criacao-de-sites-alphaville', c.get('user'))));
+publicRoutes.get('/criacao-de-sites-wordpress', (c) => c.html(renderPublicBladePage('criacao-de-sites-wordpress', c.get('user'))));
+publicRoutes.get('/desenvolvimento-de-sites', (c) => c.html(renderPublicBladePage('desenvolvimento-de-sites', c.get('user'))));
+publicRoutes.get('/quanto-custa-um-site', (c) => c.html(renderPublicBladePage('quanto-custa-um-site', c.get('user'))));
+publicRoutes.get('/ciberseguranca', (c) => c.html(renderPublicBladePage('ciberseguranca', c.get('user'))));
+publicRoutes.get('/operacao', (c) => c.html(renderPublicBladePage('operacao', c.get('user'))));
+publicRoutes.get('/politica-de-privacidade', (c) => c.html(renderPublicBladePage('politica-de-privacidade', c.get('user'))));
+publicRoutes.get('/autor-casimiro-gundja', (c) => c.html(renderPublicBladePage('autor-casimiro-gundja', c.get('user'))));
 
-publicRoutes.get('/criacao-de-sites-alphaville', (c) => {
-    return c.html(
-        <SinnapseLandingView
-            title="Criação de Sites em Alphaville e Barueri • GundjaTech"
-            description="Agência de criação de sites em Alphaville. Atendimento presencial e remoto para empresas da Grande São Paulo com tecnologia de ponta."
-            h1="Criação de Sites de Alta Performance em Alphaville"
-            subtitle="Projetos sob medida para empresas que buscam autoridade, posicionamento no Google e novos clientes."
-            badgeText="Atendimento Executivo em Alphaville e Barueri"
-            currentUser={c.get('user')}
-        />
-    );
-});
-
-publicRoutes.get('/criacao-de-sites-wordpress', (c) => {
-    return c.html(
-        <SinnapseLandingView
-            title="Criação de Sites em WordPress e WooCommerce • GundjaTech"
-            description="Especialistas em desenvolvimento de sites WordPress com Elementor Pro. Fácil de editar, seguro, rápido e preparado para SEO."
-            h1="Sites em WordPress Sob Medida: Fáceis de Editar e Seguros"
-            subtitle="Sua equipe edita páginas e textos sem depender de programador. Entregamos com treinamento e manutenção contínua."
-            badgeText="WordPress & WooCommerce Especialistas"
-            currentUser={c.get('user')}
-        />
-    );
-});
-
-publicRoutes.get('/desenvolvimento-de-sites', (c) => {
-    return c.html(
-        <SinnapseLandingView
-            title="Desenvolvimento de Sites e Aplicações Web Sob Medida • GundjaTech"
-            description="Desenvolvimento completo do código à infraestrutura na nuvem. Sistemas web, portais de clientes e integrações empresariais."
-            h1="Desenvolvimento de Sites e Sistemas Web Sob Medida"
-            subtitle="Arquiteturas robustas, escaláveis e seguras para empresas com regras de negócio personalizadas."
-            badgeText="Engenharia de Software & Cloud"
-            currentUser={c.get('user')}
-        />
-    );
-});
-
-publicRoutes.get('/quanto-custa-um-site', (c) => {
-    return c.html(
-        <SinnapseLandingView
-            title="Quanto Custa Criar um Site Profissional em 2026? • Guia GundjaTech"
-            description="Entenda os fatores que determinam o investimento na criação de um site: número de páginas, integrações, layout exclusivo e hospedagem."
-            h1="Quanto Custa Criar um Site Profissional?"
-            subtitle="Transparência total. Descubra os custos de layout, desenvolvimento, SEO e manutenção para o projeto da sua empresa."
-            badgeText="Guia Completo de Orçamento"
-            currentUser={c.get('user')}
-        />
-    );
-});
-
-publicRoutes.get('/ciberseguranca', (c) => {
-    return c.html(
-        <SinnapseLandingView
-            title="Cibersegurança para Sites, Domínios e DNS • GundjaTech"
-            description="Proteja a reputação da sua empresa. Gestão profissional de domínios, DNS blindado, certificados SSL e proteção contra ataques."
-            h1="Cibersegurança e Gestão Blindada de Domínios"
-            subtitle="Sua infraestrutura protegida 24/7 com monitoramento, backups automáticos e conformidade rigorosa com a LGPD."
-            badgeText="Segurança Empresarial 24/7"
-            currentUser={c.get('user')}
-        />
-    );
-});
-
-publicRoutes.get('/sobre', (c) => {
-    return c.html(
-        <SinnapseLandingView
-            title="Sobre a GundjaTech • Engenharia Digital & Inovação"
-            description="Conheça a história, os valores e a equipe por trás da GundjaTech. Conectando ideias e negócios no Brasil, Angola e Portugal."
-            h1="Engenharia Digital que Impulsiona Marcas Globais"
-            subtitle="Unimos visão estratégica de negócios, design centrado no usuário e tecnologia de ponta para criar plataformas de sucesso."
-            badgeText="Sobre a GundjaTech"
-            currentUser={c.get('user')}
-        />
-    );
-});
-
-publicRoutes.get('/politica-de-privacidade', (c) => {
-    return c.html(
-        <SinnapseLandingView
-            title="Política de Privacidade • GundjaTech"
-            description="Termos de privacidade e proteção de dados da GundjaTech em total conformidade com a Lei Geral de Proteção de Dados (LGPD)."
-            h1="Política de Privacidade e Proteção de Dados"
-            subtitle="Nosso compromisso inegociável com a transparência, segurança e privacidade dos seus dados pessoais e empresariais."
-            badgeText="Conformidade LGPD"
-            currentUser={c.get('user')}
-        />
-    );
-});
+// Redirecionamentos de idioma idênticos a routes/web.php
+publicRoutes.get('/pt-pt/:path{.*}?', (c) => c.redirect('/' + (c.req.param('path') || ''), 301));
+publicRoutes.get('/en/:path{.*}?', (c) => c.redirect('/' + (c.req.param('path') || ''), 301));
 
 // ----------------------------------------------------
 // SITEMAP XML & RSS FEED XML
@@ -627,6 +680,7 @@ publicRoutes.get('/sitemap.xml', (c) => {
         'https://gundjatech.com/desenvolvimento-de-sites',
         'https://gundjatech.com/quanto-custa-um-site',
         'https://gundjatech.com/ciberseguranca',
+        'https://gundjatech.com/operacao',
         'https://gundjatech.com/cases/klasse',
         'https://gundjatech.com/cases/instituto-paraiso-do-saber',
         'https://gundjatech.com/cases/cotech-contabilidade'
