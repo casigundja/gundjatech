@@ -109,7 +109,24 @@
                                     {{ $att->uploader ? ' • Enviado por ' . $att->uploader->name : '' }}
                                 </span>
                             </div>
-                            <a href="{{ route('admin.projects.attachments.download', [$project, $att]) }}" class="text-xs text-[#E4A318] hover:underline font-bold shrink-0">Download</a>
+                            <div class="flex items-center gap-3 shrink-0">
+                                <a href="{{ route('admin.projects.attachments.download', [$project, $att]) }}" class="text-xs text-[#E4A318] hover:underline font-bold">Download</a>
+                                @if(Auth::user()->hasPermission('projects.manage'))
+                                    <form
+                                        action="{{ route('admin.projects.attachments.destroy', [$project, $att]) }}"
+                                        method="POST"
+                                        data-confirm-title="Remover anexo"
+                                        data-confirm-message="Tem certeza que deseja excluir este arquivo do projeto e do servidor?"
+                                        data-confirm-target="{{ $att->file_name }}"
+                                        data-confirm-button="Sim, excluir anexo"
+                                        data-confirm-tone="danger"
+                                    >
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-xs text-red-400 hover:text-red-300 font-semibold cursor-pointer">Excluir</button>
+                                    </form>
+                                @endif
+                            </div>
                         </div>
                     @empty
                         <div class="text-xs text-gray-500 py-2">Nenhum arquivo anexado ainda.</div>
@@ -175,10 +192,18 @@
                                 <div class="text-[10px] text-[#E4A318]">{{ $member->role_in_project }}</div>
                             </div>
                             @if(Auth::user()->hasPermission('projects.manage'))
-                                <form action="{{ route('admin.projects.members.destroy', $member) }}" method="POST">
+                                <form
+                                    action="{{ route('admin.projects.members.destroy', $member) }}"
+                                    method="POST"
+                                    data-confirm-title="Remover membro da equipe"
+                                    data-confirm-message="Tem certeza que deseja remover este profissional da equipe alocada no projeto?"
+                                    data-confirm-target="{{ $member->user?->name ?? 'Profissional' }} • {{ $member->role_in_project }}"
+                                    data-confirm-button="Sim, remover"
+                                    data-confirm-tone="warning"
+                                >
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-[11px] text-red-400 hover:text-red-300 px-1.5" title="Remover">&times;</button>
+                                    <button type="submit" class="text-[11px] text-red-400 hover:text-red-300 px-1.5 cursor-pointer" title="Remover">&times;</button>
                                 </form>
                             @endif
                         </div>
@@ -212,6 +237,24 @@
                         <span class="text-gray-400">Orçamento:</span>
                         <a href="{{ route('admin.quotations.show', $project->quotation) }}" class="text-[#E4A318] hover:underline font-mono font-bold">{{ $project->quotation->quotation_number }}</a>
                     </div>
+                @endif
+                @if(Auth::user()->hasPermission('projects.manage'))
+                    <form
+                        action="{{ route('admin.projects.destroy', $project) }}"
+                        method="POST"
+                        class="pt-4 mt-2 border-t border-[#222222]"
+                        data-confirm-title="Excluir projeto definitivamente"
+                        data-confirm-message="Tem certeza que deseja excluir este projeto? Todas as etapas, alocações de equipe e anexos salvos em disco serão apagados permanentemente."
+                        data-confirm-target="[{{ $project->code }}] {{ $project->name }}"
+                        data-confirm-button="Sim, excluir projeto"
+                        data-confirm-tone="danger"
+                    >
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="w-full py-2 rounded-xl text-xs font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 transition cursor-pointer">
+                            Excluir Projeto
+                        </button>
+                    </form>
                 @endif
             </div>
         </div>

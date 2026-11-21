@@ -9,7 +9,7 @@
         'sent' => 'bg-[#F2C230]/20 text-[#F2C230] border border-[#F2C230]/40',
         'rejected' => 'bg-red-500/15 text-red-400 border border-red-500/35',
         'expired' => 'bg-white/10 text-[#D5DCEB] border border-white/15',
-        default => 'bg-[#121AFF]/20 text-[#93A3FF] border border-[#121AFF]/30',
+        default => 'bg-sky-500/15 text-sky-300 border border-sky-500/30',
     };
 @endphp
 <div class="space-y-6">
@@ -49,7 +49,7 @@
                 <a href="{{ route('admin.projects.show', $quotation->project) }}" class="btn-secondary px-4 py-2.5 rounded-xl text-xs font-bold">
                     Ver Projeto {{ $quotation->project->code }} &rarr;
                 </a>
-            @elseif(Auth::user()->hasPermission('quotations.manage'))
+            @elseif(Auth::user()->hasPermission('quotations.manage') && Auth::user()->hasPermission('projects.manage') && ! in_array($quotation->status, ['rejected', 'expired'], true))
                 <form action="{{ route('admin.quotations.convert', $quotation) }}" method="POST">
                     @csrf
                     <button type="submit" class="btn-primary px-4 py-2.5 rounded-xl text-xs font-bold">

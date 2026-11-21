@@ -17,13 +17,19 @@
         @endif
     </div>
 
-    <!-- Categories Strip -->
+    <!-- Categories Strip (Clickable Filter Cards) -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         @foreach($categories as $cat)
-            <div class="glass-card p-4 rounded-xl border border-[#222222]">
+            @php
+                $isActiveCat = (int) request('category_id') === (int) $cat->id;
+                $catUrl = $isActiveCat
+                    ? route('admin.services.index')
+                    : route('admin.services.index', ['category_id' => $cat->id]);
+            @endphp
+            <a href="{{ $catUrl }}" class="glass-card p-4 rounded-xl border {{ $isActiveCat ? 'border-[#F2C230]' : 'border-[#222222]' }} block no-underline cursor-pointer hover:border-[#F2C230]/60 hover:-translate-y-0.5 transition-all" title="{{ $isActiveCat ? 'Clique para mostrar todas as categorias' : 'Filtrar por ' . $cat->name }}">
                 <div class="text-xs font-bold text-white truncate">{{ $cat->name }}</div>
                 <div class="text-[11px] text-[#E4A318] font-semibold mt-1">{{ $cat->services_count }} serviço(s)</div>
-            </div>
+            </a>
         @endforeach
     </div>
 
@@ -89,12 +95,14 @@
                 </tbody>
             </table>
         </div>
-        <div class="p-4 border-t border-[#222222]">{{ $services->links() }}</div>
+        @if($services->hasPages())
+            <div class="p-4 border-t border-[#222222]">{{ $services->links() }}</div>
+        @endif
     </div>
 
     <!-- Modal New Category -->
-    <div x-show="catModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-        <div class="glass-card max-w-md w-full p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
+    <div x-show="catModal" x-cloak @click.self="catModal = false" @keydown.escape.window="catModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+        <div class="glass-card max-w-md w-full max-h-[90vh] overflow-y-auto p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
             <h3 class="text-base font-bold text-white">Nova Categoria de Serviço</h3>
             <form action="{{ route('admin.services.categories.store') }}" method="POST" class="space-y-4">
                 @csrf

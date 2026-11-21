@@ -140,8 +140,11 @@ class User extends Authenticatable
             return null;
         }
 
-        $existingByEmail = Client::where('email', $this->email)
+        $normalizedEmail = strtolower(trim((string) $this->email));
+
+        $existingByEmail = Client::whereRaw('LOWER(email) = ?', [$normalizedEmail])
             ->whereNull('user_id')
+            ->where('status', 'lead')
             ->first();
 
         if ($existingByEmail !== null) {
@@ -149,6 +152,7 @@ class User extends Authenticatable
                 'user_id' => $this->id,
                 'name' => $existingByEmail->name ?: $this->name,
                 'phone' => $existingByEmail->phone ?: $this->phone,
+                'status' => 'active',
             ]);
             $this->setRelation('client', $existingByEmail);
 
@@ -159,7 +163,7 @@ class User extends Authenticatable
             'user_id' => $this->id,
             'name' => $this->name,
             'company_name' => $companyName ?: $this->name,
-            'email' => $this->email,
+            'email' => $normalizedEmail,
             'phone' => $this->phone,
             'status' => 'active',
         ]);
@@ -215,6 +219,20 @@ class User extends Authenticatable
         $permissions = $this->permissions();
 
         return in_array('*', $permissions, true) || in_array($permission, $permissions, true);
+    }
+
+    /**
+     * @param  list<string>  $permissions
+     */
+    public function hasAnyPermission(array $permissions): bool
+    {
+        foreach ($permissions as $permission) {
+            if ($this->hasPermission($permission)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function isSuperAdmin(): bool

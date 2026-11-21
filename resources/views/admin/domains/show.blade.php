@@ -6,9 +6,9 @@
 <div class="space-y-6" x-data="{ dnsModal: false, renewModal: false }">
     <div class="glass-card p-6 rounded-3xl border border-[#222222] flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-            <div class="flex items-center gap-3">
-                <h2 class="text-2xl font-mono font-extrabold text-white">{{ $domain->domain_name }}</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+            <div class="flex flex-wrap items-center gap-3">
+                <h2 class="text-2xl font-mono font-extrabold text-white break-all">{{ $domain->domain_name }}</h2>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold {{ $domain->status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : ($domain->status === 'expiring_soon' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : ($domain->status === 'expired' ? 'bg-red-500/10 text-red-400 border border-red-500/30' : 'bg-sky-500/10 text-sky-400 border border-sky-500/30')) }}">
                     {{ $domain->status_label }}
                 </span>
             </div>
@@ -19,13 +19,28 @@
             </p>
         </div>
         @if(Auth::user()->hasPermission('domains.manage'))
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-2.5">
                 <button @click="dnsModal = true" class="btn-secondary px-4 py-2.5 rounded-xl text-xs font-bold">
                     + Novo Registro DNS
                 </button>
                 <button @click="renewModal = true" class="btn-primary px-4 py-2.5 rounded-xl text-xs font-bold">
                     Renovar Domínio
                 </button>
+                <form
+                    action="{{ route('admin.domains.destroy', $domain) }}"
+                    method="POST"
+                    data-confirm-title="Excluir domínio definitivamente"
+                    data-confirm-message="Tem certeza que deseja excluir este domínio? Todos os apontamentos DNS e registros de renovação vinculados serão removidos."
+                    data-confirm-target="{{ $domain->domain_name }}"
+                    data-confirm-button="Sim, excluir domínio"
+                    data-confirm-tone="danger"
+                >
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="px-3.5 py-2.5 rounded-xl text-xs font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 transition cursor-pointer">
+                        Excluir
+                    </button>
+                </form>
             </div>
         @endif
     </div>
@@ -107,8 +122,8 @@
     </div>
 
     <!-- Modal Add DNS -->
-    <div x-show="dnsModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-        <div class="glass-card max-w-md w-full p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
+    <div x-show="dnsModal" x-cloak @click.self="dnsModal = false" @keydown.escape.window="dnsModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+        <div class="glass-card max-w-md w-full max-h-[90vh] overflow-y-auto p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
             <h3 class="text-base font-bold text-white">Adicionar Registro DNS</h3>
             <form action="{{ route('admin.domains.dns', $domain) }}" method="POST" class="space-y-4">
                 @csrf
@@ -152,8 +167,8 @@
     </div>
 
     <!-- Modal Renew -->
-    <div x-show="renewModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-        <div class="glass-card max-w-md w-full p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
+    <div x-show="renewModal" x-cloak @click.self="renewModal = false" @keydown.escape.window="renewModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+        <div class="glass-card max-w-md w-full max-h-[90vh] overflow-y-auto p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
             <h3 class="text-base font-bold text-white">Registrar Renovação</h3>
             <form action="{{ route('admin.domains.renew', $domain) }}" method="POST" class="space-y-4">
                 @csrf

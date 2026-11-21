@@ -52,10 +52,10 @@ RUN { \
         echo "opcache.validate_timestamps=0"; \
     } > /usr/local/etc/php/conf.d/gundjatech.ini
 
-# Configure Apache DocumentRoot -> /var/www/html/public with AllowOverride All
+# Configure Apache DocumentRoot -> /var/www/html/public with AllowOverride All & reverse-proxy port safety
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
     && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf \
-    && printf '<Directory /var/www/html/public>\n    Options -Indexes +FollowSymLinks\n    AllowOverride All\n    Require all granted\n</Directory>\n' > /etc/apache2/conf-available/gundjatech-public.conf \
+    && printf 'ServerName localhost\nUseCanonicalName Off\nUseCanonicalPhysicalPort Off\n<Directory /var/www/html/public>\n    Options -Indexes +FollowSymLinks\n    AllowOverride All\n    Require all granted\n</Directory>\n' > /etc/apache2/conf-available/gundjatech-public.conf \
     && a2enconf gundjatech-public
 
 # Bring in Composer & Node 22 for build step

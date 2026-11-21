@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\ActivityLog;
 use App\Models\AdvertisingCampaign;
 use App\Models\Client;
 use App\Models\Conversation;
@@ -155,12 +154,9 @@ class AdminDashboardController extends Controller
 
         $revenueGrowthPct = $this->calculateGrowth($monthlyRevenue, $prevPeriodRevenue);
 
-        // 12-month series (Receita Paga vs A Receber) + 6-month legacy arrays
+        // 12-month series (Receita Paga vs A Receber)
         $chart12Series = [];
         $chartMaxValue = 0.0;
-        $months = [];
-        $incomeData = [];
-        $requestsData = [];
 
         $recentRequestTimestamps = ServiceRequest::query()
             ->where('created_at', '>=', $twelveMonthsStart)
@@ -191,12 +187,6 @@ class AdminDashboardController extends Controller
                 'requests' => $reqCount,
                 'is_current' => $ym === $currentYm,
             ];
-
-            if ($i <= 5) {
-                $months[] = ucfirst($date->translatedFormat('M/Y'));
-                $incomeData[] = $paidVal;
-                $requestsData[] = $reqCount;
-            }
         }
 
         $scaleTop = $chartMaxValue > 0 ? $chartMaxValue : 1.0;
@@ -225,9 +215,9 @@ class AdminDashboardController extends Controller
 
         $ringPalette = [
             ['radius' => 80, 'circumference' => 502.65, 'color' => '#F2C230'],
-            ['radius' => 65, 'circumference' => 408.41, 'color' => '#121AFF'],
-            ['radius' => 50, 'circumference' => 314.16, 'color' => '#16749A'],
-            ['radius' => 35, 'circumference' => 219.91, 'color' => '#FFE074'],
+            ['radius' => 65, 'circumference' => 408.41, 'color' => '#16749A'],
+            ['radius' => 50, 'circumference' => 314.16, 'color' => '#063B5C'],
+            ['radius' => 35, 'circumference' => 219.91, 'color' => '#38BDF8'],
         ];
 
         $categories = ServiceCategory::where('is_active', true)->orderBy('order')->take(4)->get();
@@ -271,9 +261,9 @@ class AdminDashboardController extends Controller
 
         $barGradients = [
             'linear-gradient(90deg, #F2C230 0%, #FFE074 100%)',
-            'linear-gradient(90deg, #1E2BFF 0%, #6E7BFF 100%)',
             'linear-gradient(90deg, #16749A 0%, #38BDF8 100%)',
-            'linear-gradient(90deg, #F2C230 0%, #E4A318 48%, #3B49FF 100%)',
+            'linear-gradient(90deg, #063B5C 0%, #16749A 100%)',
+            'linear-gradient(90deg, #F2C230 0%, #16749A 100%)',
         ];
         $clientsByLocation = [];
         $locIdx = 0;
@@ -362,11 +352,6 @@ class AdminDashboardController extends Controller
             ->take(5)
             ->get();
 
-        $recentActivities = ActivityLog::with('user')
-            ->latest()
-            ->take(6)
-            ->get();
-
         return view('admin.dashboard', compact(
             'periodDays',
             'periodStart',
@@ -403,17 +388,16 @@ class AdminDashboardController extends Controller
             'heatmapRows',
             'recentRequests',
             'recentConversations',
-            'recentProjects',
-            'recentActivities',
-            'months',
-            'requestsData',
-            'incomeData',
-            'servicesBreakdown'
+            'recentProjects'
         ));
     }
 
     public function exportReport(Request $request): StreamedResponse
     {
+        if (! $request->user()?->hasAnyPermission(['finance.view', 'requests.view'])) {
+            abort(403, 'Você não tem permissão para exportar o relatório executivo.');
+        }
+
         $allowedPeriods = [7, 30, 90, 365];
         $periodDays = (int) $request->query('period', 30);
         if (! in_array($periodDays, $allowedPeriods, true)) {
@@ -468,13 +452,13 @@ class AdminDashboardController extends Controller
                 ->chunk(200, function ($requests) use ($handle): void {
                     foreach ($requests as $req) {
                         fputcsv($handle, [
-                            $req->protocol,
-                            $req->name,
-                            $req->email,
-                            $req->phone ?? '',
-                            $req->company ?? '',
-                            $req->service_title ?? '',
-                            $req->status_label,
+                            $this->sanitizeCsvCell($req->protocol),
+                            $this->sanitizeCsvCell($req->name),
+                            $this->sanitizeCsvCell($req->email),
+                            $this->sanitizeCsvCell($req->phone),
+                            $this->sanitizeCsvCell($req->company),
+                            $this->sanitizeCsvCell($req->service_title),
+                            $this->sanitizeCsvCell($req->status_label),
                             $req->created_at?->format('d/m/Y H:i') ?? '',
                         ], ';');
                     }
@@ -484,6 +468,20 @@ class AdminDashboardController extends Controller
         }, $fileName, [
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
+    }
+
+    private function sanitizeCsvCell(?string $value): string
+    {
+        $clean = (string) ($value ?? '');
+        if ($clean === '') {
+            return '';
+        }
+
+        if (preg_match('/^[\s]*[=+\-@\t\r]/', $clean) === 1) {
+            return "'".$clean;
+        }
+
+        return $clean;
     }
 
     private function calculateGrowth(float|int $current, float|int $previous): ?float

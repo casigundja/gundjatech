@@ -7,7 +7,7 @@
   <div class="in-hero-fx" aria-hidden="true"><i></i><i></i><b></b></div>
   <div class="container ps-hero-txt">
     <nav class="ps-trilha" aria-label="Você está em">
-      <a href="/">Início</a> / <a href="{{ route('services') }}">Serviços</a> / {{ $service->category->name }}
+      <a href="/">Início</a> / <a href="{{ route('services') }}">Serviços</a> / {{ $service->category?->name ?? 'Serviço' }}
     </nav>
     <h1>{{ $service->name }}</h1>
     <p style="font-size:18px;color:#3A3F55;max-width:680px;margin-top:16px;line-height:1.6">
@@ -19,7 +19,7 @@
 <section class="hm-contato" id="detalhes-servico">
   <div class="container hm-contato-grid">
     <div class="hm-contato-txt">
-      <p class="ct-kicker">{{ $service->category->name }}</p>
+      <p class="ct-kicker">{{ $service->category?->name ?? 'Serviço GundjaTech' }}</p>
       <h2>O que está incluso na <em>entrega</em></h2>
       <p style="white-space:pre-line">{{ $service->description }}</p>
 

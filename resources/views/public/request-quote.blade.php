@@ -24,8 +24,6 @@
           </a>
         </li>
       </ul>
-
-      <p class="ct-prova"><b>5.0</b> <span aria-label="5 estrelas">★★★★★</span> no Google · Mais de 500 projetos em 4 continentes</p>
     </div>
 
     <form action="{{ route('request.store') }}" method="POST" enctype="multipart/form-data" class="form hm-form">
@@ -68,7 +66,7 @@
           <option value="" style="color:#000">Selecione o serviço...</option>
           @foreach($services as $s)
             <option value="{{ $s->id }}" style="color:#000" {{ (isset($selectedServiceId) && $selectedServiceId == $s->id) ? 'selected' : '' }}>
-              [{{ $s->category->name }}] {{ $s->name }} — A partir de R$ {{ number_format($s->starting_price, 2, ',', '.') }}
+              [{{ $s->category?->name ?? 'Geral' }}] {{ $s->name }} — A partir de R$ {{ number_format($s->starting_price, 2, ',', '.') }}
             </option>
           @endforeach
         </select>

@@ -61,22 +61,29 @@
         var existing = okBox.querySelector(".gt-protocol-receipt");
         if (existing) { existing.remove(); }
 
-        var wrap = document.createElement("p");
+        var wrap = document.createElement("div");
         wrap.className = "gt-protocol-receipt";
-        wrap.style.marginTop = "10px";
-        wrap.style.fontSize = "0.92rem";
 
-        var strong = document.createElement("strong");
-        strong.textContent = L("Protocolo") + ": " + result.protocol;
-        wrap.appendChild(strong);
+        var badge = document.createElement("div");
+        badge.className = "gt-protocol-badge";
+
+        var label = document.createElement("span");
+        label.className = "gt-protocol-label";
+        label.textContent = L("Protocolo") + ":";
+
+        var code = document.createElement("strong");
+        code.className = "gt-protocol-code";
+        code.textContent = result.protocol;
+
+        badge.appendChild(label);
+        badge.appendChild(code);
+        wrap.appendChild(badge);
 
         if (result.track_url) {
-            wrap.appendChild(document.createTextNode(" · "));
             var link = document.createElement("a");
             link.href = result.track_url;
+            link.className = "gt-protocol-cta";
             link.textContent = L("Acompanhar solicitação →");
-            link.style.textDecoration = "underline";
-            link.style.fontWeight = "700";
             wrap.appendChild(link);
         }
 

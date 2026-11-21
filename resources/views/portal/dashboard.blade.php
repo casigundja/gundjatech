@@ -3,13 +3,16 @@
 @section('header_title', 'Visão Geral do Cliente')
 
 @section('content')
-<!-- Signature Golden-Bronze Client Welcome Banner -->
+@php
+    $canPortal = static fn (string $perm): bool => Auth::user()->hasPermission($perm);
+@endphp
+<!-- Signature GundjaTech Paleta 3 Client Welcome Banner -->
 <div class="gt-hero-gold flex flex-col lg:flex-row lg:items-center justify-between gap-5">
     <div class="space-y-2">
         <span class="gt-hero-badge">
             <span class="gt-hero-dots" aria-hidden="true">
-                <i style="background:#E4A318"></i>
-                <i style="background:#121AFF"></i>
+                <i style="background:#F2C230"></i>
+                <i style="background:#16749A"></i>
                 <i style="background:#FFFFFF"></i>
             </span>
             Portal do Cliente GundjaTech
@@ -22,29 +25,35 @@
         </p>
     </div>
     <div class="flex flex-wrap items-center gap-2.5 shrink-0">
-        <a href="{{ route('portal.requests.create') }}" class="gt-hero-cta">
-            + Nova Demanda
-        </a>
-        <a href="{{ route('portal.chat.index') }}" class="gt-hero-cta-ghost">
-            Falar com Atendimento
-        </a>
+        @if($canPortal('portal.requests.manage'))
+            <a href="{{ route('portal.requests.create') }}" class="gt-hero-cta">
+                + Nova Demanda
+            </a>
+        @endif
+        @if($canPortal('portal.chat.manage'))
+            <a href="{{ route('portal.chat.index') }}" class="gt-hero-cta-ghost">
+                Falar com Atendimento
+            </a>
+        @endif
     </div>
 </div>
 
 <!-- Metric Cards -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-    <div class="glass-card p-5 rounded-2xl border border-[#222222]">
+    <a href="{{ $canPortal('portal.projects.view') ? route('portal.projects.index') : '#' }}" class="glass-card p-5 rounded-2xl border border-[#222222] block no-underline hover:border-[#F2C230]/50 hover:-translate-y-0.5 transition-all group">
         <div class="flex items-center justify-between">
             <span class="text-xs text-gray-400 font-medium">Projetos em Andamento</span>
-            <div class="w-9 h-9 rounded-xl bg-[#E4A318]/10 text-[#E4A318] flex items-center justify-center">
+            <div class="w-9 h-9 rounded-xl bg-[#F2C230]/10 text-[#F2C230] flex items-center justify-center">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
             </div>
         </div>
-        <div class="text-2xl font-extrabold text-[#E4A318] mt-2.5">{{ $activeProjects }}</div>
-        <a href="{{ route('portal.projects.index') }}" class="text-[11px] text-gray-400 hover:text-white mt-1 block font-medium">Acompanhar etapas &rarr;</a>
-    </div>
+        <div class="text-2xl font-extrabold text-[#F2C230] mt-2.5">{{ $activeProjects }}</div>
+        @if($canPortal('portal.projects.view'))
+            <span class="text-[11px] text-gray-400 group-hover:text-white mt-1 block font-medium">Acompanhar etapas &rarr;</span>
+        @endif
+    </a>
 
-    <div class="glass-card p-5 rounded-2xl border border-[#222222]">
+    <a href="{{ $canPortal('portal.requests.manage') ? route('portal.requests.index') : '#' }}" class="glass-card p-5 rounded-2xl border border-[#222222] block no-underline hover:border-amber-400/50 hover:-translate-y-0.5 transition-all group">
         <div class="flex items-center justify-between">
             <span class="text-xs text-gray-400 font-medium">Solicitações Ativas</span>
             <div class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
@@ -52,10 +61,12 @@
             </div>
         </div>
         <div class="text-2xl font-extrabold text-white mt-2.5">{{ $pendingRequests }}</div>
-        <a href="{{ route('portal.requests.index') }}" class="text-[11px] text-gray-400 hover:text-white mt-1 block font-medium">Ver histórico de status &rarr;</a>
-    </div>
+        @if($canPortal('portal.requests.manage'))
+            <span class="text-[11px] text-gray-400 group-hover:text-white mt-1 block font-medium">Ver histórico de status &rarr;</span>
+        @endif
+    </a>
 
-    <div class="glass-card p-5 rounded-2xl border border-[#222222]">
+    <a href="{{ $canPortal('portal.domains.view') ? route('portal.domains.index') : '#' }}" class="glass-card p-5 rounded-2xl border border-[#222222] block no-underline hover:border-sky-400/50 hover:-translate-y-0.5 transition-all group">
         <div class="flex items-center justify-between">
             <span class="text-xs text-gray-400 font-medium">Domínios sob Custódia</span>
             <div class="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center">
@@ -63,10 +74,12 @@
             </div>
         </div>
         <div class="text-2xl font-extrabold text-white mt-2.5">{{ $totalDomains }}</div>
-        <a href="{{ route('portal.domains.index') }}" class="text-[11px] text-gray-400 hover:text-white mt-1 block font-medium">DNS & Vencimentos &rarr;</a>
-    </div>
+        @if($canPortal('portal.domains.view'))
+            <span class="text-[11px] text-gray-400 group-hover:text-white mt-1 block font-medium">DNS &amp; Vencimentos &rarr;</span>
+        @endif
+    </a>
 
-    <div class="glass-card p-5 rounded-2xl border border-[#222222]">
+    <a href="{{ $canPortal('portal.campaigns.view') ? route('portal.campaigns.index') : '#' }}" class="glass-card p-5 rounded-2xl border border-[#222222] block no-underline hover:border-emerald-400/50 hover:-translate-y-0.5 transition-all group">
         <div class="flex items-center justify-between">
             <span class="text-xs text-gray-400 font-medium">Campanhas de Tráfego</span>
             <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
@@ -74,15 +87,17 @@
             </div>
         </div>
         <div class="text-2xl font-extrabold text-emerald-400 mt-2.5">{{ $activeCampaigns }}</div>
-        <a href="{{ route('portal.campaigns.index') }}" class="text-[11px] text-gray-400 hover:text-white mt-1 block font-medium">Relatório de leads &rarr;</a>
-    </div>
+        @if($canPortal('portal.campaigns.view'))
+            <span class="text-[11px] text-gray-400 group-hover:text-white mt-1 block font-medium">Relatório de leads &rarr;</span>
+        @endif
+    </a>
 </div>
 
 <!-- Pending Quotation Banner if Available -->
-@if($quotationsPending->isNotEmpty())
-    <div class="bg-gradient-to-r from-[#E4A318]/15 to-[#2E2D2C]/15 border border-[#E4A318]/40 p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+@if($quotationsPending->isNotEmpty() && $canPortal('portal.quotations.approve'))
+    <div class="bg-gradient-to-r from-[#F2C230]/15 to-[#16749A]/15 border border-[#F2C230]/40 p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-            <span class="text-xs font-bold text-[#E4A318] uppercase tracking-wider block">Você possui {{ $quotationsPending->count() }} orçamento(s) aguardando aprovação</span>
+            <span class="text-xs font-bold text-[#F2C230] uppercase tracking-wider block">Você possui {{ $quotationsPending->count() }} orçamento(s) aguardando aprovação</span>
             <h3 class="text-lg font-bold text-white mt-0.5">Revise os detalhes técnicos e aprove com um clique para iniciar a execução.</h3>
         </div>
         <a href="{{ route('portal.quotations.index') }}" class="btn-primary text-xs px-6 py-3 rounded-xl font-bold shrink-0">
@@ -97,20 +112,26 @@
     <div class="glass-card p-6 rounded-2xl border border-[#222222] space-y-4">
         <div class="flex items-center justify-between">
             <h3 class="text-sm font-bold text-white">Meus Projetos em Execução</h3>
-            <a href="{{ route('portal.projects.index') }}" class="text-xs text-[#E4A318] hover:underline font-bold">Ver todos</a>
+            @if($canPortal('portal.projects.view'))
+                <a href="{{ route('portal.projects.index') }}" class="text-xs text-[#F2C230] hover:underline font-bold">Ver todos</a>
+            @endif
         </div>
         <div class="space-y-4">
             @forelse($recentProjects as $p)
                 <div class="p-4 bg-[#141414] rounded-xl border border-[#2E2D2C] space-y-3">
                     <div class="flex items-center justify-between gap-3">
                         <div class="min-w-0">
-                            <a href="{{ route('portal.projects.show', $p) }}" class="text-xs font-bold text-white hover:text-[#E4A318] block truncate">{{ $p->name }}</a>
+                            @if($canPortal('portal.projects.view'))
+                                <a href="{{ route('portal.projects.show', $p) }}" class="text-xs font-bold text-white hover:text-[#F2C230] block truncate">{{ $p->name }}</a>
+                            @else
+                                <span class="text-xs font-bold text-white block truncate">{{ $p->name }}</span>
+                            @endif
                             <span class="text-[10px] text-gray-400 block mt-0.5">{{ $p->code }} • Previsão: {{ $p->deadline ? $p->deadline->format('d/m/Y') : 'Em definição' }}</span>
                         </div>
-                        <span class="text-xs font-extrabold text-[#E4A318] shrink-0">{{ $p->progress_percentage }}%</span>
+                        <span class="text-xs font-extrabold text-[#F2C230] shrink-0">{{ $p->progress_percentage }}%</span>
                     </div>
                     <div class="w-full bg-[#0B0B0B] h-2 rounded-full overflow-hidden border border-[#2E2D2C]">
-                        <div class="bg-gradient-to-r from-[#E4A318] to-[#C68B0E] h-full rounded-full" style="width: {{ $p->progress_percentage }}%"></div>
+                        <div class="bg-gradient-to-r from-[#F2C230] to-[#16749A] h-full rounded-full" style="width: {{ $p->progress_percentage }}%"></div>
                     </div>
                 </div>
             @empty
@@ -123,13 +144,19 @@
     <div class="glass-card p-6 rounded-2xl border border-[#222222] space-y-4">
         <div class="flex items-center justify-between">
             <h3 class="text-sm font-bold text-white">Últimas Solicitações Enviadas</h3>
-            <a href="{{ route('portal.requests.index') }}" class="text-xs text-[#E4A318] hover:underline font-bold">Ver todas</a>
+            @if($canPortal('portal.requests.manage'))
+                <a href="{{ route('portal.requests.index') }}" class="text-xs text-[#F2C230] hover:underline font-bold">Ver todas</a>
+            @endif
         </div>
         <div class="divide-y divide-[#222222]">
             @forelse($recentRequests as $req)
                 <div class="py-3 flex items-center justify-between gap-3">
                     <div class="min-w-0">
-                        <a href="{{ route('portal.requests.show', $req) }}" class="text-xs font-bold text-white hover:text-[#E4A318] block truncate">{{ $req->title ?: 'Solicitação ' . $req->protocol }}</a>
+                        @if($canPortal('portal.requests.manage'))
+                            <a href="{{ route('portal.requests.show', $req) }}" class="text-xs font-bold text-white hover:text-[#F2C230] block truncate">{{ $req->title ?: 'Solicitação ' . $req->protocol }}</a>
+                        @else
+                            <span class="text-xs font-bold text-white block truncate">{{ $req->title ?: 'Solicitação ' . $req->protocol }}</span>
+                        @endif
                         <span class="text-[10px] text-gray-400 block truncate">{{ $req->protocol }} • {{ $req->service?->name ?? 'Serviço Geral' }}</span>
                     </div>
                     <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-[#1C1C1C] text-gray-300 shrink-0">

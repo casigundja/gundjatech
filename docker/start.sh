@@ -3,9 +3,12 @@ set -e
 
 PORT="${PORT:-10000}"
 
-# Bind Apache dynamically to the platform PORT (Render / Railway / Fly)
+# Bind Apache dynamically to the platform PORT (Render / Railway / Fly) without leaking internal port on redirects
 sed -ri "s/Listen [0-9]+/Listen ${PORT}/g" /etc/apache2/ports.conf
 sed -ri "s/<VirtualHost \*:[0-9]+>/<VirtualHost *:${PORT}>/g" /etc/apache2/sites-available/000-default.conf
+if ! grep -q "UseCanonicalPhysicalPort Off" /etc/apache2/apache2.conf; then
+    printf '\nServerName localhost\nUseCanonicalName Off\nUseCanonicalPhysicalPort Off\n' >> /etc/apache2/apache2.conf
+fi
 
 # Ensure runtime writable directories exist
 mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache

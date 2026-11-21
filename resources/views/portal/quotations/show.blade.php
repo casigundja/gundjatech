@@ -78,8 +78,8 @@
     </div>
 
     <!-- Modal Reject Quotation -->
-    <div x-show="rejectModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-        <div class="glass-card max-w-md w-full p-6 rounded-3xl border border-red-500/40 space-y-4">
+    <div x-show="rejectModal" x-cloak @click.self="rejectModal = false" @keydown.escape.window="rejectModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+        <div class="glass-card max-w-md w-full max-h-[90vh] overflow-y-auto p-6 rounded-3xl border border-red-500/40 space-y-4">
             <h3 class="text-base font-bold text-white">Recusar ou Solicitar Ajuste</h3>
             <p class="text-xs text-gray-400">Conte o motivo ou o que gostaria de ajustar para que nossa equipe comercial prepare uma nova proposta.</p>
             <form action="{{ route('portal.quotations.reject', $quotation) }}" method="POST" class="space-y-4">

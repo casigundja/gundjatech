@@ -31,37 +31,37 @@
 
 <!-- ROW 1: 4 AUTONOMOUS CRM KPI CARDS -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-    <div class="gtb-card gtb-kpi-gold flex flex-col justify-between gap-3">
+    <a href="{{ route('admin.chat.index', ['filter' => 'ai']) }}" class="gtb-card gtb-kpi-gold flex flex-col justify-between gap-3 no-underline cursor-pointer hover:border-[#F2C230]/50 hover:-translate-y-0.5 transition-all">
         <span class="text-xs font-semibold text-[#D5DCEB]">Em Piloto Automático</span>
         <div class="flex items-baseline justify-between">
             <span class="gt-font-display text-2xl font-extrabold text-white">{{ $activeAutopilotCount }}</span>
             <span class="px-2 py-0.5 rounded-full bg-[#F2C230]/15 text-[#F2C230] text-[10px] font-bold">IA Ativa</span>
         </div>
-    </div>
+    </a>
 
-    <div class="gtb-card gtb-kpi-blue flex flex-col justify-between gap-3">
+    <a href="{{ route('admin.chat.index', ['filter' => 'open']) }}" class="gtb-card gtb-kpi-blue flex flex-col justify-between gap-3 no-underline cursor-pointer hover:border-[#38BDF8]/50 hover:-translate-y-0.5 transition-all">
         <span class="text-xs font-semibold text-[#D5DCEB]">Em Qualificação</span>
         <div class="flex items-baseline justify-between">
             <span class="gt-font-display text-2xl font-extrabold text-white">{{ $qualifyingCount }}</span>
-            <span class="px-2 py-0.5 rounded-full bg-[#121AFF]/20 text-[#93A3FF] text-[10px] font-bold">Coletando Escopo</span>
+            <span class="px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300 text-[10px] font-bold">Coletando Escopo</span>
         </div>
-    </div>
+    </a>
 
-    <div class="gtb-card gtb-kpi-petrol flex flex-col justify-between gap-3">
+    <a href="{{ route('admin.quotations.index') }}" class="gtb-card gtb-kpi-petrol flex flex-col justify-between gap-3 no-underline cursor-pointer hover:border-[#6EE7B7]/50 hover:-translate-y-0.5 transition-all">
         <span class="text-xs font-semibold text-[#D5DCEB]">Pré-Orçamentos IA</span>
         <div class="flex items-baseline justify-between">
             <span class="gt-font-display text-2xl font-extrabold text-white">{{ $aiQuotationsCount }}</span>
             <span class="px-2 py-0.5 rounded-full bg-emerald-500/15 text-[#6EE7B7] text-[10px] font-bold">{{ $proposalReadyCount }} prontos</span>
         </div>
-    </div>
+    </a>
 
-    <div class="gtb-card flex flex-col justify-between gap-3">
+    <a href="{{ route('admin.chat.index', ['filter' => 'waiting_staff']) }}" class="gtb-card flex flex-col justify-between gap-3 no-underline cursor-pointer hover:border-amber-400/50 hover:-translate-y-0.5 transition-all">
         <span class="text-xs font-semibold text-[#D5DCEB]">Transferidos p/ Humano</span>
         <div class="flex items-baseline justify-between">
             <span class="gt-font-display text-2xl font-extrabold text-white">{{ $handoffCount }}</span>
             <span class="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 text-[10px] font-bold">Handoff</span>
         </div>
-    </div>
+    </a>
 </div>
 
 <!-- ROW 2: PIPELINE TABLE (8 cols) + AI CONFIGURATION PANEL (4 cols) -->

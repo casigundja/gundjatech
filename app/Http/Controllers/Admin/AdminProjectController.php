@@ -153,9 +153,11 @@ class AdminProjectController extends Controller
             'status' => $validated['status'],
         ];
 
-        if ($validated['status'] === 'completed' && ! $project->completed_at) {
-            $updateData['completed_at'] = now();
+        if ($validated['status'] === 'completed') {
+            $updateData['completed_at'] = $project->completed_at ?? now();
             $updateData['progress_percentage'] = 100;
+        } else {
+            $updateData['completed_at'] = null;
         }
 
         $project->update($updateData);
@@ -191,6 +193,16 @@ class AdminProjectController extends Controller
 
         $this->recalculateProjectProgress($stage->project);
 
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'project.stage_updated',
+            'subject_type' => Project::class,
+            'subject_id' => $stage->project_id,
+            'details' => ['stage_title' => $stage->title, 'status' => $stage->status],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
         return back()->with('success', 'Etapa atualizada e progresso recalculado!');
     }
 
@@ -204,7 +216,7 @@ class AdminProjectController extends Controller
 
         $nextOrder = ((int) $project->stages()->max('order')) + 1;
 
-        $project->stages()->create([
+        $stage = $project->stages()->create([
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
             'deadline' => $validated['deadline'] ?? null,
@@ -213,6 +225,16 @@ class AdminProjectController extends Controller
         ]);
 
         $this->recalculateProjectProgress($project);
+
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'project.stage_added',
+            'subject_type' => Project::class,
+            'subject_id' => $project->id,
+            'details' => ['code' => $project->code, 'stage_title' => $stage->title],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
 
         return back()->with('success', 'Nova etapa adicionada ao cronograma e progresso recalculado!');
     }
@@ -234,12 +256,34 @@ class AdminProjectController extends Controller
             ['role_in_project' => $validated['role_in_project']]
         );
 
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'project.member_added',
+            'subject_type' => Project::class,
+            'subject_id' => $project->id,
+            'details' => ['code' => $project->code, 'member_user_id' => (int) $validated['user_id'], 'role' => $validated['role_in_project']],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
         return back()->with('success', 'Membro atribuído à equipe do projeto!');
     }
 
-    public function removeMember(ProjectMember $member): RedirectResponse
+    public function removeMember(Request $request, ProjectMember $member): RedirectResponse
     {
+        $projectId = $member->project_id;
+        $memberUserId = $member->user_id;
         $member->delete();
+
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'project.member_removed',
+            'subject_type' => Project::class,
+            'subject_id' => $projectId,
+            'details' => ['member_user_id' => $memberUserId],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
 
         return back()->with('success', 'Membro removido da equipe do projeto.');
     }
@@ -247,7 +291,7 @@ class AdminProjectController extends Controller
     public function uploadAttachment(Request $request, Project $project): RedirectResponse
     {
         $validated = $request->validate([
-            'file' => ['required', 'file', 'max:20480', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,png,jpg,jpeg,webp,zip'],
+            'file' => ['required', 'file', 'max:20480', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,png,jpg,jpeg,webp,zip', 'extensions:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,png,jpg,jpeg,webp,zip'],
             'title' => ['nullable', 'string', 'max:255'],
             'stage_id' => [
                 'nullable',
@@ -258,19 +302,39 @@ class AdminProjectController extends Controller
 
         $file = $request->file('file');
         $path = $file->store('project_files', 'local');
-        $displayName = ! empty($validated['title'])
+        $rawDisplayName = ! empty($validated['title'])
             ? $validated['title'].' ('.$file->getClientOriginalName().')'
             : $file->getClientOriginalName();
+        $displayName = Str::limit(
+            preg_replace('/[\x00-\x1F\x7F]+/', '', str_replace(['/', '\\', "\0"], '-', trim((string) $rawDisplayName))) ?: 'anexo',
+            220,
+            ''
+        );
 
-        ProjectAttachment::create([
-            'project_id' => $project->id,
-            'stage_id' => $validated['stage_id'] ?? null,
-            'file_name' => $displayName,
-            'file_path' => $path,
-            'file_size' => $file->getSize(),
-            'mime_type' => $file->getClientMimeType(),
-            'uploaded_by_user_id' => Auth::id(),
-            'is_client_visible' => $request->has('is_client_visible') ? $request->boolean('is_client_visible') : true,
+        try {
+            $attachment = ProjectAttachment::create([
+                'project_id' => $project->id,
+                'stage_id' => $validated['stage_id'] ?? null,
+                'file_name' => $displayName,
+                'file_path' => $path,
+                'file_size' => $file->getSize(),
+                'mime_type' => $file->getMimeType() ?: $file->getClientMimeType(),
+                'uploaded_by_user_id' => Auth::id(),
+                'is_client_visible' => $request->has('is_client_visible') ? $request->boolean('is_client_visible') : true,
+            ]);
+        } catch (\Throwable $e) {
+            Storage::disk('local')->delete($path);
+            throw $e;
+        }
+
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'project.attachment_uploaded',
+            'subject_type' => Project::class,
+            'subject_id' => $project->id,
+            'details' => ['code' => $project->code, 'attachment_id' => $attachment->id, 'file_name' => $displayName],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
         ]);
 
         return back()->with('success', 'Arquivo anexado ao projeto com armazenamento protegido!');
@@ -282,13 +346,77 @@ class AdminProjectController extends Controller
             abort(404);
         }
 
+        $safeName = str_replace(['/', '\\', "\0"], '-', (string) $attachment->file_name) ?: 'anexo';
+
         foreach (['local', 'public'] as $disk) {
             if (Storage::disk($disk)->exists($attachment->file_path)) {
-                return Storage::disk($disk)->download($attachment->file_path, $attachment->file_name);
+                return Storage::disk($disk)->download($attachment->file_path, $safeName);
             }
         }
 
         abort(404, 'Arquivo não encontrado no servidor.');
+    }
+
+    public function deleteAttachment(Request $request, Project $project, ProjectAttachment $attachment): RedirectResponse
+    {
+        if ($attachment->project_id !== $project->id) {
+            abort(404);
+        }
+
+        $filePath = $attachment->file_path;
+        $fileName = $attachment->file_name;
+        $attachment->delete();
+
+        foreach (['local', 'public'] as $disk) {
+            if (Storage::disk($disk)->exists($filePath)) {
+                Storage::disk($disk)->delete($filePath);
+            }
+        }
+
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'project.attachment_deleted',
+            'subject_type' => Project::class,
+            'subject_id' => $project->id,
+            'details' => ['code' => $project->code, 'file_name' => $fileName],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return back()->with('success', 'Anexo removido do projeto.');
+    }
+
+    public function destroy(Request $request, Project $project): RedirectResponse
+    {
+        $projectId = $project->id;
+        $code = $project->code;
+        $name = $project->name;
+        $attachmentPaths = $project->attachments()->pluck('file_path')->all();
+
+        DB::transaction(function () use ($project): void {
+            $project->delete();
+        });
+
+        foreach ($attachmentPaths as $filePath) {
+            foreach (['local', 'public'] as $disk) {
+                if (Storage::disk($disk)->exists($filePath)) {
+                    Storage::disk($disk)->delete($filePath);
+                }
+            }
+        }
+
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'project.deleted',
+            'subject_type' => Project::class,
+            'subject_id' => $projectId,
+            'details' => ['code' => $code, 'name' => $name],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return redirect()->route('admin.projects.index')
+            ->with('success', "Projeto {$code} excluído com sucesso.");
     }
 
     private function recalculateProjectProgress(Project $project): void

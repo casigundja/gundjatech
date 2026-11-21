@@ -28,28 +28,28 @@
         @endif
     </div>
 
-    <!-- Balance Summary -->
+    <!-- Balance Summary (Clickable Filter Cards) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div class="glass-card p-5 rounded-2xl border border-[#222222]">
+        <a href="{{ route('admin.finance.index', ['type' => 'income', 'status' => 'paid']) }}#extrato" class="glass-card p-5 rounded-2xl border border-[#222222] block no-underline cursor-pointer hover:border-emerald-400/50 hover:-translate-y-0.5 transition-all">
             <span class="text-xs text-gray-400 font-medium">Entradas Confirmadas</span>
             <div class="text-2xl font-extrabold text-emerald-400 mt-2">R$ {{ number_format($totalIncome, 2, ',', '.') }}</div>
-        </div>
-        <div class="glass-card p-5 rounded-2xl border border-[#222222]">
+        </a>
+        <a href="{{ route('admin.finance.index', ['type' => 'income', 'status' => 'pending_all']) }}#extrato" class="glass-card p-5 rounded-2xl border border-[#222222] block no-underline cursor-pointer hover:border-amber-400/50 hover:-translate-y-0.5 transition-all">
             <span class="text-xs text-gray-400 font-medium">A Receber (Pendente)</span>
             <div class="text-2xl font-extrabold text-amber-400 mt-2">R$ {{ number_format($pendingIncome, 2, ',', '.') }}</div>
-        </div>
-        <div class="glass-card p-5 rounded-2xl border border-[#222222]">
-            <span class="text-xs text-gray-400 font-medium">Despesas & Custos</span>
+        </a>
+        <a href="{{ route('admin.finance.index', ['type' => 'expense', 'status' => 'paid']) }}#extrato" class="glass-card p-5 rounded-2xl border border-[#222222] block no-underline cursor-pointer hover:border-red-400/50 hover:-translate-y-0.5 transition-all">
+            <span class="text-xs text-gray-400 font-medium">Despesas &amp; Custos</span>
             <div class="text-2xl font-extrabold text-red-400 mt-2">R$ {{ number_format($totalExpense, 2, ',', '.') }}</div>
-        </div>
-        <div class="glass-card p-5 rounded-2xl border border-[#222222]">
+        </a>
+        <a href="{{ route('admin.finance.index') }}#extrato" class="glass-card p-5 rounded-2xl border border-[#222222] block no-underline cursor-pointer hover:border-[#F2C230]/50 hover:-translate-y-0.5 transition-all">
             <span class="text-xs text-gray-400 font-medium">Saldo Líquido</span>
             <div class="text-2xl font-extrabold text-[#E4A318] mt-2">R$ {{ number_format($netBalance, 2, ',', '.') }}</div>
-        </div>
+        </a>
     </div>
 
     <!-- Transactions List -->
-    <div class="glass-card rounded-2xl border border-[#222222] overflow-hidden">
+    <div id="extrato" class="glass-card rounded-2xl border border-[#222222] overflow-hidden">
         <div class="p-4 border-b border-[#222222] flex items-center justify-between">
             <h3 class="text-xs font-bold uppercase tracking-wider text-white">Extrato de Lançamentos</h3>
         </div>
@@ -114,7 +114,7 @@
                                             method="POST"
                                             data-confirm-title="Excluir lançamento financeiro"
                                             data-confirm-message="Tem certeza que deseja excluir este lançamento? Os totalizadores de receita e caixa serão recalculados imediatamente."
-                                            data-confirm-target="{{ $t->description ?? ('Lançamento #' . $t->id) }} • R$ {{ number_format((float) $t->amount, 2, ',', '.') }}"
+                                            data-confirm-target="{{ $t->title ?: ($t->description ?: ('Lançamento #' . $t->id)) }} • R$ {{ number_format((float) $t->amount, 2, ',', '.') }}"
                                             data-confirm-button="Sim, excluir lançamento"
                                             data-confirm-tone="danger"
                                         >
@@ -148,24 +148,37 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 @foreach($recentQuotations as $q)
-                    <div class="p-3.5 bg-[#141414] rounded-xl border border-[#2E2D2C] flex items-center justify-between text-xs">
-                        <div class="truncate pr-2">
-                            <div class="font-mono font-bold text-[#E4A318]">{{ $q->quotation_number }}</div>
-                            <div class="text-white font-semibold truncate">{{ $q->client?->display_name ?? 'Cliente' }}</div>
+                    @if(Auth::user()->hasPermission('quotations.view'))
+                        <a href="{{ route('admin.quotations.show', $q) }}" class="p-3.5 bg-[#141414] rounded-xl border border-[#2E2D2C] hover:border-[#F2C230]/50 transition flex items-center justify-between text-xs no-underline">
+                            <div class="truncate pr-2">
+                                <div class="font-mono font-bold text-[#E4A318]">{{ $q->quotation_number }}</div>
+                                <div class="text-white font-semibold truncate">{{ $q->client?->display_name ?? 'Cliente' }}</div>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <div class="font-bold text-white">R$ {{ number_format($q->total, 2, ',', '.') }}</div>
+                                <span class="text-[10px] text-gray-400">{{ $q->status_label }}</span>
+                            </div>
+                        </a>
+                    @else
+                        <div class="p-3.5 bg-[#141414] rounded-xl border border-[#2E2D2C] flex items-center justify-between text-xs">
+                            <div class="truncate pr-2">
+                                <div class="font-mono font-bold text-[#E4A318]">{{ $q->quotation_number }}</div>
+                                <div class="text-white font-semibold truncate">{{ $q->client?->display_name ?? 'Cliente' }}</div>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <div class="font-bold text-white">R$ {{ number_format($q->total, 2, ',', '.') }}</div>
+                                <span class="text-[10px] text-gray-400">{{ $q->status_label }}</span>
+                            </div>
                         </div>
-                        <div class="text-right shrink-0">
-                            <div class="font-bold text-white">R$ {{ number_format($q->total, 2, ',', '.') }}</div>
-                            <span class="text-[10px] text-gray-400">{{ $q->status_label }}</span>
-                        </div>
-                    </div>
+                    @endif
                 @endforeach
             </div>
         </div>
     @endif
 
     <!-- Modal Transaction -->
-    <div x-show="transModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-        <div class="glass-card max-w-md w-full p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
+    <div x-show="transModal" x-cloak @click.self="transModal = false" @keydown.escape.window="transModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+        <div class="glass-card max-w-md w-full max-h-[90vh] overflow-y-auto p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
             <h3 class="text-base font-bold text-white">Novo Lançamento Financeiro</h3>
             <form action="{{ route('admin.finance.store') }}" method="POST" class="space-y-4">
                 @csrf

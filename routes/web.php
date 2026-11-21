@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\AdminAutonomousCrmController;
 use App\Http\Controllers\Admin\AdminCampaignController;
 use App\Http\Controllers\Admin\AdminChatController;
@@ -84,6 +85,17 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 /*
 |--------------------------------------------------------------------------
+| Self-Service Account & Security Routes (Authenticated Staff & Clients)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth')->prefix('minha-conta')->name('account.')->group(function () {
+    Route::get('/', [AccountController::class, 'edit'])->name('edit');
+    Route::put('/perfil', [AccountController::class, 'updateProfile'])->name('profile.update');
+    Route::put('/senha', [AccountController::class, 'updatePassword'])->middleware('throttle:10,1')->name('password.update');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Admin Panel Routes (Staff Only)
 |--------------------------------------------------------------------------
 */
@@ -145,6 +157,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/projetos/{project}/membros', [AdminProjectController::class, 'addMember'])->name('projects.members.store');
         Route::delete('/projetos/membros/{member}', [AdminProjectController::class, 'removeMember'])->name('projects.members.destroy');
         Route::post('/projetos/{project}/anexos', [AdminProjectController::class, 'uploadAttachment'])->name('projects.attachment');
+        Route::delete('/projetos/{project}/anexos/{attachment}', [AdminProjectController::class, 'deleteAttachment'])->name('projects.attachments.destroy');
+        Route::delete('/projetos/{project}', [AdminProjectController::class, 'destroy'])->name('projects.destroy');
     });
     Route::middleware('permission:projects.view')->group(function () {
         Route::get('/projetos', [AdminProjectController::class, 'index'])->name('projects.index');
@@ -171,6 +185,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/dominios/{domain}/dns', [AdminDomainController::class, 'addDnsRecord'])->name('domains.dns');
         Route::delete('/dominios/dns/{dnsRecord}', [AdminDomainController::class, 'deleteDnsRecord'])->name('domains.dns.destroy');
         Route::post('/dominios/{domain}/renovar', [AdminDomainController::class, 'renewDomain'])->name('domains.renew');
+        Route::delete('/dominios/{domain}', [AdminDomainController::class, 'destroy'])->name('domains.destroy');
     });
     Route::middleware('permission:domains.view')->group(function () {
         Route::get('/dominios', [AdminDomainController::class, 'index'])->name('domains.index');
@@ -182,6 +197,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/campanhas', [AdminCampaignController::class, 'store'])->name('campaigns.store');
         Route::put('/campanhas/{campaign}/status', [AdminCampaignController::class, 'updateStatus'])->name('campaigns.status');
         Route::post('/campanhas/{campaign}/metricas', [AdminCampaignController::class, 'addMetrics'])->name('campaigns.metrics');
+        Route::delete('/campanhas/{campaign}', [AdminCampaignController::class, 'destroy'])->name('campaigns.destroy');
     });
     Route::middleware('permission:campaigns.view')->group(function () {
         Route::get('/campanhas', [AdminCampaignController::class, 'index'])->name('campaigns.index');

@@ -4,20 +4,20 @@
 
 @section('content')
 <div class="space-y-6" x-data="{ domainModal: false }">
-    <!-- KPIs -->
+    <!-- KPIs (Clickable Filter Cards) -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="glass-card p-4 rounded-2xl border border-[#222222]">
+        <a href="{{ route('admin.domains.index') }}" class="glass-card p-4 rounded-2xl border border-[#222222] block no-underline cursor-pointer hover:border-[#F2C230]/50 hover:-translate-y-0.5 transition-all">
             <span class="text-xs text-gray-400">Total de Domínios Sob Gestão</span>
             <div class="text-2xl font-extrabold text-white mt-1">{{ $totalDomains }}</div>
-        </div>
-        <div class="glass-card p-4 rounded-2xl border border-[#222222]">
+        </a>
+        <a href="{{ route('admin.domains.index', ['status' => 'expiring_soon']) }}" class="glass-card p-4 rounded-2xl border border-[#222222] block no-underline cursor-pointer hover:border-amber-400/50 hover:-translate-y-0.5 transition-all">
             <span class="text-xs text-gray-400">Expirando em 30 dias</span>
             <div class="text-2xl font-extrabold text-amber-400 mt-1">{{ $expiringCount }}</div>
-        </div>
-        <div class="glass-card p-4 rounded-2xl border border-[#222222]">
+        </a>
+        <a href="{{ route('admin.domains.index', ['status' => 'expired']) }}" class="glass-card p-4 rounded-2xl border border-[#222222] block no-underline cursor-pointer hover:border-red-400/50 hover:-translate-y-0.5 transition-all">
             <span class="text-xs text-gray-400">Expirados</span>
             <div class="text-2xl font-extrabold text-red-400 mt-1">{{ $expiredCount }}</div>
-        </div>
+        </a>
     </div>
 
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -57,7 +57,7 @@
                 <tbody class="divide-y divide-[#222222]">
                     @forelse($domains as $d)
                         @php
-                            $daysLeft = $d->expiration_date ? (int) now()->startOfDay()->diffInDays($d->expiration_date->startOfDay(), false) : 0;
+                            $daysLeft = $d->days_until_expiration;
                         @endphp
                         <tr class="hover:bg-[#161616] transition">
                             <td class="px-6 py-4 font-mono font-bold text-white">
@@ -70,10 +70,12 @@
                             </td>
                             <td class="px-6 py-4">
                                 <span class="block text-white">{{ $d->expiration_date ? $d->expiration_date->format('d/m/Y') : 'Em definição' }}</span>
-                                @if($daysLeft <= 30 && $daysLeft >= 0)
-                                    <span class="text-[10px] text-amber-400 font-bold">Vence em {{ $daysLeft }} dias!</span>
+                                @if($daysLeft === null)
+                                    <span class="text-[10px] text-gray-400">Sem data definida</span>
+                                @elseif($daysLeft <= 30 && $daysLeft >= 0)
+                                    <span class="text-[10px] text-amber-400 font-bold">Vence em {{ $daysLeft }} dia(s)!</span>
                                 @elseif($daysLeft < 0)
-                                    <span class="text-[10px] text-red-400 font-bold">Expirado há {{ abs($daysLeft) }} dias!</span>
+                                    <span class="text-[10px] text-red-400 font-bold">Expirado há {{ abs($daysLeft) }} dia(s)!</span>
                                 @else
                                     <span class="text-[10px] text-emerald-400 font-semibold">{{ $daysLeft }} dias restantes</span>
                                 @endif
@@ -84,7 +86,25 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-right whitespace-nowrap">
-                                <a href="{{ route('admin.domains.show', $d) }}" class="text-[#E4A318] hover:underline font-bold">Gerenciar DNS &rarr;</a>
+                                <div class="inline-flex items-center gap-3">
+                                    <a href="{{ route('admin.domains.show', $d) }}" class="text-[#E4A318] hover:underline font-bold">Gerenciar DNS &rarr;</a>
+                                    @if(Auth::user()->hasPermission('domains.manage'))
+                                        <form
+                                            action="{{ route('admin.domains.destroy', $d) }}"
+                                            method="POST"
+                                            class="inline"
+                                            data-confirm-title="Excluir domínio"
+                                            data-confirm-message="Tem certeza que deseja excluir este domínio e toda a sua zona DNS e histórico de renovações?"
+                                            data-confirm-target="{{ $d->domain_name }}"
+                                            data-confirm-button="Sim, excluir domínio"
+                                            data-confirm-tone="danger"
+                                        >
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-400 hover:text-red-300 font-semibold cursor-pointer">Excluir</button>
+                                        </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -99,8 +119,8 @@
     </div>
 
     <!-- Modal Create Domain -->
-    <div x-show="domainModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-        <div class="glass-card max-w-md w-full p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
+    <div x-show="domainModal" x-cloak @click.self="domainModal = false" @keydown.escape.window="domainModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+        <div class="glass-card max-w-md w-full max-h-[90vh] overflow-y-auto p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
             <h3 class="text-base font-bold text-white">Cadastrar Domínio para Custódia</h3>
             <form action="{{ route('admin.domains.store') }}" method="POST" class="space-y-4">
                 @csrf

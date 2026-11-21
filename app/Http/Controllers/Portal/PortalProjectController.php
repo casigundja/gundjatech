@@ -50,9 +50,11 @@ class PortalProjectController extends Controller
             abort(403, 'Este anexo é restrito à equipe interna.');
         }
 
+        $safeName = str_replace(['/', '\\', "\0"], '-', (string) $attachment->file_name) ?: 'anexo';
+
         foreach (['local', 'public'] as $disk) {
             if (Storage::disk($disk)->exists($attachment->file_path)) {
-                return Storage::disk($disk)->download($attachment->file_path, $attachment->file_name);
+                return Storage::disk($disk)->download($attachment->file_path, $safeName);
             }
         }
 

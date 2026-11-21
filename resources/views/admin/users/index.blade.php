@@ -3,7 +3,7 @@
 @section('header_title', 'Gestão de Usuários & Perfis')
 
 @section('content')
-<div class="space-y-6" x-data="{ userModal: false, editModal: false, editUser: { id: null, name: '', email: '', phone: '', role: 'attendant', is_active: true } }">
+<div class="space-y-6" x-data="{ userModal: false, editModal: false, editUser: { id: null, name: '', email: '', phone: '', role: 'manager', is_active: true } }">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <form method="GET" class="flex flex-wrap gap-2 max-w-xl w-full">
             <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por nome ou e-mail..." class="grow bg-[#141414] border border-[#2E2D2C] rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-[#E4A318]">
@@ -42,7 +42,16 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#222222]">
-                    @foreach($users as $u)
+                    @php
+                        $actingUser = Auth::user();
+                        $actingLevel = $actingUser->roleEnum()->level();
+                    @endphp
+                    @forelse($users as $u)
+                        @php
+                            $canManageTarget = $actingUser->isSuperAdmin()
+                                || $u->id === $actingUser->id
+                                || $u->roleEnum()->level() < $actingLevel;
+                        @endphp
                         <tr class="hover:bg-[#161616]">
                             <td class="px-6 py-4">
                                 <span class="font-bold text-white block">{{ $u->name }}</span>
@@ -54,7 +63,7 @@
                                     $roleBadgeClass = match ($u->role) {
                                         'superadmin', 'admin' => 'bg-[#F2C230]/20 text-[#F2C230] border border-[#F2C230]/40',
                                         'client' => 'bg-white/10 text-[#D5DCEB] border border-white/15',
-                                        default => 'bg-[#121AFF]/20 text-[#93A3FF] border border-[#121AFF]/30',
+                                        default => 'bg-sky-500/15 text-sky-300 border border-sky-500/30',
                                     };
                                 @endphp
                                 <span class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold {{ $roleBadgeClass }}">
@@ -67,8 +76,8 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-right whitespace-nowrap">
-                                @if(Auth::user()->hasPermission('users.manage'))
-                                    @if(! $u->isSuperAdmin() || Auth::user()->isSuperAdmin())
+                                @if($actingUser->hasPermission('users.manage'))
+                                    @if($canManageTarget)
                                         <div class="inline-flex items-center justify-end gap-3">
                                             <button
                                                 type="button"
@@ -101,7 +110,9 @@
                                 @endif
                             </td>
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">Nenhum usuário encontrado para o filtro aplicado.</td></tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
@@ -111,8 +122,8 @@
     </div>
 
     <!-- Modal Create User -->
-    <div x-show="userModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-        <div class="glass-card max-w-md w-full p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
+    <div x-show="userModal" x-cloak @click.self="userModal = false" @keydown.escape.window="userModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+        <div class="glass-card max-w-md w-full max-h-[90vh] overflow-y-auto p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
             <h3 class="text-base font-bold text-white">Criar Usuário</h3>
             <form action="{{ route('admin.users.store') }}" method="POST" class="space-y-4">
                 @csrf
@@ -134,7 +145,7 @@
                     <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Perfil / Cargo *</label>
                     <select name="role" required class="w-full bg-[#141414] border border-[#2E2D2C] rounded-xl px-3 py-2 text-xs text-white">
                         @foreach($roles as $role)
-                            @if($role !== \App\Enums\UserRole::SuperAdmin || Auth::user()->isSuperAdmin())
+                            @if($actingUser->isSuperAdmin() || $role->level() < $actingLevel)
                                 <option value="{{ $role->value }}">{{ $role->label() }}</option>
                             @endif
                         @endforeach
@@ -154,8 +165,8 @@
     </div>
 
     <!-- Modal Edit User -->
-    <div x-show="editModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-        <div class="glass-card max-w-md w-full p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
+    <div x-show="editModal" x-cloak @click.self="editModal = false" @keydown.escape.window="editModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+        <div class="glass-card max-w-md w-full max-h-[90vh] overflow-y-auto p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
             <h3 class="text-base font-bold text-white">Editar Usuário</h3>
             <form :action="`{{ url('/admin/usuarios') }}/${editUser.id}`" method="POST" class="space-y-4">
                 @csrf
@@ -178,7 +189,7 @@
                     <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Perfil / Cargo *</label>
                     <select name="role" x-model="editUser.role" required class="w-full bg-[#141414] border border-[#2E2D2C] rounded-xl px-3 py-2 text-xs text-white">
                         @foreach($roles as $role)
-                            @if($role !== \App\Enums\UserRole::SuperAdmin || Auth::user()->isSuperAdmin())
+                            @if($actingUser->isSuperAdmin() || $role->level() <= $actingLevel)
                                 <option value="{{ $role->value }}">{{ $role->label() }}</option>
                             @endif
                         @endforeach

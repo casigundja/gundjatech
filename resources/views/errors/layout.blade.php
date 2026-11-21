@@ -19,9 +19,9 @@
             min-height: 100vh;
             font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
             background:
-                radial-gradient(60% 55% at 22% 24%, rgba(228, 163, 24, .22), transparent 65%),
-                radial-gradient(50% 50% at 85% 80%, rgba(18, 26, 255, .14), transparent 65%),
-                #06070E;
+                radial-gradient(60% 55% at 22% 24%, rgba(242, 194, 48, .20), transparent 65%),
+                radial-gradient(50% 50% at 85% 80%, rgba(22, 116, 154, .32), transparent 65%),
+                #063B5C;
             color: #FFFFFF;
             display: flex;
             align-items: center;
@@ -32,10 +32,10 @@
             width: 100%;
             max-width: 520px;
             background: #FFFFFF;
-            color: #1C1508;
+            color: #063B5C;
             border-radius: 24px;
             padding: 40px 36px;
-            box-shadow: 0 32px 80px -20px rgba(0, 0, 0, .65), 0 0 0 1px rgba(242, 194, 48, .22);
+            box-shadow: 0 32px 80px -20px rgba(4, 24, 38, .65), 0 0 0 1px rgba(242, 194, 48, .28);
             text-align: center;
         }
         .gt-err-brand {
@@ -48,13 +48,13 @@
         .gt-err-brand span {
             font-family: "ZSE", "Plus Jakarta Sans", sans-serif;
             font-size: 18px;
-            font-weight: 700;
-            color: #1C1508;
+            font-weight: 800;
+            color: #063B5C;
             letter-spacing: -.03em;
         }
         .gt-err-brand span em {
             font-style: normal;
-            color: #B87D0A;
+            color: #F2C230;
         }
         .gt-err-code {
             display: inline-flex;
@@ -62,9 +62,9 @@
             gap: 8px;
             padding: 6px 14px;
             border-radius: 999px;
-            background: #FDF5E2;
-            border: 1px solid #E8D5A5;
-            color: #8F6107;
+            background: #FEF7DC;
+            border: 1px solid rgba(242, 194, 48, .65);
+            color: #9A6B00;
             font-size: 12px;
             font-weight: 800;
             letter-spacing: .08em;
@@ -76,13 +76,13 @@
             font-size: clamp(22px, 4vw, 28px);
             line-height: 1.2;
             letter-spacing: -.025em;
-            color: #1C1508;
+            color: #063B5C;
             margin-bottom: 12px;
         }
         p {
             font-size: 14px;
             line-height: 1.6;
-            color: #6B5D45;
+            color: #46667B;
             margin-bottom: 28px;
         }
         .gt-err-actions {
@@ -96,37 +96,38 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            background: #121AFF;
-            color: #FFFFFF;
+            background: #F2C230;
+            color: #063B5C;
             text-decoration: none;
             font-size: 13.5px;
-            font-weight: 700;
+            font-weight: 800;
             padding: 12px 22px;
             border-radius: 12px;
-            box-shadow: 0 10px 24px -6px rgba(18, 26, 255, .45);
+            box-shadow: 0 10px 24px -6px rgba(242, 194, 48, .50);
             transition: background-color .18s ease, transform .15s ease;
         }
         .gt-btn-primary:hover {
-            background: #0B10C9;
+            background: #E0B020;
             transform: translateY(-1px);
         }
         .gt-btn-secondary {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: #FAF7F0;
-            color: #1C1508;
-            border: 1px solid #D6C9B2;
+            background: #E7F0F5;
+            color: #063B5C;
+            border: 1px solid #B6CDD9;
             text-decoration: none;
             font-size: 13.5px;
-            font-weight: 600;
+            font-weight: 700;
             padding: 12px 20px;
             border-radius: 12px;
-            transition: border-color .18s ease, color .18s ease;
+            transition: border-color .18s ease, color .18s ease, background-color .18s ease;
         }
         .gt-btn-secondary:hover {
-            border-color: #8F6107;
-            color: #8F6107;
+            background: #DCE8F0;
+            border-color: #16749A;
+            color: #16749A;
         }
         @media (max-width: 480px) {
             .gt-err-card { padding: 30px 22px; }

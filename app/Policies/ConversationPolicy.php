@@ -18,7 +18,10 @@ class ConversationPolicy
             return true;
         }
 
-        return $user->client !== null && $conversation->client_id === $user->client->id;
+        return $user->client !== null
+            && $conversation->client_id === $user->client->id
+            && $conversation->visitor_token === null
+            && ($conversation->channel === null || $conversation->channel === 'web_chat');
     }
 
     public function reply(User $user, Conversation $conversation): bool
@@ -27,6 +30,9 @@ class ConversationPolicy
             return true;
         }
 
-        return $user->client !== null && $conversation->client_id === $user->client->id;
+        return $user->client !== null
+            && $conversation->client_id === $user->client->id
+            && $conversation->visitor_token === null
+            && ($conversation->channel === null || $conversation->channel === 'web_chat');
     }
 }

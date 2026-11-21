@@ -6,7 +6,7 @@
 <div class="space-y-6">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         @forelse($domains as $d)
-            @php $daysLeft = $d->expiration_date ? (int) now()->startOfDay()->diffInDays($d->expiration_date->startOfDay(), false) : 0; @endphp
+            @php $daysLeft = $d->days_until_expiration; @endphp
             <div class="glass-card rounded-2xl p-6 border border-[#222222] space-y-4">
                 <div class="flex items-center justify-between gap-2">
                     <h3 class="text-lg font-mono font-bold text-white truncate">{{ $d->domain_name }}</h3>
@@ -16,8 +16,15 @@
                 </div>
 
                 <div class="text-xs text-gray-300 space-y-1">
-                    <div><span class="text-gray-400">Registrador:</span> {{ $d->registrar }}</div>
-                    <div><span class="text-gray-400">Vencimento:</span> {{ $d->expiration_date ? $d->expiration_date->format('d/m/Y') : 'Em definição' }} ({{ $daysLeft >= 0 ? $daysLeft . ' dias restantes' : 'Expirado' }})</div>
+                    <div><span class="text-gray-400">Registrador:</span> {{ $d->registrar ?: 'Não informado' }}</div>
+                    <div>
+                        <span class="text-gray-400">Vencimento:</span>
+                        @if($d->expiration_date)
+                            {{ $d->expiration_date->format('d/m/Y') }} ({{ $daysLeft >= 0 ? $daysLeft . ' dias restantes' : 'Expirado' }})
+                        @else
+                            Em definição
+                        @endif
+                    </div>
                     <div><span class="text-gray-400">Registros DNS ativos:</span> {{ $d->dnsRecords->count() }} apontamento(s)</div>
                 </div>
 
@@ -34,7 +41,7 @@
                 </div>
             </div>
         @empty
-            <div class="col-span-2 text-center py-12 text-gray-500 text-xs">Nenhum domínio vinculado à sua conta.</div>
+            <div class="col-span-full text-center py-12 text-gray-500 text-xs">Nenhum domínio vinculado à sua conta.</div>
         @endforelse
     </div>
 </div>

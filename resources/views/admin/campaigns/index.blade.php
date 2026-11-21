@@ -34,7 +34,8 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @forelse($campaigns as $camp)
             @php
-                $totalSpent = $camp->metrics->sum('spend') ?: (float) $camp->spent;
+                $totalSpent = (float) ($camp->metrics_sum_spend ?? 0) ?: (float) $camp->spent;
+                $totalConversions = (int) ($camp->metrics_sum_conversions ?? 0);
             @endphp
             <div class="glass-card rounded-2xl p-6 border border-[#222222] flex flex-col justify-between group hover:border-[#E4A318]/60 transition">
                 <div class="space-y-4">
@@ -62,21 +63,40 @@
                     </div>
                 </div>
 
-                <div class="pt-6 border-t border-[#222222] flex items-center justify-between text-xs mt-6">
-                    <span class="text-gray-400">{{ $camp->metrics->sum('conversions') }} conversões</span>
-                    <a href="{{ route('admin.campaigns.show', $camp) }}" class="btn-primary text-xs px-3 py-1.5 rounded-lg font-bold">Ver Métricas &rarr;</a>
+                <div class="pt-6 border-t border-[#222222] flex items-center justify-between gap-2 text-xs mt-6">
+                    <span class="text-gray-400">{{ $totalConversions }} conversões</span>
+                    <div class="flex items-center gap-2">
+                        @if(Auth::user()->hasPermission('campaigns.manage'))
+                            <form
+                                action="{{ route('admin.campaigns.destroy', $camp) }}"
+                                method="POST"
+                                data-confirm-title="Excluir campanha"
+                                data-confirm-message="Tem certeza que deseja excluir esta campanha e todo o histórico de métricas registrado?"
+                                data-confirm-target="{{ $camp->name }}"
+                                data-confirm-button="Sim, excluir campanha"
+                                data-confirm-tone="danger"
+                            >
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-red-400 hover:bg-red-500/10 border border-red-500/30 transition cursor-pointer">Excluir</button>
+                            </form>
+                        @endif
+                        <a href="{{ route('admin.campaigns.show', $camp) }}" class="btn-primary text-xs px-3 py-1.5 rounded-lg font-bold">Ver Métricas &rarr;</a>
+                    </div>
                 </div>
             </div>
         @empty
-            <div class="col-span-3 text-center py-12 text-gray-500">Nenhuma campanha cadastrada.</div>
+            <div class="col-span-full text-center py-12 text-gray-500">Nenhuma campanha cadastrada.</div>
         @endforelse
     </div>
 
-    <div>{{ $campaigns->links() }}</div>
+    @if($campaigns->hasPages())
+        <div>{{ $campaigns->links() }}</div>
+    @endif
 
     <!-- Modal Create Campaign -->
-    <div x-show="campModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-        <div class="glass-card max-w-md w-full p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
+    <div x-show="campModal" x-cloak @click.self="campModal = false" @keydown.escape.window="campModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+        <div class="glass-card max-w-md w-full max-h-[90vh] overflow-y-auto p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
             <h3 class="text-base font-bold text-white">Cadastrar Campanha de Tráfego</h3>
             <form action="{{ route('admin.campaigns.store') }}" method="POST" class="space-y-4">
                 @csrf

@@ -21,6 +21,17 @@
     </div>
 
     <div>
+      @if(session('success'))
+        <div role="status" style="margin-bottom:18px;padding:14px 18px;border-radius:14px;background:rgba(16,185,129,.16);border:1px solid rgba(16,185,129,.42);color:#ecfdf5;font-size:13px;font-weight:600">
+          {{ session('success') }}
+        </div>
+      @endif
+      @if(session('error'))
+        <div role="alert" style="margin-bottom:18px;padding:14px 18px;border-radius:14px;background:rgba(242,46,62,.16);border:1px solid rgba(242,46,62,.42);color:#fff;font-size:13px;font-weight:600">
+          {{ session('error') }}
+        </div>
+      @endif
+
       @php
         $statusLabels = [
             'new' => 'Nova Solicitação',

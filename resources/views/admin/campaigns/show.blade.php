@@ -30,6 +30,21 @@
                 <button @click="metricsModal = true" class="btn-primary px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2">
                     <span>+ Lançar Métricas</span>
                 </button>
+                <form
+                    action="{{ route('admin.campaigns.destroy', $campaign) }}"
+                    method="POST"
+                    data-confirm-title="Excluir campanha definitivamente"
+                    data-confirm-message="Tem certeza que deseja excluir esta campanha e todo o histórico de performance vinculado?"
+                    data-confirm-target="{{ $campaign->name }}"
+                    data-confirm-button="Sim, excluir campanha"
+                    data-confirm-tone="danger"
+                >
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="px-3.5 py-2.5 rounded-xl text-xs font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 transition cursor-pointer">
+                        Excluir
+                    </button>
+                </form>
             </div>
         @endif
     </div>
@@ -43,7 +58,7 @@
         $avgRoas = $campaign->metrics->count() > 0 ? (float) $campaign->metrics->avg('roas') : 0;
     @endphp
 
-    <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <div class="glass-card p-4 rounded-xl border border-[#222222]">
             <span class="text-[10px] text-gray-400 uppercase font-bold">Investimento</span>
             <div class="text-xl font-extrabold text-white mt-1">R$ {{ number_format($totSpend, 2, ',', '.') }}</div>
@@ -104,8 +119,8 @@
     </div>
 
     <!-- Modal Add Metrics -->
-    <div x-show="metricsModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-        <div class="glass-card max-w-md w-full p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
+    <div x-show="metricsModal" x-cloak @click.self="metricsModal = false" @keydown.escape.window="metricsModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+        <div class="glass-card max-w-md w-full max-h-[90vh] overflow-y-auto p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
             <h3 class="text-base font-bold text-white">Lançar Métricas de Desempenho</h3>
             <form action="{{ route('admin.campaigns.metrics', $campaign) }}" method="POST" class="space-y-4">
                 @csrf

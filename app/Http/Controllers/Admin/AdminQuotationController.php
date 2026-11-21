@@ -28,7 +28,11 @@ class AdminQuotationController extends Controller
             ->withCount('items');
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'open') {
+                $query->whereIn('status', ['draft', 'sent']);
+            } else {
+                $query->where('status', $request->status);
+            }
         }
 
         if ($request->filled('search')) {
@@ -110,6 +114,15 @@ class AdminQuotationController extends Controller
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
         ]);
+
+        if (! empty($validated['service_request_id'])) {
+            $linkedRequest = ServiceRequest::find($validated['service_request_id']);
+            if ($linkedRequest !== null && $linkedRequest->client_id !== null && (int) $linkedRequest->client_id !== (int) $validated['client_id']) {
+                return back()->withInput()->withErrors([
+                    'service_request_id' => 'A solicitação selecionada pertence a outro cliente.',
+                ]);
+            }
+        }
 
         $quotation = DB::transaction(function () use ($validated): Quotation {
             $subtotal = 0.0;
@@ -261,6 +274,10 @@ class AdminQuotationController extends Controller
 
         $quotation->update($updatePayload);
 
+        if ($validated['status'] === 'approved' && $quotation->client && $quotation->client->status === 'lead') {
+            $quotation->client->update(['status' => 'active']);
+        }
+
         if ($quotation->serviceRequest) {
             $sr = $quotation->serviceRequest;
             $srOld = $sr->status;
@@ -305,6 +322,14 @@ class AdminQuotationController extends Controller
 
     public function convertToProject(Request $request, Quotation $quotation): RedirectResponse
     {
+        if (! $request->user()?->hasPermission('projects.manage')) {
+            abort(403, 'Você não tem permissão para converter orçamentos em projetos.');
+        }
+
+        if (in_array($quotation->status, ['rejected', 'expired'], true)) {
+            return back()->with('error', 'Não é possível converter um orçamento recusado ou expirado em projeto.');
+        }
+
         if ($quotation->project) {
             return redirect()->route('admin.projects.show', $quotation->project)
                 ->with('success', 'Este orçamento já foi convertido em projeto.');
@@ -316,6 +341,10 @@ class AdminQuotationController extends Controller
                     'status' => 'approved',
                     'approved_at' => $quotation->approved_at ?? now(),
                 ]);
+            }
+
+            if ($quotation->client && $quotation->client->status === 'lead') {
+                $quotation->client->update(['status' => 'active']);
             }
 
             $firstServiceId = $quotation->items()->whereNotNull('service_id')->value('service_id')
@@ -386,7 +415,26 @@ class AdminQuotationController extends Controller
     {
         $number = $quotation->quotation_number;
         $quotationId = $quotation->id;
-        $quotation->delete();
+
+        DB::transaction(function () use ($quotation, $quotationId): void {
+            Conversation::whereNotNull('extracted_data')
+                ->where(function ($q) use ($quotation): void {
+                    if ($quotation->service_request_id !== null) {
+                        $q->where('service_request_id', $quotation->service_request_id);
+                    }
+                    $q->orWhere('client_id', $quotation->client_id);
+                })
+                ->get()
+                ->each(function (Conversation $conv) use ($quotationId): void {
+                    $data = is_array($conv->extracted_data) ? $conv->extracted_data : [];
+                    if ((int) ($data['draft_quotation_id'] ?? 0) === $quotationId) {
+                        unset($data['draft_quotation_id'], $data['draft_quotation_number']);
+                        $conv->update(['extracted_data' => $data]);
+                    }
+                });
+
+            $quotation->delete();
+        });
 
         ActivityLog::create([
             'user_id' => Auth::id(),

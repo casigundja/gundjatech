@@ -55,7 +55,7 @@
 
 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossorigin>
 
-<link rel="stylesheet" href="/css/sinnapse-criacao.css?v=gt-hdr1">
+<link rel="stylesheet" href="/css/sinnapse-criacao.css?v=gt-hdr7">
 
 <meta name="twitter:title" content="Agência de Criação de Sites em SP | GundjaTech">
 
@@ -139,13 +139,39 @@
 
     @endverbatim
     @auth
-      @if(auth()->user()->isStaff())
-        <a href="/admin" class="topo-acesso" aria-label="Acessar Painel Administrativo"><svg><use href="#i-escudo"/></svg><span>Painel Admin</span></a>
-      @else
-        <a href="/portal" class="topo-acesso" aria-label="Acessar Portal do Cliente"><svg><use href="#i-pessoa"/></svg><span>Meu Portal</span></a>
-      @endif
+      <div class="gt-pub-user">
+        <button
+          type="button"
+          class="gt-pub-user-btn"
+          aria-haspopup="true"
+          aria-expanded="false"
+          onclick="var w=this.closest('.gt-pub-user');w.classList.toggle('is-open');this.setAttribute('aria-expanded',w.classList.contains('is-open'));event.stopPropagation();"
+        >
+          <span class="gt-pub-user-meta">
+            <span class="gt-pub-user-name">{{ auth()->user()->name }}</span>
+            <span class="gt-pub-user-email">{{ auth()->user()->email }}</span>
+          </span>
+          <span class="gt-pub-user-avatar">
+            <span class="gt-pub-user-avatar-inner">{{ strtoupper(substr(auth()->user()->name, 0, 2)) }}</span>
+          </span>
+        </button>
+        <div class="gt-pub-user-dropdown" role="menu">
+          <a href="/minha-conta" class="gt-pub-user-item" role="menuitem">Minha Conta &amp; Senha</a>
+          @if(auth()->user()->isStaff())
+            <a href="/admin" class="gt-pub-user-item" role="menuitem">Painel Admin &nearr;</a>
+          @endif
+          @if(!auth()->user()->isStaff() || auth()->user()->isAdmin() || auth()->user()->hasPermission('portal.access'))
+            <a href="/portal" class="gt-pub-user-item" role="menuitem">Portal do Cliente &nearr;</a>
+          @endif
+          <form action="/logout" method="POST" class="gt-pub-user-logout-form">
+            @csrf
+            <button type="submit" class="gt-pub-user-logout" role="menuitem">Sair do Painel</button>
+          </form>
+        </div>
+      </div>
+      <script>if(!window.__gtPubUserInit){window.__gtPubUserInit=1;document.addEventListener('click',function(e){document.querySelectorAll('.gt-pub-user.is-open').forEach(function(el){if(!el.contains(e.target)){el.classList.remove('is-open');var b=el.querySelector('.gt-pub-user-btn');if(b)b.setAttribute('aria-expanded','false');}});});document.addEventListener('keydown',function(e){if(e.key==='Escape'){document.querySelectorAll('.gt-pub-user.is-open').forEach(function(el){el.classList.remove('is-open');var b=el.querySelector('.gt-pub-user-btn');if(b)b.setAttribute('aria-expanded','false');});}});}</script>
     @else
-      <a href="/login" class="topo-acesso" aria-label="Acessar Painel ou Área do Cliente"><svg><use href="#i-pessoa"/></svg><span>Painel / Login</span></a>
+      <a href="/login" class="topo-acesso" aria-label="Entrar no sistema"><span>Entrar no sistema</span></a>
     @endauth
     @verbatim
 
@@ -174,8 +200,6 @@
   <a href="/blog">Blog</a>
 
   <a href="/contato">Contato</a>
-
-  <a href="/login">Área do Cliente</a>
 
   <a class="btn mm-whats" href="https://wa.me/5519953248420"><svg><use href="#i-whats"/></svg> WhatsApp (19) 95324-8420</a>
 
@@ -269,7 +293,7 @@
 
             <h3 class="sr-only">KLASSE</h3><span class="hm-c-linha"></span>
 
-            <div class="hm-c-cols"><p>Plataforma de gestão escolar concebida para o ensino privado em Angola. Centraliza propinas, matrículas, pautas, presenças, conciliação bancária e documentos MED num único ecossistema em tempo real.</p><span class="hm-c-acoes"><a class="hm-c-cta" href="/cases/klasse/">Ver o case <svg><use href="#i-seta"/></svg></a><a class="hm-c-cta hm-c-cta-2" href="https://klasse.ao/" target="_blank" rel="noopener">Acessar o site <svg><use href="#i-diag"/></svg></a></span></div>
+            <div class="hm-c-cols"><p>Plataforma de gestão escolar concebida para o ensino privado em Angola. Centraliza propinas, matrículas, pautas, presenças, conciliação bancária e documentos MED num único ecossistema em tempo real.</p><span class="hm-c-acoes"><a class="hm-c-cta" href="/cases/klasse">Ver o case <svg><use href="#i-seta"/></svg></a><a class="hm-c-cta hm-c-cta-2" href="https://klasse.ao/" target="_blank" rel="noopener">Acessar o site <svg><use href="#i-diag"/></svg></a></span></div>
 
           </div>
 
@@ -291,7 +315,7 @@
 
             <h3 class="sr-only">Instituto Paraíso do Saber</h3><span class="hm-c-linha"></span>
 
-            <div class="hm-c-cols"><p>Instituto Técnico Privado de Saúde em Luanda dedicado à formação prática de excelência em Enfermagem, Análises Clínicas, Farmácia, Fisioterapia e Estomatologia, com portal de admissões e tour virtual.</p><span class="hm-c-acoes"><a class="hm-c-cta" href="/cases/instituto-paraiso-do-saber/">Ver o case <svg><use href="#i-seta"/></svg></a><a class="hm-c-cta hm-c-cta-2" href="https://institutoparaisodosaber.com/" target="_blank" rel="noopener">Acessar o site <svg><use href="#i-diag"/></svg></a></span></div>
+            <div class="hm-c-cols"><p>Instituto Técnico Privado de Saúde em Luanda dedicado à formação prática de excelência em Enfermagem, Análises Clínicas, Farmácia, Fisioterapia e Estomatologia, com portal de admissões e tour virtual.</p><span class="hm-c-acoes"><a class="hm-c-cta" href="/cases/instituto-paraiso-do-saber">Ver o case <svg><use href="#i-seta"/></svg></a><a class="hm-c-cta hm-c-cta-2" href="https://institutoparaisodosaber.com/" target="_blank" rel="noopener">Acessar o site <svg><use href="#i-diag"/></svg></a></span></div>
 
           </div>
 
@@ -313,7 +337,7 @@
 
             <h3 class="sr-only">Cotech Contabilidade</h3><span class="hm-c-linha"></span>
 
-            <div class="hm-c-cols"><p>Plataforma digital de contabilidade empresarial e consultoria tributária que une tecnologia e proximidade, com abertura de empresa, planos transparentes, calculadoras fiscais interativas e área da equipa.</p><span class="hm-c-acoes"><a class="hm-c-cta" href="/cases/cotech-contabilidade/">Ver o case <svg><use href="#i-seta"/></svg></a><a class="hm-c-cta hm-c-cta-2" href="https://cotechcontabilidade.com/" target="_blank" rel="noopener">Acessar o site <svg><use href="#i-diag"/></svg></a></span></div>
+            <div class="hm-c-cols"><p>Plataforma digital de contabilidade empresarial e consultoria tributária que une tecnologia e proximidade, com abertura de empresa, planos transparentes, calculadoras fiscais interativas e área da equipa.</p><span class="hm-c-acoes"><a class="hm-c-cta" href="/cases/cotech-contabilidade">Ver o case <svg><use href="#i-seta"/></svg></a><a class="hm-c-cta hm-c-cta-2" href="https://cotechcontabilidade.com/" target="_blank" rel="noopener">Acessar o site <svg><use href="#i-diag"/></svg></a></span></div>
 
           </div>
 
@@ -511,26 +535,6 @@
 
 
 
-      <article class="g-card g-seguranca">
-
-        <div class="radar" aria-hidden="true"><i></i><b></b><b></b><b></b></div>
-
-        <div class="seg-txt">
-
-          <h3>Segurança aprovada em auditoria internacional</h3>
-
-          <p>Em 2025, a Associated British Foods auditou e aprovou nosso processo de criação, cibersegurança e operação de sites.</p>
-
-          <div class="selos-seg"><span><svg><use href="#i-escudo"/></svg>Auditoria ABF</span><span><svg><use href="#i-escudo"/></svg>ISO/IEC 27001</span><span><svg><use href="#i-escudo"/></svg>Monitoramento 24/7</span><span><svg><use href="#i-escudo"/></svg>Backup diário</span></div>
-
-          <a class="link-cta seg-link" href="/servicos/gerenciamento-de-dominios">Conheça a GundjaTech Web Security →</a>
-
-        </div>
-
-      </article>
-
-
-
     </div>
 
   </div>
@@ -717,7 +721,7 @@
 
       <details><summary>Por que contratar uma empresa de criação de sites em vez de um freelancer ou template?</summary><p>Uma empresa de criação de sites reúne em um time só designers, desenvolvedores, especialistas em SEO e em cibersegurança, com prazo e garantia em contrato. Templates e freelancers costumam resolver o visual, mas deixam de fora performance, segurança, SEO técnico e suporte depois do lançamento.</p></details>
 
-      <details><summary>Por que escolher uma agência de criação de sites em São Paulo?</summary><p>A GundjaTech tem escritórios na Av. Eng. Luís Carlos Berrini, em São Paulo, e em <a href="/criacao-de-sites-alphaville/">Alphaville, Barueri</a>. Atendemos empresas de SP com reuniões presenciais quando necessário e também clientes de todo o Brasil e de outros 3 continentes, com projetos para empresas de educação, saúde, tecnologia e finanças como KLASSE, Instituto Paraíso do Saber e Cotech Contabilidade.</p></details>
+      <details><summary>Por que escolher uma agência de criação de sites em São Paulo?</summary><p>A GundjaTech tem escritórios na Av. Eng. Luís Carlos Berrini, em São Paulo, e em <a href="/criacao-de-sites-alphaville">Alphaville, Barueri</a>. Atendemos empresas de SP com reuniões presenciais quando necessário e também clientes de todo o Brasil e de outros 3 continentes, com projetos para empresas de educação, saúde, tecnologia e finanças como KLASSE, Instituto Paraíso do Saber e Cotech Contabilidade.</p></details>
 
       <details><summary>Vocês fazem desenvolvimento de sites sob medida?</summary><p>Sim. O desenvolvimento de sites da GundjaTech é 100% sob medida: layout exclusivo, sistemas web, portais, áreas de cliente e integrações com CRM, ERP e ferramentas de marketing. Nosso time de desenvolvimento tem experiência em PHP, Java, ASP.NET e APIs de mercado.</p></details>
 
@@ -753,7 +757,7 @@
 
   <div class="container">
 
-    <h2 id="guia-titulo">Criação e desenvolvimento de sites em São Paulo: o guia da GundjaTech</h2>
+    <h2 id="guia-titulo">Criação e desenvolvimento de sites: o guia da GundjaTech</h2>
 
     <div class="guia-txt js-guia" id="guia-txt">
 
@@ -771,7 +775,7 @@
 
         <h3>Agência de desenvolvimento de sites sob medida</h3>
 
-        <p>Como <a href="/desenvolvimento-de-sites/">empresa de desenvolvimento de sites</a>, cuidamos do código à infraestrutura. Desenvolvemos sites institucionais, sites corporativos B2B, landing pages, portais de conteúdo, áreas de cliente, sistemas web e sites internacionais em vários idiomas.</p>
+        <p>Como <a href="/desenvolvimento-de-sites">empresa de desenvolvimento de sites</a>, cuidamos do código à infraestrutura. Desenvolvemos sites institucionais, sites corporativos B2B, landing pages, portais de conteúdo, áreas de cliente, sistemas web e sites internacionais em vários idiomas.</p>
 
         <p>Nosso time tem experiência em PHP, Java, ASP.NET, Drupal, Magento e integrações com CRM, ERP, plataformas de automação de marketing e APIs como Google Maps, YouTube e Shopify. O resultado é um site rápido, estável e preparado para crescer junto com a empresa.</p>
 
@@ -781,7 +785,7 @@
 
         <h3>Agência de sites em WordPress</h3>
 
-        <p>Somos especialistas em <a href="/criacao-de-sites-wordpress/">criação de sites em WordPress</a>, a plataforma mais usada no mundo. Com o Elementor Pro, a sua equipe edita textos, imagens e páginas sem depender de programador. Entregamos o site com treinamento e cuidamos de atualizações, segurança e backups, porque um WordPress sem manutenção vira porta de entrada para ataques.</p>
+        <p>Somos especialistas em <a href="/criacao-de-sites-wordpress">criação de sites em WordPress</a>, a plataforma mais usada no mundo. Com o Elementor Pro, a sua equipe edita textos, imagens e páginas sem depender de programador. Entregamos o site com treinamento e cuidamos de atualizações, segurança e backups, porque um WordPress sem manutenção vira porta de entrada para ataques.</p>
 
       </article>
 
@@ -871,7 +875,7 @@
 
         <h3>Quanto custa a criação de um site em SP</h3>
 
-        <p>O valor de um site depende do número de páginas, das integrações e das funcionalidades. Um site institucional custa bem menos que um portal com área de cliente ou integração com ERP. Veja o nosso guia <a href="/quanto-custa-um-site/">quanto custa um site</a>. Na GundjaTech, você recebe uma proposta com escopo, prazo e investimento fechados, sem surpresas no meio do caminho.</p>
+        <p>O valor de um site depende do número de páginas, das integrações e das funcionalidades. Um site institucional custa bem menos que um portal com área de cliente ou integração com ERP. Veja o nosso guia <a href="/quanto-custa-um-site">quanto custa um site</a>. Na GundjaTech, você recebe uma proposta com escopo, prazo e investimento fechados, sem surpresas no meio do caminho.</p>
 
       </article>
 
@@ -887,7 +891,7 @@
 
         <h3>Atendimento em São Paulo e em todo o Brasil</h3>
 
-        <p>Temos escritórios na Av. Eng. Luís Carlos Berrini, em São Paulo, e em <a href="/criacao-de-sites-alphaville/">Alphaville, Barueri</a>. Atendemos empresas da capital e da Grande São Paulo com reuniões presenciais quando necessário, e clientes de todo o Brasil e do exterior de forma remota, com o mesmo time do início ao fim.</p>
+        <p>Temos escritórios na Av. Eng. Luís Carlos Berrini, em São Paulo, e em <a href="/criacao-de-sites-alphaville">Alphaville, Barueri</a>. Atendemos empresas da capital e da Grande São Paulo com reuniões presenciais quando necessário, e clientes de todo o Brasil e do exterior de forma remota, com o mesmo time do início ao fim.</p>
 
       </article>
 
@@ -932,13 +936,13 @@
 
         <div><h3>Links</h3><ul><li><a href="#contato">Contato</a></li><li><a href="/#sobre">Sobre</a></li><li><a href="/portfolio">Projetos</a></li><li><a href="/blog">Blog</a></li></ul></div>
 
-        <div><h3>Serviços</h3><ul><li><a href="/desenvolvimento-de-sites/">Desenvolvimento de sites</a></li><li><a href="/criacao-de-sites-wordpress/">Sites em WordPress</a></li><li><a href="/quanto-custa-um-site/">Quanto custa um site</a></li><li><a href="/servicos">Todos os serviços</a></li></ul></div>
+        <div><h3>Serviços</h3><ul><li><a href="/desenvolvimento-de-sites">Desenvolvimento de sites</a></li><li><a href="/criacao-de-sites-wordpress">Sites em WordPress</a></li><li><a href="/quanto-custa-um-site">Quanto custa um site</a></li><li><a href="/servicos">Todos os serviços</a></li></ul></div>
 
-        <div><h3>Cases</h3><ul><li><a href="/cases/klasse/">KLASSE · Gestão Escolar</a></li><li><a href="/cases/instituto-paraiso-do-saber/">Instituto Paraíso do Saber</a></li><li><a href="/cases/cotech-contabilidade/">Cotech Contabilidade</a></li><li><a href="/portfolio">Todos os cases</a></li></ul></div>
+        <div><h3>Cases</h3><ul><li><a href="/cases/klasse">KLASSE · Gestão Escolar</a></li><li><a href="/cases/instituto-paraiso-do-saber">Instituto Paraíso do Saber</a></li><li><a href="/cases/cotech-contabilidade">Cotech Contabilidade</a></li><li><a href="/portfolio">Todos os cases</a></li></ul></div>
 
         
 
-        <div><h3>Fale com a gente</h3><ul><li><a href="mailto:contato@gundjatech.com">contato@gundjatech.com</a></li><li><a href="https://wa.me/5519953248420">WhatsApp (19) 95324-8420</a></li></ul></div>
+        <div><h3>Fale com a gente</h3><ul><li><a href="mailto:contato@gundjatech.com">contato@gundjatech.com</a></li><li><a href="https://wa.me/5519953248420">WhatsApp (19) 95324-8420</a></li><li><a href="/acompanhar-solicitacao">Acompanhar solicitação</a></li></ul></div>
 
       </div>
 
@@ -950,7 +954,7 @@
 
       <a href="https://wa.me/5519953248420" aria-label="WhatsApp"><svg><use href="#i-whats"/></svg></a>
 
-    </div><a href="/politica-de-privacidade/">Política de privacidade</a></div>
+    </div><a href="/politica-de-privacidade">Política de privacidade</a></div>
 
     </div>
 
@@ -1083,9 +1087,9 @@
 
 
 
-<script defer src="/jsm/main.ac8b157f35.js?v=gt-live1"></script>
+<script defer src="/jsm/main.ac8b157f35.js?v=gt-live2"></script>
 
-<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live5"></script>
+<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live7"></script>
 
 <script defer src="/jsm/animacoes.b868b7f2df.js"></script>
 
@@ -1097,7 +1101,7 @@
 
 <script defer src="/jsm/video-bg.811fe64ce2.js"></script>
 
-<script src="/jsm/leads.ce7ca30ca6.js?v=gt-live1" defer></script>
+<script src="/jsm/leads.ce7ca30ca6.js?v=gt-live2" defer></script>
 
 <script src="/jsm/cro.107b971293.js" defer></script>
 

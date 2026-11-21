@@ -9,7 +9,7 @@
     }
 
     function setSessionJson(key, val) {
-        try { sessionStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+        try { sessionStorage.setItem(key, JSON.stringify(val)); } catch (e) { }
     }
 
     function pushDataLayer(event, extra) {
@@ -33,7 +33,7 @@
 
     function getAttribution() {
         var first = null;
-        try { first = JSON.parse(localStorage.getItem("snp_ft") || "null"); } catch (e) {}
+        try { first = JSON.parse(localStorage.getItem("snp_ft") || "null"); } catch (e) { }
         return { primeiro: first, ultimo: getSessionJson("snp_lt") };
     }
 
@@ -52,7 +52,7 @@
         try {
             var parsed = document.referrer ? new URL(document.referrer).hostname : "";
             if (parsed && parsed !== location.hostname) { refHost = parsed; }
-        } catch (e) {}
+        } catch (e) { }
         if (refHost) {
             data.referrer = refHost;
             hasData = true;
@@ -65,7 +65,7 @@
             if (!existing || Date.now() - new Date(existing.em).getTime() > 7776e6) {
                 localStorage.setItem("snp_ft", JSON.stringify(data));
             }
-        } catch (e) {}
+        } catch (e) { }
 
         if (hasData || !getSessionJson("snp_lt")) {
             setSessionJson("snp_lt", data);
@@ -227,27 +227,27 @@
         waDialog.setAttribute("aria-labelledby", "wq-tit");
         waDialog.innerHTML =
             '<div class="wq-caixa">' +
-                '<aside class="wq-lado" aria-hidden="true">' +
-                    '<p class="wq-kicker"><span class="wq-on"></span>' + L("Especialistas online") + '</p>' +
-                    '<p class="wq-lado-tit">' + L("Sua conversa já começa") + ' <em>' + L("no ponto certo") + '</em></p>' +
-                    '<div class="wq-fone">' +
-                        '<div class="wq-fone-topo"><img src="/img/simbolo-branco.svg" alt=""><span><b>GundjaTech</b><small>' + L("Responde em até 4 horas úteis") + '</small></span></div>' +
-                        '<div class="wq-fone-msgs"><p class="wq-bolha wq-bolha-eles">' + L("Olá! Como podemos ajudar?") + '</p><p class="wq-bolha wq-bolha-voce js-wq-previa"></p></div>' +
-                    '</div>' +
-                    '<ul class="wq-selos"><li>' + L("Atendimento direto com especialistas") + '</li><li>' + L("Seus dados protegidos (LGPD)") + '</li></ul>' +
-                '</aside>' +
-                '<form class="wq-form" novalidate>' +
-                    '<button type="button" class="wq-x" aria-label="' + L("Fechar") + '">×</button>' +
-                    '<h2 id="wq-tit">' + L("Antes de abrir o WhatsApp,") + ' <em>' + L("conta rapidinho:") + '</em></h2>' +
-                    '<p class="wq-sub">' + L("Assim o especialista certo já responde com o que importa para o seu projeto.") + '</p>' +
-                    '<label class="wq-campo">' + L("Nome") + '*<input name="nome" autocomplete="name" required></label>' +
-                    '<label class="wq-campo">' + L("E-mail corporativo") + '*<input name="email" type="email" autocomplete="email" required placeholder="voce@empresa.com.br"></label>' +
-                    '<label class="wq-campo wq-meio">WhatsApp*<input name="telefone" type="tel" autocomplete="tel" required placeholder="' + L("(11) 90000-0000") + '"></label>' +
-                    '<label class="wq-campo wq-meio">' + L("Empresa") + '<input name="empresa" autocomplete="organization"></label>' +
-                    '<div class="wq-campo wq-site"><label for="wq-site">' + L("Site da empresa") + '</label><div class="wq-site-linha"><input id="wq-site" name="site" inputmode="url" placeholder="www.suaempresa.com.br"><label class="wq-chip"><input type="checkbox" name="semsite"><span>' + L("Ainda não tenho site") + '</span></label></div></div>' +
-                    '<input type="text" name="sobrenome_hp" tabindex="-1" autocomplete="off" class="wq-hp" aria-hidden="true">' +
-                    '<button type="submit" class="btn wq-btn"><svg><use href="#i-whats"/></svg> ' + L("Abrir o WhatsApp") + '</button>' +
-                '</form>' +
+            '<aside class="wq-lado" aria-hidden="true">' +
+            '<p class="wq-kicker"><span class="wq-on"></span>' + L("Especialistas online") + '</p>' +
+            '<p class="wq-lado-tit">' + L("Sua conversa já começa") + ' <em>' + L("no ponto certo") + '</em></p>' +
+            '<div class="wq-fone">' +
+            '<div class="wq-fone-topo"><img src="/img/simbolo-branco.svg" alt=""><span><b>GundjaTech</b><small>' + L("Responde em até 4 horas úteis") + '</small></span></div>' +
+            '<div class="wq-fone-msgs"><p class="wq-bolha wq-bolha-eles">' + L("Olá! Como podemos ajudar?") + '</p><p class="wq-bolha wq-bolha-voce js-wq-previa"></p></div>' +
+            '</div>' +
+            '<ul class="wq-selos"><li>' + L("Atendimento direto com especialistas") + '</li><li>' + L("Seus dados protegidos (LGPD)") + '</li></ul>' +
+            '</aside>' +
+            '<form class="wq-form" novalidate>' +
+            '<button type="button" class="wq-x" aria-label="' + L("Fechar") + '">×</button>' +
+            '<h2 id="wq-tit">' + L("Antes de abrir o WhatsApp,") + ' <em>' + L("conta rapidinho:") + '</em></h2>' +
+            '<p class="wq-sub">' + L("Assim o especialista certo já responde com o que importa para o seu projeto.") + '</p>' +
+            '<label class="wq-campo">' + L("Nome") + '*<input name="nome" autocomplete="name" required></label>' +
+            '<label class="wq-campo">' + L("E-mail corporativo") + '*<input name="email" type="email" autocomplete="email" required placeholder="voce@empresa.com.br"></label>' +
+            '<label class="wq-campo wq-meio">WhatsApp*<input name="telefone" type="tel" autocomplete="tel" required placeholder="' + L("(11) 90000-0000") + '"></label>' +
+            '<label class="wq-campo wq-meio">' + L("Empresa") + '<input name="empresa" autocomplete="organization"></label>' +
+            '<div class="wq-campo wq-site"><label for="wq-site">' + L("Site da empresa") + '</label><div class="wq-site-linha"><input id="wq-site" name="site" inputmode="url" placeholder="www.suaempresa.com.br"><label class="wq-chip"><input type="checkbox" name="semsite"><span>' + L("Ainda não tenho site") + '</span></label></div></div>' +
+            '<input type="text" name="sobrenome_hp" tabindex="-1" autocomplete="off" class="wq-hp" aria-hidden="true">' +
+            '<button type="submit" class="btn wq-btn"><svg><use href="#i-whats"/></svg> ' + L("Abrir o WhatsApp") + '</button>' +
+            '</form>' +
             '</div>';
         document.body.appendChild(waDialog);
 
@@ -314,25 +314,26 @@
             setSessionJson("snp_wq_dados", lead);
             setSessionJson("snp_wq", score.quente ? "Q" : "F");
 
-            sendLead(lead);
-            fetch("/api/whatsapp", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "X-Requested-With": "XMLHttpRequest"
-                },
-                keepalive: true,
-                body: JSON.stringify({
-                    nome: lead.nome,
-                    email: lead.email,
-                    telefone: lead.telefone,
-                    empresa: lead.empresa,
-                    site: lead.site,
-                    qualificado: score.quente,
-                    lingua: document.documentElement.lang
-                })
-            }).catch(function () {});
+            Promise.resolve(sendLead(lead)).then(function () {
+                return fetch("/api/whatsapp", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    keepalive: true,
+                    body: JSON.stringify({
+                        nome: lead.nome,
+                        email: lead.email,
+                        telefone: lead.telefone,
+                        empresa: lead.empresa,
+                        site: lead.site,
+                        qualificado: score.quente,
+                        lingua: document.documentElement.lang
+                    })
+                });
+            }).catch(function () { });
 
             waDialog.close();
             openWhatsappWindow(lead, score.quente ? "Q" : "F");

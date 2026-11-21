@@ -31,6 +31,30 @@ enum UserRole: string
     }
 
     /**
+     * @return list<self>
+     */
+    public static function visibleRoles(): array
+    {
+        return [
+            self::SuperAdmin,
+            self::Admin,
+            self::Manager,
+            self::Client,
+        ];
+    }
+
+    public function level(): int
+    {
+        return match ($this) {
+            self::SuperAdmin => 100,
+            self::Admin => 80,
+            self::Manager => 60,
+            self::Financial, self::Attendant, self::Developer => 40,
+            self::Client => 10,
+        };
+    }
+
+    /**
      * @return list<string>
      */
     public function defaultPermissions(): array

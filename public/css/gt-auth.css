@@ -26,24 +26,24 @@
 }
 
 :root {
-    --gt-obsidian: #06070E;
-    --gt-obsidian-soft: #0C0F1C;
-    --gt-canvas: #F7F5F0;
-    --gt-canvas-deep: #EFEBE1;
+    --gt-obsidian: #041D30;
+    --gt-obsidian-soft: #063B5C;
+    --gt-canvas: #E7F0F5;
+    --gt-canvas-deep: #DCE8F0;
     --gt-white: #FFFFFF;
-    --gt-ink: #111625;
-    --gt-ink-soft: #3D4559;
-    --gt-muted: #646E84;
-    --gt-border: #E5DFD3;
-    --gt-input-border: #D9DFEB;
-    --gt-input-bg: #FAF9F6;
-    --gt-gold: #E4A318;
+    --gt-ink: #063B5C;
+    --gt-ink-soft: #264F6A;
+    --gt-muted: #527287;
+    --gt-border: #CFE0EB;
+    --gt-input-border: #BDD2DF;
+    --gt-input-bg: #F6FAFC;
+    --gt-gold: #F2C230;
     --gt-gold-bright: #F2C230;
-    --gt-gold-glow: #FFC94A;
-    --gt-gold-ink: #9A6806;
-    --gt-gold-soft: #FDF5DF;
-    --gt-blue: #121AFF;
-    --gt-blue-hover: #0B10C9;
+    --gt-gold-glow: #FFE074;
+    --gt-gold-ink: #9A6B00;
+    --gt-gold-soft: #FEF7DC;
+    --gt-blue: #16749A;
+    --gt-blue-hover: #0E5A7A;
     --gt-ok: #22C55E;
 }
 
@@ -81,15 +81,15 @@ html, body {
     overflow: hidden;
     isolation: isolate;
     background:
-        radial-gradient(95% 75% at 18% 8%, rgba(228, 163, 24, .14) 0%, transparent 62%),
-        radial-gradient(80% 65% at 88% 92%, rgba(18, 26, 255, .10) 0%, transparent 60%),
-        linear-gradient(160deg, #070810 0%, #05060C 58%, #0A0C16 100%);
+        radial-gradient(95% 75% at 18% 8%, rgba(242, 194, 48, .15) 0%, transparent 62%),
+        radial-gradient(80% 65% at 88% 92%, rgba(22, 116, 154, .28) 0%, transparent 60%),
+        linear-gradient(160deg, #063B5C 0%, #04243B 58%, #031A2B 100%);
     color: #FFFFFF;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     padding: clamp(24px, 3vw, 40px) clamp(28px, 4.5vw, 68px);
-    border-right: 1px solid rgba(228, 163, 24, .20);
+    border-right: 1px solid rgba(242, 194, 48, .22);
 }
 
 /* Soft Animated Ambient Glows (Controlled opacity — atmospheric, never muddy) */
@@ -118,8 +118,8 @@ html, body {
     height: 460px;
     right: -160px;
     bottom: -180px;
-    opacity: .34;
-    background: radial-gradient(circle, #C68B0E 0%, rgba(143, 97, 7, .28) 45%, transparent 72%);
+    opacity: .42;
+    background: radial-gradient(circle, #16749A 0%, rgba(22, 116, 154, .32) 45%, transparent 72%);
     animation: gt-drift-2 32s ease-in-out infinite alternate;
 }
 
@@ -509,8 +509,8 @@ html, body {
     isolation: isolate;
     background:
         radial-gradient(75% 55% at 88% 8%, rgba(242, 194, 48, .12) 0%, transparent 65%),
-        radial-gradient(65% 50% at 10% 94%, rgba(18, 26, 255, .045) 0%, transparent 62%),
-        linear-gradient(180deg, #FAF8F3 0%, var(--gt-canvas) 62%, var(--gt-canvas-deep) 100%);
+        radial-gradient(65% 50% at 10% 94%, rgba(22, 116, 154, .10) 0%, transparent 62%),
+        linear-gradient(180deg, #F1F6FA 0%, var(--gt-canvas) 62%, var(--gt-canvas-deep) 100%);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -725,7 +725,7 @@ html, body {
 .gt-input:focus {
     background: #FFFFFF;
     border-color: var(--gt-blue);
-    box-shadow: 0 0 0 3.5px rgba(18, 26, 255, .12);
+    box-shadow: 0 0 0 3.5px rgba(22, 116, 154, .16);
 }
 
 /* Clean Override for Browser Autofill Blue/Yellow Fill */
@@ -810,27 +810,28 @@ html, body {
     text-decoration: underline;
 }
 
-/* Primary Electric Blue CTA (10% Accent Rule — Pure White Text) */
+/* Primary GundjaTech Golden Yellow CTA (Official Paleta 3 — #F2C230 + #063B5C 800) */
 .gt-btn-submit {
     width: 100%;
     height: 48px;
     margin-top: 4px;
     border: 0;
     border-radius: 10px;
-    background: var(--gt-blue);
-    color: #FFFFFF;
+    background: linear-gradient(135deg, #F8CE4A 0%, #F2C230 55%, #E0B020 100%);
+    color: #063B5C;
     font-family: inherit;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 800;
     letter-spacing: -.01em;
     cursor: pointer;
-    box-shadow: 0 12px 26px -8px rgba(18, 26, 255, .48);
-    transition: background .18s ease, transform .15s ease, box-shadow .18s ease;
+    box-shadow: 0 12px 26px -8px rgba(242, 194, 48, .50);
+    transition: background .18s ease, transform .15s ease, box-shadow .18s ease, filter .16s ease;
 }
 
 .gt-btn-submit:hover {
-    background: var(--gt-blue-hover);
-    box-shadow: 0 16px 32px -8px rgba(18, 26, 255, .58);
+    filter: brightness(1.03);
+    background: #E0B020;
+    box-shadow: 0 16px 32px -8px rgba(242, 194, 48, .62);
     transform: translateY(-1px);
 }
 

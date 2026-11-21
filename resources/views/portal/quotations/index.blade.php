@@ -47,7 +47,9 @@
                 </tbody>
             </table>
         </div>
-        <div class="p-4 border-t border-[#222222]">{{ $quotations->links() }}</div>
+        @if($quotations->hasPages())
+            <div class="p-4 border-t border-[#222222]">{{ $quotations->links() }}</div>
+        @endif
     </div>
 </div>
 @endsection

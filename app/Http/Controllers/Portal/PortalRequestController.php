@@ -47,52 +47,65 @@ class PortalRequestController extends Controller
             'description' => ['required', 'string', 'max:5000'],
             'estimated_budget' => ['nullable', 'numeric', 'min:0'],
             'desired_deadline' => ['nullable', 'date', 'after:today'],
-            'attachment' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,png,jpg,jpeg,webp,zip'],
+            'attachment' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,png,jpg,jpeg,webp,zip', 'extensions:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,png,jpg,jpeg,webp,zip'],
         ]);
 
         $protocol = 'GNDJ-'.date('Ymd').'-'.strtoupper(Str::random(4));
+        $storedPath = null;
 
-        $serviceRequest = DB::transaction(function () use ($request, $validated, $client, $protocol): ServiceRequest {
-            $serviceRequest = ServiceRequest::create([
-                'protocol' => $protocol,
-                'client_id' => $client ? $client->id : null,
-                'user_id' => Auth::id(),
-                'service_id' => $validated['service_id'],
-                'name' => Auth::user()->name,
-                'company' => $client ? $client->display_name : Auth::user()->name,
-                'email' => Auth::user()->email,
-                'phone' => Auth::user()->phone,
-                'service_title' => $validated['title'],
-                'description' => $validated['description'],
-                'estimated_budget' => $validated['estimated_budget'] ?? null,
-                'desired_deadline' => $validated['desired_deadline'] ?? null,
-                'status' => 'new',
-            ]);
-
-            RequestStatusHistory::create([
-                'service_request_id' => $serviceRequest->id,
-                'old_status' => null,
-                'new_status' => 'new',
-                'comment' => 'Solicitação aberta diretamente pelo Portal do Cliente.',
-                'user_id' => Auth::id(),
-            ]);
-
-            if ($request->hasFile('attachment')) {
-                $file = $request->file('attachment');
-                $path = $file->store('attachments', 'local');
-
-                RequestAttachment::create([
-                    'service_request_id' => $serviceRequest->id,
-                    'file_name' => $file->getClientOriginalName(),
-                    'file_path' => $path,
-                    'file_size' => $file->getSize(),
-                    'mime_type' => $file->getClientMimeType(),
-                    'uploaded_by_user_id' => Auth::id(),
+        try {
+            $serviceRequest = DB::transaction(function () use ($request, $validated, $client, $protocol, &$storedPath): ServiceRequest {
+                $serviceRequest = ServiceRequest::create([
+                    'protocol' => $protocol,
+                    'client_id' => $client ? $client->id : null,
+                    'user_id' => Auth::id(),
+                    'service_id' => $validated['service_id'],
+                    'name' => Auth::user()->name,
+                    'company' => $client ? $client->display_name : Auth::user()->name,
+                    'email' => Auth::user()->email,
+                    'phone' => Auth::user()->phone,
+                    'service_title' => $validated['title'],
+                    'description' => $validated['description'],
+                    'estimated_budget' => $validated['estimated_budget'] ?? null,
+                    'desired_deadline' => $validated['desired_deadline'] ?? null,
+                    'status' => 'new',
                 ]);
-            }
 
-            return $serviceRequest;
-        });
+                RequestStatusHistory::create([
+                    'service_request_id' => $serviceRequest->id,
+                    'old_status' => null,
+                    'new_status' => 'new',
+                    'comment' => 'Solicitação aberta diretamente pelo Portal do Cliente.',
+                    'user_id' => Auth::id(),
+                ]);
+
+                if ($request->hasFile('attachment')) {
+                    $file = $request->file('attachment');
+                    $storedPath = $file->store('attachments', 'local');
+                    $safeFileName = Str::limit(
+                        preg_replace('/[\x00-\x1F\x7F]+/', '', str_replace(['/', '\\', "\0"], '-', trim((string) $file->getClientOriginalName()))) ?: 'anexo',
+                        180,
+                        ''
+                    );
+
+                    RequestAttachment::create([
+                        'service_request_id' => $serviceRequest->id,
+                        'file_name' => $safeFileName,
+                        'file_path' => $storedPath,
+                        'file_size' => $file->getSize(),
+                        'mime_type' => $file->getMimeType() ?: $file->getClientMimeType(),
+                        'uploaded_by_user_id' => Auth::id(),
+                    ]);
+                }
+
+                return $serviceRequest;
+            });
+        } catch (\Throwable $e) {
+            if ($storedPath !== null) {
+                Storage::disk('local')->delete($storedPath);
+            }
+            throw $e;
+        }
 
         return redirect()->route('portal.requests.show', $serviceRequest)
             ->with('success', "Solicitação {$protocol} enviada com sucesso!");
@@ -115,9 +128,11 @@ class PortalRequestController extends Controller
             abort(404);
         }
 
+        $safeName = str_replace(['/', '\\', "\0"], '-', (string) $attachment->file_name) ?: 'anexo';
+
         foreach (['local', 'public'] as $disk) {
             if (Storage::disk($disk)->exists($attachment->file_path)) {
-                return Storage::disk($disk)->download($attachment->file_path, $attachment->file_name);
+                return Storage::disk($disk)->download($attachment->file_path, $safeName);
             }
         }
 

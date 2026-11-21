@@ -15,14 +15,16 @@
         </div>
         <div class="flex flex-wrap items-center gap-3">
             @if(Auth::user()->hasPermission('requests.manage'))
-                <button @click="quoteModal = true" class="btn-secondary px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2">
-                    <span>Gerar Orçamento</span>
-                </button>
+                @if(Auth::user()->hasPermission('quotations.manage') && $serviceRequest->status !== 'cancelled')
+                    <button @click="quoteModal = true" class="btn-secondary px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2">
+                        <span>Gerar Orçamento</span>
+                    </button>
+                @endif
                 @if($serviceRequest->project)
                     <a href="{{ route('admin.projects.show', $serviceRequest->project) }}" class="btn-primary px-4 py-2.5 rounded-xl text-xs font-bold">
                         Abrir Projeto {{ $serviceRequest->project->code }} &rarr;
                     </a>
-                @elseif(in_array($serviceRequest->status, ['approved', 'quotation_sent', 'awaiting_approval', 'analyzing'], true))
+                @elseif(Auth::user()->hasPermission('projects.manage') && in_array($serviceRequest->status, ['approved', 'quotation_sent', 'awaiting_approval', 'analyzing'], true))
                     <button @click="convertModal = true" class="btn-primary px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2">
                         <span>Converter em Projeto</span>
                     </button>
@@ -205,8 +207,8 @@
     </div>
 
     <!-- Modal Generate Quotation -->
-    <div x-show="quoteModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-        <div class="glass-card max-w-lg w-full p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
+    <div x-show="quoteModal" x-cloak @click.self="quoteModal = false" @keydown.escape.window="quoteModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+        <div class="glass-card max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
             <h3 class="text-base font-bold text-white">Emitir Orçamento para esta Solicitação</h3>
             <form action="{{ route('admin.requests.quotation', $serviceRequest) }}" method="POST" class="space-y-4">
                 @csrf
@@ -245,8 +247,8 @@
     </div>
 
     <!-- Modal Convert to Project -->
-    <div x-show="convertModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-        <div class="glass-card max-w-md w-full p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
+    <div x-show="convertModal" x-cloak @click.self="convertModal = false" @keydown.escape.window="convertModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+        <div class="glass-card max-w-md w-full max-h-[90vh] overflow-y-auto p-6 rounded-3xl border border-[#E4A318]/40 space-y-4">
             <h3 class="text-base font-bold text-white">Converter em Projeto</h3>
             <p class="text-xs text-gray-300">Isso criará automaticamente o projeto correspondente, configurará as 5 etapas padrão de execução e vinculará o orçamento/cliente.</p>
             <form action="{{ route('admin.requests.convert', $serviceRequest) }}" method="POST" class="pt-2">

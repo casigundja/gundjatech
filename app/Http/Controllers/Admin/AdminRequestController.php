@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Client;
@@ -20,6 +21,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -69,9 +71,11 @@ class AdminRequestController extends Controller
             abort(404);
         }
 
+        $safeName = str_replace(['/', '\\', "\0"], '-', (string) $attachment->file_name) ?: 'anexo';
+
         foreach (['local', 'public'] as $disk) {
             if (Storage::disk($disk)->exists($attachment->file_path)) {
-                return Storage::disk($disk)->download($attachment->file_path, $attachment->file_name);
+                return Storage::disk($disk)->download($attachment->file_path, $safeName);
             }
         }
 
@@ -88,16 +92,26 @@ class AdminRequestController extends Controller
 
         $request->merge(['status' => $normalizedStatus]);
 
+        $activeStaffRule = Rule::exists('users', 'id')->where(
+            fn ($q) => $q->where('role', '!=', UserRole::Client->value)->where('is_active', true)
+        );
+
         $validated = $request->validate([
             'status' => ['required', 'in:new,analyzing,awaiting_info,quotation_sent,awaiting_approval,approved,in_progress,completed,cancelled'],
             'comment' => ['nullable', 'string', 'max:1000'],
-            'assigned_to' => ['nullable', 'exists:users,id'],
-            'assigned_user_id' => ['nullable', 'exists:users,id'],
+            'assigned_to' => ['nullable', $activeStaffRule],
+            'assigned_user_id' => ['nullable', $activeStaffRule],
             'internal_notes' => ['nullable', 'string'],
         ]);
 
         $oldStatus = $serviceRequest->status;
-        $assignedUserId = $validated['assigned_user_id'] ?? $validated['assigned_to'] ?? $serviceRequest->assigned_user_id;
+        if (array_key_exists('assigned_user_id', $validated)) {
+            $assignedUserId = $validated['assigned_user_id'];
+        } elseif (array_key_exists('assigned_to', $validated)) {
+            $assignedUserId = $validated['assigned_to'];
+        } else {
+            $assignedUserId = $serviceRequest->assigned_user_id;
+        }
 
         $serviceRequest->update([
             'status' => $validated['status'],
@@ -209,6 +223,14 @@ class AdminRequestController extends Controller
 
     public function generateQuotation(Request $request, ServiceRequest $serviceRequest): RedirectResponse
     {
+        if (! $request->user()?->hasPermission('quotations.manage')) {
+            abort(403, 'Você não tem permissão para gerar orçamentos.');
+        }
+
+        if ($serviceRequest->status === 'cancelled') {
+            return back()->with('error', 'Não é possível gerar orçamento para uma solicitação cancelada.');
+        }
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'valid_until' => ['required', 'date', 'after:today'],
@@ -224,16 +246,18 @@ class AdminRequestController extends Controller
             $clientId = $serviceRequest->client_id;
 
             if (! $clientId) {
-                $client = Client::firstOrCreate(
-                    ['email' => $serviceRequest->email],
-                    [
+                $normalizedEmail = strtolower(trim((string) $serviceRequest->email));
+                $client = Client::whereRaw('LOWER(email) = ?', [$normalizedEmail])->first();
+                if ($client === null) {
+                    $client = Client::create([
+                        'email' => $normalizedEmail,
                         'user_id' => $serviceRequest->user_id,
                         'name' => $serviceRequest->name,
                         'company_name' => $serviceRequest->company ?: $serviceRequest->name,
                         'phone' => $serviceRequest->phone,
                         'status' => 'lead',
-                    ]
-                );
+                    ]);
+                }
                 $clientId = $client->id;
                 $serviceRequest->update(['client_id' => $clientId]);
             }
@@ -306,28 +330,43 @@ class AdminRequestController extends Controller
 
     public function convertToProject(Request $request, ServiceRequest $serviceRequest): RedirectResponse
     {
+        if (! $request->user()?->hasPermission('projects.manage')) {
+            abort(403, 'Você não tem permissão para converter solicitações em projetos.');
+        }
+
+        if ($serviceRequest->status === 'cancelled') {
+            return back()->with('error', 'Não é possível converter uma solicitação cancelada em projeto.');
+        }
+
         if ($serviceRequest->project) {
             return redirect()->route('admin.projects.show', $serviceRequest->project)
                 ->with('success', 'Esta solicitação já possui um projeto vinculado.');
         }
 
         $project = DB::transaction(function () use ($serviceRequest): Project {
-            $clientId = $serviceRequest->client_id;
+            $client = $serviceRequest->client;
 
-            if (! $clientId) {
-                $client = Client::firstOrCreate(
-                    ['email' => $serviceRequest->email],
-                    [
+            if (! $client) {
+                $normalizedEmail = strtolower(trim((string) $serviceRequest->email));
+                $client = Client::whereRaw('LOWER(email) = ?', [$normalizedEmail])->first();
+                if ($client === null) {
+                    $client = Client::create([
+                        'email' => $normalizedEmail,
                         'user_id' => $serviceRequest->user_id,
                         'name' => $serviceRequest->name,
                         'company_name' => $serviceRequest->company ?: $serviceRequest->name,
                         'phone' => $serviceRequest->phone,
                         'status' => 'active',
-                    ]
-                );
-                $clientId = $client->id;
-                $serviceRequest->update(['client_id' => $clientId]);
+                    ]);
+                }
+                $serviceRequest->update(['client_id' => $client->id]);
             }
+
+            if ($client->status === 'lead') {
+                $client->update(['status' => 'active']);
+            }
+
+            $clientId = $client->id;
 
             $oldStatus = $serviceRequest->status;
             $code = 'PRJ-'.date('Y').'-'.strtoupper(Str::random(5));

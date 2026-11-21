@@ -215,6 +215,8 @@ body.gt-admin-boost .gt-font-display {
    TOPBAR & SUB-HEADER CONTROLS
    ========================================================================== */
 .gtb-topbar {
+    position: relative;
+    z-index: 70;
     height: 72px;
     display: flex;
     align-items: center;
@@ -320,6 +322,7 @@ html[data-admin-theme="light"] .gtb-theme-orb[data-theme-orb="light"] {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
     transition: border-color 0.18s ease, color 0.18s ease, background-color 0.18s ease;
 }
 
@@ -337,13 +340,15 @@ html[data-admin-theme="light"] .gtb-theme-orb[data-theme-orb="light"] {
     background: #0A2033;
     border: 1px solid rgba(231, 240, 245, 0.14);
     color: #E7F0F5;
+    z-index: 120 !important;
 }
 
 .gtb-dropdown a {
     color: #E7F0F5;
 }
 
-.gtb-dropdown a:hover {
+.gtb-dropdown a:hover,
+.gtb-notif-item:hover {
     background: rgba(231, 240, 245, 0.08);
     color: #F2C230;
 }
@@ -508,7 +513,16 @@ html[data-admin-theme="light"] .gtb-theme-orb[data-theme-orb="light"] {
     font-size: 11.5px;
     font-weight: 600;
     text-decoration: none;
+    cursor: pointer;
     transition: all 0.18s ease;
+}
+
+body.gt-admin-boost main select.gtb-ctrl-select {
+    background-color: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 4px 0 0 !important;
+    cursor: pointer;
 }
 
 .gtb-ctrl-btn:hover {
@@ -678,11 +692,18 @@ html[data-admin-theme="light"] .gtb-theme-orb[data-theme-orb="light"] {
 /* ==========================================================================
    COMPATIBILITY WITH ALL INNER ADMIN PAGES (/admin/*) — DARK MODE
    ========================================================================== */
-body.gt-admin-boost .glass-card {
+body.gt-admin-boost .glass-card,
+body.gt-admin-boost .gt-card {
     background: linear-gradient(165deg, var(--gtb-card) 0%, var(--gtb-card-end) 100%) !important;
     border: 1px solid var(--gtb-border) !important;
     border-radius: 18px !important;
     box-shadow: 0 14px 34px -18px rgba(0, 0, 0, 0.65) !important;
+}
+
+body.gt-admin-boost .gt-input {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 10px;
 }
 
 body.gt-admin-boost .btn-primary {
@@ -691,6 +712,7 @@ body.gt-admin-boost .btn-primary {
     font-weight: 800 !important;
     border: 0 !important;
     border-radius: 10px !important;
+    cursor: pointer;
     box-shadow: 0 8px 20px -6px rgba(242, 194, 48, 0.42) !important;
     transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
 }
@@ -711,6 +733,7 @@ body.gt-admin-boost .btn-secondary {
     color: #E7F0F5 !important;
     font-weight: 700 !important;
     border-radius: 10px !important;
+    cursor: pointer;
     transition: all 0.16s ease;
 }
 
@@ -718,6 +741,30 @@ body.gt-admin-boost .btn-secondary:hover {
     background: #143957 !important;
     border-color: var(--gtb-gold) !important;
     color: var(--gtb-gold) !important;
+}
+
+/* Pagination (Laravel Tailwind links — Dark Mode) */
+body.gt-admin-boost main nav[role="navigation"] span[aria-current="page"] > span {
+    background: #F2C230 !important;
+    border-color: #F2C230 !important;
+    color: #063B5C !important;
+    font-weight: 800 !important;
+}
+
+body.gt-admin-boost main nav[role="navigation"] a {
+    background-color: #0C253A !important;
+    border-color: rgba(231, 240, 245, 0.16) !important;
+    color: #E7F0F5 !important;
+}
+
+body.gt-admin-boost main nav[role="navigation"] a:hover {
+    background-color: #143957 !important;
+    border-color: #F2C230 !important;
+    color: #F2C230 !important;
+}
+
+body.gt-admin-boost main nav[role="navigation"] p {
+    color: var(--gtb-muted) !important;
 }
 
 body.gt-admin-boost main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select, textarea) {
@@ -751,9 +798,90 @@ body.gt-admin-boost main table thead th {
     font-weight: 700 !important;
 }
 
+/* Custom Paleta 3 Checkboxes & RBAC Matrix — Dark Mode */
+body.gt-admin-boost input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+    background-color: #081E30 !important;
+    border: 1.5px solid rgba(231, 240, 245, 0.30) !important;
+    display: inline-grid;
+    place-content: center;
+    cursor: pointer;
+    transition: all 0.16s ease;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+body.gt-admin-boost input[type="checkbox"]:hover:not(:disabled) {
+    border-color: #F2C230 !important;
+    box-shadow: 0 0 0 3px rgba(242, 194, 48, 0.16);
+}
+
+body.gt-admin-boost input[type="checkbox"]::before {
+    content: "";
+    width: 10px;
+    height: 6px;
+    border-left: 2.2px solid #063B5C;
+    border-bottom: 2.2px solid #063B5C;
+    transform: rotate(-45deg) scale(0);
+    transform-origin: center;
+    transition: transform 0.14s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    margin-top: -1px;
+}
+
+body.gt-admin-boost input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, #F8CE4A 0%, #F2C230 100%) !important;
+    border-color: #F2C230 !important;
+    box-shadow: 0 4px 12px -2px rgba(242, 194, 48, 0.42);
+}
+
+body.gt-admin-boost input[type="checkbox"]:checked::before {
+    transform: rotate(-45deg) scale(1);
+}
+
+body.gt-admin-boost input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.85;
+}
+
+body.gt-admin-boost input[type="checkbox"]:disabled:checked {
+    background: rgba(242, 194, 48, 0.20) !important;
+    border-color: rgba(242, 194, 48, 0.55) !important;
+    box-shadow: none;
+}
+
+body.gt-admin-boost input[type="checkbox"]:disabled:checked::before {
+    border-left-color: #F2C230;
+    border-bottom-color: #F2C230;
+}
+
+.gtb-rbac-module-row td {
+    background: linear-gradient(90deg, rgba(22, 116, 154, 0.28) 0%, rgba(12, 37, 58, 0.92) 100%) !important;
+    border-top: 1px solid rgba(242, 194, 48, 0.28) !important;
+    border-bottom: 1px solid rgba(231, 240, 245, 0.14) !important;
+    color: #F2C230 !important;
+}
+
+.gtb-rbac-module-title {
+    color: #F2C230;
+}
+
+.gtb-rbac-slug {
+    background: rgba(6, 59, 92, 0.65);
+    border: 1px solid rgba(56, 189, 248, 0.22);
+    color: #93C5FD;
+}
+
+.gtb-rbac-row:hover {
+    background-color: rgba(22, 116, 154, 0.14) !important;
+}
+
 /* Harmonize legacy dark hex backgrounds across inner pages in Dark Mode */
-body.gt-admin-boost :where(.bg-\[\#141414\], .bg-\[\#161616\], .bg-\[\#171B27\], .bg-\[\#1A1F2E\], .bg-\[\#121623\], .bg-\[\#0C0F18\]) {
-    background-color: #0E2940;
+body.gt-admin-boost :where(.bg-\[\#0B0B0B\], .bg-\[\#111111\], .bg-\[\#121212\], .bg-\[\#141414\], .bg-\[\#161616\], .bg-\[\#181818\], .bg-\[\#171B27\], .bg-\[\#1A1F2E\], .bg-\[\#1C1C1C\], .bg-\[\#1C2233\], .bg-\[\#1D2232\], .bg-\[\#222222\], .bg-\[\#121623\], .bg-\[\#0C0F18\]) {
+    background-color: #0E2940 !important;
 }
 
 @media (min-width: 1024px) {
@@ -915,7 +1043,8 @@ html[data-admin-theme="light"] .gtb-dropdown a {
     color: #063B5C !important;
 }
 
-html[data-admin-theme="light"] .gtb-dropdown a:hover {
+html[data-admin-theme="light"] .gtb-dropdown a:hover,
+html[data-admin-theme="light"] .gtb-notif-item:hover {
     background: #EEF5F9 !important;
     color: #16749A !important;
 }
@@ -935,7 +1064,8 @@ html[data-admin-theme="light"] .gtb-alert-error {
 
 /* Light Cards, Chat Workspace & Semantic Surfaces */
 html[data-admin-theme="light"] .gtb-card,
-html[data-admin-theme="light"] .glass-card {
+html[data-admin-theme="light"] .glass-card,
+html[data-admin-theme="light"] .gt-card {
     background: #FFFFFF !important;
     border: 1px solid #CFE0EB !important;
     box-shadow: 0 10px 28px -14px rgba(6, 59, 92, 0.12) !important;
@@ -1011,9 +1141,14 @@ html[data-admin-theme="light"] svg circle[stroke="#222738"] {
 }
 
 /* Light Mode — Complete Utility Overrides Across ALL Inner Admin Views */
-html[data-admin-theme="light"] body.gt-admin-boost :where(.bg-\[\#222738\], .bg-\[\#171B27\], .bg-\[\#171B27\]\/80, .bg-\[\#1A1F2E\], .bg-\[\#121623\], .bg-\[\#0C0F18\], .bg-\[\#141414\], .bg-\[\#161616\], .bg-\[\#181818\], .bg-\[\#191919\], .bg-\[\#1C1C1C\], .bg-\[\#0B0B0B\], .bg-gray-800, .bg-gray-900) {
+html[data-admin-theme="light"] body.gt-admin-boost :where(.bg-\[\#222738\], .bg-\[\#171B27\], .bg-\[\#171B27\]\/80, .bg-\[\#1A1F2E\], .bg-\[\#1C2233\], .bg-\[\#1D2232\], .bg-\[\#121623\], .bg-\[\#0C0F18\], .bg-\[\#111111\], .bg-\[\#121212\], .bg-\[\#141414\], .bg-\[\#161616\], .bg-\[\#181818\], .bg-\[\#191919\], .bg-\[\#1C1C1C\], .bg-\[\#222222\], .bg-\[\#0B0B0B\], .bg-gray-800, .bg-gray-900) {
     background-color: #F4F8FB !important;
     border-color: #CFE0EB !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost .bg-black\/80 {
+    background-color: rgba(6, 59, 92, 0.46) !important;
+    backdrop-filter: blur(5px);
 }
 
 html[data-admin-theme="light"] body.gt-admin-boost :where(.bg-white\/5, .bg-white\/10):not(.gtb-promo-card *) {
@@ -1025,12 +1160,12 @@ html[data-admin-theme="light"] body.gt-admin-boost :where(.hover\:bg-white\/5:ho
     background-color: #F2F7FB !important;
 }
 
-html[data-admin-theme="light"] body.gt-admin-boost :where(.bg-\[\#121AFF\]\/20, .bg-\[\#121AFF\]\/15) {
+html[data-admin-theme="light"] body.gt-admin-boost :where(.bg-\[\#121AFF\]\/20, .bg-\[\#121AFF\]\/15, .bg-sky-500\/10, .bg-sky-500\/15) {
     background-color: rgba(22, 116, 154, 0.13) !important;
     border: 1px solid rgba(22, 116, 154, 0.28) !important;
 }
 
-html[data-admin-theme="light"] body.gt-admin-boost :where(.bg-\[\#F2C230\]\/15, .bg-\[\#F2C230\]\/20) {
+html[data-admin-theme="light"] body.gt-admin-boost :where(.bg-\[\#F2C230\]\/15, .bg-\[\#F2C230\]\/20, .bg-\[\#E4A318\]\/10, .bg-\[\#E4A318\]\/15) {
     background-color: #FEF3C7 !important;
     border-color: rgba(201, 144, 0, 0.42) !important;
 }
@@ -1045,7 +1180,7 @@ html[data-admin-theme="light"] body.gt-admin-boost :where(.bg-amber-500\/15, .bg
     border-color: rgba(217, 119, 6, 0.35) !important;
 }
 
-html[data-admin-theme="light"] body.gt-admin-boost :where(.bg-red-500\/10, .bg-red-500\/15, .bg-red-500\/20) {
+html[data-admin-theme="light"] body.gt-admin-boost :where(.bg-red-500\/10, .bg-red-500\/15, .bg-red-500\/20, .\!bg-red-400\/20) {
     background-color: #FEE2E2 !important;
     border-color: rgba(220, 38, 38, 0.35) !important;
 }
@@ -1054,11 +1189,15 @@ html[data-admin-theme="light"] body.gt-admin-boost :where(.text-white):not(.gtb-
     color: #063B5C !important;
 }
 
+html[data-admin-theme="light"] body.gt-admin-boost :where(.hover\:text-white:hover):not(.gtb-promo-card *):not(.btn-primary) {
+    color: #063B5C !important;
+}
+
 html[data-admin-theme="light"] body.gt-admin-boost :where(.text-\[\#D5DCEB\], .text-\[\#8C95AA\], .text-gray-200, .text-gray-300, .text-gray-400):not(.gtb-promo-card *):not(.gtb-float-tooltip *) {
     color: #3E5C71 !important;
 }
 
-html[data-admin-theme="light"] body.gt-admin-boost :where(.text-\[\#F2C230\], .text-\[\#E4A318\]):not(.gtb-promo-card *):not(.gtb-brand-badge *):not(.gtb-avatar-inner) {
+html[data-admin-theme="light"] body.gt-admin-boost :where(.text-\[\#F2C230\], .text-\[\#E4A318\], .hover\:text-\[\#F2C230\]:hover, .hover\:text-\[\#E4A318\]:hover):not(.gtb-promo-card *):not(.gtb-brand-badge *):not(.gtb-avatar-inner) {
     color: #9A6B00 !important;
 }
 
@@ -1074,12 +1213,30 @@ html[data-admin-theme="light"] body.gt-admin-boost :where(.text-amber-200, .text
     color: #92400E !important;
 }
 
-html[data-admin-theme="light"] body.gt-admin-boost :where(.text-red-200, .text-red-300, .text-red-400) {
+html[data-admin-theme="light"] body.gt-admin-boost :where(.text-red-200, .text-red-300, .text-red-400, .\!text-red-300, .hover\:text-red-300:hover) {
     color: #B91C1C !important;
 }
 
-html[data-admin-theme="light"] body.gt-admin-boost :where(.border-white\/5, .border-white\/10, .border-\[\#2E2D2C\], .border-\[\#222222\], .border-\[\#2A2A2A\], .border-gray-700, .border-gray-800, .divide-white\/5 > :not(:last-child)) {
+html[data-admin-theme="light"] body.gt-admin-boost :where(.border-white\/5, .border-white\/10, .border-white\/15, .border-\[\#2E2D2C\], .border-\[\#222222\], .border-\[\#2A2A2A\], .border-\[\#333333\], .border-gray-700, .border-gray-800, .divide-white\/5 > :not(:last-child), .divide-\[\#222222\] > :not(:last-child)) {
     border-color: #D4E3ED !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost main nav[role="navigation"] span[aria-current="page"] > span {
+    background: #063B5C !important;
+    border-color: #063B5C !important;
+    color: #FFFFFF !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost main nav[role="navigation"] a {
+    background-color: #FFFFFF !important;
+    border-color: #BDD2DF !important;
+    color: #063B5C !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost main nav[role="navigation"] a:hover {
+    background-color: #EEF5F9 !important;
+    border-color: #16749A !important;
+    color: #063B5C !important;
 }
 
 html[data-admin-theme="light"] body.gt-admin-boost main table thead {
@@ -1121,6 +1278,60 @@ html[data-admin-theme="light"] body.gt-admin-boost .btn-secondary:hover {
     background: #EEF5F9 !important;
     border-color: #16749A !important;
     color: #063B5C !important;
+}
+
+/* Custom Paleta 3 Checkboxes & RBAC Matrix — Light Mode */
+html[data-admin-theme="light"] body.gt-admin-boost input[type="checkbox"] {
+    background-color: #FFFFFF !important;
+    border: 1.5px solid #95B4C9 !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost input[type="checkbox"]:hover:not(:disabled) {
+    border-color: #16749A !important;
+    box-shadow: 0 0 0 3px rgba(22, 116, 154, 0.15);
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, #063B5C 0%, #16749A 100%) !important;
+    border-color: #063B5C !important;
+    box-shadow: 0 3px 10px -2px rgba(6, 59, 92, 0.28);
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost input[type="checkbox"]::before {
+    border-left-color: #F2C230;
+    border-bottom-color: #F2C230;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost input[type="checkbox"]:disabled:checked {
+    background: #FEF3C7 !important;
+    border-color: #E0B020 !important;
+    box-shadow: none;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost input[type="checkbox"]:disabled:checked::before {
+    border-left-color: #063B5C;
+    border-bottom-color: #063B5C;
+}
+
+html[data-admin-theme="light"] .gtb-rbac-module-row td {
+    background: linear-gradient(90deg, #E2EEF6 0%, #F1F7FB 100%) !important;
+    border-top: 1px solid #BDD2DF !important;
+    border-bottom: 1px solid #CFE0EB !important;
+    color: #063B5C !important;
+}
+
+html[data-admin-theme="light"] .gtb-rbac-module-title {
+    color: #063B5C !important;
+}
+
+html[data-admin-theme="light"] .gtb-rbac-slug {
+    background: #EEF5F9 !important;
+    border: 1px solid #C8DCE8 !important;
+    color: #0E5A7A !important;
+}
+
+html[data-admin-theme="light"] .gtb-rbac-row:hover {
+    background-color: #F3F8FC !important;
 }
 
 /* Live Notification Toasts (Dark + Light Ready) */
@@ -1293,4 +1504,42 @@ html[data-admin-theme="light"] .gtb-confirm-target {
 html[data-admin-theme="light"] .gtb-confirm-footer {
     background: #F4F8FB !important;
     border-top-color: #D4E3ED !important;
+}
+
+
+/* Central de Notificações: estado vazio */
+.gtb-notif-empty-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #F2C230;
+    background: radial-gradient(circle at 30% 25%, rgba(242, 194, 48, 0.28), rgba(22, 116, 154, 0.22));
+    border: 1px solid rgba(242, 194, 48, 0.45);
+    box-shadow: 0 8px 20px -8px rgba(242, 194, 48, 0.45);
+}
+.gtb-notif-restore {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #063B5C;
+    background: #F2C230;
+    border: 0;
+    transition: background .18s ease, transform .18s ease;
+}
+.gtb-notif-restore:hover {
+    background: #E0B020;
+    transform: translateY(-1px);
+}
+html[data-admin-theme="light"] .gtb-notif-empty-icon {
+    color: #063B5C;
+    background: linear-gradient(135deg, #FFF4CC 0%, #E7F0F5 100%);
+    border-color: #F2C230;
+    box-shadow: 0 8px 18px -8px rgba(6, 59, 92, 0.25);
 }

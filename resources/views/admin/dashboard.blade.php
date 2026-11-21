@@ -30,34 +30,36 @@
                 <svg class="w-3.5 h-3.5 text-[#F2C230]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                 <span>{{ $periodStart->translatedFormat('d M Y') }} - {{ now()->translatedFormat('d M Y') }}</span>
             </span>
-            <select name="period" onchange="this.form.submit()" aria-label="Período do relatório" class="!bg-transparent !border-0 !rounded-none px-3 py-1.5 text-xs font-semibold text-[#D5DCEB] focus:outline-none cursor-pointer">
+            <select name="period" onchange="this.form.submit()" aria-label="Período do relatório" class="gtb-ctrl-select !bg-transparent !border-0 !rounded-none px-3 py-1.5 text-xs font-semibold text-[#D5DCEB] focus:outline-none cursor-pointer">
                 @foreach($periodLabels as $days => $label)
                     <option value="{{ $days }}" @selected($periodDays === $days) class="bg-[#121623] text-white">{{ $label }}</option>
                 @endforeach
             </select>
         </form>
 
-        <a href="{{ route('admin.dashboard.export', ['period' => $periodDays]) }}" class="gtb-ctrl-btn !h-8" title="Exportar relatório CSV real">
-            <span>Exportar CSV</span>
-            <svg class="w-3.5 h-3.5 text-[#F2C230]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-        </a>
+        @if(Auth::user()->hasAnyPermission(['finance.view', 'requests.view']))
+            <a href="{{ route('admin.dashboard.export', ['period' => $periodDays]) }}" class="gtb-ctrl-btn !h-8" title="Exportar relatório CSV real">
+                <span>Exportar CSV</span>
+                <svg class="w-3.5 h-3.5 text-[#F2C230]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            </a>
+        @endif
     </div>
 </div>
 
 <!-- ROW 1: 3 REAL TOP KPI CARDS -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     <!-- KPI 1: Receita Recebida no Período -->
-    <div class="gtb-card gtb-kpi-gold flex flex-col justify-between gap-4">
+    <a href="{{ route('admin.finance.index') }}" class="gtb-card gtb-kpi-gold flex flex-col justify-between gap-4 no-underline cursor-pointer hover:border-[#F2C230]/50 hover:-translate-y-0.5 transition-all group" title="Abrir Gestão Financeira">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-2.5">
                 <span class="gtb-icon-box">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
                 </span>
-                <span class="text-xs font-semibold text-[#D5DCEB]">Receita Recebida ({{ $periodDays }}d)</span>
+                <span class="text-xs font-semibold text-[#D5DCEB] group-hover:text-white transition-colors">Receita Recebida ({{ $periodDays }}d)</span>
             </div>
-            <a href="{{ route('admin.finance.index') }}" class="text-[#8C95AA] hover:text-white" title="Ver Financeiro">
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/></svg>
-            </a>
+            <span class="text-[#8C95AA] group-hover:text-[#F2C230] transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </span>
         </div>
         <div class="flex items-baseline justify-between gap-2 flex-wrap">
             <span class="gt-font-display text-2xl font-extrabold text-white tracking-tight">
@@ -73,20 +75,20 @@
                 </span>
             @endif
         </div>
-    </div>
+    </a>
 
     <!-- KPI 2: Clientes & Leads -->
-    <div class="gtb-card gtb-kpi-blue flex flex-col justify-between gap-4">
+    <a href="{{ route('admin.clients.index') }}" class="gtb-card gtb-kpi-blue flex flex-col justify-between gap-4 no-underline cursor-pointer hover:border-[#38BDF8]/50 hover:-translate-y-0.5 transition-all group" title="Abrir Base de Clientes & Leads">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-2.5">
                 <span class="gtb-icon-box is-blue">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 </span>
-                <span class="text-xs font-semibold text-[#D5DCEB]">Clientes & Leads</span>
+                <span class="text-xs font-semibold text-[#D5DCEB] group-hover:text-white transition-colors">Clientes &amp; Leads</span>
             </div>
-            <a href="{{ route('admin.clients.index') }}" class="text-[#8C95AA] hover:text-white" title="Ver Clientes">
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/></svg>
-            </a>
+            <span class="text-[#8C95AA] group-hover:text-[#38BDF8] transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </span>
         </div>
         <div class="flex items-baseline justify-between gap-2 flex-wrap">
             <span class="gt-font-display text-2xl font-extrabold text-white tracking-tight">
@@ -102,20 +104,20 @@
                 </span>
             @endif
         </div>
-    </div>
+    </a>
 
     <!-- KPI 3: Solicitações & Projetos -->
-    <div class="gtb-card gtb-kpi-petrol flex flex-col justify-between gap-4">
+    <a href="{{ route('admin.requests.index') }}" class="gtb-card gtb-kpi-petrol flex flex-col justify-between gap-4 no-underline cursor-pointer hover:border-[#6EE7B7]/50 hover:-translate-y-0.5 transition-all group" title="Abrir Central de Solicitações">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-2.5">
                 <span class="gtb-icon-box is-petrol">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
                 </span>
-                <span class="text-xs font-semibold text-[#D5DCEB]">Solicitações & Projetos</span>
+                <span class="text-xs font-semibold text-[#D5DCEB] group-hover:text-white transition-colors">Solicitações &amp; Projetos</span>
             </div>
-            <a href="{{ route('admin.requests.index') }}" class="text-[#8C95AA] hover:text-white" title="Ver Solicitações">
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/></svg>
-            </a>
+            <span class="text-[#8C95AA] group-hover:text-[#6EE7B7] transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </span>
         </div>
         <div class="flex items-baseline justify-between gap-2 flex-wrap">
             <span class="gt-font-display text-2xl font-extrabold text-white tracking-tight">
@@ -131,7 +133,7 @@
                 </span>
             @endif
         </div>
-    </div>
+    </a>
 </div>
 
 <!-- ROW 2: REAL 12-MONTH REVENUE BAR CHART (8 cols) + REAL CATEGORY CONCENTRIC RINGS (4 cols) -->
@@ -160,7 +162,7 @@
                 <i class="w-2.5 h-2.5 rounded-xs bg-[#F2C230] inline-block"></i> Recebido (R$)
             </span>
             <span class="flex items-center gap-1.5">
-                <i class="w-2.5 h-2.5 rounded-xs bg-[#121AFF] inline-block"></i> A Receber (R$)
+                <i class="w-2.5 h-2.5 rounded-xs bg-[#16749A] inline-block"></i> A Receber (R$)
             </span>
         </div>
 
@@ -179,7 +181,7 @@
                         <span class="text-[9.5px] text-[#8C95AA] font-semibold">pago</span>
                     </div>
                     <div class="flex items-center justify-between gap-3 text-[#D5DCEB]">
-                        <span class="flex items-center gap-1.5"><i class="w-2 h-2 rounded-full bg-[#4E5BFF] shadow-[0_0_8px_#4E5BFF] inline-block"></i> R$ {{ number_format($currentMonthPending, 2, ',', '.') }}</span>
+                        <span class="flex items-center gap-1.5"><i class="w-2 h-2 rounded-full bg-[#38BDF8] shadow-[0_0_8px_#38BDF8] inline-block"></i> R$ {{ number_format($currentMonthPending, 2, ',', '.') }}</span>
                         <span class="text-[9.5px] text-[#8C95AA] font-semibold">aberto</span>
                     </div>
                     <div class="pt-1 border-t border-white/10 text-[10px] text-[#8C95AA] font-semibold">
@@ -310,10 +312,10 @@
 
             <div class="flex items-center gap-3">
                 <div class="flex items-center gap-1" title="Intensidade de solicitações">
-                    <span class="w-3 h-3 rounded-xs bg-[#1D2232] inline-block"></span>
+                    <span class="w-3 h-3 rounded-xs bg-[#0E2940] inline-block"></span>
                     <span class="w-3 h-3 rounded-xs bg-[#063B5C] inline-block"></span>
                     <span class="w-3 h-3 rounded-xs bg-[#16749A] inline-block"></span>
-                    <span class="w-3 h-3 rounded-xs bg-[#121AFF] inline-block"></span>
+                    <span class="w-3 h-3 rounded-xs bg-[#38BDF8] inline-block"></span>
                     <span class="w-3 h-3 rounded-xs bg-[#F2C230] inline-block"></span>
                 </div>
                 <span class="text-[11px] font-bold text-[#8C95AA]">{{ $requestsCurrentPeriod }} total</span>
@@ -413,7 +415,7 @@
                         <span class="font-extrabold text-[#F2C230] shrink-0">{{ $p->progress_percentage }}%</span>
                     </div>
                     <div class="w-full h-1.5 rounded-full bg-[#222738] overflow-hidden">
-                        <div class="h-full rounded-full" style="width: {{ $p->progress_percentage }}%; background: linear-gradient(90deg, #F2C230 0%, #121AFF 100%);"></div>
+                        <div class="h-full rounded-full" style="width: {{ $p->progress_percentage }}%; background: linear-gradient(90deg, #16749A 0%, #F2C230 100%);"></div>
                     </div>
                 </div>
             @empty

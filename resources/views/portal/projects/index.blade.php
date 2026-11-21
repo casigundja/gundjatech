@@ -38,10 +38,12 @@
                 </div>
             </div>
         @empty
-            <div class="col-span-3 text-center py-12 text-gray-500 text-xs">Nenhum projeto ativo no momento.</div>
+            <div class="col-span-full text-center py-12 text-gray-500 text-xs">Nenhum projeto ativo no momento.</div>
         @endforelse
     </div>
 
-    <div>{{ $projects->links() }}</div>
+    @if($projects->hasPages())
+        <div>{{ $projects->links() }}</div>
+    @endif
 </div>
 @endsection

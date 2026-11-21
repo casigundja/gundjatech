@@ -35,7 +35,7 @@
 
 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossorigin>
 
-<link rel="stylesheet" href="/css/sinnapse-ciber.css?v=gt-hdr1">
+<link rel="stylesheet" href="/css/sinnapse-ciber.css?v=gt-hdr7">
 
 <meta property="og:site_name" content="GundjaTech">
 
@@ -183,13 +183,39 @@
 
     @endverbatim
     @auth
-      @if(auth()->user()->isStaff())
-        <a href="/admin" class="topo-acesso" aria-label="Acessar Painel Administrativo"><svg><use href="#i-escudo"/></svg><span>Painel Admin</span></a>
-      @else
-        <a href="/portal" class="topo-acesso" aria-label="Acessar Portal do Cliente"><svg><use href="#i-pessoa"/></svg><span>Meu Portal</span></a>
-      @endif
+      <div class="gt-pub-user">
+        <button
+          type="button"
+          class="gt-pub-user-btn"
+          aria-haspopup="true"
+          aria-expanded="false"
+          onclick="var w=this.closest('.gt-pub-user');w.classList.toggle('is-open');this.setAttribute('aria-expanded',w.classList.contains('is-open'));event.stopPropagation();"
+        >
+          <span class="gt-pub-user-meta">
+            <span class="gt-pub-user-name">{{ auth()->user()->name }}</span>
+            <span class="gt-pub-user-email">{{ auth()->user()->email }}</span>
+          </span>
+          <span class="gt-pub-user-avatar">
+            <span class="gt-pub-user-avatar-inner">{{ strtoupper(substr(auth()->user()->name, 0, 2)) }}</span>
+          </span>
+        </button>
+        <div class="gt-pub-user-dropdown" role="menu">
+          <a href="/minha-conta" class="gt-pub-user-item" role="menuitem">Minha Conta &amp; Senha</a>
+          @if(auth()->user()->isStaff())
+            <a href="/admin" class="gt-pub-user-item" role="menuitem">Painel Admin &nearr;</a>
+          @endif
+          @if(!auth()->user()->isStaff() || auth()->user()->isAdmin() || auth()->user()->hasPermission('portal.access'))
+            <a href="/portal" class="gt-pub-user-item" role="menuitem">Portal do Cliente &nearr;</a>
+          @endif
+          <form action="/logout" method="POST" class="gt-pub-user-logout-form">
+            @csrf
+            <button type="submit" class="gt-pub-user-logout" role="menuitem">Sair do Painel</button>
+          </form>
+        </div>
+      </div>
+      <script>if(!window.__gtPubUserInit){window.__gtPubUserInit=1;document.addEventListener('click',function(e){document.querySelectorAll('.gt-pub-user.is-open').forEach(function(el){if(!el.contains(e.target)){el.classList.remove('is-open');var b=el.querySelector('.gt-pub-user-btn');if(b)b.setAttribute('aria-expanded','false');}});});document.addEventListener('keydown',function(e){if(e.key==='Escape'){document.querySelectorAll('.gt-pub-user.is-open').forEach(function(el){el.classList.remove('is-open');var b=el.querySelector('.gt-pub-user-btn');if(b)b.setAttribute('aria-expanded','false');});}});}</script>
     @else
-      <a href="/login" class="topo-acesso" aria-label="Acessar Painel ou Área do Cliente"><svg><use href="#i-pessoa"/></svg><span>Painel / Login</span></a>
+      <a href="/login" class="topo-acesso" aria-label="Entrar no sistema"><span>Entrar no sistema</span></a>
     @endauth
     @verbatim
 
@@ -219,8 +245,6 @@
 
   <a href="/contato">Contato</a>
 
-  <a href="/login">Área do Cliente</a>
-
   <a class="btn mm-whats" href="https://wa.me/5519953248420"><svg><use href="#i-whats"/></svg> WhatsApp (19) 95324-8420</a>
 
 </nav>
@@ -249,11 +273,9 @@
 
     <div class="hero-centro cs-hero-txt js-hero-centro">
 
-      <div class="nota hp"><svg class="cs-nota-ic"><use href="#i-escudo"/></svg><small>Processo aprovado em <b>auditoria internacional</b></small></div>
-
       <h1 id="hero-titulo" class="hp">Cibersegurança para sites</h1>
 
-      <h2 class="js-hero-titulo">Seu site <em>protegido</em><br><em class="giro-palavra"><span class="js-giro" data-palavras="24 horas por dia|contra invasões|contra malware|contra ataques DDoS">24 horas por dia</span></em></h2>
+      <h2 class="js-hero-titulo">Seu site <em>protegido</em><br><em class="giro-palavra"><span class="js-giro" data-palavras="24 horas por dia|contra invasões|contra malware">24 horas por dia</span></em></h2>
 
       <p class="hp cs-hero-sub">A GundjaTech Web Security vigia, bloqueia e corrige ameaças no site da sua empresa, com especialistas cuidando de cada camada. Sem trocar de hospedagem nem de agência.</p>
 
@@ -274,8 +296,6 @@
         <div class="ok" role="status"><h3>Análise solicitada!</h3><p>Um especialista analisa o seu site e fala com você sobre os pontos de risco e o que corrigir primeiro.</p></div>
 
       </form>
-
-      <p class="hp cs-hero-mini"><span>Sem instalar nada</span><span>Sem acesso ao seu painel</span><span>Confidencial</span></p>
 
     </div>
 
@@ -312,14 +332,6 @@
       </svg>
 
       <div class="cs-nucleo"><img width="198" height="188" src="/img/simbolo-branco.svg?v=4" alt=""></div>
-
-      <i class="cs-ataque t1"></i><i class="cs-ataque t2"></i><i class="cs-ataque t3"></i><i class="cs-ataque t4"></i><i class="cs-ataque t5"></i><i class="cs-ataque t6"></i>
-
-      <span class="cs-tag tg1">SQL Injection <b>bloqueado</b></span>
-
-      <span class="cs-tag tg2">Força bruta <b>bloqueado</b></span>
-
-      <span class="cs-tag tg3">Bot malicioso <b>bloqueado</b></span>
 
     </div>
 
@@ -449,90 +461,6 @@
 
 
 
-<section class="cs-vivo escuro" aria-labelledby="vivo-titulo">
-
-  <div class="container cs-vivo-grid">
-
-    <div class="cs-terminal" aria-hidden="true">
-
-      <div class="term-barra"><i></i><i></i><i></i><span>firewall · tentativas bloqueadas</span><em class="cs-ao-vivo">ao vivo</em></div>
-
-      <ol class="cs-log js-log"></ol>
-
-    </div>
-
-    <div class="cs-vivo-txt">
-
-      <h2 id="vivo-titulo">Enquanto você dorme, <em>alguém está olhando</em></h2>
-
-      <p>Monitoramento 24 horas, 7 dias por semana. Tentativas de invasão são bloqueadas na hora e qualquer anomalia vira alerta para o nosso time.</p>
-
-      <div class="cs-numeros">
-
-        <div><b>24/7</b><small>monitoramento contínuo</small></div>
-
-        <div><b>99,99%</b><small>disponibilidade em nuvem</small></div>
-
-        <div><b>Diário</b><small>backup versionado</small></div>
-
-        <div><b>4h</b><small>para responder chamados</small></div>
-
-      </div>
-
-    </div>
-
-  </div>
-
-</section>
-
-
-
-<section class="cs-incluso" id="incluso" aria-labelledby="incluso-titulo">
-
-  <div class="container">
-
-    <div class="cs-cab">
-
-      <h2 id="incluso-titulo">Tudo o que a <em>GundjaTech Web Security</em> faz pelo seu site</h2>
-
-      <p>Um serviço contínuo, com responsável definido e SLA em contrato. Não é manutenção com um plugin de segurança instalado.</p>
-
-    </div>
-
-    <div class="cs-inc-grade js-inc">
-
-      <article><svg><use href="#c-olho"/></svg><h3>Monitoramento contínuo</h3><p>Disponibilidade, integridade de arquivos e comportamento suspeito, dia e noite.</p></article>
-
-      <article><svg><use href="#i-escudo"/></svg><h3>Firewall (WAF)</h3><p>Bloqueio de ataques conhecidos na borda e no servidor antes que cheguem ao site.</p></article>
-
-      <article><svg><use href="#c-lupa"/></svg><h3>Gestão de vulnerabilidades</h3><p>Varreduras periódicas do core, plugins, temas e componentes, com prioridade de correção.</p></article>
-
-      <article><svg><use href="#c-curativo"/></svg><h3>Virtual patching</h3><p>Falha nova descoberta? Bloqueamos a exploração enquanto a correção oficial não sai.</p></article>
-
-      <article><svg><use href="#c-cadeado"/></svg><h3>Hardening do WordPress</h3><p>Configurações endurecidas, painel protegido, 2FA e permissões mínimas por usuário.</p></article>
-
-      <article><svg><use href="#c-backup"/></svg><h3>Backups e recuperação</h3><p>Cópias diárias, versionadas e fora do servidor. Recuperação testada, não só prometida.</p></article>
-
-      <article><svg><use href="#c-sirene"/></svg><h3>Resposta a incidentes</h3><p>Se algo acontecer, contenção, limpeza, causa raiz e reforço para não se repetir.</p></article>
-
-      <article><svg><use href="#c-alvo"/></svg><h3>Pentest anual</h3><p>Teste de invasão controlado para encontrar o que as ferramentas automáticas não veem.</p></article>
-
-      <article><svg><use href="#c-relatorio"/></svg><h3>Atualizações seguras</h3><p>Core, plugins e componentes atualizados com teste em homologação antes de ir para o ar.</p></article>
-
-      <article><svg><use href="#c-contrato"/></svg><h3>Evidências para auditoria</h3><p>Documentação pronta para compliance, LGPD e auditorias de clientes e matrizes.</p></article>
-
-      <article><svg><use href="#c-raio"/></svg><h3>Segurança com IA</h3><p>Detecção de padrões anômalos e bloqueio automático de origens maliciosas.</p></article>
-
-      <article><svg><use href="#i-time"/></svg><h3>Time responsável</h3><p>Um especialista que conhece o seu site e responde em até 4 horas úteis.</p></article>
-
-    </div>
-
-  </div>
-
-</section>
-
-
-
 <section class="cs-livre" aria-labelledby="livre-titulo">
 
   <div class="container">
@@ -590,66 +518,6 @@
       <li><span>5</span><h3>Melhoria contínua</h3><p>Ajustes de proteção conforme surgem novas ameaças e mudanças no site.</p></li>
 
     </ol>
-
-  </div>
-
-</section>
-
-
-
-<section class="cs-prova escuro" id="prova" aria-labelledby="prova-titulo">
-
-  <div class="container">
-
-    <div class="cs-prova-grid">
-
-      <article class="cs-abf">
-
-        <div class="radar" aria-hidden="true"><i></i><b></b><b></b><b></b></div>
-
-        <span class="cs-abf-ano">2025</span>
-
-        <h2 id="prova-titulo">Aprovados em <em>auditoria internacional</em> de segurança</h2>
-
-        <p>A Associated British Foods, grupo global dono da Fleischmann, auditou nosso processo de criação, cibersegurança, LGPD e governança de sites. Resultado: aprovado.</p>
-
-        <div class="selos-seg"><span><svg><use href="#i-escudo"/></svg>Performance</span><span><svg><use href="#i-escudo"/></svg>Segurança</span><span><svg><use href="#i-escudo"/></svg>LGPD</span><span><svg><use href="#i-escudo"/></svg>Governança</span></div>
-
-      </article>
-
-      <div class="cs-certs">
-
-        <h3>Um time com certificações de mercado</h3>
-
-        <ul>
-
-          <li><b>ISO/IEC 27001</b><small>Lead Auditor · PECB</small></li>
-
-          <li><b>Cisco</b><small>Network Security</small></li>
-
-          <li><b>AWS</b><small>Solutions Architect Associate</small></li>
-
-          <li><b>AWS</b><small>Cloud Practitioner</small></li>
-
-        </ul>
-
-        <p class="cs-certs-nota">Certificações individuais de profissionais do time GundjaTech.</p>
-
-      </div>
-
-      <div class="cs-pipeline">
-
-        <h3>Nada vai para o ar sem passar por aqui</h3>
-
-        <ol aria-label="Fluxo de publicação">
-
-          <li>Desenvolvimento</li><li>GitHub</li><li>Homologação</li><li>Aprovação QA</li><li>Produção</li>
-
-        </ol>
-
-      </div>
-
-    </div>
 
   </div>
 
@@ -725,8 +593,6 @@
 
         <button type="submit" class="btn btn-brilho">Quero meu diagnóstico de segurança <svg><use href="#i-seta"/></svg></button>
 
-        <p class="cs-lgpd">Análise confidencial. Seus dados são usados só para o contato sobre a análise (LGPD).</p>
-
         <div class="ok" role="status"><h3>Pedido recebido!</h3><p>Um especialista em segurança fala com você em até 4 horas úteis.</p></div>
 
       </form>
@@ -756,60 +622,6 @@
         <button type="button" class="btn btn-vermelho js-abre-chat">Conversar pelo chat</button>
 
       </div>
-
-    </div>
-
-  </div>
-
-</section>
-
-
-
-<section class="secao" id="contato" style="padding-top:20px" aria-labelledby="contato-titulo">
-
-  <div class="container">
-
-    <div class="contato-card escuro">
-
-      <div>
-
-        <h2 id="contato-titulo">Coloque o site da sua empresa <em>sob proteção</em></h2>
-
-        <ul class="bullets"><li>Resposta em até 4 horas úteis</li><li>Assinamos NDA antes de qualquer análise</li><li>Proposta fechada, com SLA em contrato</li><li>Diagnóstico de segurança sem custo</li></ul>
-
-        <a class="btn btn-claro" href="https://wa.me/5519953248420"><svg><use href="#i-whats"/></svg> Prefere conversar pelo WhatsApp?</a>
-
-      </div>
-
-      <form class="form js-form" novalidate>
-
-        <label class="campo cheio">Nome completo<input type="text" name="nome" placeholder="Seu nome" autocomplete="name" required></label>
-
-        <label class="campo">E-mail corporativo*<input type="email" name="email" placeholder="voce@empresa.com.br" autocomplete="email" required></label>
-
-        <label class="campo">WhatsApp*<input type="tel" name="telefone" placeholder="(11) 90000-0000" autocomplete="tel" required></label>
-
-        <fieldset class="orcamento cheio"><legend>Quantos sites a empresa tem?</legend><div>
-
-          <label><input type="radio" name="sites" value="1"><span>1 site</span></label>
-
-          <label><input type="radio" name="sites" value="2-5"><span>2 a 5</span></label>
-
-          <label><input type="radio" name="sites" value="6-20"><span>6 a 20</span></label>
-
-          <label><input type="radio" name="sites" value="20+"><span>Mais de 20</span></label>
-
-        </div></fieldset>
-
-        <label class="campo cheio">O que você precisa?*<textarea name="mensagem" placeholder="Quero proteger o site da minha empresa..." required></textarea></label>
-
-        <input type="hidden" name="origem" value="ciber-contato">
-
-        <div class="cheio"><button type="submit" class="btn">Enviar pedido <svg><use href="#i-seta"/></svg></button></div>
-
-        <div class="ok" role="status"><h3>Recebido!</h3><p>Um especialista em segurança da GundjaTech responde em até 4 horas úteis.</p></div>
-
-      </form>
 
     </div>
 
@@ -878,15 +690,15 @@
 
       <div class="links-grade">
 
-        <div><h3>Links</h3><ul><li><a href="/contato">Contato</a></li><li><a href="/sobre">Sobre</a></li><li><a href="/portfolio">Projetos</a></li><li><a href="/blog">Blog</a></li><li><a href="/login">Área do Cliente</a></li></ul></div>
+        <div><h3>Links</h3><ul><li><a href="/contato">Contato</a></li><li><a href="/sobre">Sobre</a></li><li><a href="/portfolio">Projetos</a></li><li><a href="/blog">Blog</a></li></ul></div>
 
-        <div><h3>Serviços</h3><ul><li><a href="/desenvolvimento-de-sites/">Desenvolvimento de sites</a></li><li><a href="/criacao-de-sites-wordpress/">Sites em WordPress</a></li><li><a href="/quanto-custa-um-site/">Quanto custa um site</a></li><li><a href="/servicos">Todos os serviços</a></li></ul></div>
+        <div><h3>Serviços</h3><ul><li><a href="/desenvolvimento-de-sites">Desenvolvimento de sites</a></li><li><a href="/criacao-de-sites-wordpress">Sites em WordPress</a></li><li><a href="/quanto-custa-um-site">Quanto custa um site</a></li><li><a href="/servicos">Todos os serviços</a></li></ul></div>
 
-        <div><h3>Cases</h3><ul><li><a href="/cases/klasse/">KLASSE · Gestão Escolar</a></li><li><a href="/cases/instituto-paraiso-do-saber/">Instituto Paraíso do Saber</a></li><li><a href="/cases/cotech-contabilidade/">Cotech Contabilidade</a></li><li><a href="/portfolio">Todos os cases</a></li></ul></div>
+        <div><h3>Cases</h3><ul><li><a href="/cases/klasse">KLASSE · Gestão Escolar</a></li><li><a href="/cases/instituto-paraiso-do-saber">Instituto Paraíso do Saber</a></li><li><a href="/cases/cotech-contabilidade">Cotech Contabilidade</a></li><li><a href="/portfolio">Todos os cases</a></li></ul></div>
 
         
 
-        <div><h3>Fale com a gente</h3><ul><li><a href="mailto:contato@gundjatech.com">contato@gundjatech.com</a></li><li><a href="https://wa.me/5519953248420">WhatsApp (19) 95324-8420</a></li></ul></div>
+        <div><h3>Fale com a gente</h3><ul><li><a href="mailto:contato@gundjatech.com">contato@gundjatech.com</a></li><li><a href="https://wa.me/5519953248420">WhatsApp (19) 95324-8420</a></li><li><a href="/acompanhar-solicitacao">Acompanhar solicitação</a></li></ul></div>
 
       </div>
 
@@ -898,7 +710,7 @@
 
       <a href="https://wa.me/5519953248420" aria-label="WhatsApp"><svg><use href="#i-whats"/></svg></a>
 
-    </div><a href="/politica-de-privacidade/">Política de privacidade</a></div>
+    </div><a href="/politica-de-privacidade">Política de privacidade</a></div>
 
     </div>
 
@@ -918,13 +730,13 @@
 
   <button type="button" class="destaque js-abrir">Fale com a gente <svg><use href="#i-seta"/></svg></button>
 
-  <a href="#prova" class="esconde">Auditoria</a>
+  <a href="#faq-titulo" class="esconde">Perguntas</a>
 
   <button type="button" class="js-mais" aria-expanded="false" aria-controls="menu-mais">Mais</button>
 
 </nav>
 
-<div class="menu-mais" id="menu-mais"><a href="/servicos/criacao-de-sites">Criação de sites</a><a href="#camadas">Camadas</a><a href="#incluso">O que inclui</a><a href="#prova">Auditoria</a><a href="#faq-titulo">Perguntas</a><a href="#contato">Contato</a></div>
+<div class="menu-mais" id="menu-mais"><a href="/servicos/criacao-de-sites">Criação de sites</a><a href="#camadas">Camadas</a><a href="#diag-titulo">Diagnóstico</a><a href="#faq-titulo">Perguntas</a><a href="/contato">Contato</a></div>
 
 <button type="button" class="topo-btn js-topo">↑ Voltar ao topo</button>
 
@@ -999,8 +811,6 @@
 
         <div class="cheio"><button type="submit" class="btn btn-brilho cad-enviar">Quero a análise do meu site <svg><use href="#i-seta"/></svg></button></div>
 
-        <p class="cheio cad-lgpd">Análise confidencial. Seus dados são usados só para o contato sobre a análise (LGPD).</p>
-
         <div class="ok" role="status"><h3>Pedido feito!</h3><p>Um especialista em segurança da GundjaTech vai falar com você em até 4 horas úteis.</p></div>
 
       </form>
@@ -1043,9 +853,9 @@
 
 
 
-<script defer src="/jsm/main.ac8b157f35.js?v=gt-live1"></script>
+<script defer src="/jsm/main.ac8b157f35.js?v=gt-live2"></script>
 
-<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live5"></script>
+<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live7"></script>
 
 <script defer src="/jsm/animacoes.b868b7f2df.js"></script>
 
@@ -1053,7 +863,7 @@
 
 <script defer src="/jsm/ciber.0a4f78b3e0.js"></script>
 
-<script src="/jsm/leads.ce7ca30ca6.js?v=gt-live1" defer></script>
+<script src="/jsm/leads.ce7ca30ca6.js?v=gt-live2" defer></script>
 
 <script src="/jsm/cro.107b971293.js" defer></script>
 

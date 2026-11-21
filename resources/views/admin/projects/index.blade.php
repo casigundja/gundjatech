@@ -54,15 +54,36 @@
                     </div>
                 </div>
 
-                <div class="pt-6 border-t border-[#222222] flex items-center justify-between text-xs text-gray-400 mt-6">
+                <div class="pt-6 border-t border-[#222222] flex items-center justify-between gap-2 text-xs text-gray-400 mt-6">
                     <span>Prazo: {{ $p->deadline ? $p->deadline->format('d/m/Y') : 'Não definido' }}</span>
-                    <a href="{{ route('admin.projects.show', $p) }}" class="btn-primary text-xs px-3 py-1.5 rounded-lg font-bold">Ver Projeto &rarr;</a>
+                    <div class="flex items-center gap-2">
+                        @if(Auth::user()->hasPermission('projects.manage'))
+                            <form
+                                action="{{ route('admin.projects.destroy', $p) }}"
+                                method="POST"
+                                data-confirm-title="Excluir projeto"
+                                data-confirm-message="Tem certeza que deseja excluir este projeto definitivamente? Todas as etapas, membros e anexos vinculados serão removidos."
+                                data-confirm-target="[{{ $p->code }}] {{ $p->name }}"
+                                data-confirm-button="Sim, excluir projeto"
+                                data-confirm-tone="danger"
+                            >
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-red-400 hover:bg-red-500/10 border border-red-500/30 transition cursor-pointer">
+                                    Excluir
+                                </button>
+                            </form>
+                        @endif
+                        <a href="{{ route('admin.projects.show', $p) }}" class="btn-primary text-xs px-3 py-1.5 rounded-lg font-bold">Ver Projeto &rarr;</a>
+                    </div>
                 </div>
             </div>
         @empty
-            <div class="col-span-3 text-center py-12 text-gray-500">Nenhum projeto registrado.</div>
+            <div class="col-span-full text-center py-12 text-gray-500">Nenhum projeto registrado.</div>
         @endforelse
     </div>
-    <div>{{ $projects->links() }}</div>
+    @if($projects->hasPages())
+        <div>{{ $projects->links() }}</div>
+    @endif
 </div>
 @endsection

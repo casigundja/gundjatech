@@ -9,11 +9,13 @@ use App\Models\DnsRecord;
 use App\Models\Domain;
 use App\Models\DomainRenewal;
 use App\Models\FinancialTransaction;
+use App\Models\Payment;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class AdminDomainController extends Controller
@@ -22,12 +24,34 @@ class AdminDomainController extends Controller
     {
         $query = Domain::with(['client'])->withCount(['dnsRecords', 'renewals']);
 
+        $today = Carbon::now()->startOfDay()->toDateString();
+        $inThirtyDays = Carbon::now()->addDays(30)->toDateString();
+
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'expiring_soon') {
+                $query->where(function ($q) use ($today, $inThirtyDays): void {
+                    $q->where('status', 'expiring_soon')
+                        ->orWhere(function ($sq) use ($today, $inThirtyDays): void {
+                            $sq->whereNotNull('expiration_date')
+                                ->whereBetween('expiration_date', [$today, $inThirtyDays]);
+                        });
+                });
+            } elseif ($request->status === 'expired') {
+                $query->where(function ($q) use ($today): void {
+                    $q->where('status', 'expired')
+                        ->orWhere(function ($sq) use ($today): void {
+                            $sq->whereNotNull('expiration_date')
+                                ->where('expiration_date', '<', $today);
+                        });
+                });
+            } else {
+                $query->where('status', $request->status);
+            }
         }
 
         if ($request->filled('expiring')) {
-            $query->where('expiration_date', '<=', Carbon::now()->addDays(30));
+            $query->whereNotNull('expiration_date')
+                ->whereBetween('expiration_date', [$today, $inThirtyDays]);
         }
 
         if ($request->filled('search')) {
@@ -61,6 +85,10 @@ class AdminDomainController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        if ($request->filled('domain_name')) {
+            $request->merge(['domain_name' => strtolower(trim((string) $request->input('domain_name')))]);
+        }
+
         if (! $request->filled('registration_date') && $request->filled('registered_at')) {
             $request->merge(['registration_date' => $request->input('registered_at')]);
         }
@@ -143,14 +171,37 @@ class AdminDomainController extends Controller
             'priority' => ['nullable', 'integer', 'min:0', 'max:65535'],
         ]);
 
-        $domain->dnsRecords()->create($validated);
+        $record = $domain->dnsRecords()->create($validated);
+
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'domain.dns_added',
+            'subject_type' => Domain::class,
+            'subject_id' => $domain->id,
+            'details' => ['domain_name' => $domain->domain_name, 'type' => $record->type, 'host' => $record->host],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
 
         return back()->with('success', 'Registro DNS adicionado com sucesso!');
     }
 
-    public function deleteDnsRecord(DnsRecord $dnsRecord): RedirectResponse
+    public function deleteDnsRecord(Request $request, DnsRecord $dnsRecord): RedirectResponse
     {
+        $domainId = $dnsRecord->domain_id;
+        $type = $dnsRecord->type;
+        $host = $dnsRecord->host;
         $dnsRecord->delete();
+
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'domain.dns_deleted',
+            'subject_type' => Domain::class,
+            'subject_id' => $domainId,
+            'details' => ['type' => $type, 'host' => $host],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
 
         return back()->with('success', 'Registro DNS removido com sucesso!');
     }
@@ -186,7 +237,7 @@ class AdminDomainController extends Controller
             ]);
 
             if ($request->boolean('register_finance')) {
-                FinancialTransaction::create([
+                $tx = FinancialTransaction::create([
                     'client_id' => $domain->client_id,
                     'type' => 'income',
                     'category' => 'Renovação de Domínio',
@@ -198,6 +249,18 @@ class AdminDomainController extends Controller
                     'status' => 'paid',
                     'payment_method' => 'PIX',
                 ]);
+
+                if ($domain->client_id) {
+                    Payment::create([
+                        'financial_transaction_id' => $tx->id,
+                        'client_id' => $domain->client_id,
+                        'amount' => $tx->amount,
+                        'payment_method' => 'pix',
+                        'status' => 'approved',
+                        'transaction_id' => 'PAY-'.date('Ymd').'-'.strtoupper(Str::random(6)),
+                        'paid_at' => now(),
+                    ]);
+                }
             }
         });
 
@@ -216,5 +279,28 @@ class AdminDomainController extends Controller
         ]);
 
         return back()->with('success', "Domínio renovado com sucesso até {$newExpiry->format('d/m/Y')}!");
+    }
+
+    public function destroy(Request $request, Domain $domain): RedirectResponse
+    {
+        $domainId = $domain->id;
+        $domainName = $domain->domain_name;
+
+        DB::transaction(function () use ($domain): void {
+            $domain->delete();
+        });
+
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'domain.deleted',
+            'subject_type' => Domain::class,
+            'subject_id' => $domainId,
+            'details' => ['domain_name' => $domainName],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return redirect()->route('admin.domains.index')
+            ->with('success', "Domínio {$domainName} excluído com sucesso.");
     }
 }

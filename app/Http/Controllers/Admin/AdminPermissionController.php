@@ -22,7 +22,7 @@ class AdminPermissionController extends Controller
             ->get()
             ->groupBy('module');
 
-        $roles = UserRole::cases();
+        $roles = UserRole::visibleRoles();
 
         $assignedMatrix = [];
         $pivotRows = DB::table('role_permissions')->get(['role', 'permission_id']);
@@ -91,12 +91,53 @@ class AdminPermissionController extends Controller
             }
         }
 
+        if ($currentUser && ! $currentUser->isSuperAdmin()) {
+            $actorRole = $currentUser->roleEnum();
+            $actorHeldIds = Permission::whereIn('slug', $currentUser->permissions())
+                ->pluck('id')
+                ->map(fn ($id): int => (int) $id)
+                ->all();
+
+            foreach ($submitted as $roleValue => $permIds) {
+                $targetRole = UserRole::tryFrom((string) $roleValue);
+                if ($targetRole === null) {
+                    continue;
+                }
+
+                $submittedIds = array_values(array_unique(array_map('intval', $permIds)));
+                $unauthorizedGrant = array_diff($submittedIds, $actorHeldIds);
+                if ($unauthorizedGrant !== []) {
+                    return back()->with('error', 'Você não pode conceder permissões que o seu próprio cargo não possui.');
+                }
+
+                if ($targetRole->level() > $actorRole->level()) {
+                    return back()->with('error', 'Apenas Super Administradores podem alterar permissões de cargos superiores.');
+                }
+            }
+        }
+
         $now = now();
 
-        DB::transaction(function () use ($submitted, $allPermissionIds, $now): void {
+        DB::transaction(function () use ($submitted, $allPermissionIds, $now, $currentUser): void {
+            $actorRole = $currentUser?->roleEnum() ?? UserRole::Client;
+            $visibleRoleValues = array_map(fn (UserRole $r): string => $r->value, UserRole::visibleRoles());
             $editableRoles = array_filter(
                 UserRole::cases(),
-                fn (UserRole $role): bool => $role !== UserRole::SuperAdmin
+                static function (UserRole $role) use ($currentUser, $actorRole, $visibleRoleValues, $submitted): bool {
+                    if ($role === UserRole::SuperAdmin) {
+                        return false;
+                    }
+
+                    if (! in_array($role->value, $visibleRoleValues, true) && ! array_key_exists($role->value, $submitted)) {
+                        return false;
+                    }
+
+                    if ($currentUser !== null && ! $currentUser->isSuperAdmin()) {
+                        return $role->level() < $actorRole->level();
+                    }
+
+                    return true;
+                }
             );
 
             $editableRoleValues = array_map(fn (UserRole $r): string => $r->value, $editableRoles);
@@ -156,6 +197,10 @@ class AdminPermissionController extends Controller
 
     public function resetDefaults(Request $request): RedirectResponse
     {
+        if (! Auth::user()?->isSuperAdmin()) {
+            abort(403, 'Apenas Super Administradores podem restaurar a matriz padrão de permissões RBAC.');
+        }
+
         $permissionMap = Permission::pluck('id', 'slug')->all();
         $now = now();
 

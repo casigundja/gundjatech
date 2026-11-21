@@ -58,6 +58,10 @@ class PortalQuotationController extends Controller
                 'approved_at' => now(),
             ]);
 
+            if ($quotation->client && $quotation->client->status === 'lead') {
+                $quotation->client->update(['status' => 'active']);
+            }
+
             if ($quotation->serviceRequest) {
                 $oldStatus = $quotation->serviceRequest->status;
                 $quotation->serviceRequest->update(['status' => 'approved']);

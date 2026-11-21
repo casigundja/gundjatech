@@ -180,6 +180,7 @@ class CleanDemoDataCommand extends Command
                 $superAdminId = User::where('role', 'superadmin')->value('id');
                 if ($superAdminId !== null) {
                     BlogPost::whereIn('author_id', $demoUserIds)->update(['author_id' => $superAdminId]);
+                    Quotation::whereIn('user_id', $demoUserIds)->update(['user_id' => $superAdminId]);
                 }
             }
 

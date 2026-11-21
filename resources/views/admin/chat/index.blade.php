@@ -229,8 +229,8 @@
     </div>
 
     <!-- Modal Start Conversation -->
-    <div x-show="newChatModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-        <div class="glass-card max-w-md w-full p-6 rounded-3xl border border-[#F2C230]/40 space-y-4">
+    <div x-show="newChatModal" x-cloak @click.self="newChatModal = false" @keydown.escape.window="newChatModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+        <div class="glass-card max-w-md w-full max-h-[90vh] overflow-y-auto p-6 rounded-3xl border border-[#F2C230]/40 space-y-4">
             <h3 class="text-base font-bold text-white">Iniciar Atendimento com Cliente</h3>
             <form action="{{ route('admin.chat.start') }}" method="POST" class="space-y-4">
                 @csrf

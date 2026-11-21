@@ -30,6 +30,10 @@ class AuthController extends Controller
 
     public function login(Request $request): RedirectResponse
     {
+        if ($request->filled('email')) {
+            $request->merge(['email' => strtolower(trim((string) $request->input('email')))]);
+        }
+
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
@@ -68,61 +72,79 @@ class AuthController extends Controller
 
     public function register(Request $request): RedirectResponse
     {
+        if ($request->filled('email')) {
+            $request->merge(['email' => strtolower(trim((string) $request->input('email')))]);
+        }
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::min(6)],
             'phone' => ['nullable', 'string', 'max:30'],
             'company_name' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $user = DB::transaction(function () use ($data): User {
+        $normalizedEmail = strtolower(trim($data['email']));
+
+        if (User::whereRaw('LOWER(email) = ?', [$normalizedEmail])->exists()) {
+            return back()
+                ->withInput($request->except('password', 'password_confirmation'))
+                ->withErrors(['email' => 'Este endereço de e-mail já está cadastrado.']);
+        }
+
+        $user = DB::transaction(function () use ($data, $normalizedEmail): User {
             $user = User::create([
-                'name' => $data['name'],
-                'email' => $data['email'],
+                'name' => trim($data['name']),
+                'email' => $normalizedEmail,
                 'phone' => $data['phone'] ?? null,
                 'password' => Hash::make($data['password']),
                 'role' => 'client',
                 'is_active' => true,
             ]);
 
-            $normalizedEmail = strtolower(trim($data['email']));
-
-            $existingClient = Client::whereRaw('LOWER(email) = ?', [$normalizedEmail])
+            // Only auto-link unowned public leads (never hijack an active manually-managed client)
+            $existingLeadClient = Client::whereRaw('LOWER(email) = ?', [$normalizedEmail])
                 ->whereNull('user_id')
+                ->where('status', 'lead')
                 ->first();
 
-            if ($existingClient !== null) {
-                $existingClient->update([
+            $companyName = trim((string) ($data['company_name'] ?? ''));
+
+            if ($existingLeadClient !== null) {
+                $existingLeadClient->update([
                     'user_id' => $user->id,
-                    'name' => $data['name'],
-                    'company_name' => $data['company_name'] ?: ($existingClient->company_name ?: $data['name']),
-                    'phone' => $data['phone'] ?? $existingClient->phone,
+                    'name' => trim($data['name']),
+                    'company_name' => $companyName !== '' ? $companyName : ($existingLeadClient->company_name ?: trim($data['name'])),
+                    'phone' => $data['phone'] ?? $existingLeadClient->phone,
                     'status' => 'active',
                 ]);
-                $client = $existingClient;
+                $client = $existingLeadClient;
             } else {
                 $client = Client::create([
                     'user_id' => $user->id,
-                    'name' => $data['name'],
-                    'company_name' => $data['company_name'] ?: $data['name'],
+                    'name' => trim($data['name']),
+                    'company_name' => $companyName !== '' ? $companyName : trim($data['name']),
                     'email' => $normalizedEmail,
                     'phone' => $data['phone'] ?? null,
                     'status' => 'active',
                 ]);
             }
 
+            // Link only unowned guest requests matching this email (never steal another user's requests)
             ServiceRequest::whereRaw('LOWER(email) = ?', [$normalizedEmail])
-                ->where(function ($q): void {
-                    $q->whereNull('client_id')->orWhereNull('user_id');
+                ->whereNull('user_id')
+                ->where(function ($q) use ($client): void {
+                    $q->whereNull('client_id')
+                        ->orWhere('client_id', $client->id);
                 })
                 ->update([
                     'client_id' => $client->id,
                     'user_id' => $user->id,
                 ]);
 
+            // Link only unattached anonymous website chats (never steal another client's conversations)
             Conversation::whereRaw('LOWER(visitor_email) = ?', [$normalizedEmail])
-                ->where('client_id', '!=', $client->id)
+                ->whereNull('client_id')
                 ->update(['client_id' => $client->id]);
 
             return $user;
@@ -141,6 +163,10 @@ class AuthController extends Controller
 
     public function sendResetLink(Request $request): RedirectResponse
     {
+        if ($request->filled('email')) {
+            $request->merge(['email' => strtolower(trim((string) $request->input('email')))]);
+        }
+
         $request->validate([
             'email' => ['required', 'email'],
         ]);
@@ -164,6 +190,10 @@ class AuthController extends Controller
 
     public function resetPassword(Request $request): RedirectResponse
     {
+        if ($request->filled('email')) {
+            $request->merge(['email' => strtolower(trim((string) $request->input('email')))]);
+        }
+
         $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],
@@ -177,6 +207,8 @@ class AuthController extends Controller
                     'password' => Hash::make($password),
                     'remember_token' => Str::random(60),
                 ])->save();
+
+                DB::table('sessions')->where('user_id', $user->id)->delete();
             }
         );
 

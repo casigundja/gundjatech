@@ -88,8 +88,8 @@
                 <div>
                     <label class="block text-xs font-bold text-gray-300 uppercase mb-1">Status Inicial</label>
                     <select name="status" class="w-full bg-[#141414] border border-[#2E2D2C] rounded-xl px-4 py-2.5 text-xs text-white">
-                        <option value="sent" selected>Enviar ao Cliente (Disponível no Portal)</option>
-                        <option value="draft">Salvar como Rascunho Interno</option>
+                        <option value="sent" @selected(old('status', 'sent') === 'sent')>Enviar ao Cliente (Disponível no Portal)</option>
+                        <option value="draft" @selected(old('status') === 'draft')>Salvar como Rascunho Interno</option>
                     </select>
                 </div>
                 <div>
@@ -126,12 +126,19 @@
 <script>
 function quotationBuilder() {
     const catalog = @json($services->mapWithKeys(fn ($s) => [$s->id => ['name' => $s->name, 'price' => (float) ($s->base_price ?? 0)]]));
+    const oldItems = @json(old('items'));
+    const initialItems = Array.isArray(oldItems) && oldItems.length > 0
+        ? oldItems.map((item) => ({
+            service_id: item.service_id ?? '',
+            description: item.description ?? '',
+            quantity: Number(item.quantity ?? 1) || 1,
+            unit_price: Number(item.unit_price ?? 0) || 0,
+        }))
+        : [{ service_id: '', description: '', quantity: 1, unit_price: 0 }];
 
     return {
-        discount: 0,
-        items: [
-            { service_id: '', description: '', quantity: 1, unit_price: 0 }
-        ],
+        discount: Number(@json((float) old('discount', 0))) || 0,
+        items: initialItems,
         addItem() {
             this.items.push({ service_id: '', description: '', quantity: 1, unit_price: 0 });
         },

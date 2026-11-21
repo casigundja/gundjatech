@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Portal;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use App\Services\AutonomousCrmAgent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ use Illuminate\View\View;
 
 class PortalChatController extends Controller
 {
-    public function index(): View
+    public function index(AutonomousCrmAgent $crmAgent): View
     {
         $user = Auth::user();
         $client = $user->ensureClientProfile();
@@ -29,6 +30,8 @@ class PortalChatController extends Controller
         }
 
         $conversation = Conversation::where('client_id', $client->id)
+            ->where('channel', 'web_chat')
+            ->whereNull('visitor_token')
             ->whereIn('status', ['open', 'waiting_client', 'waiting_staff'])
             ->latest('updated_at')
             ->first();
@@ -39,6 +42,9 @@ class PortalChatController extends Controller
                 'subject' => 'Atendimento Geral '.$client->display_name,
                 'channel' => 'web_chat',
                 'status' => 'open',
+                'ai_enabled' => $crmAgent->isGloballyEnabled(),
+                'crm_stage' => 'new',
+                'lead_score' => 25,
             ]);
         }
 
@@ -94,7 +100,7 @@ class PortalChatController extends Controller
         ]);
     }
 
-    public function sendMessage(Request $request, Conversation $conversation): RedirectResponse|JsonResponse
+    public function sendMessage(Request $request, Conversation $conversation, AutonomousCrmAgent $crmAgent): RedirectResponse|JsonResponse
     {
         Gate::authorize('reply', $conversation);
 
@@ -103,7 +109,7 @@ class PortalChatController extends Controller
         ]);
 
         /** @var ConversationMessage $createdMessage */
-        $createdMessage = DB::transaction(function () use ($conversation, $validated): ConversationMessage {
+        $createdMessage = DB::transaction(function () use ($conversation, $validated, $crmAgent): ConversationMessage {
             $createdMessage = ConversationMessage::create([
                 'conversation_id' => $conversation->id,
                 'sender_id' => Auth::id(),
@@ -113,18 +119,38 @@ class PortalChatController extends Controller
                 'is_read' => false,
             ]);
 
-            $conversation->update([
+            $updates = [
                 'status' => 'waiting_staff',
                 'closed_at' => null,
-            ]);
+            ];
+
+            // Enable AI automatically on legacy portal conversations where no human staff has taken over
+            if (
+                ! $conversation->ai_enabled
+                && $crmAgent->isGloballyEnabled()
+                && $conversation->crm_stage !== 'handoff_human'
+                && $conversation->assigned_user_id === null
+                && ! $conversation->messages()->where('sender_type', 'staff')->where('is_ai', false)->exists()
+            ) {
+                $updates['ai_enabled'] = true;
+            }
+
+            $conversation->update($updates);
             $conversation->touch();
 
             return $createdMessage;
         });
 
+        $conversation->load(['client', 'serviceRequest']);
+        $aiMessage = $crmAgent->handleIncomingVisitorMessage($conversation, $validated['message']);
+
         if ($request->expectsJson()) {
+            $conversation->refresh();
+
             return response()->json([
                 'ok' => true,
+                'status' => $conversation->status,
+                'status_label' => $conversation->status_label,
                 'message' => [
                     'id' => $createdMessage->id,
                     'sender_type' => 'client',
@@ -132,6 +158,14 @@ class PortalChatController extends Controller
                     'message' => $createdMessage->message,
                     'created_at' => $createdMessage->created_at?->format('d/m H:i') ?? '',
                 ],
+                'ai_reply' => $aiMessage ? [
+                    'id' => $aiMessage->id,
+                    'sender_type' => 'staff',
+                    'sender_name' => $aiMessage->sender_name ?: 'Assistente IA GundjaTech',
+                    'is_ai' => true,
+                    'message' => $aiMessage->message,
+                    'created_at' => $aiMessage->created_at?->format('d/m H:i') ?? '',
+                ] : null,
             ]);
         }
 

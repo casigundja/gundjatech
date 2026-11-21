@@ -4,28 +4,28 @@
 
 @section('content')
 <div class="space-y-6">
-    <!-- KPI Row -->
+    <!-- KPI Row (Clickable Filter Cards) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div class="glass-card p-5 rounded-2xl border border-[#222222]">
+        <a href="{{ route('admin.quotations.index') }}" class="glass-card p-5 rounded-2xl border border-[#222222] block no-underline cursor-pointer hover:border-[#F2C230]/50 hover:-translate-y-0.5 transition-all">
             <span class="text-xs text-gray-400 font-medium">Volume Total Orçado</span>
             <div class="text-2xl font-extrabold text-white mt-2">R$ {{ number_format($totalValue, 2, ',', '.') }}</div>
             <span class="text-[10px] text-gray-400">Todas as propostas emitidas</span>
-        </div>
-        <div class="glass-card p-5 rounded-2xl border border-[#222222]">
+        </a>
+        <a href="{{ route('admin.quotations.index', ['status' => 'approved']) }}" class="glass-card p-5 rounded-2xl border border-[#222222] block no-underline cursor-pointer hover:border-emerald-400/50 hover:-translate-y-0.5 transition-all">
             <span class="text-xs text-gray-400 font-medium">Propostas Aprovadas</span>
             <div class="text-2xl font-extrabold text-emerald-400 mt-2">R$ {{ number_format($approvedValue, 2, ',', '.') }}</div>
             <span class="text-[10px] text-emerald-400 font-semibold">Receita contratada</span>
-        </div>
-        <div class="glass-card p-5 rounded-2xl border border-[#222222]">
+        </a>
+        <a href="{{ route('admin.quotations.index', ['status' => 'open']) }}" class="glass-card p-5 rounded-2xl border border-[#222222] block no-underline cursor-pointer hover:border-[#F2C230]/50 hover:-translate-y-0.5 transition-all">
             <span class="text-xs text-gray-400 font-medium">Em Aberto / Aguardando</span>
             <div class="text-2xl font-extrabold text-[#E4A318] mt-2">{{ $pendingCount }}</div>
             <span class="text-[10px] text-gray-400">Rascunhos e enviadas</span>
-        </div>
-        <div class="glass-card p-5 rounded-2xl border border-[#222222]">
+        </a>
+        <a href="{{ route('admin.quotations.index', ['status' => 'approved']) }}" class="glass-card p-5 rounded-2xl border border-[#222222] block no-underline cursor-pointer hover:border-sky-400/50 hover:-translate-y-0.5 transition-all">
             <span class="text-xs text-gray-400 font-medium">Taxa de Conversão</span>
             <div class="text-2xl font-extrabold text-sky-400 mt-2">{{ number_format($conversionRate, 1, ',', '.') }}%</div>
             <span class="text-[10px] text-gray-400">Orçamentos aprovados</span>
-        </div>
+        </a>
     </div>
 
     <!-- Filters & CTA -->

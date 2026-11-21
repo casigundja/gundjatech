@@ -9,7 +9,7 @@
         <div>
             <div class="flex items-center gap-3">
                 <h2 class="text-2xl font-extrabold text-white">{{ $client->display_name }}</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold {{ $client->status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : ($client->status === 'lead' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : 'bg-red-500/10 text-red-400 border border-red-500/30') }}">
                     {{ $client->status_label }}
                 </span>
             </div>

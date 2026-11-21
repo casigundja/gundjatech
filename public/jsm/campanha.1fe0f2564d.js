@@ -12,11 +12,11 @@
     }
 
     function setSession(key, val) {
-        try { sessionStorage.setItem(key, val); } catch (e) {}
+        try { sessionStorage.setItem(key, val); } catch (e) { }
     }
 
     function removeSession(key) {
-        try { sessionStorage.removeItem(key); } catch (e) {}
+        try { sessionStorage.removeItem(key); } catch (e) { }
     }
 
     function pushDataLayer(event, extra) {
@@ -111,6 +111,8 @@
         var liveSession = null;
         var pollTimer = null;
         var renderedMsgIds = {};
+        var isSendingLiveMessage = false;
+        var closedHandled = false;
 
         try {
             var storedSession = getSession("gt_chat_session");
@@ -125,6 +127,40 @@
             if (liveSession) {
                 setSession("gt_chat_session", JSON.stringify(liveSession));
             }
+        }
+
+        function stopPollingLiveMessages() {
+            if (pollTimer) {
+                clearTimeout(pollTimer);
+                pollTimer = null;
+            }
+        }
+
+        function handleClosedConversation(noticeText) {
+            stopPollingLiveMessages();
+            chatForm.hidden = true;
+            currentStep = null;
+            if (!closedHandled) {
+                closedHandled = true;
+                appendBotBubbleInstant(noticeText || L("Este atendimento foi encerrado pela equipe. Você pode iniciar uma nova conversa ou falar no WhatsApp."));
+            }
+            renderOptions([
+                {
+                    texto: L("Iniciar nova conversa"),
+                    silent: true,
+                    acao: function () {
+                        removeSession("gt_chat_session");
+                        liveSession = null;
+                        renderedMsgIds = {};
+                        closedHandled = false;
+                        stopPollingLiveMessages();
+                        chatMessagesEl.innerHTML = "";
+                        chatStarted = false;
+                        openChat();
+                    }
+                },
+                { texto: L("Falar no WhatsApp"), link: WA_URL }
+            ]);
         }
 
         function scrollChatBottom() {
@@ -171,6 +207,17 @@
             })();
         }
 
+        function enableFreeTextInput() {
+            if (closedHandled) { return; }
+            if (!currentStep || currentStep.tipo === "livre") {
+                currentStep = { tipo: "livre" };
+                chatForm.hidden = false;
+                chatInput.disabled = false;
+                chatInput.type = "text";
+                chatInput.placeholder = L("Digite sua mensagem ou escolha uma opção...");
+            }
+        }
+
         function renderOptions(options) {
             chatOptionsEl.innerHTML = "";
             options.forEach(function (opt) {
@@ -178,8 +225,8 @@
                 if (opt.link) {
                     btn = document.createElement("a");
                     btn.href = opt.link;
-                    btn.target = "_blank";
-                    btn.rel = "noopener";
+                    btn.target = opt.sameTab ? "_self" : "_blank";
+                    if (!opt.sameTab) { btn.rel = "noopener"; }
                 } else {
                     btn = document.createElement("button");
                     btn.type = "button";
@@ -197,6 +244,7 @@
                 });
                 chatOptionsEl.appendChild(btn);
             });
+            enableFreeTextInput();
         }
 
         function askInput(prompts, type, callback) {
@@ -220,11 +268,20 @@
         }
 
         function startPollingLiveMessages() {
-            if (pollTimer) { clearInterval(pollTimer); }
-            if (!liveSession || !liveSession.token) { return; }
+            stopPollingLiveMessages();
+            if (!liveSession || !liveSession.token || closedHandled) { return; }
+
+            var scheduleNext = function () {
+                if (!liveSession || !liveSession.token || closedHandled) { return; }
+                pollTimer = setTimeout(pollOnce, 5000);
+            };
 
             var pollOnce = function () {
-                if (!liveSession || !liveSession.token) { return; }
+                if (!liveSession || !liveSession.token || closedHandled) { return; }
+                if (isSendingLiveMessage) {
+                    scheduleNext();
+                    return;
+                }
                 var url = "/api/chat/messages?token=" + encodeURIComponent(liveSession.token) + "&after_id=" + (liveSession.lastId || 0);
                 fetch(url, {
                     headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest" }
@@ -239,40 +296,29 @@
                             if (msg.sender_type === "staff") {
                                 var prefix = msg.sender_name ? msg.sender_name + ": " : "";
                                 appendBotBubbleInstant(prefix + msg.message, msg.id);
-                            } else {
+                            } else if (!isSendingLiveMessage) {
                                 appendUserBubble(msg.message, msg.id);
                             }
                         });
                         saveLiveSession();
 
                         if (data.status === "closed") {
-                            renderOptions([
-                                {
-                                    texto: L("Iniciar nova conversa"),
-                                    silent: true,
-                                    acao: function () {
-                                        removeSession("gt_chat_session");
-                                        liveSession = null;
-                                        renderedMsgIds = {};
-                                        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-                                        chatMessagesEl.innerHTML = "";
-                                        chatStarted = false;
-                                        openChat();
-                                    }
-                                },
-                                { texto: L("Falar no WhatsApp"), link: WA_URL }
-                            ]);
+                            handleClosedConversation();
                         }
                     })
-                    .catch(function () {});
+                    .catch(function () { })
+                    .then(function () {
+                        scheduleNext();
+                    });
             };
 
-            pollTimer = setInterval(pollOnce, 5000);
+            scheduleNext();
         }
 
         function restoreExistingLiveSession() {
             if (!liveSession || !liveSession.token) { return false; }
             chatStarted = true;
+            closedHandled = false;
             chatMessagesEl.innerHTML = "";
             renderedMsgIds = {};
 
@@ -304,7 +350,11 @@
                         }
                     });
                     saveLiveSession();
-                    startPollingLiveMessages();
+                    if (data.status === "closed") {
+                        handleClosedConversation();
+                    } else {
+                        startPollingLiveMessages();
+                    }
                 })
                 .catch(function () {
                     startPollingLiveMessages();
@@ -344,7 +394,11 @@
 
         function scrollToTargetSection() {
             var target = document.getElementById(copy.ver);
-            if (target) { target.scrollIntoView({ behavior: "smooth" }); }
+            if (target) {
+                target.scrollIntoView({ behavior: "smooth" });
+                return;
+            }
+            window.location.href = isSecurityTheme ? "/ciberseguranca#camadas" : "/portfolio";
         }
 
         function startEmergencyFlow() {
@@ -359,8 +413,12 @@
             });
         }
 
-        function startLeadCaptureFlow() {
-            askInput([copy.oferta, L("Como posso te chamar?")], "texto", function (fullName) {
+        function startLeadCaptureFlow(fromFreeText) {
+            var introPrompts = fromFreeText === true
+                ? [L("Perfeito, recebi sua mensagem! Para conectarmos seu atendimento em tempo real, como posso te chamar?")]
+                : [copy.oferta, L("Como posso te chamar?")];
+
+            askInput(introPrompts, "texto", function (fullName) {
                 visitorData.nomeCompleto = fullName;
                 visitorData.nome = fullName.split(" ")[0];
 
@@ -383,7 +441,9 @@
                         setSession("snp_wq", JSON.stringify(isCorp ? "Q" : "F"));
 
                         var choicesSummary = (visitorData.escolhas || []).join(" > ") || L("Atendimento Online");
-                        var initialMsg = L("Interesse informado no chat: ") + choicesSummary;
+                        var initialMsg = visitorData.mensagemLivre
+                            ? visitorData.mensagemLivre
+                            : (L("Interesse informado no chat: ") + choicesSummary);
 
                         var pendingTyping = document.createElement("div");
                         pendingTyping.className = "msg-digitando";
@@ -432,6 +492,7 @@
                                     }
                                     if (m.id > lastId) { lastId = m.id; }
                                 });
+                                closedHandled = false;
                                 liveSession = {
                                     token: data.visitor_token,
                                     conversationId: data.conversation_id,
@@ -478,10 +539,40 @@
         chatForm.addEventListener("submit", function (ev) {
             ev.preventDefault();
             var value = chatInput.value.trim();
-            if (!value || !currentStep) { return; }
+            if (!value || closedHandled) { return; }
+
+            if (!currentStep || currentStep.tipo === "livre") {
+                chatInput.value = "";
+                chatOptionsEl.innerHTML = "";
+                appendUserBubble(value);
+                visitorData.escolhas = (visitorData.escolhas || []).concat([value]);
+                visitorData.mensagemLivre = value;
+
+                var protoMatch = value.match(/\b((?:GNDJ|CHAT|CNT|WPP)-\d{8}-[A-Z0-9]{4})\b/i);
+                if (protoMatch || /protocolo|acompanhar\s+solicita/i.test(value)) {
+                    var protoCode = protoMatch ? protoMatch[1].toUpperCase() : "";
+                    var trackHref = "/acompanhar-solicitacao" + (protoCode ? "?protocol=" + encodeURIComponent(protoCode) : "");
+                    sendBotMessages([
+                        protoCode
+                            ? L("Localizei o código ") + protoCode + L("! Você pode consultar o status completo agora ou continuar falando com nossa equipe por aqui.")
+                            : L("Você pode consultar seu protocolo em tempo real na página de rastreamento ou continuar o atendimento com nossa equipe por aqui.")
+                    ], function () {
+                        renderOptions([
+                            { texto: protoCode ? (L("Consultar ") + protoCode + " →") : L("Consultar protocolo agora →"), link: trackHref, sameTab: true },
+                            { texto: L("Continuar atendimento no chat"), acao: function () { startLeadCaptureFlow(true); } },
+                            { texto: L("Falar no WhatsApp"), link: WA_URL }
+                        ]);
+                    });
+                    return;
+                }
+
+                startLeadCaptureFlow(true);
+                return;
+            }
 
             if (currentStep.tipo === "live") {
-                if (!liveSession || !liveSession.token) { return; }
+                if (!liveSession || !liveSession.token || isSendingLiveMessage) { return; }
+                isSendingLiveMessage = true;
                 chatInput.value = "";
                 chatInput.disabled = true;
                 appendUserBubble(value);
@@ -506,14 +597,22 @@
                 })
                     .then(function (resp) {
                         return resp.json().catch(function () { return { ok: false }; }).then(function (parsed) {
-                            return resp.ok ? parsed : { ok: false };
+                            return { httpStatus: resp.status, ok: resp.ok, body: parsed };
                         });
                     })
-                    .then(function (data) {
+                    .then(function (result) {
                         replyTyping.remove();
+                        isSendingLiveMessage = false;
                         chatInput.disabled = false;
+
+                        var data = result.body;
+                        if (result.httpStatus === 409 || (data && data.status === "closed")) {
+                            handleClosedConversation(data && data.message ? data.message : null);
+                            return;
+                        }
+
                         chatInput.focus();
-                        if (data && data.ok && data.message) {
+                        if (result.ok && data && data.ok && data.message) {
                             renderedMsgIds[data.message.id] = true;
                             if (data.message.id > (liveSession.lastId || 0)) {
                                 liveSession.lastId = data.message.id;
@@ -531,6 +630,7 @@
                     })
                     .catch(function () {
                         replyTyping.remove();
+                        isSendingLiveMessage = false;
                         chatInput.disabled = false;
                         appendBotBubbleInstant(L("Sem conexão no momento. Tente novamente ou chame no WhatsApp."));
                     });
@@ -569,6 +669,7 @@
             if (!chatStarted) {
                 if (restoreExistingLiveSession()) { return; }
                 chatStarted = true;
+                enableFreeTextInput();
                 pushDataLayer("chat_aberto");
                 sendBotMessages([L("Oi! Aqui é da GundjaTech."), copy.ola], function () {
                     renderOptions([

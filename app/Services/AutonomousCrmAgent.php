@@ -30,6 +30,8 @@ class AutonomousCrmAgent
 
     public const CACHE_CATALOG_KEY = 'gundjatech_crm_ai_catalog_v2';
 
+    private const MAX_AI_TURNS_PER_CONVERSATION = 30;
+
     public const DEFAULT_SYSTEM_PROMPT = 'Você é o Assistente Comercial Sênior da GundjaTech (engenharia digital, criação de sites sob medida, sistemas web, cibersegurança, gestão de domínios e tráfego pago). Converse em português de forma clara, executiva, acolhedora e objetiva (máximo 3 frases por resposta). Use apenas os serviços, preços base e cases reais informados no contexto. Qualifique o visitante fazendo uma pergunta de cada vez (projeto/objetivo, empresa, prazo desejado e faixa de investimento) para montar o pré-orçamento no CRM. Se o visitante relatar emergência (site invadido/fora do ar), pedir desconto, quiser fechar contrato ou pedir para falar com um humano/diretor, acione handoff_to_human=true.';
 
     public static function flushCache(): void
@@ -117,6 +119,17 @@ class AutonomousCrmAgent
     {
         $config = $this->getConfig();
         if (! $config['enabled'] || ! $conversation->ai_enabled || $conversation->status === 'closed') {
+            return null;
+        }
+
+        if ($conversation->messages()->where('is_ai', true)->count() >= self::MAX_AI_TURNS_PER_CONVERSATION) {
+            $conversation->update([
+                'ai_enabled' => false,
+                'crm_stage' => 'handoff_human',
+                'ai_handoff_reason' => 'Limite de respostas automáticas atingido; encaminhado para equipe humana.',
+                'status' => 'waiting_staff',
+            ]);
+
             return null;
         }
 
@@ -725,9 +738,15 @@ PROMPT;
             $summary,
             $config
         ): ConversationMessage {
-            // 1. Enrich Client CRM record (only query/write when new info is extracted)
+            // 1. Enrich Client CRM record (never overwrite owned portal accounts from unauthenticated website chats)
+            $linkedClient = $conversation->client;
+            $isUnverifiedPortalClient = $conversation->channel === 'website_chat'
+                && $linkedClient !== null
+                && $linkedClient->user_id !== null
+                && (int) auth()->id() !== (int) $linkedClient->user_id;
+
             $hasClientChanges = ! empty($merged['company']) || ! empty($merged['city_state']) || $score >= 60;
-            $client = $hasClientChanges ? $conversation->client : null;
+            $client = ($hasClientChanges && ! $isUnverifiedPortalClient) ? $linkedClient : null;
             if ($client !== null) {
                 $clientUpdates = [];
                 if (! empty($merged['company']) && (empty($client->company_name) || $client->company_name === $client->name)) {
@@ -787,11 +806,12 @@ PROMPT;
                 }
             }
 
-            // 3. Auto-draft Quotation when qualified
+            // 3. Auto-draft Quotation when qualified (never inject unverified visitor drafts into owned portal accounts)
             $shouldDraft = (bool) ($decision['create_draft_quotation'] ?? false)
                 && (bool) $config['auto_draft_quotation']
                 && empty($merged['draft_quotation_id'])
-                && $conversation->client_id !== null;
+                && $conversation->client_id !== null
+                && ! $isUnverifiedPortalClient;
 
             if ($shouldDraft) {
                 $creatorId = User::whereIn('role', [UserRole::SuperAdmin->value, UserRole::Admin->value, UserRole::Manager->value])

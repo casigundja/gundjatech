@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Service;
 use App\Models\ServiceCategory;
+use App\Services\AutonomousCrmAgent;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,10 +15,16 @@ use Illuminate\View\View;
 
 class AdminServiceController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $categories = ServiceCategory::withCount('services')->orderBy('order')->get();
-        $services = Service::with('category')->orderBy('id', 'desc')->paginate(15);
+        $query = Service::with('category')->orderBy('id', 'desc');
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', (int) $request->category_id);
+        }
+
+        $services = $query->paginate(15)->withQueryString();
 
         return view('admin.services.index', compact('categories', 'services'));
     }
@@ -70,6 +77,8 @@ class AdminServiceController extends Controller
             'is_featured' => $request->boolean('is_featured'),
         ]);
 
+        AutonomousCrmAgent::flushCache();
+
         ActivityLog::create([
             'user_id' => Auth::id(),
             'action' => 'service.created',
@@ -105,6 +114,8 @@ class AdminServiceController extends Controller
             'order' => ((int) ServiceCategory::max('order')) + 1,
             'is_active' => true,
         ]);
+
+        AutonomousCrmAgent::flushCache();
 
         return redirect()->route('admin.services.index')->with('success', 'Categoria de serviço criada com sucesso!');
     }
@@ -148,6 +159,8 @@ class AdminServiceController extends Controller
             'is_featured' => $request->boolean('is_featured'),
         ]);
 
+        AutonomousCrmAgent::flushCache();
+
         ActivityLog::create([
             'user_id' => Auth::id(),
             'action' => 'service.updated',
@@ -166,6 +179,7 @@ class AdminServiceController extends Controller
         $name = $service->name;
         $serviceId = $service->id;
         $service->delete();
+        AutonomousCrmAgent::flushCache();
 
         ActivityLog::create([
             'user_id' => Auth::id(),

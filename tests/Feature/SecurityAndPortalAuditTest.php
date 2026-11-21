@@ -174,7 +174,7 @@ class SecurityAndPortalAuditTest extends TestCase
             'service_title' => 'Renovação de Domínio: '.$domain2->domain_name,
         ]);
 
-        // 3. Portal Chat sends message with sender_type = client and sets status waiting_staff
+        // 3. Portal Chat sends message with sender_type = client and the autonomous CRM AI replies
         $this->get('/portal/atendimento')->assertStatus(200);
         $conversation = Conversation::where('client_id', $client2->client->id)->firstOrFail();
 
@@ -187,7 +187,12 @@ class SecurityAndPortalAuditTest extends TestCase
             'sender_type' => 'client',
             'message' => 'Olá equipe, gostaria de aumentar o orçamento de mídia.',
         ]);
-        $this->assertEquals('waiting_staff', $conversation->fresh()->status);
+        $this->assertDatabaseHas('conversation_messages', [
+            'conversation_id' => $conversation->id,
+            'sender_type' => 'staff',
+            'is_ai' => true,
+        ]);
+        $this->assertContains($conversation->fresh()->status, ['open', 'waiting_staff']);
 
         // 4. Portal Quotation Rejection workflow
         $quotation = Quotation::factory()->create([

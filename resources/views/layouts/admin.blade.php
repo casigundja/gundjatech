@@ -9,7 +9,7 @@
     <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="stylesheet" href="/css/gt-admin.css?v=10">
+    <link rel="stylesheet" href="/css/gt-admin.css?v=16">
     <script>
         (function () {
             function applyAdminTheme(val) {
@@ -40,6 +40,7 @@
         sidebarOpen: false,
         sidebarCollapsed: false,
         profileOpen: false,
+        notificationsOpen: false,
         theme: (function () { try { return localStorage.getItem('gt_admin_theme') || 'dark'; } catch (e) { return 'dark'; } })(),
         setTheme(val) {
             this.theme = window.GT_SetAdminTheme ? window.GT_SetAdminTheme(val) : (val === 'light' ? 'light' : 'dark');
@@ -263,7 +264,7 @@
             </a>
         </div>
         <div x-show="sidebarCollapsed" x-cloak class="p-3 flex justify-center">
-            <a href="{{ $sidebarCtaUrl }}" class="w-10 h-10 rounded-xl text-[#0B0E1A] flex items-center justify-center font-extrabold no-underline shadow-lg" style="background: linear-gradient(135deg, #F2C230 0%, #121AFF 100%);" title="{{ $sidebarCtaLabel }}">
+            <a href="{{ $sidebarCtaUrl }}" class="w-10 h-10 rounded-xl text-[#063B5C] flex items-center justify-center font-extrabold no-underline shadow-lg" style="background: linear-gradient(135deg, #F2C230 0%, #E0B020 100%);" title="{{ $sidebarCtaLabel }}">
                 ♛
             </a>
         </div>
@@ -272,7 +273,7 @@
     <!-- Main Workspace Area -->
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
         <!-- Top Header Bar (Title on left; Search + KBD + Theme Pill + Bell + User Profile on right) -->
-        <header class="gtb-topbar">
+        <header class="gtb-topbar relative z-[80]" style="position: relative; z-index: 80;">
             <div class="flex items-center gap-3 min-w-0">
                 <button @click="sidebarOpen = !sidebarOpen" class="gtb-mobile-toggle gtb-icon-btn rounded-xl" aria-label="Abrir menu">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -284,11 +285,13 @@
 
             <div class="flex items-center gap-3 shrink-0">
                 <!-- Search Box with ⌘ F Pill -->
-                <form action="{{ route('admin.requests.index') }}" method="GET" class="gtb-search-box hidden md:flex">
-                    <svg class="w-4 h-4 text-[#8C95AA] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Pesquisar demandas, clientes..." aria-label="Pesquisar">
-                    <span class="gtb-kbd-pill">⌘ F</span>
-                </form>
+                @if($currentUser->hasPermission('requests.view'))
+                    <form action="{{ route('admin.requests.index') }}" method="GET" class="gtb-search-box hidden md:flex">
+                        <svg class="w-4 h-4 text-[#8C95AA] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Pesquisar demandas, clientes..." aria-label="Pesquisar">
+                        <span class="gtb-kbd-pill">⌘ F</span>
+                    </form>
+                @endif
 
                 <!-- Theme / Mode Toggle Pill (Interactive Light & Dark Switch) -->
                 <div class="gtb-theme-switch" role="group" aria-label="Alternar entre modo claro e modo escuro">
@@ -325,17 +328,139 @@
                     </button>
                 @endif
 
-                <!-- Notification Bell with Live Indicator -->
-                <a href="{{ route('admin.requests.index') }}" id="gt-topbar-bell-link" class="gtb-icon-btn relative" title="Notificações ({{ $totalNotifications }})">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                    <span id="gt-topbar-bell-dot" class="{{ $totalNotifications > 0 ? '' : 'hidden' }} absolute top-2 right-2.5 w-2 h-2 rounded-full bg-[#34D399] shadow-[0_0_8px_#34D399]"></span>
-                </a>
+                <!-- Notification Bell with Interactive Dropdown Panel -->
+                @if($currentUser->hasAnyPermission(['requests.view', 'chat.view']))
+                    <div class="relative" @click.away="notificationsOpen = false" @keydown.escape.window="notificationsOpen = false">
+                        <button
+                            type="button"
+                            id="gt-topbar-bell-link"
+                            @click="notificationsOpen = !notificationsOpen; if (notificationsOpen) profileOpen = false"
+                            :aria-expanded="notificationsOpen ? 'true' : 'false'"
+                            aria-haspopup="true"
+                            class="gtb-icon-btn relative cursor-pointer"
+                            title="Notificações ({{ $totalNotifications }})"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                            <span id="gt-topbar-bell-dot" class="{{ $totalNotifications > 0 ? '' : 'hidden' }} absolute top-2 right-2.5 w-2 h-2 rounded-full bg-[#34D399] shadow-[0_0_8px_#34D399]"></span>
+                        </button>
+
+                        <!-- Notifications Dropdown Panel -->
+                        <div
+                            x-show="notificationsOpen"
+                            x-cloak
+                            id="gt-notif-dropdown"
+                            data-csrf="{{ csrf_token() }}"
+                            style="z-index: 120; width: min(24rem, calc(100vw - 2rem));"
+                            class="gtb-dropdown gtb-notif-panel absolute right-0 mt-2.5 rounded-2xl shadow-2xl z-[120] overflow-hidden"
+                        >
+                            <!-- Dropdown Header -->
+                            <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-[#F2C230]"></span>
+                                    <span class="gt-font-display text-xs font-extrabold text-white whitespace-nowrap">Central de Notificações</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        id="gt-notif-clear-all"
+                                        class="text-[10.5px] font-bold text-[#8C95AA] hover:text-[#F2C230] transition cursor-pointer {{ empty($adminNotificationItems) ? 'hidden' : '' }}"
+                                        title="Ocultar todas as notificações atuais da lista"
+                                    >
+                                        Limpar tudo
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Notification Feed List -->
+                            <div id="gt-notif-list" class="max-h-80 overflow-y-auto divide-y divide-white/5">
+                                @forelse($adminNotificationItems ?? [] as $item)
+                                    @php
+                                        $badgeClass = match ($item['badge_tone'] ?? 'blue') {
+                                            'gold' => 'bg-[#F2C230]/20 text-[#F2C230] border border-[#F2C230]/40',
+                                            'amber' => 'bg-amber-500/15 text-amber-300 border border-amber-500/30',
+                                            'emerald' => 'bg-emerald-500/15 text-[#6EE7B7] border border-emerald-500/30',
+                                            default => 'bg-sky-500/15 text-sky-300 border border-sky-500/30',
+                                        };
+                                        $itemKey = $item['key'] ?? (($item['type'] ?? 'notif') . ':' . ($item['id'] ?? $loop->index));
+                                    @endphp
+                                    <div class="gtb-notif-item flex items-start gap-3 px-4 py-3 transition" data-notif-key="{{ $itemKey }}" data-notif-time="{{ $item['time'] }}">
+                                        <a href="{{ $item['url'] }}" class="flex items-start gap-3 min-w-0 flex-1 no-underline">
+                                            <span class="gtb-icon-box {{ ($item['type'] ?? '') === 'chat' ? 'is-petrol' : '' }} !w-8 !h-8 !rounded-lg mt-0.5">
+                                                @if(($item['type'] ?? '') === 'chat')
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                                                @else
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                                @endif
+                                            </span>
+                                            <div class="min-w-0 flex-1">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <span class="text-xs font-bold text-white truncate">{{ $item['title'] }}</span>
+                                                    <span class="text-[9.5px] text-[#8C95AA] shrink-0">{{ $item['time'] }}</span>
+                                                </div>
+                                                <p class="text-[11px] text-[#8C95AA] truncate mt-0.5">{{ $item['subtitle'] }}</p>
+                                                <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-[9.5px] font-bold {{ $badgeClass }}">
+                                                    {{ $item['badge'] }}
+                                                </span>
+                                            </div>
+                                        </a>
+
+                                        @if(! empty($item['can_delete']) && ! empty($item['delete_url']))
+                                            <div class="flex flex-col items-end gap-1.5 shrink-0 pt-0.5">
+                                                <form
+                                                    action="{{ $item['delete_url'] }}"
+                                                    method="POST"
+                                                    data-confirm-title="{{ $item['confirm_title'] ?? 'Confirmar exclusão' }}"
+                                                    data-confirm-message="{{ $item['confirm_message'] ?? 'Tem certeza que deseja excluir este item permanentemente?' }}"
+                                                    data-confirm-target="{{ $item['confirm_target'] ?? $item['title'] }}"
+                                                    data-confirm-button="{{ $item['confirm_button'] ?? 'Sim, excluir' }}"
+                                                    data-confirm-tone="danger"
+                                                >
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button
+                                                        type="submit"
+                                                        class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition cursor-pointer"
+                                                        title="Excluir permanentemente do banco de dados"
+                                                    >
+                                                        Excluir
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @empty
+                                    <div class="gtb-notif-empty px-6 py-8 flex flex-col items-center text-center">
+                                        <span class="gtb-notif-empty-icon">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7"/></svg>
+                                        </span>
+                                        <div class="mt-3 text-[13px] font-extrabold text-white">Tudo em dia por aqui!</div>
+                                        <p class="mt-1 text-[11.5px] leading-relaxed text-[#8C95AA] max-w-[16rem]">Nenhuma solicitação ou conversa pendente no momento.</p>
+                                    </div>
+                                @endforelse
+                            </div>
+
+                            <!-- Dropdown Footer Links -->
+                            <div class="px-4 py-2.5 border-t border-white/10 bg-white/[0.02] flex items-center justify-between gap-2 text-[11px] font-bold">
+                                @if($currentUser->hasPermission('requests.view'))
+                                    <a href="{{ route('admin.requests.index') }}" class="text-[#F2C230] hover:underline no-underline whitespace-nowrap">
+                                        Ver Solicitações &rarr;
+                                    </a>
+                                @endif
+                                @if($currentUser->hasPermission('chat.view'))
+                                    <a href="{{ route('admin.chat.index') }}" class="text-[#D5DCEB] hover:text-[#F2C230] hover:underline no-underline ml-auto whitespace-nowrap">
+                                        Abrir Chat ao Vivo &rarr;
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @endif
 
                 <span class="h-6 w-px bg-white/10 hidden sm:inline-block"></span>
 
                 <!-- User Name, Email & Avatar Dropdown -->
                 <div class="relative" @click.away="profileOpen = false">
-                    <button type="button" @click="profileOpen = !profileOpen" class="flex items-center gap-3 cursor-pointer text-right">
+                    <button type="button" @click="profileOpen = !profileOpen; if (profileOpen) notificationsOpen = false" class="flex items-center gap-3 cursor-pointer text-right">
                         <div class="hidden sm:block leading-tight">
                             <div class="text-xs font-bold text-white">{{ $currentUser->name }}</div>
                             <div class="text-[10.5px] text-[#8C95AA]">{{ $currentUser->email }}</div>
@@ -347,7 +472,8 @@
                         </div>
                     </button>
 
-                    <div x-show="profileOpen" x-cloak class="gtb-dropdown absolute right-0 mt-2 w-52 rounded-2xl shadow-2xl py-2 z-50 text-xs font-semibold">
+                    <div x-show="profileOpen" x-cloak style="z-index: 120;" class="gtb-dropdown absolute right-0 mt-2 w-56 rounded-2xl shadow-2xl py-2 z-[120] text-xs font-semibold">
+                        <a href="{{ route('account.edit') }}" class="block px-4 py-2 no-underline">Minha Conta &amp; Senha</a>
                         <a href="{{ route('home') }}" target="_blank" class="block px-4 py-2 no-underline">Ver Site Público &nearr;</a>
                         @if($currentUser->isAdmin() || $currentUser->hasPermission('portal.access'))
                             <a href="{{ route('portal.dashboard') }}" target="_blank" class="block px-4 py-2 no-underline">Portal do Cliente &nearr;</a>
@@ -392,7 +518,7 @@
         @endif
 
         <!-- Main Scrollable Content -->
-        <main class="flex-1 overflow-y-auto px-4 sm:px-6 pb-8 pt-4 space-y-5">
+        <main class="relative z-[10] flex-1 overflow-y-auto px-4 sm:px-6 pb-8 pt-4 space-y-5" style="position: relative; z-index: 10;">
             @yield('content')
         </main>
     </div>
@@ -526,6 +652,266 @@
                     closeModal();
                 }
             });
+        })();
+
+        // Interactive Notification Center (Limpar individual / Limpar tudo / Excluir com confirmação)
+        (function () {
+            const STORAGE_KEY = 'gt_admin_dismissed_notifs_v1';
+            const dropdown = document.getElementById('gt-notif-dropdown');
+            const notifList = document.getElementById('gt-notif-list');
+            const clearAllBtn = document.getElementById('gt-notif-clear-all');
+            const totalPill = document.getElementById('gt-notif-total-pill');
+            const bellDot = document.getElementById('gt-topbar-bell-dot');
+            const bellLink = document.getElementById('gt-topbar-bell-link');
+            if (!dropdown || !notifList) return;
+
+            const csrfToken = dropdown.dataset.csrf || '';
+
+            function getDismissed() {
+                try {
+                    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') || {};
+                } catch (e) {
+                    return {};
+                }
+            }
+
+            function saveDismissed(map) {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+                } catch (e) {}
+            }
+
+            function isItemDismissed(key, time) {
+                if (!key) return false;
+                const map = getDismissed();
+                if (!Object.prototype.hasOwnProperty.call(map, key)) return false;
+                if (key.startsWith('chat:') && time && map[key] !== true && map[key] !== time) {
+                    return false;
+                }
+                return true;
+            }
+
+            function dismissKey(key, time) {
+                if (!key) return;
+                const map = getDismissed();
+                map[key] = time || true;
+                saveDismissed(map);
+            }
+
+            function clearDismissedHistory() {
+                saveDismissed({});
+            }
+
+            function renderEmptyState(hasDismissedItems) {
+                notifList.innerHTML = '';
+                const emptyWrap = document.createElement('div');
+                emptyWrap.className = 'gtb-notif-empty px-6 py-8 flex flex-col items-center text-center';
+                const emptyIcon = document.createElement('span');
+                emptyIcon.className = 'gtb-notif-empty-icon';
+                emptyIcon.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7"/></svg>';
+                const emptyTitle = document.createElement('div');
+                emptyTitle.className = 'mt-3 text-[13px] font-extrabold text-white';
+                emptyTitle.textContent = 'Tudo em dia por aqui!';
+                const emptySub = document.createElement('p');
+                emptySub.className = 'mt-1 text-[11.5px] leading-relaxed text-[#8C95AA] max-w-[16rem]';
+                emptySub.textContent = hasDismissedItems
+                    ? 'Você limpou as notificações desta lista. Novas solicitações e conversas aparecerão aqui.'
+                    : 'Nenhuma solicitação ou conversa pendente no momento.';
+                emptyWrap.appendChild(emptyIcon);
+                emptyWrap.appendChild(emptyTitle);
+                emptyWrap.appendChild(emptySub);
+
+                if (hasDismissedItems) {
+                    const restoreBtn = document.createElement('button');
+                    restoreBtn.type = 'button';
+                    restoreBtn.className = 'gtb-notif-restore mt-4 cursor-pointer';
+                    restoreBtn.textContent = 'Restaurar notificações ocultas';
+                    restoreBtn.addEventListener('click', function (ev) {
+                        ev.stopPropagation();
+                        clearDismissedHistory();
+                        window.location.reload();
+                    });
+                    emptyWrap.appendChild(restoreBtn);
+                }
+
+                notifList.appendChild(emptyWrap);
+            }
+
+            function syncVisibleHeaderState() {
+                const rows = Array.from(notifList.querySelectorAll('.gtb-notif-item'));
+                const visibleRows = rows.filter(function (r) { return !r.classList.contains('hidden'); });
+                const count = visibleRows.length;
+
+                if (clearAllBtn) {
+                    clearAllBtn.classList.toggle('hidden', count === 0);
+                }
+                if (totalPill) {
+                    totalPill.textContent = count + ' pendente(s)';
+                }
+                if (bellDot) {
+                    bellDot.classList.toggle('hidden', count === 0);
+                }
+                if (bellLink) {
+                    bellLink.title = 'Notificações (' + count + ')';
+                }
+                if (rows.length > 0 && count === 0) {
+                    renderEmptyState(true);
+                }
+            }
+
+            // Apply initial dismissed filter on page load
+            Array.from(notifList.querySelectorAll('.gtb-notif-item')).forEach(function (row) {
+                const key = row.dataset.notifKey || '';
+                const time = row.dataset.notifTime || '';
+                if (isItemDismissed(key, time)) {
+                    row.remove();
+                }
+            });
+            if (notifList.querySelectorAll('.gtb-notif-item').length === 0 && Object.keys(getDismissed()).length > 0) {
+                renderEmptyState(true);
+            }
+            syncVisibleHeaderState();
+
+            // Event delegation for "Limpar" button on individual items
+            notifList.addEventListener('click', function (ev) {
+                const dismissBtn = ev.target.closest('[data-notif-dismiss]');
+                if (!dismissBtn) return;
+                ev.preventDefault();
+                ev.stopPropagation();
+
+                const key = dismissBtn.getAttribute('data-notif-dismiss');
+                const time = dismissBtn.getAttribute('data-notif-time') || '';
+                dismissKey(key, time);
+
+                const row = dismissBtn.closest('.gtb-notif-item');
+                if (row) row.remove();
+                syncVisibleHeaderState();
+            });
+
+            // "Limpar tudo" button in header
+            if (clearAllBtn) {
+                clearAllBtn.addEventListener('click', function (ev) {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    Array.from(notifList.querySelectorAll('.gtb-notif-item')).forEach(function (row) {
+                        dismissKey(row.dataset.notifKey || '', row.dataset.notifTime || '');
+                        row.remove();
+                    });
+                    renderEmptyState(true);
+                    syncVisibleHeaderState();
+                });
+            }
+
+            function renderDynamicNotifications(items) {
+                if (!Array.isArray(items)) return;
+                const visibleItems = items.filter(function (item) {
+                    const key = item.key || ((item.type || 'notif') + ':' + (item.id || '0'));
+                    return !isItemDismissed(key, item.time || '');
+                });
+
+                notifList.innerHTML = '';
+                if (visibleItems.length === 0) {
+                    renderEmptyState(items.length > 0);
+                    syncVisibleHeaderState();
+                    return;
+                }
+
+                visibleItems.forEach(function (item) {
+                    const key = item.key || ((item.type || 'notif') + ':' + (item.id || '0'));
+                    const row = document.createElement('div');
+                    row.className = 'gtb-notif-item flex items-start gap-3 px-4 py-3 transition';
+                    row.dataset.notifKey = key;
+                    row.dataset.notifTime = item.time || '';
+
+                    const mainLink = document.createElement('a');
+                    mainLink.href = item.url || '#';
+                    mainLink.className = 'flex items-start gap-3 min-w-0 flex-1 no-underline';
+
+                    const iconWrap = document.createElement('span');
+                    const isChat = item.type === 'chat';
+                    iconWrap.className = 'gtb-icon-box ' + (isChat ? 'is-petrol ' : '') + '!w-8 !h-8 !rounded-lg mt-0.5';
+                    iconWrap.innerHTML = isChat
+                        ? '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>'
+                        : '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>';
+
+                    const body = document.createElement('div');
+                    body.className = 'min-w-0 flex-1';
+
+                    const topLine = document.createElement('div');
+                    topLine.className = 'flex items-center justify-between gap-2';
+                    const titleEl = document.createElement('span');
+                    titleEl.className = 'text-xs font-bold text-white truncate';
+                    titleEl.textContent = item.title || '';
+                    const timeEl = document.createElement('span');
+                    timeEl.className = 'text-[9.5px] text-[#8C95AA] shrink-0';
+                    timeEl.textContent = item.time || '';
+                    topLine.appendChild(titleEl);
+                    topLine.appendChild(timeEl);
+
+                    const subEl = document.createElement('p');
+                    subEl.className = 'text-[11px] text-[#8C95AA] truncate mt-0.5';
+                    subEl.textContent = item.subtitle || '';
+
+                    const badgeEl = document.createElement('span');
+                    let toneClass = 'bg-sky-500/15 text-sky-300 border border-sky-500/30';
+                    if (item.badge_tone === 'gold') toneClass = 'bg-[#F2C230]/20 text-[#F2C230] border border-[#F2C230]/40';
+                    else if (item.badge_tone === 'amber') toneClass = 'bg-amber-500/15 text-amber-300 border border-amber-500/30';
+                    else if (item.badge_tone === 'emerald') toneClass = 'bg-emerald-500/15 text-[#6EE7B7] border border-emerald-500/30';
+                    badgeEl.className = 'inline-block mt-1 px-2 py-0.5 rounded-full text-[9.5px] font-bold ' + toneClass;
+                    badgeEl.textContent = item.badge || '';
+
+                    body.appendChild(topLine);
+                    body.appendChild(subEl);
+                    body.appendChild(badgeEl);
+                    mainLink.appendChild(iconWrap);
+                    mainLink.appendChild(body);
+                    row.appendChild(mainLink);
+
+                    if (item.can_delete && item.delete_url) {
+                        const actionsCol = document.createElement('div');
+                        actionsCol.className = 'flex flex-col items-end gap-1.5 shrink-0 pt-0.5';
+
+                        const delForm = document.createElement('form');
+                        delForm.action = item.delete_url;
+                        delForm.method = 'POST';
+                        delForm.dataset.confirmTitle = item.confirm_title || 'Confirmar exclusão';
+                        delForm.dataset.confirmMessage = item.confirm_message || 'Tem certeza que deseja excluir este item permanentemente?';
+                        delForm.dataset.confirmTarget = item.confirm_target || item.title || '';
+                        delForm.dataset.confirmButton = item.confirm_button || 'Sim, excluir';
+                        delForm.dataset.confirmTone = 'danger';
+
+                        const csrfInput = document.createElement('input');
+                        csrfInput.type = 'hidden';
+                        csrfInput.name = '_token';
+                        csrfInput.value = csrfToken;
+
+                        const methodInput = document.createElement('input');
+                        methodInput.type = 'hidden';
+                        methodInput.name = '_method';
+                        methodInput.value = 'DELETE';
+
+                        const delBtn = document.createElement('button');
+                        delBtn.type = 'submit';
+                        delBtn.className = 'px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition cursor-pointer';
+                        delBtn.title = 'Excluir permanentemente do banco de dados';
+                        delBtn.textContent = 'Excluir';
+
+                        delForm.appendChild(csrfInput);
+                        delForm.appendChild(methodInput);
+                        delForm.appendChild(delBtn);
+                        actionsCol.appendChild(delForm);
+                        row.appendChild(actionsCol);
+                    }
+
+                    notifList.appendChild(row);
+                });
+
+                syncVisibleHeaderState();
+            }
+
+            window.GT_NotifCenter = {
+                renderList: renderDynamicNotifications
+            };
         })();
     </script>
 
@@ -684,11 +1070,27 @@
                     chatBadge.classList.toggle('hidden', data.open_chats <= 0);
                 }
 
-                const bellDot = document.getElementById('gt-topbar-bell-dot');
-                const bellLink = document.getElementById('gt-topbar-bell-link');
-                const total = (data.pending_requests || 0) + (data.open_chats || 0);
-                if (bellDot) bellDot.classList.toggle('hidden', total <= 0);
-                if (bellLink) bellLink.title = 'Notificações (' + total + ')';
+                const notifReqCount = document.getElementById('gt-notif-req-count');
+                if (notifReqCount && typeof data.pending_requests === 'number') {
+                    notifReqCount.textContent = String(data.pending_requests);
+                }
+
+                const notifChatCount = document.getElementById('gt-notif-chat-count');
+                if (notifChatCount && typeof data.open_chats === 'number') {
+                    notifChatCount.textContent = String(data.open_chats);
+                }
+
+                if (window.GT_NotifCenter && Array.isArray(data.notifications)) {
+                    window.GT_NotifCenter.renderList(data.notifications);
+                } else {
+                    const bellDot = document.getElementById('gt-topbar-bell-dot');
+                    const bellLink = document.getElementById('gt-topbar-bell-link');
+                    const total = (data.pending_requests || 0) + (data.open_chats || 0);
+                    if (bellDot) bellDot.classList.toggle('hidden', total <= 0);
+                    if (bellLink) bellLink.title = 'Notificações (' + total + ')';
+                    const totalPill = document.getElementById('gt-notif-total-pill');
+                    if (totalPill) totalPill.textContent = total + ' pendente(s)';
+                }
             }
 
             window.GT_AdminNotify = {

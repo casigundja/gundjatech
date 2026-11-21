@@ -53,14 +53,12 @@ class Client extends Model
 
     public function getTradeNameAttribute(): ?string
     {
-        return $this->attributes['company_name'] ?? null;
+        return $this->attributes['trade_name'] ?? $this->attributes['company_name'] ?? null;
     }
 
     public function setTradeNameAttribute(?string $value): void
     {
-        if (empty($this->attributes['company_name'])) {
-            $this->attributes['company_name'] = $value;
-        }
+        $this->attributes['trade_name'] = $value;
     }
 
     public function user()

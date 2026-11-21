@@ -27,7 +27,7 @@
 
 <meta name="description" content="Agência e empresa de desenvolvimento de sites em São Paulo: sites sob medida, sistemas web, integrações com CRM e ERP, APIs, performance e segurança.">
 
-<link rel="canonical" href="/desenvolvimento-de-sites/">
+<link rel="canonical" href="/desenvolvimento-de-sites">
 
 <meta property="og:title" content="Agência de Desenvolvimento de Sites em SP | GundjaTech">
 
@@ -37,7 +37,7 @@
 
 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossorigin>
 
-<link rel="stylesheet" href="/css/sinnapse-interna.css?v=gt-hdr1">
+<link rel="stylesheet" href="/css/sinnapse-interna.css?v=gt-hdr7">
 
 <meta property="og:site_name" content="GundjaTech">
 
@@ -139,13 +139,39 @@
 
     @endverbatim
     @auth
-      @if(auth()->user()->isStaff())
-        <a href="/admin" class="topo-acesso" aria-label="Acessar Painel Administrativo"><svg><use href="#i-escudo"/></svg><span>Painel Admin</span></a>
-      @else
-        <a href="/portal" class="topo-acesso" aria-label="Acessar Portal do Cliente"><svg><use href="#i-pessoa"/></svg><span>Meu Portal</span></a>
-      @endif
+      <div class="gt-pub-user">
+        <button
+          type="button"
+          class="gt-pub-user-btn"
+          aria-haspopup="true"
+          aria-expanded="false"
+          onclick="var w=this.closest('.gt-pub-user');w.classList.toggle('is-open');this.setAttribute('aria-expanded',w.classList.contains('is-open'));event.stopPropagation();"
+        >
+          <span class="gt-pub-user-meta">
+            <span class="gt-pub-user-name">{{ auth()->user()->name }}</span>
+            <span class="gt-pub-user-email">{{ auth()->user()->email }}</span>
+          </span>
+          <span class="gt-pub-user-avatar">
+            <span class="gt-pub-user-avatar-inner">{{ strtoupper(substr(auth()->user()->name, 0, 2)) }}</span>
+          </span>
+        </button>
+        <div class="gt-pub-user-dropdown" role="menu">
+          <a href="/minha-conta" class="gt-pub-user-item" role="menuitem">Minha Conta &amp; Senha</a>
+          @if(auth()->user()->isStaff())
+            <a href="/admin" class="gt-pub-user-item" role="menuitem">Painel Admin &nearr;</a>
+          @endif
+          @if(!auth()->user()->isStaff() || auth()->user()->isAdmin() || auth()->user()->hasPermission('portal.access'))
+            <a href="/portal" class="gt-pub-user-item" role="menuitem">Portal do Cliente &nearr;</a>
+          @endif
+          <form action="/logout" method="POST" class="gt-pub-user-logout-form">
+            @csrf
+            <button type="submit" class="gt-pub-user-logout" role="menuitem">Sair do Painel</button>
+          </form>
+        </div>
+      </div>
+      <script>if(!window.__gtPubUserInit){window.__gtPubUserInit=1;document.addEventListener('click',function(e){document.querySelectorAll('.gt-pub-user.is-open').forEach(function(el){if(!el.contains(e.target)){el.classList.remove('is-open');var b=el.querySelector('.gt-pub-user-btn');if(b)b.setAttribute('aria-expanded','false');}});});document.addEventListener('keydown',function(e){if(e.key==='Escape'){document.querySelectorAll('.gt-pub-user.is-open').forEach(function(el){el.classList.remove('is-open');var b=el.querySelector('.gt-pub-user-btn');if(b)b.setAttribute('aria-expanded','false');});}});}</script>
     @else
-      <a href="/login" class="topo-acesso" aria-label="Acessar Painel ou Área do Cliente"><svg><use href="#i-pessoa"/></svg><span>Painel / Login</span></a>
+      <a href="/login" class="topo-acesso" aria-label="Entrar no sistema"><span>Entrar no sistema</span></a>
     @endauth
     @verbatim
 
@@ -174,8 +200,6 @@
   <a href="/blog">Blog</a>
 
   <a href="/contato">Contato</a>
-
-  <a href="/login">Área do Cliente</a>
 
   <a class="btn mm-whats" href="https://wa.me/5519953248420"><svg><use href="#i-whats"/></svg> WhatsApp (19) 95324-8420</a>
 
@@ -215,7 +239,7 @@
 
     <details class="ps-indice-m"><summary>Nesta página</summary><ol><li><a href="#desenvolvimento-de-sites-com-engenharia-de-verdade">Desenvolvimento de sites com engenharia de verdade</a></li><li><a href="#o-que-desenvolvemos">O que desenvolvemos</a></li><li><a href="#integracoes-com-crm-erp-e-marketing">Integrações com CRM, ERP e marketing</a></li><li><a href="#tecnologias-que-usamos">Tecnologias que usamos</a></li><li><a href="#performance-velocidade-e-requisito-nao-detalhe">Performance: velocidade é requisito, não detalhe</a></li><li><a href="#seguranca-desde-o-codigo">Segurança desde o código</a></li><li><a href="#como-funciona-o-processo-de-desenvolvimento">Como funciona o processo de desenvolvimento</a></li><li><a href="#projetos-de-desenvolvimento">Projetos de desenvolvimento</a></li></ol></details>
 
-    <div class="ps-corpo js-corpo"><h2 id="desenvolvimento-de-sites-com-engenharia-de-verdade">Desenvolvimento de sites com engenharia de verdade</h2><p>Um site bonito que trava, demora para carregar ou não conversa com o CRM vira problema. Como empresa de desenvolvimento de sites, a GundjaTech cuida da parte que não aparece no layout: arquitetura, código, banco de dados, integrações, servidores, segurança e performance.</p><p>Nosso time de desenvolvimento reúne profissionais com mais de 15 anos em projetos PHP, Java e ASP.NET, DevOps em Linux e Docker e integração com dezenas de APIs de mercado. O design fica a cargo da nossa <a href="/servicos/criacao-de-sites">agência de criação de sites</a>; aqui falamos de como tudo funciona por dentro.</p><h2 id="o-que-desenvolvemos">O que desenvolvemos</h2><ul><li><b>Sites corporativos sob medida:</b> temas próprios, sem templates pesados, com tipos de conteúdo estruturados.</li><li><b>Sistemas web e portais:</b> áreas de cliente, extranets, intranets, simuladores e calculadoras.</li><li><b>Catálogos e e-commerce B2B:</b> filtros avançados, listas de favoritos, cotação e integração com estoque.</li><li><b>Venda online e agendamento:</b> ingressos, pacotes, reservas e pagamentos.</li><li><b>Sites multilíngues e internacionais:</b> estrutura de idiomas, hreflang e conteúdo por país.</li><li><b>Sites headless:</b> front-end moderno consumindo um CMS por API, quando o projeto pede.</li></ul><h2 id="integracoes-com-crm-erp-e-marketing">Integrações com CRM, ERP e marketing</h2><p>O site precisa ser parte da operação. Integramos formulários e eventos com CRM (RD Station, HubSpot, Salesforce), ERPs, plataformas de automação, WhatsApp, Google Tag Manager, GA4, gateways de pagamento, sistemas de bilheteria, mapas e APIs próprias do cliente. Cada lead chega no lugar certo, com a origem rastreada.</p><h2 id="tecnologias-que-usamos">Tecnologias que usamos</h2><p>Escolhemos a tecnologia pelo problema, não por costume:</p><ul><li><b>WordPress e WooCommerce</b> para sites editáveis e catálogos (veja <a href="/criacao-de-sites-wordpress/">criação de sites em WordPress</a>).</li><li><b>PHP, Java e ASP.NET</b> para sistemas e integrações.</li><li><b>JavaScript moderno</b> para interfaces ricas e sites headless.</li><li><b>Drupal e Magento</b> quando o projeto já está nessas plataformas.</li><li><b>Nuvem, Docker e CDN</b> para hospedagem estável e rápida.</li></ul><h2 id="performance-velocidade-e-requisito-nao-detalhe">Performance: velocidade é requisito, não detalhe</h2><p>Desenvolvemos para passar nos Core Web Vitals do Google: imagens em formatos modernos, carregamento sob demanda, CSS e JavaScript enxutos, cache, CDN e servidores dimensionados. Um site rápido ranqueia melhor, gasta menos com mídia e converte mais.</p><h2 id="seguranca-desde-o-codigo">Segurança desde o código</h2><p>Validação de formulários, proteção contra injeção de SQL e XSS, controle de acesso, atualizações e backups fazem parte do desenvolvimento. Para proteção contínua, o site pode ficar sob a <a href="/servicos/gerenciamento-de-dominios">cibersegurança gerenciada da GundjaTech</a>, com firewall e monitoramento 24 horas.</p><h2 id="como-funciona-o-processo-de-desenvolvimento">Como funciona o processo de desenvolvimento</h2><p><b>1. Levantamento técnico:</b> requisitos, integrações, volume de acesso e sistemas atuais. <b>2. Arquitetura:</b> plataforma, estrutura de dados e infraestrutura. <b>3. Desenvolvimento em ambiente de homologação</b>, com versionamento e entregas parciais para validação. <b>4. Testes:</b> navegadores, celular, velocidade, segurança e formulários. <b>5. Publicação</b> com migração de conteúdo e redirecionamentos, sem perder posições no Google. <b>6. Evolução contínua</b> com a <a href="/servicos/gestao-de-trafego-pago">operação de sites</a>.</p><p>Escopo, prazo e investimento ficam definidos em contrato. Veja também o guia <a href="/quanto-custa-um-site/">quanto custa um site</a>.</p><h2 id="projetos-de-desenvolvimento">Projetos de desenvolvimento</h2><p>Alguns exemplos do que já entregamos: a plataforma de gestão escolar do <a href="/cases/klasse/">KLASSE</a>, o portal educacional de saúde do <a href="/cases/instituto-paraiso-do-saber/">Instituto Paraíso do Saber</a> e a plataforma corporativa com calculadoras tributárias da <a href="/cases/cotech-contabilidade/">Cotech Contabilidade</a>. Veja todos os <a href="/portfolio">cases</a>.</p></div>
+    <div class="ps-corpo js-corpo"><h2 id="desenvolvimento-de-sites-com-engenharia-de-verdade">Desenvolvimento de sites com engenharia de verdade</h2><p>Um site bonito que trava, demora para carregar ou não conversa com o CRM vira problema. Como empresa de desenvolvimento de sites, a GundjaTech cuida da parte que não aparece no layout: arquitetura, código, banco de dados, integrações, servidores, segurança e performance.</p><p>Nosso time de desenvolvimento reúne profissionais com mais de 15 anos em projetos PHP, Java e ASP.NET, DevOps em Linux e Docker e integração com dezenas de APIs de mercado. O design fica a cargo da nossa <a href="/servicos/criacao-de-sites">agência de criação de sites</a>; aqui falamos de como tudo funciona por dentro.</p><h2 id="o-que-desenvolvemos">O que desenvolvemos</h2><ul><li><b>Sites corporativos sob medida:</b> temas próprios, sem templates pesados, com tipos de conteúdo estruturados.</li><li><b>Sistemas web e portais:</b> áreas de cliente, extranets, intranets, simuladores e calculadoras.</li><li><b>Catálogos e e-commerce B2B:</b> filtros avançados, listas de favoritos, cotação e integração com estoque.</li><li><b>Venda online e agendamento:</b> ingressos, pacotes, reservas e pagamentos.</li><li><b>Sites multilíngues e internacionais:</b> estrutura de idiomas, hreflang e conteúdo por país.</li><li><b>Sites headless:</b> front-end moderno consumindo um CMS por API, quando o projeto pede.</li></ul><h2 id="integracoes-com-crm-erp-e-marketing">Integrações com CRM, ERP e marketing</h2><p>O site precisa ser parte da operação. Integramos formulários e eventos com CRM (RD Station, HubSpot, Salesforce), ERPs, plataformas de automação, WhatsApp, Google Tag Manager, GA4, gateways de pagamento, sistemas de bilheteria, mapas e APIs próprias do cliente. Cada lead chega no lugar certo, com a origem rastreada.</p><h2 id="tecnologias-que-usamos">Tecnologias que usamos</h2><p>Escolhemos a tecnologia pelo problema, não por costume:</p><ul><li><b>WordPress e WooCommerce</b> para sites editáveis e catálogos (veja <a href="/criacao-de-sites-wordpress">criação de sites em WordPress</a>).</li><li><b>PHP, Java e ASP.NET</b> para sistemas e integrações.</li><li><b>JavaScript moderno</b> para interfaces ricas e sites headless.</li><li><b>Drupal e Magento</b> quando o projeto já está nessas plataformas.</li><li><b>Nuvem, Docker e CDN</b> para hospedagem estável e rápida.</li></ul><h2 id="performance-velocidade-e-requisito-nao-detalhe">Performance: velocidade é requisito, não detalhe</h2><p>Desenvolvemos para passar nos Core Web Vitals do Google: imagens em formatos modernos, carregamento sob demanda, CSS e JavaScript enxutos, cache, CDN e servidores dimensionados. Um site rápido ranqueia melhor, gasta menos com mídia e converte mais.</p><h2 id="seguranca-desde-o-codigo">Segurança desde o código</h2><p>Validação de formulários, proteção contra injeção de SQL e XSS, controle de acesso, atualizações e backups fazem parte do desenvolvimento. Para proteção contínua, o site pode ficar sob a <a href="/servicos/gerenciamento-de-dominios">cibersegurança gerenciada da GundjaTech</a>, com firewall e monitoramento 24 horas.</p><h2 id="como-funciona-o-processo-de-desenvolvimento">Como funciona o processo de desenvolvimento</h2><p><b>1. Levantamento técnico:</b> requisitos, integrações, volume de acesso e sistemas atuais. <b>2. Arquitetura:</b> plataforma, estrutura de dados e infraestrutura. <b>3. Desenvolvimento em ambiente de homologação</b>, com versionamento e entregas parciais para validação. <b>4. Testes:</b> navegadores, celular, velocidade, segurança e formulários. <b>5. Publicação</b> com migração de conteúdo e redirecionamentos, sem perder posições no Google. <b>6. Evolução contínua</b> com a <a href="/servicos/gestao-de-trafego-pago">operação de sites</a>.</p><p>Escopo, prazo e investimento ficam definidos em contrato. Veja também o guia <a href="/quanto-custa-um-site">quanto custa um site</a>.</p><h2 id="projetos-de-desenvolvimento">Projetos de desenvolvimento</h2><p>Alguns exemplos do que já entregamos: a plataforma de gestão escolar do <a href="/cases/klasse">KLASSE</a>, o portal educacional de saúde do <a href="/cases/instituto-paraiso-do-saber">Instituto Paraíso do Saber</a> e a plataforma corporativa com calculadoras tributárias da <a href="/cases/cotech-contabilidade">Cotech Contabilidade</a>. Veja todos os <a href="/portfolio">cases</a>.</p></div>
 
   </article>
 
@@ -328,15 +352,15 @@
 
       <div class="links-grade">
 
-        <div><h3>Links</h3><ul><li><a href="/contato">Contato</a></li><li><a href="/sobre">Sobre</a></li><li><a href="/portfolio">Projetos</a></li><li><a href="/blog">Blog</a></li><li><a href="/login">Área do Cliente</a></li></ul></div>
+        <div><h3>Links</h3><ul><li><a href="/contato">Contato</a></li><li><a href="/sobre">Sobre</a></li><li><a href="/portfolio">Projetos</a></li><li><a href="/blog">Blog</a></li></ul></div>
 
-        <div><h3>Serviços</h3><ul><li><a href="/desenvolvimento-de-sites/">Desenvolvimento de sites</a></li><li><a href="/criacao-de-sites-wordpress/">Sites em WordPress</a></li><li><a href="/quanto-custa-um-site/">Quanto custa um site</a></li><li><a href="/servicos">Todos os serviços</a></li></ul></div>
+        <div><h3>Serviços</h3><ul><li><a href="/desenvolvimento-de-sites">Desenvolvimento de sites</a></li><li><a href="/criacao-de-sites-wordpress">Sites em WordPress</a></li><li><a href="/quanto-custa-um-site">Quanto custa um site</a></li><li><a href="/servicos">Todos os serviços</a></li></ul></div>
 
-        <div><h3>Cases</h3><ul><li><a href="/cases/klasse/">KLASSE · Gestão Escolar</a></li><li><a href="/cases/instituto-paraiso-do-saber/">Instituto Paraíso do Saber</a></li><li><a href="/cases/cotech-contabilidade/">Cotech Contabilidade</a></li><li><a href="/portfolio">Todos os cases</a></li></ul></div>
+        <div><h3>Cases</h3><ul><li><a href="/cases/klasse">KLASSE · Gestão Escolar</a></li><li><a href="/cases/instituto-paraiso-do-saber">Instituto Paraíso do Saber</a></li><li><a href="/cases/cotech-contabilidade">Cotech Contabilidade</a></li><li><a href="/portfolio">Todos os cases</a></li></ul></div>
 
         
 
-        <div><h3>Fale com a gente</h3><ul><li><a href="mailto:contato@gundjatech.com">contato@gundjatech.com</a></li><li><a href="https://wa.me/5519953248420">WhatsApp (19) 95324-8420</a></li></ul></div>
+        <div><h3>Fale com a gente</h3><ul><li><a href="mailto:contato@gundjatech.com">contato@gundjatech.com</a></li><li><a href="https://wa.me/5519953248420">WhatsApp (19) 95324-8420</a></li><li><a href="/acompanhar-solicitacao">Acompanhar solicitação</a></li></ul></div>
 
       </div>
 
@@ -348,7 +372,7 @@
 
       <a href="https://wa.me/5519953248420" aria-label="WhatsApp"><svg><use href="#i-whats"/></svg></a>
 
-    </div><a href="/politica-de-privacidade/">Política de privacidade</a></div>
+    </div><a href="/politica-de-privacidade">Política de privacidade</a></div>
 
     </div>
 
@@ -374,7 +398,7 @@
 
 </nav>
 
-<div class="menu-mais" id="menu-mais"><a href="/">Início</a><a href="/servicos">Serviços</a><a href="/servicos/criacao-de-sites">Criação de sites</a><a href="/servicos/gestao-de-trafego-pago">Operação de sites</a><a href="/servicos/gerenciamento-de-dominios">Cibersegurança</a><a href="/blog">Blog</a><a href="/login">Área do Cliente</a></div>
+<div class="menu-mais" id="menu-mais"><a href="/">Início</a><a href="/servicos">Serviços</a><a href="/servicos/criacao-de-sites">Criação de sites</a><a href="/servicos/gestao-de-trafego-pago">Operação de sites</a><a href="/servicos/gerenciamento-de-dominios">Cibersegurança</a><a href="/blog">Blog</a></div>
 
 <button type="button" class="topo-btn js-topo">↑ Voltar ao topo</button>
 
@@ -487,9 +511,9 @@
 
 
 
-<script defer src="/jsm/main.ac8b157f35.js?v=gt-live1"></script>
+<script defer src="/jsm/main.ac8b157f35.js?v=gt-live2"></script>
 
-<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live5"></script>
+<script defer src="/jsm/campanha.1fe0f2564d.js?v=gt-live7"></script>
 
 <script defer src="/jsm/animacoes.b868b7f2df.js"></script>
 
@@ -497,7 +521,7 @@
 
 <script defer src="/jsm/blog-post.92fa79da23.js"></script>
 
-<script src="/jsm/leads.ce7ca30ca6.js?v=gt-live1" defer></script>
+<script src="/jsm/leads.ce7ca30ca6.js?v=gt-live2" defer></script>
 
 <script src="/jsm/cro.107b971293.js" defer></script>
 

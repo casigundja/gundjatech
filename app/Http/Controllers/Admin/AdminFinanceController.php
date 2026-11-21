@@ -27,7 +27,11 @@ class AdminFinanceController extends Controller
         }
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'pending_all') {
+                $query->whereIn('status', ['pending', 'overdue']);
+            } else {
+                $query->where('status', $request->status);
+            }
         }
 
         $transactions = $query->orderBy('due_date', 'desc')->paginate(12)->withQueryString();
@@ -150,6 +154,10 @@ class AdminFinanceController extends Controller
 
     public function markAsPaid(Request $request, FinancialTransaction $transaction): RedirectResponse
     {
+        if ($transaction->status === 'cancelled') {
+            return back()->with('error', 'Não é possível confirmar o pagamento de um lançamento cancelado.');
+        }
+
         if ($transaction->status === 'paid') {
             return back()->with('success', 'Este lançamento já está marcado como pago.');
         }

@@ -1,10 +1,10 @@
 /* ==========================================================================
-   GUNDJATECH GOLDEN-BRONZE ENTERPRISE PANEL SYSTEM (ADMIN & CLIENT PORTAL)
-   Adapted from GundjaTech's signature Golden-Bronze Hero Palette:
-   - Hero Gradient: #2C1D02 -> #8F6107 -> #C68B0E + radial #B37B0B + dot grid
-   - Surfaces: Warm Champagne Canvas #F7F4EC + Crisp Pure White #FFFFFF cards
-   - Primary CTA: Electric Blue #121AFF (hover #0B10C9) with Pure White #FFFFFF
-   - Brand Accents: Bronze Gold #8F6107 / #E4A318 / #FFC94A + Espresso Ink #1C1508
+   GUNDJATECH CLIENT PORTAL — OFFICIAL PALETA 3 BRAND SYSTEM
+   - Deep Petrol Blue:   #063B5C (Primary Ink, Hero Anchor, Active Navigation)
+   - Medium Petrol Blue: #16749A (Accents, Gradients, Interactive Links)
+   - Golden Yellow:      #F2C230 / #E0B020 (Primary CTA Buttons & Highlights)
+   - Soft Ice:           #E7F0F5 (Calm Executive Canvas & Subtle Surfaces)
+   - Pure White:         #FFFFFF (Elevated Cards & High-Contrast Surfaces)
    ========================================================================== */
 
 @font-face {
@@ -22,24 +22,21 @@
 }
 
 :root {
-    --gt-canvas: #F7F4EC;
+    --gt-canvas: #E7F0F5;
     --gt-white: #FFFFFF;
-    --gt-subtle: #FAF7F0;
-    --gt-border: #E8DFCE;
-    --gt-border-strong: #D6C9B2;
-    --gt-ink: #1C1508;
-    --gt-ink-soft: #433722;
-    --gt-muted: #766852;
-    --gt-bronze-deep: #2C1D02;
-    --gt-bronze-mid: #8F6107;
-    --gt-bronze-light: #C68B0E;
-    --gt-gold: #E4A318;
-    --gt-gold-bright: #FFC94A;
-    --gt-gold-ink: #8F6107;
-    --gt-gold-soft: #FDF5E2;
-    --gt-blue: #121AFF;
-    --gt-blue-hover: #0B10C9;
-    --gt-blue-soft: #EEF0FF;
+    --gt-subtle: #F2F7FA;
+    --gt-border: #CFE0EB;
+    --gt-border-strong: #B6CDD9;
+    --gt-ink: #063B5C;
+    --gt-ink-soft: #28526D;
+    --gt-muted: #527287;
+    --gt-petrol-deep: #063B5C;
+    --gt-petrol-mid: #16749A;
+    --gt-petrol-bright: #248CB5;
+    --gt-gold: #F2C230;
+    --gt-gold-hover: #E0B020;
+    --gt-gold-ink: #9A6B00;
+    --gt-gold-soft: #FEF7DC;
 }
 
 body.gt-panel {
@@ -56,7 +53,7 @@ body.gt-panel .gt-font-display {
 .gt-sidebar {
     background: var(--gt-white);
     border-right: 1px solid var(--gt-border);
-    box-shadow: 2px 0 20px rgba(44, 29, 2, .04);
+    box-shadow: 2px 0 22px rgba(6, 59, 92, .05);
 }
 
 .gt-sidebar-head {
@@ -66,14 +63,14 @@ body.gt-panel .gt-font-display {
 .gt-brand-word {
     font-family: "ZSE", "Plus Jakarta Sans", sans-serif;
     font-size: 16px;
-    font-weight: 700;
+    font-weight: 800;
     letter-spacing: -.03em;
     color: var(--gt-ink);
     line-height: 1;
 }
 
 .gt-brand-word span {
-    color: var(--gt-bronze-mid);
+    color: var(--gt-gold);
 }
 
 .gt-nav-item {
@@ -84,25 +81,25 @@ body.gt-panel .gt-font-display {
     border-radius: 10px;
     font-size: 12.5px;
     font-weight: 600;
-    color: #544630;
+    color: #36576E;
     text-decoration: none;
     transition: background-color .16s ease, color .16s ease, box-shadow .16s ease;
 }
 
 .gt-nav-item:hover {
-    background-color: #FAF3E3;
-    color: var(--gt-bronze-mid);
+    background-color: #EEF5F9;
+    color: var(--gt-petrol-deep);
 }
 
 .gt-nav-item.is-active {
-    background: linear-gradient(135deg, #2C1D02 0%, #8F6107 72%, #B37B0B 100%) !important;
+    background: linear-gradient(135deg, #063B5C 0%, #16749A 100%) !important;
     color: #FFFFFF !important;
     font-weight: 700;
-    box-shadow: 0 10px 22px -8px rgba(143, 97, 7, .52);
+    box-shadow: 0 10px 22px -8px rgba(6, 59, 92, .42);
 }
 
 .gt-nav-item.is-active svg {
-    color: #FFC94A !important;
+    color: #F2C230 !important;
 }
 
 .gt-nav-section {
@@ -111,7 +108,7 @@ body.gt-panel .gt-font-display {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .09em;
-    color: #9E8F74;
+    color: #67879C;
 }
 
 /* Sticky Topbar */
@@ -126,18 +123,18 @@ body.gt-panel .gt-font-display {
     letter-spacing: -.025em;
 }
 
-/* Signature Golden-Bronze Hero Banner (exact palette from the print) */
+/* Signature GundjaTech Deep Petrol + Gold Hero Banner */
 .gt-hero-gold {
     position: relative;
     overflow: hidden;
     isolation: isolate;
     background:
-        radial-gradient(70% 80% at 50% 0%, #B37B0B 0%, rgba(179, 123, 11, 0) 70%),
-        linear-gradient(145deg, #2C1D02 0%, #8F6107 55%, #C68B0E 100%);
+        radial-gradient(65% 85% at 86% 12%, rgba(242, 194, 48, .26) 0%, rgba(242, 194, 48, 0) 68%),
+        linear-gradient(135deg, #042840 0%, #063B5C 52%, #16749A 100%);
     color: #FFFFFF !important;
     border-radius: 18px;
     padding: 26px 30px;
-    box-shadow: 0 18px 42px -14px rgba(44, 29, 2, .34);
+    box-shadow: 0 18px 42px -14px rgba(6, 59, 92, .38);
 }
 
 .gt-hero-gold::before {
@@ -145,7 +142,7 @@ body.gt-panel .gt-font-display {
     position: absolute;
     inset: 0;
     z-index: -1;
-    background-image: radial-gradient(rgba(255, 255, 255, .20) 1px, transparent 1.2px);
+    background-image: radial-gradient(rgba(231, 240, 245, .20) 1px, transparent 1.2px);
     background-size: 22px 22px;
     mask-image: linear-gradient(180deg, transparent, #000 25%, #000 75%, transparent);
     pointer-events: none;
@@ -160,8 +157,8 @@ body.gt-panel .gt-font-display {
     height: 340px;
     transform: translateY(-50%);
     border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, .15);
-    box-shadow: 0 0 60px rgba(228, 163, 24, .22) inset;
+    border: 1px solid rgba(242, 194, 48, .22);
+    box-shadow: 0 0 60px rgba(242, 194, 48, .16) inset;
     pointer-events: none;
     z-index: -1;
 }
@@ -173,16 +170,15 @@ body.gt-panel .gt-font-display {
     color: #FFFFFF !important;
 }
 
-/* Dark Smoked Bronze Pill (matching "Projetos em 4 continentes" pill in print) */
 .gt-hero-gold .gt-hero-badge {
     display: inline-flex;
     align-items: center;
     gap: 7px;
     padding: 5px 13px;
     border-radius: 999px;
-    background: rgba(20, 13, 2, .48);
-    border: 1px solid rgba(255, 255, 255, .16);
-    color: #F6ECD6 !important;
+    background: rgba(4, 30, 48, .55);
+    border: 1px solid rgba(242, 194, 48, .35);
+    color: #E7F0F5 !important;
     font-size: 11px;
     font-weight: 700;
     letter-spacing: .04em;
@@ -203,18 +199,18 @@ body.gt-panel .gt-font-display {
 }
 
 .gt-hero-gold .gt-hero-dot {
-    color: #FFC94A !important;
+    color: #F2C230 !important;
 }
 
 .gt-hero-gold .gt-hero-muted {
-    color: rgba(255, 247, 228, .88) !important;
+    color: rgba(231, 240, 245, .88) !important;
 }
 
-/* Electric Blue Primary CTA inside Gold Hero (matching "Fale com a gente ->" in print) */
+/* Official Golden Yellow Primary CTA inside Hero */
 .gt-hero-gold .gt-hero-cta {
-    background: var(--gt-blue) !important;
-    color: #FFFFFF !important;
-    font-weight: 700;
+    background: var(--gt-gold) !important;
+    color: var(--gt-petrol-deep) !important;
+    font-weight: 800;
     border-radius: 10px;
     padding: 11px 19px;
     font-size: 12.5px;
@@ -222,23 +218,24 @@ body.gt-panel .gt-font-display {
     align-items: center;
     gap: 8px;
     text-decoration: none;
-    box-shadow: 0 10px 24px -6px rgba(18, 26, 255, .58);
+    cursor: pointer;
+    box-shadow: 0 10px 24px -6px rgba(242, 194, 48, .45);
     transition: transform .16s ease, box-shadow .16s ease, background-color .16s ease;
 }
 
 .gt-hero-gold .gt-hero-cta * {
-    color: #FFFFFF !important;
+    color: var(--gt-petrol-deep) !important;
 }
 
 .gt-hero-gold .gt-hero-cta:hover {
-    background: var(--gt-blue-hover) !important;
+    background: var(--gt-gold-hover) !important;
     transform: translateY(-1px);
-    box-shadow: 0 14px 28px -6px rgba(18, 26, 255, .68);
+    box-shadow: 0 14px 28px -6px rgba(242, 194, 48, .55);
 }
 
-/* Outlined Ghost Button inside Gold Hero (matching "Conheça a coordenação" in print) */
+/* Outlined Ghost Button inside Hero */
 .gt-hero-gold .gt-hero-cta-ghost {
-    background: rgba(255, 255, 255, .08) !important;
+    background: rgba(255, 255, 255, .10) !important;
     color: #FFFFFF !important;
     border: 1px solid rgba(255, 255, 255, .42);
     font-weight: 600;
@@ -249,91 +246,95 @@ body.gt-panel .gt-font-display {
     align-items: center;
     gap: 8px;
     text-decoration: none;
+    cursor: pointer;
     transition: background-color .16s ease, border-color .16s ease, transform .16s ease;
 }
 
 .gt-hero-gold .gt-hero-cta-ghost:hover {
-    background: rgba(255, 255, 255, .18) !important;
+    background: rgba(255, 255, 255, .20) !important;
     border-color: #FFFFFF;
     transform: translateY(-1px);
 }
 
-/* Primary & Secondary Buttons (Electric Blue Primary CTA + Warm White Secondary) */
+/* Official GundjaTech Primary & Secondary Buttons */
 body.gt-panel .btn-primary {
-    background: var(--gt-blue) !important;
-    color: #FFFFFF !important;
-    font-weight: 700 !important;
+    background: linear-gradient(135deg, #F8CE4A 0%, #F2C230 55%, #E0B020 100%) !important;
+    color: #063B5C !important;
+    font-weight: 800 !important;
     border: 0 !important;
-    box-shadow: 0 8px 20px -6px rgba(18, 26, 255, .42) !important;
-    transition: background-color .18s ease, transform .15s ease, box-shadow .18s ease !important;
+    cursor: pointer;
+    box-shadow: 0 8px 20px -6px rgba(242, 194, 48, .44) !important;
+    transition: background-color .18s ease, transform .15s ease, box-shadow .18s ease, filter .16s ease !important;
 }
 
 body.gt-panel .btn-primary:hover {
-    background: var(--gt-blue-hover) !important;
-    color: #FFFFFF !important;
-    filter: none !important;
+    filter: brightness(1.04);
+    color: #063B5C !important;
     transform: translateY(-1px);
-    box-shadow: 0 12px 24px -6px rgba(18, 26, 255, .52) !important;
+    box-shadow: 0 12px 24px -6px rgba(242, 194, 48, .54) !important;
 }
 
 body.gt-panel .btn-primary svg,
 body.gt-panel .btn-primary span {
-    color: #FFFFFF !important;
+    color: #063B5C !important;
 }
 
 body.gt-panel .btn-secondary {
     background-color: var(--gt-white) !important;
     border: 1px solid var(--gt-border-strong) !important;
     color: var(--gt-ink) !important;
-    font-weight: 600 !important;
-    box-shadow: 0 1px 2px rgba(44, 29, 2, .05);
+    font-weight: 700 !important;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(6, 59, 92, .05);
 }
 
 body.gt-panel .btn-secondary:hover {
-    background-color: #FAF5E8 !important;
-    border-color: var(--gt-bronze-mid) !important;
-    color: var(--gt-bronze-mid) !important;
+    background-color: #EEF5F9 !important;
+    border-color: var(--gt-petrol-mid) !important;
+    color: var(--gt-petrol-mid) !important;
 }
 
 /* Elevated Pure White Cards */
-body.gt-panel .glass-card {
+body.gt-panel .glass-card,
+body.gt-panel .gt-panel-card {
     background: var(--gt-white) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     border: 1px solid var(--gt-border) !important;
-    box-shadow: 0 1px 3px rgba(44, 29, 2, .04), 0 10px 26px -16px rgba(44, 29, 2, .10) !important;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(6, 59, 92, .04), 0 10px 26px -16px rgba(6, 59, 92, .12) !important;
 }
 
 body.gt-panel .glass-card:hover {
-    border-color: #DACBA8 !important;
-    box-shadow: 0 2px 6px rgba(44, 29, 2, .05), 0 14px 32px -16px rgba(143, 97, 7, .16) !important;
+    border-color: #A9C7DA !important;
+    box-shadow: 0 2px 6px rgba(6, 59, 92, .06), 0 14px 32px -16px rgba(22, 116, 154, .18) !important;
 }
 
 /* ==========================================================================
-   AUTOMATIC WARM LIGHT-THEME MAPPING FOR ALL 36 ADMIN & PORTAL INNER VIEWS
+   AUTOMATIC PALETA 3 LIGHT-THEME MAPPING FOR PORTAL INNER VIEWS
    Scoped strictly to `body.gt-panel main` (excluding `.gt-hero-gold`)
    ========================================================================== */
 
 body.gt-panel main :where(.bg-\[\#0B0B0B\], .bg-\[\#111111\], .bg-\[\#121212\]) {
-    background-color: #F7F4EC !important;
+    background-color: #EEF5F9 !important;
 }
 
 body.gt-panel main :where(.bg-\[\#141414\], .bg-\[\#181818\]) {
-    background-color: #FAF7F0 !important;
+    background-color: #F4F8FB !important;
 }
 
 body.gt-panel main :where(.bg-\[\#1C1C1C\], .bg-gray-800) {
-    background-color: #F2ECDE !important;
+    background-color: #E7F0F5 !important;
 }
 
 body.gt-panel main .bg-black\/80 {
-    background-color: rgba(28, 21, 8, .54) !important;
+    background-color: rgba(6, 59, 92, .48) !important;
     backdrop-filter: blur(4px);
 }
 
-/* Active tabs & outgoing chat bubbles in rich Smoked Bronze-Gold with pure white ink */
+/* Active tabs & outgoing chat bubbles in Deep Petrol Blue with crisp white ink */
 body.gt-panel main .bg-\[\#E4A318\] {
-    background: linear-gradient(135deg, #2C1D02 0%, #8F6107 100%) !important;
+    background: linear-gradient(135deg, #063B5C 0%, #16749A 100%) !important;
     color: #FFFFFF !important;
 }
 
@@ -342,45 +343,88 @@ body.gt-panel main .bg-\[\#E4A318\] :where(div, p, span, a) {
 }
 
 body.gt-panel main .bg-\[\#E4A318\]\/10 {
-    background-color: #FDF5E2 !important;
+    background-color: #FEF7DC !important;
 }
 
 /* Form Controls inside Panel */
+body.gt-panel main input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+    background-color: #FFFFFF !important;
+    border: 1.5px solid #95B4C9 !important;
+    display: inline-grid;
+    place-content: center;
+    cursor: pointer;
+    transition: all 0.16s ease;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+body.gt-panel main input[type="checkbox"]:hover:not(:disabled) {
+    border-color: #16749A !important;
+    box-shadow: 0 0 0 3px rgba(22, 116, 154, 0.15);
+}
+
+body.gt-panel main input[type="checkbox"]::before {
+    content: "";
+    width: 10px;
+    height: 6px;
+    border-left: 2.2px solid #F2C230;
+    border-bottom: 2.2px solid #F2C230;
+    transform: rotate(-45deg) scale(0);
+    transform-origin: center;
+    transition: transform 0.14s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    margin-top: -1px;
+}
+
+body.gt-panel main input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, #063B5C 0%, #16749A 100%) !important;
+    border-color: #063B5C !important;
+    box-shadow: 0 3px 10px -2px rgba(6, 59, 92, 0.28);
+}
+
+body.gt-panel main input[type="checkbox"]:checked::before {
+    transform: rotate(-45deg) scale(1);
+}
+
 body.gt-panel main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select, textarea) {
     background-color: #FFFFFF !important;
     border-color: var(--gt-border-strong) !important;
     color: var(--gt-ink) !important;
-    border-radius: 8px;
+    border-radius: 10px;
 }
 
 body.gt-panel main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select, textarea)::placeholder {
-    color: #9A8D76 !important;
+    color: #6B889C !important;
 }
 
 body.gt-panel main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select, textarea):focus {
-    border-color: var(--gt-bronze-light) !important;
-    box-shadow: 0 0 0 3px rgba(198, 139, 14, .16) !important;
+    border-color: var(--gt-petrol-mid) !important;
+    box-shadow: 0 0 0 3px rgba(22, 116, 154, .16) !important;
     outline: none !important;
 }
 
 body.gt-panel main input[type="checkbox"],
 body.gt-panel main input[type="radio"] {
-    accent-color: var(--gt-bronze-mid);
+    accent-color: var(--gt-petrol-mid);
 }
 
 body.gt-panel main input[type="file"]::file-selector-button {
-    background-color: var(--gt-blue) !important;
-    color: #FFFFFF !important;
+    background-color: var(--gt-gold) !important;
+    color: var(--gt-petrol-deep) !important;
     border: 0 !important;
     border-radius: 8px;
     padding: 7px 14px;
-    font-weight: 700;
+    font-weight: 800;
     cursor: pointer;
     transition: background-color .16s ease;
 }
 
 body.gt-panel main input[type="file"]::file-selector-button:hover {
-    background-color: var(--gt-blue-hover) !important;
+    background-color: var(--gt-gold-hover) !important;
 }
 
 /* Borders & Dividers */
@@ -389,32 +433,32 @@ body.gt-panel main :where(.border-\[\#222222\], .border-\[\#2E2D2C\], .border-\[
 }
 
 body.gt-panel main :where(.border-\[\#E4A318\], .border-\[\#E4A318\]\/30, .border-\[\#E4A318\]\/40, .border-\[\#E4A318\]\/50) {
-    border-color: rgba(143, 97, 7, .36) !important;
+    border-color: rgba(22, 116, 154, .34) !important;
 }
 
 body.gt-panel main :where(.divide-\[\#222222\], .divide-\[\#1C1C1C\]) > :not(:last-child) {
-    border-color: #EFE8D9 !important;
+    border-color: #D8E6EF !important;
 }
 
 /* Hover States */
 body.gt-panel main :where(.hover\:bg-\[\#161616\], .hover\:bg-\[\#181818\]):hover {
-    background-color: #FAF6EC !important;
+    background-color: #EEF5F9 !important;
 }
 
 body.gt-panel main :where(.hover\:border-\[\#E4A318\]\/40, .hover\:border-\[\#E4A318\]\/50, .hover\:border-\[\#E4A318\]\/60):hover {
-    border-color: rgba(143, 97, 7, .52) !important;
+    border-color: rgba(22, 116, 154, .52) !important;
 }
 
 body.gt-panel main .hover\:text-\[\#E4A318\]:hover {
-    color: var(--gt-bronze-mid) !important;
+    color: var(--gt-petrol-mid) !important;
 }
 
 body.gt-panel main .hover\:text-white:hover {
-    color: var(--gt-bronze-mid) !important;
+    color: var(--gt-petrol-deep) !important;
 }
 
-/* High-Contrast Warm Typography on Light Surfaces */
-body.gt-panel main :where(.text-white):not(.gt-hero-gold):not(.gt-hero-gold *):not(.btn-primary):not(.btn-primary *):not(.bg-emerald-500):not(.bg-red-500):not(.bg-\[\#121AFF\]) {
+/* High-Contrast Petrol Typography on Light Surfaces */
+body.gt-panel main :where(.text-white):not(.gt-hero-gold):not(.gt-hero-gold *):not(.btn-primary):not(.btn-primary *):not(.bg-emerald-500):not(.bg-red-500):not(.bg-\[\#063B5C\]) {
     color: var(--gt-ink) !important;
 }
 
@@ -427,11 +471,11 @@ body.gt-panel main :where(.text-gray-400, .text-gray-500):not(.gt-hero-gold *) {
 }
 
 body.gt-panel main .text-\[\#E4A318\]:not(.gt-hero-gold *) {
-    color: var(--gt-bronze-mid) !important;
+    color: var(--gt-petrol-mid) !important;
 }
 
 body.gt-panel main .gt-gold-value {
-    color: var(--gt-bronze-mid) !important;
+    color: var(--gt-petrol-deep) !important;
 }
 
 body.gt-panel main .text-emerald-400,
@@ -440,11 +484,11 @@ body.gt-panel main .text-emerald-300 {
 }
 
 body.gt-panel main .text-amber-400 {
-    color: #A86B04 !important;
+    color: #9A6B00 !important;
 }
 
 body.gt-panel main .text-sky-400 {
-    color: #0284C7 !important;
+    color: #16749A !important;
 }
 
 body.gt-panel main .text-red-400 {
@@ -460,24 +504,24 @@ body.gt-panel main :where(.bg-emerald-500, .bg-red-500, .hover\:bg-red-600) {
     color: #FFFFFF !important;
 }
 
-/* Metallic Gold Progress Bars */
+/* Official GundjaTech Gold-to-Petrol Progress Bars */
 body.gt-panel main .from-\[\#E4A318\].to-\[\#C68B0E\] {
-    background-image: linear-gradient(90deg, #8F6107 0%, #E4A318 65%, #F2C230 100%) !important;
+    background-image: linear-gradient(90deg, #16749A 0%, #F2C230 100%) !important;
 }
 
 /* Quotation pending highlight strip on portal */
 body.gt-panel main .from-\[\#E4A318\]\/15.to-\[\#2E2D2C\]\/15 {
-    background-image: linear-gradient(90deg, #FDF5E2 0%, #F7EFE0 100%) !important;
-    border-color: rgba(143, 97, 7, .32) !important;
+    background-image: linear-gradient(90deg, #FEF7DC 0%, #EEF5F9 100%) !important;
+    border-color: rgba(242, 194, 48, .55) !important;
 }
 
 /* Tables Polish */
 body.gt-panel main table thead {
-    background-color: #FAF7F0 !important;
+    background-color: #EEF5F9 !important;
 }
 
 body.gt-panel main table thead th {
-    color: #766852 !important;
+    color: #063B5C !important;
     font-weight: 700 !important;
 }
 
@@ -498,8 +542,8 @@ body.gt-panel main table td > span[class*="rounded"] {
 
 /* Pagination (Laravel Tailwind links) */
 body.gt-panel main nav[role="navigation"] span[aria-current="page"] > span {
-    background: linear-gradient(135deg, #2C1D02 0%, #8F6107 100%) !important;
-    border-color: #8F6107 !important;
+    background: #063B5C !important;
+    border-color: #063B5C !important;
     color: #FFFFFF !important;
 }
 
@@ -510,11 +554,11 @@ body.gt-panel main nav[role="navigation"] a {
 }
 
 body.gt-panel main nav[role="navigation"] a:hover {
-    background-color: #FAF5E8 !important;
-    color: var(--gt-bronze-mid) !important;
+    background-color: #EEF5F9 !important;
+    color: var(--gt-petrol-mid) !important;
 }
 
-/* Subtle Warm Custom Scrollbar */
+/* Subtle Petrol Scrollbar */
 body.gt-panel ::-webkit-scrollbar {
     width: 7px;
     height: 7px;
@@ -525,10 +569,10 @@ body.gt-panel ::-webkit-scrollbar-track {
 }
 
 body.gt-panel ::-webkit-scrollbar-thumb {
-    background: #D8CCB6;
+    background: #B8CEDD;
     border-radius: 999px;
 }
 
 body.gt-panel ::-webkit-scrollbar-thumb:hover {
-    background: #B8A586;
+    background: #16749A;
 }

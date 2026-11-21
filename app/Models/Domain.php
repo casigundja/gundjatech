@@ -44,9 +44,13 @@ class Domain extends Model
         return $this->hasMany(DnsRecord::class);
     }
 
-    public function getDaysUntilExpirationAttribute(): int
+    public function getDaysUntilExpirationAttribute(): ?int
     {
-        return (int) now()->startOfDay()->diffInDays($this->expiration_date->startOfDay(), false);
+        if ($this->expiration_date === null) {
+            return null;
+        }
+
+        return (int) now()->startOfDay()->diffInDays($this->expiration_date->copy()->startOfDay(), false);
     }
 
     public function getStatusLabelAttribute(): string
@@ -56,6 +60,7 @@ class Domain extends Model
             'expiring_soon' => 'Expirando em breve',
             'expired' => 'Expirado',
             'pending' => 'Pendente',
+            'transferred' => 'Transferido',
             'cancelled' => 'Cancelado',
             default => ucfirst(str_replace('_', ' ', (string) $this->status)),
         };

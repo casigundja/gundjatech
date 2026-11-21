@@ -19,16 +19,26 @@ class AdminAutonomousCrmController extends Controller
     public function index(AutonomousCrmAgent $crmAgent): View
     {
         $config = $crmAgent->getConfig();
+        unset($config['api_key']);
 
         $conversations = Conversation::with(['client', 'serviceRequest.quotation', 'latestMessage'])
             ->orderByDesc('updated_at')
             ->take(40)
             ->get();
 
-        $activeAutopilotCount = $conversations->where('ai_enabled', true)->where('status', '!=', 'closed')->count();
-        $qualifyingCount = $conversations->where('crm_stage', 'qualifying')->count();
-        $proposalReadyCount = $conversations->where('crm_stage', 'proposal_ready')->count();
-        $handoffCount = $conversations->where('crm_stage', 'handoff_human')->count();
+        $crmStats = Conversation::query()
+            ->selectRaw("
+                SUM(CASE WHEN ai_enabled = true AND status != 'closed' THEN 1 ELSE 0 END) AS active_autopilot,
+                SUM(CASE WHEN crm_stage = 'qualifying' THEN 1 ELSE 0 END) AS qualifying_count,
+                SUM(CASE WHEN crm_stage = 'proposal_ready' THEN 1 ELSE 0 END) AS proposal_ready_count,
+                SUM(CASE WHEN crm_stage = 'handoff_human' THEN 1 ELSE 0 END) AS handoff_count
+            ")
+            ->first();
+
+        $activeAutopilotCount = (int) ($crmStats->active_autopilot ?? 0);
+        $qualifyingCount = (int) ($crmStats->qualifying_count ?? 0);
+        $proposalReadyCount = (int) ($crmStats->proposal_ready_count ?? 0);
+        $handoffCount = (int) ($crmStats->handoff_count ?? 0);
         $aiQuotationsCount = Quotation::where('quotation_number', 'like', 'ORC-AI-%')->count();
 
         return view('admin.crm.index', compact(
@@ -48,7 +58,7 @@ class AdminAutonomousCrmController extends Controller
             'crm_ai_enabled' => ['nullable', 'boolean'],
             'crm_ai_auto_draft_quotation' => ['nullable', 'boolean'],
             'crm_ai_provider' => ['required', 'in:auto,gemini,openai,rules'],
-            'crm_ai_model' => ['nullable', 'string', 'max:80'],
+            'crm_ai_model' => ['nullable', 'string', 'max:80', 'regex:/^[a-zA-Z0-9._-]+$/'],
             'crm_ai_agent_name' => ['required', 'string', 'max:80'],
             'crm_ai_system_prompt' => ['required', 'string', 'max:4000'],
             'crm_ai_api_key' => ['nullable', 'string', 'max:255'],

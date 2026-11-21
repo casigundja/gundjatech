@@ -21,6 +21,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -89,15 +90,24 @@ class PublicController extends Controller
             return view($sinnapseServiceMap[$slug]);
         }
 
-        $service = Service::with('category')->where('slug', $slug)->first();
+        $service = Service::with('category')
+            ->where('slug', $slug)
+            ->where('is_active', true)
+            ->first();
 
         if (! $service) {
-            $category = ServiceCategory::with('services')->where('slug', $slug)->firstOrFail();
+            $category = ServiceCategory::with(['services' => function ($q): void {
+                $q->where('is_active', true)->orderBy('name');
+            }])
+                ->where('slug', $slug)
+                ->where('is_active', true)
+                ->firstOrFail();
 
             return view('public.services.category', compact('category'));
         }
 
         $relatedServices = Service::where('category_id', $service->category_id)
+            ->where('is_active', true)
             ->where('id', '!=', $service->id)
             ->take(3)
             ->get();
@@ -331,10 +341,11 @@ class PublicController extends Controller
             'description' => ['required', 'string', 'max:5000'],
             'estimated_budget' => ['nullable', 'numeric', 'min:0'],
             'desired_deadline' => ['nullable', 'date', 'after:today'],
-            'attachment' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,png,jpg,jpeg,webp,zip'],
+            'attachment' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,png,jpg,jpeg,webp,zip', 'extensions:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,png,jpg,jpeg,webp,zip'],
         ]);
 
         $protocol = 'GNDJ-'.date('Ymd').'-'.strtoupper(Str::random(4));
+        $storedPath = null;
 
         DB::beginTransaction();
         try {
@@ -371,14 +382,14 @@ class PublicController extends Controller
 
             if ($request->hasFile('attachment')) {
                 $file = $request->file('attachment');
-                $path = $file->store('attachments', 'local');
+                $storedPath = $file->store('attachments', 'local');
 
                 RequestAttachment::create([
                     'service_request_id' => $serviceRequest->id,
-                    'file_name' => $file->getClientOriginalName(),
-                    'file_path' => $path,
+                    'file_name' => $this->sanitizeUploadedFilename((string) $file->getClientOriginalName()),
+                    'file_path' => $storedPath,
                     'file_size' => $file->getSize(),
-                    'mime_type' => $file->getClientMimeType(),
+                    'mime_type' => $file->getMimeType() ?: $file->getClientMimeType(),
                     'uploaded_by_user_id' => Auth::id(),
                 ]);
             }
@@ -394,6 +405,9 @@ class PublicController extends Controller
                 ->with('success', 'Sua solicitação foi registrada com sucesso! Guarde seu número de protocolo para acompanhamento.');
         } catch (\Throwable $e) {
             DB::rollBack();
+            if ($storedPath !== null) {
+                Storage::disk('local')->delete($storedPath);
+            }
             Log::error('Falha ao registrar solicitação pública de orçamento.', [
                 'exception' => $e->getMessage(),
                 'email' => $validated['email'] ?? null,
@@ -405,12 +419,14 @@ class PublicController extends Controller
 
     public function trackRequest(Request $request): View
     {
-        $protocol = $request->query('protocol');
+        $protocol = $request->filled('protocol')
+            ? strtoupper(trim((string) $request->query('protocol')))
+            : null;
         $serviceRequest = null;
 
-        if ($protocol) {
-            $serviceRequest = ServiceRequest::with(['service', 'statusHistories', 'attachments', 'quotation'])
-                ->where('protocol', trim((string) $protocol))
+        if ($protocol !== null && $protocol !== '') {
+            $serviceRequest = ServiceRequest::with(['service', 'statusHistories', 'quotation'])
+                ->where('protocol', $protocol)
                 ->first();
         }
 
@@ -433,7 +449,7 @@ class PublicController extends Controller
             'campanha' => ['nullable', 'string', 'max:120'],
             'pagina' => ['nullable', 'string', 'max:500'],
             'mensagem' => ['nullable', 'string', 'max:4000'],
-            'arquivo' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,png,jpg,jpeg,webp,zip'],
+            'arquivo' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,png,jpg,jpeg,webp,zip', 'extensions:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,png,jpg,jpeg,webp,zip'],
         ]);
 
         $protocol = 'GNDJ-'.date('Ymd').'-'.strtoupper(Str::random(4));
@@ -444,98 +460,107 @@ class PublicController extends Controller
         $service = $this->resolveServiceForText($origem.' '.$campanha.' '.($validated['mensagem'] ?? ''));
 
         $conversation = null;
+        $storedPath = null;
 
-        DB::transaction(function () use ($validated, $protocol, $origem, $campanha, $leadName, $leadEmail, $service, $request, &$conversation): void {
-            $client = $this->resolveLeadClient(
-                $leadEmail,
-                $leadName,
-                $validated['telefone'] ?? null,
-                $validated['empresa'] ?? null
-            );
+        try {
+            DB::transaction(function () use ($validated, $protocol, $origem, $campanha, $leadName, $leadEmail, $service, $request, &$conversation, &$storedPath): void {
+                $client = $this->resolveLeadClient(
+                    $leadEmail,
+                    $leadName,
+                    $validated['telefone'] ?? null,
+                    $validated['empresa'] ?? null
+                );
 
-            $detailsParts = [];
-            if (! empty($validated['site'])) {
-                $detailsParts[] = 'Site: '.$validated['site'];
-            }
-            if ($campanha !== '') {
-                $detailsParts[] = 'Campanha: '.$campanha;
-            }
-            if (! empty($validated['mensagem'])) {
-                $detailsParts[] = $validated['mensagem'];
-            }
-            if (! empty($validated['pagina'])) {
-                $detailsParts[] = 'Página: '.$validated['pagina'];
-            }
+                $detailsParts = [];
+                if (! empty($validated['site'])) {
+                    $detailsParts[] = 'Site: '.$validated['site'];
+                }
+                if ($campanha !== '') {
+                    $detailsParts[] = 'Campanha: '.$campanha;
+                }
+                if (! empty($validated['mensagem'])) {
+                    $detailsParts[] = $validated['mensagem'];
+                }
+                if (! empty($validated['pagina'])) {
+                    $detailsParts[] = 'Página: '.$validated['pagina'];
+                }
 
-            $description = trim(implode(' | ', $detailsParts));
-            if ($description === '') {
-                $description = 'Solicitação de diagnóstico recebida pelo site GundjaTech.';
-            }
+                $description = trim(implode(' | ', $detailsParts));
+                if ($description === '') {
+                    $description = 'Solicitação de diagnóstico recebida pelo site GundjaTech.';
+                }
 
-            $serviceRequest = ServiceRequest::create([
-                'protocol' => $protocol,
-                'client_id' => $client->id,
-                'user_id' => Auth::id(),
-                'service_id' => $service?->id,
-                'name' => $leadName,
-                'company' => $validated['empresa'] ?? null,
-                'email' => $leadEmail,
-                'phone' => $validated['telefone'] ?? null,
-                'service_title' => 'Solicitação Digital ('.$origem.')',
-                'description' => $description,
-                'status' => 'new',
-            ]);
-
-            RequestStatusHistory::create([
-                'service_request_id' => $serviceRequest->id,
-                'old_status' => null,
-                'new_status' => 'new',
-                'comment' => "Lead recebido automaticamente via formulário ({$origem}).",
-                'user_id' => Auth::id(),
-            ]);
-
-            if ($request->hasFile('arquivo')) {
-                $file = $request->file('arquivo');
-                $path = $file->store('attachments', 'local');
-
-                RequestAttachment::create([
-                    'service_request_id' => $serviceRequest->id,
-                    'file_name' => $file->getClientOriginalName(),
-                    'file_path' => $path,
-                    'file_size' => $file->getSize(),
-                    'mime_type' => $file->getClientMimeType(),
-                    'uploaded_by_user_id' => Auth::id(),
-                ]);
-            }
-
-            if (str_starts_with(strtolower($origem), 'chat')) {
-                $conversation = Conversation::create([
+                $serviceRequest = ServiceRequest::create([
+                    'protocol' => $protocol,
                     'client_id' => $client->id,
-                    'subject' => 'Chat do Site • '.$leadName,
-                    'channel' => 'website_chat',
-                    'visitor_token' => Str::random(48),
-                    'visitor_name' => $leadName,
-                    'visitor_email' => $leadEmail,
-                    'visitor_phone' => $validated['telefone'] ?? null,
-                    'status' => 'waiting_staff',
+                    'user_id' => Auth::id(),
+                    'service_id' => $service?->id,
+                    'name' => $leadName,
+                    'company' => $validated['empresa'] ?? null,
+                    'email' => $leadEmail,
+                    'phone' => $validated['telefone'] ?? null,
+                    'service_title' => 'Solicitação Digital ('.$origem.')',
+                    'description' => $description,
+                    'status' => 'new',
                 ]);
 
-                ConversationMessage::create([
-                    'conversation_id' => $conversation->id,
-                    'sender_id' => Auth::id(),
-                    'sender_type' => 'client',
-                    'sender_name' => $leadName,
-                    'message' => $description,
-                    'is_read' => false,
+                RequestStatusHistory::create([
+                    'service_request_id' => $serviceRequest->id,
+                    'old_status' => null,
+                    'new_status' => 'new',
+                    'comment' => "Lead recebido automaticamente via formulário ({$origem}).",
+                    'user_id' => Auth::id(),
                 ]);
+
+                if ($request->hasFile('arquivo')) {
+                    $file = $request->file('arquivo');
+                    $storedPath = $file->store('attachments', 'local');
+
+                    RequestAttachment::create([
+                        'service_request_id' => $serviceRequest->id,
+                        'file_name' => $this->sanitizeUploadedFilename((string) $file->getClientOriginalName()),
+                        'file_path' => $storedPath,
+                        'file_size' => $file->getSize(),
+                        'mime_type' => $file->getMimeType() ?: $file->getClientMimeType(),
+                        'uploaded_by_user_id' => Auth::id(),
+                    ]);
+                }
+
+                if (str_starts_with(strtolower($origem), 'chat')) {
+                    $conversation = Conversation::create([
+                        'client_id' => $client->id,
+                        'service_request_id' => $serviceRequest->id,
+                        'subject' => 'Chat do Site • '.$leadName,
+                        'channel' => 'website_chat',
+                        'visitor_token' => Str::random(48),
+                        'visitor_name' => $leadName,
+                        'visitor_email' => $leadEmail,
+                        'visitor_phone' => $validated['telefone'] ?? null,
+                        'status' => 'waiting_staff',
+                    ]);
+
+                    ConversationMessage::create([
+                        'conversation_id' => $conversation->id,
+                        'sender_id' => Auth::id(),
+                        'sender_type' => 'client',
+                        'sender_name' => $leadName,
+                        'message' => $description,
+                        'is_read' => false,
+                    ]);
+                }
+
+                $this->recordPublicActivity($request, 'public.lead.created', $serviceRequest, [
+                    'protocol' => $protocol,
+                    'origem' => $origem,
+                    'email' => $leadEmail,
+                ]);
+            });
+        } catch (\Throwable $e) {
+            if ($storedPath !== null) {
+                Storage::disk('local')->delete($storedPath);
             }
-
-            $this->recordPublicActivity($request, 'public.lead.created', $serviceRequest, [
-                'protocol' => $protocol,
-                'origem' => $origem,
-                'email' => $leadEmail,
-            ]);
-        });
+            throw $e;
+        }
 
         return response()->json([
             'ok' => true,
@@ -655,10 +680,14 @@ class PublicController extends Controller
                 null
             );
 
-            $serviceRequest = ServiceRequest::where('email', $leadEmail)
-                ->where('created_at', '>=', now()->subMinutes(2))
-                ->latest('id')
-                ->first();
+            $conversation = null;
+            if (! empty($validated['visitor_token'])) {
+                $conversation = Conversation::where('visitor_token', $validated['visitor_token'])
+                    ->where('status', '!=', 'closed')
+                    ->first();
+            }
+
+            $serviceRequest = $conversation?->serviceRequest;
 
             if ($serviceRequest === null) {
                 $protocol = 'CHAT-'.date('Ymd').'-'.strtoupper(Str::random(4));
@@ -686,13 +715,6 @@ class PublicController extends Controller
                 ]);
             } else {
                 $protocol = $serviceRequest->protocol;
-            }
-
-            $conversation = null;
-            if (! empty($validated['visitor_token'])) {
-                $conversation = Conversation::where('visitor_token', $validated['visitor_token'])
-                    ->where('status', '!=', 'closed')
-                    ->first();
             }
 
             if ($conversation === null) {
@@ -777,12 +799,24 @@ class PublicController extends Controller
             'message' => ['required', 'string', 'max:3000'],
         ]);
 
-        $conversation = Conversation::where('visitor_token', $validated['visitor_token'])->first();
+        $conversation = Conversation::with(['client', 'serviceRequest'])
+            ->where('visitor_token', $validated['visitor_token'])
+            ->first();
         if ($conversation === null) {
             return response()->json([
                 'ok' => false,
                 'message' => 'Sessão de atendimento não localizada.',
             ], 404);
+        }
+
+        if ($conversation->status === 'closed') {
+            return response()->json([
+                'ok' => false,
+                'closed' => true,
+                'status' => $conversation->status,
+                'status_label' => $conversation->status_label,
+                'message' => 'Este atendimento foi encerrado pela equipe. Inicie uma nova conversa se precisar de mais ajuda.',
+            ], 409);
         }
 
         $senderName = $conversation->visitor_name ?: 'Visitante';
@@ -875,15 +909,18 @@ class PublicController extends Controller
         $client = Client::whereRaw('LOWER(email) = ?', [$normalizedEmail])->first();
 
         if ($client !== null) {
-            $updates = [];
-            if (empty($client->phone) && ! empty($phone)) {
-                $updates['phone'] = $phone;
-            }
-            if ((empty($client->company_name) || $client->company_name === $client->name) && ! empty($company)) {
-                $updates['company_name'] = $company;
-            }
-            if ($updates !== []) {
-                $client->update($updates);
+            $isOwnedPortalClient = $client->user_id !== null && (int) Auth::id() !== (int) $client->user_id;
+            if (! $isOwnedPortalClient) {
+                $updates = [];
+                if (empty($client->phone) && ! empty($phone)) {
+                    $updates['phone'] = $phone;
+                }
+                if ((empty($client->company_name) || $client->company_name === $client->name) && ! empty($company)) {
+                    $updates['company_name'] = $company;
+                }
+                if ($updates !== []) {
+                    $client->update($updates);
+                }
             }
 
             return $client;
@@ -951,6 +988,14 @@ class PublicController extends Controller
             'ip_address' => $request->ip(),
             'user_agent' => Str::limit((string) $request->userAgent(), 255),
         ]);
+    }
+
+    private function sanitizeUploadedFilename(string $originalName): string
+    {
+        $clean = str_replace(['/', '\\', "\0"], '-', trim($originalName));
+        $clean = preg_replace('/[\x00-\x1F\x7F]+/', '', $clean) ?? '';
+
+        return Str::limit($clean !== '' ? $clean : 'anexo', 180, '');
     }
 
     /**

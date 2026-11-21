@@ -10,13 +10,17 @@ use App\Models\Client;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AdminCampaignController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = AdvertisingCampaign::with(['client', 'metrics']);
+        $query = AdvertisingCampaign::with('client')
+            ->withSum('metrics', 'spend')
+            ->withSum('metrics', 'clicks')
+            ->withSum('metrics', 'conversions');
 
         if ($request->filled('platform')) {
             $query->where('platform', $request->platform);
@@ -138,5 +142,28 @@ class AdminCampaignController extends Controller
         ]);
 
         return back()->with('success', 'Métricas de desempenho registradas!');
+    }
+
+    public function destroy(Request $request, AdvertisingCampaign $campaign): RedirectResponse
+    {
+        $campaignId = $campaign->id;
+        $name = $campaign->name;
+
+        DB::transaction(function () use ($campaign): void {
+            $campaign->delete();
+        });
+
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'campaign.deleted',
+            'subject_type' => AdvertisingCampaign::class,
+            'subject_id' => $campaignId,
+            'details' => ['name' => $name],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return redirect()->route('admin.campaigns.index')
+            ->with('success', "Campanha {$name} excluída com sucesso.");
     }
 }

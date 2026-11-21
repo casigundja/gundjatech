@@ -4,8 +4,8 @@
   "description": "Plataforma corporativa da GundjaTech: criação de sites, cibersegurança, operação contínua, tráfego pago e portal do cliente.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#06070E",
-  "theme_color": "#E4A318",
+  "background_color": "#063B5C",
+  "theme_color": "#F2C230",
   "lang": "pt-BR",
   "icons": [
     {

@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Client;
+use App\Models\ProjectAttachment;
+use App\Models\RequestAttachment;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -47,6 +51,10 @@ class AdminClientController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $request->merge([
+            'email' => strtolower(trim((string) $request->input('email'))),
+        ]);
+
         $createAccount = $request->boolean('create_user_account');
 
         $rules = [
@@ -97,6 +105,7 @@ class AdminClientController extends Controller
                 'user_id' => $userId,
                 'name' => $validated['contact_name'],
                 'company_name' => $validated['company_name'],
+                'trade_name' => $validated['trade_name'] ?? null,
                 'email' => $validated['email'],
                 'phone' => $validated['phone'] ?? null,
                 'document' => $validated['document'] ?? null,
@@ -149,6 +158,10 @@ class AdminClientController extends Controller
 
     public function update(Request $request, Client $client): RedirectResponse
     {
+        $request->merge([
+            'email' => strtolower(trim((string) $request->input('email'))),
+        ]);
+
         $validated = $request->validate([
             'company_name' => ['required', 'string', 'max:255'],
             'trade_name' => ['nullable', 'string', 'max:255'],
@@ -167,6 +180,7 @@ class AdminClientController extends Controller
         $client->update([
             'name' => $validated['contact_name'],
             'company_name' => $validated['company_name'],
+            'trade_name' => $validated['trade_name'] ?? null,
             'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
             'document' => $validated['document'] ?? null,
@@ -193,9 +207,41 @@ class AdminClientController extends Controller
 
     public function destroy(Request $request, Client $client): RedirectResponse
     {
+        if ($client->projects()->whereIn('status', ['planning', 'in_progress', 'reviewing', 'on_hold'])->exists()) {
+            return back()->with('error', 'Não é possível excluir este cliente pois há projetos ativos vinculados. Conclua ou exclua os projetos primeiro.');
+        }
+
+        if ($client->financialTransactions()->where('status', 'paid')->exists()) {
+            return back()->with('error', 'Não é possível excluir este cliente pois existem lançamentos financeiros pagos vinculados. Inative o cadastro para preservar o histórico fiscal.');
+        }
+
         $companyName = $client->display_name;
         $clientId = $client->id;
-        $client->delete();
+
+        $projectIds = $client->projects()->pluck('id')->all();
+        $requestIds = $client->serviceRequests()->pluck('id')->all();
+        $attachmentPaths = array_merge(
+            $projectIds !== [] ? ProjectAttachment::whereIn('project_id', $projectIds)->pluck('file_path')->all() : [],
+            $requestIds !== [] ? RequestAttachment::whereIn('service_request_id', $requestIds)->pluck('file_path')->all() : []
+        );
+
+        DB::transaction(function () use ($client): void {
+            $linkedUser = $client->user;
+            $client->delete();
+
+            if ($linkedUser !== null && $linkedUser->role === UserRole::Client->value) {
+                $linkedUser->update(['is_active' => false]);
+                DB::table('sessions')->where('user_id', $linkedUser->id)->delete();
+            }
+        });
+
+        foreach ($attachmentPaths as $filePath) {
+            foreach (['local', 'public'] as $disk) {
+                if (Storage::disk($disk)->exists($filePath)) {
+                    Storage::disk($disk)->delete($filePath);
+                }
+            }
+        }
 
         ActivityLog::create([
             'user_id' => Auth::id(),

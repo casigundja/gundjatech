@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\Client;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use App\Models\ServiceRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,7 +34,7 @@ class AdminChatController extends Controller
             $query->where('status', $statusFilter);
         }
 
-        $conversations = $query->get();
+        $conversations = $query->take(100)->get();
 
         $activeConversation = null;
         if ($request->filled('conversation_id')) {
@@ -88,6 +89,74 @@ class AdminChatController extends Controller
         ];
 
         if ($request->boolean('counts_only')) {
+            $user = $request->user();
+            $canManageRequests = (bool) $user?->hasPermission('requests.manage');
+            $canManageChats = (bool) $user?->hasPermission('chat.manage');
+            $items = collect();
+
+            if ($user?->hasPermission('requests.view') && $payload['pending_requests'] > 0) {
+                foreach (
+                    ServiceRequest::with('client')
+                        ->whereIn('status', ['new', 'analyzing', 'awaiting_info'])
+                        ->latest('created_at')
+                        ->take(4)
+                        ->get() as $req
+                ) {
+                    $contact = $req->contact_name ?: ($req->client?->display_name ?? 'Cliente');
+                    $title = $req->title ?: ('Solicitação '.$req->protocol);
+                    $items->push([
+                        'id' => $req->id,
+                        'key' => 'request:'.$req->id,
+                        'type' => 'request',
+                        'title' => $title,
+                        'subtitle' => $req->protocol.' • '.$contact,
+                        'badge' => $req->status_label,
+                        'badge_tone' => $req->status === 'new' ? 'gold' : 'blue',
+                        'time' => $req->created_at?->format('d/m H:i') ?? '',
+                        'sort_ts' => $req->created_at?->getTimestamp() ?? 0,
+                        'url' => route('admin.requests.show', $req),
+                        'can_delete' => $canManageRequests,
+                        'delete_url' => route('admin.requests.destroy', $req),
+                        'confirm_title' => 'Excluir solicitação',
+                        'confirm_message' => 'Tem certeza que deseja excluir permanentemente esta solicitação e seus anexos para não sobrecarregar o banco? Esta ação não pode ser desfeita.',
+                        'confirm_target' => $req->protocol.' • '.$title,
+                        'confirm_button' => 'Sim, excluir solicitação',
+                    ]);
+                }
+            }
+
+            if ($user?->hasPermission('chat.view') && $payload['open_chats'] > 0) {
+                foreach (
+                    Conversation::with(['client', 'latestMessage'])
+                        ->where('status', '!=', 'closed')
+                        ->latest('updated_at')
+                        ->take(4)
+                        ->get() as $conv
+                ) {
+                    $leadName = $conv->visitor_name ?: ($conv->client?->display_name ?? 'Visitante');
+                    $items->push([
+                        'id' => $conv->id,
+                        'key' => 'chat:'.$conv->id,
+                        'type' => 'chat',
+                        'title' => 'Chat • '.$leadName,
+                        'subtitle' => Str::limit((string) ($conv->latestMessage?->message ?? $conv->subject), 58),
+                        'badge' => $conv->status === 'waiting_staff' ? 'Aguardando Equipe' : ($conv->ai_enabled ? 'Piloto IA' : $conv->status_label),
+                        'badge_tone' => $conv->status === 'waiting_staff' ? 'amber' : 'emerald',
+                        'time' => $conv->updated_at?->format('d/m H:i') ?? '',
+                        'sort_ts' => $conv->updated_at?->getTimestamp() ?? 0,
+                        'url' => route('admin.chat.index', ['conversation_id' => $conv->id]),
+                        'can_delete' => $canManageChats,
+                        'delete_url' => route('admin.chat.destroy', $conv),
+                        'confirm_title' => 'Excluir conversa de atendimento',
+                        'confirm_message' => 'Tem certeza que deseja excluir permanentemente esta conversa e todo o histórico de mensagens do banco de dados?',
+                        'confirm_target' => 'Chat • '.$leadName,
+                        'confirm_button' => 'Sim, excluir conversa',
+                    ]);
+                }
+            }
+
+            $payload['notifications'] = $items->sortByDesc('sort_ts')->take(6)->values()->all();
+
             return response()->json($payload);
         }
 

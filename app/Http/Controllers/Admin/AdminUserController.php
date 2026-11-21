@@ -35,13 +35,17 @@ class AdminUserController extends Controller
         }
 
         $users = $query->orderBy('name')->paginate(12)->withQueryString();
-        $roles = UserRole::cases();
+        $roles = UserRole::visibleRoles();
 
         return view('admin.users.index', compact('users', 'roles'));
     }
 
     public function store(Request $request): RedirectResponse
     {
+        $request->merge([
+            'email' => strtolower(trim((string) $request->input('email'))),
+        ]);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
@@ -51,8 +55,12 @@ class AdminUserController extends Controller
             'is_active' => ['nullable', 'boolean'],
         ]);
 
-        if ($validated['role'] === UserRole::SuperAdmin->value && ! Auth::user()->isSuperAdmin()) {
-            return back()->with('error', 'Apenas Super Administradores podem criar outro Super Administrador.');
+        $actor = Auth::user();
+        $actorRole = UserRole::tryFrom((string) $actor->role) ?? UserRole::Client;
+        $targetRole = UserRole::from($validated['role']);
+
+        if (! $actor->isSuperAdmin() && $targetRole->level() >= $actorRole->level()) {
+            return back()->with('error', 'Você não tem permissão para criar um usuário com cargo igual ou superior ao seu.');
         }
 
         $user = User::create([
@@ -83,9 +91,17 @@ class AdminUserController extends Controller
 
     public function update(Request $request, User $user): RedirectResponse
     {
-        if ($user->isSuperAdmin() && ! Auth::user()->isSuperAdmin()) {
-            return back()->with('error', 'Apenas Super Administradores podem alterar a conta de um Super Administrador.');
+        $actor = Auth::user();
+        $actorRole = UserRole::tryFrom((string) $actor->role) ?? UserRole::Client;
+        $currentTargetRole = UserRole::tryFrom((string) $user->role) ?? UserRole::Client;
+
+        if (! $actor->isSuperAdmin() && $user->id !== $actor->id && $currentTargetRole->level() >= $actorRole->level()) {
+            return back()->with('error', 'Você não tem permissão para alterar a conta de um usuário com cargo igual ou superior ao seu.');
         }
+
+        $request->merge([
+            'email' => strtolower(trim((string) $request->input('email'))),
+        ]);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -96,20 +112,22 @@ class AdminUserController extends Controller
             'password' => ['nullable', Password::min(6)],
         ]);
 
+        $newTargetRole = UserRole::from($validated['role']);
         $isActive = $request->has('is_active') ? $request->boolean('is_active') : false;
 
-        if ($user->id === Auth::id() && ! $isActive) {
+        if ($user->id === $actor->id && ! $isActive) {
             return back()->with('error', 'Você não pode desativar sua própria conta enquanto estiver logado.');
         }
 
-        if ($user->id === Auth::id() && $user->isSuperAdmin() && $validated['role'] !== UserRole::SuperAdmin->value) {
-            return back()->with('error', 'Você não pode remover seu próprio cargo de Super Administrador.');
+        if ($user->id === $actor->id && $validated['role'] !== $user->role) {
+            return back()->with('error', 'Você não pode alterar o seu próprio cargo.');
         }
 
-        if ($validated['role'] === UserRole::SuperAdmin->value && ! Auth::user()->isSuperAdmin()) {
-            return back()->with('error', 'Apenas Super Administradores podem atribuir o cargo de Super Administrador.');
+        if (! $actor->isSuperAdmin() && $user->id !== $actor->id && $newTargetRole->level() >= $actorRole->level()) {
+            return back()->with('error', 'Você não tem permissão para atribuir um cargo igual ou superior ao seu.');
         }
 
+        $passwordChanged = ! empty($validated['password']);
         $updateData = [
             'name' => $validated['name'],
             'email' => $validated['email'],
@@ -118,11 +136,19 @@ class AdminUserController extends Controller
             'is_active' => $isActive,
         ];
 
-        if (! empty($validated['password'])) {
+        if ($passwordChanged) {
             $updateData['password'] = Hash::make($validated['password']);
         }
 
         $user->update($updateData);
+
+        if ($passwordChanged || ! $isActive) {
+            $sessionQuery = DB::table('sessions')->where('user_id', $user->id);
+            if ($user->id === $actor->id && $request->hasSession()) {
+                $sessionQuery->where('id', '!=', $request->session()->getId());
+            }
+            $sessionQuery->delete();
+        }
 
         if ($user->isClient()) {
             $user->ensureClientProfile();
@@ -147,12 +173,16 @@ class AdminUserController extends Controller
 
     public function destroy(Request $request, User $user): RedirectResponse
     {
-        if ($user->id === Auth::id()) {
+        $actor = Auth::user();
+        $actorRole = UserRole::tryFrom((string) $actor->role) ?? UserRole::Client;
+        $targetRole = UserRole::tryFrom((string) $user->role) ?? UserRole::Client;
+
+        if ($user->id === $actor->id) {
             return back()->with('error', 'Você não pode excluir sua própria conta enquanto estiver logado.');
         }
 
-        if ($user->isSuperAdmin() && ! Auth::user()->isSuperAdmin()) {
-            return back()->with('error', 'Apenas Super Administradores podem excluir outro Super Administrador.');
+        if (! $actor->isSuperAdmin() && $targetRole->level() >= $actorRole->level()) {
+            return back()->with('error', 'Você não tem permissão para excluir um usuário com cargo igual ou superior ao seu.');
         }
 
         if (
