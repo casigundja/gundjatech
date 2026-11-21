@@ -1323,14 +1323,16 @@ html[data-admin-theme="light"] body.gt-admin-boost main select option {
     color: #063B5C;
 }
 
-html[data-admin-theme="light"] body.gt-admin-boost .btn-secondary {
+html[data-admin-theme="light"] body.gt-admin-boost .btn-secondary,
+html[data-admin-theme="light"] body.gt-admin-boost .gt-btn-outline {
     background: #FFFFFF !important;
     border: 1px solid #BDD2DF !important;
     color: #063B5C !important;
     font-weight: 700 !important;
 }
 
-html[data-admin-theme="light"] body.gt-admin-boost .btn-secondary:hover {
+html[data-admin-theme="light"] body.gt-admin-boost .btn-secondary:hover,
+html[data-admin-theme="light"] body.gt-admin-boost .gt-btn-outline:hover {
     background: #EEF5F9 !important;
     border-color: #16749A !important;
     color: #063B5C !important;
