@@ -71,9 +71,9 @@ export const AdminDashboardView: FC<AdminDashboardProps> = ({
             </div>
 
             {/* ROW 1: 3 REAL TOP KPI CARDS (Compact Executive Proportion) */}
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {/* KPI 1: Receita Recebida */}
-                <a href="/admin/financeiro" class="gtb-card gtb-kpi-gold !py-3.5 !px-4 flex flex-col justify-between gap-2.5 no-underline cursor-pointer hover:border-[#F2C230]/50 hover:-translate-y-0.5 transition-all group" title="Abrir Gestão Financeira">
+                <a href="/admin/financeiro" class="gtb-card gtb-kpi-gold !p-5 flex flex-col justify-between gap-3 no-underline cursor-pointer hover:border-[#F2C230]/50 hover:-translate-y-0.5 transition-all group" title="Abrir Gestão Financeira">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <span class="gtb-icon-box !w-8 !h-8">
@@ -96,7 +96,7 @@ export const AdminDashboardView: FC<AdminDashboardProps> = ({
                 </a>
 
                 {/* KPI 2: Clientes & Leads */}
-                <a href="/admin/clientes" class="gtb-card gtb-kpi-blue !py-3.5 !px-4 flex flex-col justify-between gap-2.5 no-underline cursor-pointer hover:border-[#38BDF8]/50 hover:-translate-y-0.5 transition-all group" title="Abrir Base de Clientes & Leads">
+                <a href="/admin/clientes" class="gtb-card gtb-kpi-blue !p-5 flex flex-col justify-between gap-3 no-underline cursor-pointer hover:border-[#38BDF8]/50 hover:-translate-y-0.5 transition-all group" title="Abrir Base de Clientes & Leads">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <span class="gtb-icon-box is-blue !w-8 !h-8">
@@ -119,7 +119,7 @@ export const AdminDashboardView: FC<AdminDashboardProps> = ({
                 </a>
 
                 {/* KPI 3: Solicitações & Projetos */}
-                <a href="/admin/solicitacoes" class="gtb-card gtb-kpi-petrol !py-3.5 !px-4 flex flex-col justify-between gap-2.5 no-underline cursor-pointer hover:border-[#6EE7B7]/50 hover:-translate-y-0.5 transition-all group" title="Abrir Central de Solicitações">
+                <a href="/admin/solicitacoes" class="gtb-card gtb-kpi-petrol !p-5 flex flex-col justify-between gap-3 no-underline cursor-pointer hover:border-[#6EE7B7]/50 hover:-translate-y-0.5 transition-all group" title="Abrir Central de Solicitações">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <span class="gtb-icon-box is-petrol !w-8 !h-8">
@@ -143,8 +143,8 @@ export const AdminDashboardView: FC<AdminDashboardProps> = ({
             </div>
 
             {/* ROW 2: REAL 12-MONTH REVENUE BAR CHART (8 cols) + CATEGORY RINGS (4 cols) */}
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
-                <section class="lg:col-span-8 gtb-card !p-4 sm:!p-5 flex flex-col justify-between gap-3">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                <section class="lg:col-span-8 gtb-card !p-5 flex flex-col justify-between gap-3.5">
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <div class="flex flex-wrap items-center gap-2.5">
                             <span class="gtb-icon-box">
@@ -189,7 +189,7 @@ export const AdminDashboardView: FC<AdminDashboardProps> = ({
                     </div>
                 </section>
 
-                <section class="lg:col-span-4 gtb-card !p-4 sm:!p-5 flex flex-col justify-between gap-3">
+                <section class="lg:col-span-4 gtb-card !p-5 flex flex-col justify-between gap-3.5">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <span class="gtb-icon-box is-blue !w-8 !h-8">
@@ -244,8 +244,8 @@ export const AdminDashboardView: FC<AdminDashboardProps> = ({
             </div>
 
             {/* ROW 3: LIVE OPERATIONAL RECORDS (Últimas Solicitações & Clientes Recentes) */}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <section class="gtb-card !p-4 sm:!p-5 space-y-2.5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <section class="gtb-card !p-5 space-y-3">
                     <div class="flex items-center justify-between">
                         <h2 class="text-xs font-extrabold uppercase tracking-wider text-[#F2C230]">Últimas Solicitações de Clientes ({stats.totalRequests})</h2>
                         <a href="/admin/solicitacoes" class="text-xs font-bold text-[#8C95AA] hover:text-white no-underline">Ver todas &rarr;</a>
@@ -269,7 +269,7 @@ export const AdminDashboardView: FC<AdminDashboardProps> = ({
                     </div>
                 </section>
 
-                <section class="gtb-card !p-4 sm:!p-5 space-y-2.5">
+                <section class="gtb-card !p-5 space-y-3">
                     <div class="flex items-center justify-between">
                         <h2 class="text-xs font-extrabold uppercase tracking-wider text-[#F2C230]">Clientes &amp; Leads Recentes ({stats.totalClients})</h2>
                         <a href="/admin/clientes" class="text-xs font-bold text-[#8C95AA] hover:text-white no-underline">Ver todos &rarr;</a>

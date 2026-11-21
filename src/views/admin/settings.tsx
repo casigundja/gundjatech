@@ -203,12 +203,12 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                             />
                         </div>
                         <div>
-                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Client-Token (Opcional — apenas Z-API Clássico)</label>
+                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Secret Key do Workspace (Z-API Omni → Segurança) / Client-Token</label>
                             <input
                                 type="password"
                                 name="whatsapp_zapi_client_token"
                                 autocomplete="off"
-                                placeholder={settings.has_zapi_client_token ? '•••••••• (salvo — deixe vazio para manter)' : 'Cole o Client-Token da Z-API'}
+                                placeholder={settings.has_zapi_client_token ? '•••••••• (salvo — deixe vazio para manter)' : 'Cole a Secret Key gerada em Administração → Segurança'}
                                 class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
                             />
                         </div>

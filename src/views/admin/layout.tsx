@@ -485,7 +485,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                     {/* Live Real-Time Toast Notification Stack (Sound + Visual Alert) */}
                     <div id="gt-live-toast-stack" class="fixed bottom-5 right-5 z-[100] w-80 max-w-[calc(100vw-2rem)] space-y-2.5 pointer-events-none"></div>
 
-                    <main class="gt-admin-main flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5 space-y-4">
+                    <main class="gt-admin-main flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 space-y-5">
                         {children}
                     </main>
                 </div>

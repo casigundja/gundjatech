@@ -91,29 +91,21 @@ async function resolveWhatsAppConfig(env: Env): Promise<ResolvedWhatsAppConfig> 
 }
 
 async function sendViaZApiOmni(cfg: ResolvedWhatsAppConfig, to: string, body: string): Promise<WhatsAppSendResult> {
-    if (!cfg.zapiInstanceId || !cfg.zapiToken) {
-        return { ok: false, provider: 'zapi_omni', error: 'Credenciais Z-API Omni não configuradas (ID do canal / Token).' };
+    const bearerKey = (cfg.zapiClientToken || cfg.zapiToken || '').trim();
+    if (!cfg.zapiInstanceId || !bearerKey) {
+        return { ok: false, provider: 'zapi_omni', error: 'Credenciais Z-API Omni não configuradas (ID do canal / Secret Key).' };
     }
 
     const channelId = cfg.zapiInstanceId.includes('/channels/')
         ? cfg.zapiInstanceId.split('/channels/')[1].split('/')[0]
         : cfg.zapiInstanceId;
     const baseHeaders: Record<string, string> = {
-        Authorization: `Bearer ${cfg.zapiToken}`,
+        Authorization: `Bearer ${bearerKey}`,
         'Content-Type': 'application/json'
     };
-    if (cfg.zapiClientToken) {
-        baseHeaders['Client-Token'] = cfg.zapiClientToken;
-    }
 
     const attempts: Array<{ url: string; headers: Record<string, string>; body: Record<string, unknown> }> = [
-        // 1. Z-API Omni v1 send-text (compatível com canais WhatsApp Web Omni)
-        {
-            url: `https://api.omni.z-api.io/v1/channels/${encodeURIComponent(channelId)}/send-text`,
-            headers: baseHeaders,
-            body: { phone: to, message: body.slice(0, 4096) }
-        },
-        // 2. Z-API Omni v1 /messages (envelope unificado)
+        // 1. Z-API Omni v1 /messages (endpoint oficial Omni com Workspace Secret Key)
         {
             url: `https://api.omni.z-api.io/v1/channels/${encodeURIComponent(channelId)}/messages`,
             headers: baseHeaders,
@@ -122,9 +114,9 @@ async function sendViaZApiOmni(cfg: ResolvedWhatsAppConfig, to: string, body: st
                 content: { type: 'TEXT', body: { message: body.slice(0, 4096) } }
             }
         },
-        // 3. Z-API Omni v1 com /token/{token}/send-text
+        // 2. Z-API Omni v1 /send-text (fallback compatibilidade)
         {
-            url: `https://api.omni.z-api.io/v1/channels/${encodeURIComponent(channelId)}/token/${encodeURIComponent(cfg.zapiToken)}/send-text`,
+            url: `https://api.omni.z-api.io/v1/channels/${encodeURIComponent(channelId)}/send-text`,
             headers: baseHeaders,
             body: { phone: to, message: body.slice(0, 4096) }
         }
@@ -156,8 +148,11 @@ async function sendViaZApiOmni(cfg: ResolvedWhatsAppConfig, to: string, body: st
                 };
             }
 
-            lastError = `${attempt.url} -> HTTP ${res.status}: ${payload?.error || payload?.message || 'erro'}`;
+            lastError = `${attempt.url} -> HTTP ${res.status}: ${payload?.message || payload?.error || 'erro'}`;
             console.warn('[WhatsApp Z-API Omni]', lastError);
+            if (res.status === 401 || res.status === 403) {
+                break;
+            }
         } catch (err) {
             lastError = err instanceof Error ? err.message : 'Erro de rede Z-API Omni';
         }
