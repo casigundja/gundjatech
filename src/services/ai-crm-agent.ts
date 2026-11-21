@@ -78,7 +78,8 @@ Seu objetivo é acolher o visitante, diagnosticar o desafio técnico dele e orie
 
             const candidateModels = [
                 '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
-                '@cf/meta/llama-3.1-8b-instruct'
+                '@cf/meta/llama-3.1-8b-instruct',
+                '@cf/meta/llama-3.3-70b-instruct'
             ];
 
             for (const modelId of candidateModels) {

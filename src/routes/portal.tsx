@@ -474,10 +474,10 @@ portalRoutes.post('/atendimento/:id/mensagem', async (c) => {
 
     // Se a conversa estiver com Piloto IA ativo (e IA global ativa), responde automaticamente
     try {
-        const conv = await db.prepare('SELECT ai_enabled FROM conversations WHERE id = ?').bind(convId).first<{ ai_enabled?: number }>();
+        const conv = (await db.prepare('SELECT ai_enabled FROM conversations WHERE id = ?').bind(convId).first()) as { ai_enabled?: number } | null;
         let globalAiEnabled = true;
         try {
-            const cfg = await db.prepare(`SELECT value FROM system_settings WHERE key = 'crm_ai_enabled'`).first<{ value: string }>();
+            const cfg = (await db.prepare(`SELECT value FROM system_settings WHERE key = 'crm_ai_enabled'`).first()) as { value: string } | null;
             if (cfg && cfg.value === '0') globalAiEnabled = false;
         } catch {}
 
