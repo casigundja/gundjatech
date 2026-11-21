@@ -38,19 +38,48 @@ function parseIncomingWebhook(payload: any): {
     const messages: NormalizedIncomingMessage[] = [];
     const metaStatuses: any[] = [];
 
-    // 0. Z-API Omni v1 Webhook Format (api.omni.z-api.io)
+    // 0. Z-API Omni v1 / Z-API Clássico (suporta ambos formatos: top-level ReceivedCallback e nested data.message)
     const omniType = String(payload?.type || payload?.event || '').toLowerCase();
-    if (payload && (payload.channelId || omniType === 'message.received')) {
-        const msgObj = payload.data?.message || payload.message || payload.data || {};
+    if (payload && (payload.channelId || payload.instanceId || omniType === 'receivedcallback' || omniType === 'message.received')) {
+        const msgObj = payload.data?.message || payload.message || payload.data || payload;
         const contactObj = payload.data?.contact || payload.contact || {};
-        const isFromMe = Boolean(msgObj.fromMe || payload.data?.fromMe || msgObj.direction === 'outbound');
-        const isGroup = Boolean(msgObj.isGroup || payload.data?.isGroup || String(msgObj.from || '').endsWith('@g.us'));
+        const isFromMe = Boolean(
+            payload.fromMe ||
+            msgObj.fromMe ||
+            payload.data?.fromMe ||
+            msgObj.direction === 'outbound'
+        );
+        const isGroup = Boolean(
+            payload.isGroup ||
+            msgObj.isGroup ||
+            payload.data?.isGroup ||
+            payload.isNewsletter ||
+            payload.broadcast ||
+            String(msgObj.from || payload.phone || '').endsWith('@g.us')
+        );
 
-        if (!isFromMe && !isGroup && (omniType === 'message.received' || omniType === 'received' || !omniType || msgObj.text || msgObj.content || msgObj.body)) {
+        const isIncomingEvent =
+            omniType === 'receivedcallback' ||
+            omniType === 'message.received' ||
+            omniType === 'received' ||
+            !omniType;
+
+        if (!isFromMe && !isGroup && isIncomingEvent) {
             const fromPhone = normalizeWhatsAppPhone(
-                contactObj.phone || contactObj.identifier || msgObj.from || payload.data?.from || ''
+                payload.phone ||
+                contactObj.phone ||
+                contactObj.identifier ||
+                msgObj.from ||
+                payload.data?.from ||
+                ''
             );
             const text = String(
+                payload.text?.message ||
+                payload.buttonsResponseMessage?.message ||
+                payload.listResponseMessage?.message ||
+                payload.image?.caption ||
+                payload.document?.caption ||
+                (payload.audio ? '[Áudio enviado via WhatsApp]' : '') ||
                 msgObj.text?.body ||
                 msgObj.text?.message ||
                 msgObj.content?.body?.message ||
@@ -61,36 +90,12 @@ function parseIncomingWebhook(payload: any): {
                 ''
             ).trim();
             if (fromPhone && text) {
+                const detectedProvider: WhatsAppProvider = payload.channelId ? 'zapi_omni' : 'zapi';
                 messages.push({
-                    provider: 'zapi_omni',
-                    messageId: String(msgObj._id || msgObj.id || msgObj.messageId || payload.eventId || '').trim(),
+                    provider: detectedProvider,
+                    messageId: String(payload.messageId || payload.zaapId || msgObj._id || msgObj.id || payload.eventId || '').trim(),
                     fromPhone,
-                    contactName: String(contactObj.name || msgObj.senderName || `WhatsApp ${fromPhone}`).trim(),
-                    text
-                });
-            }
-        }
-        return { messages, metaStatuses };
-    }
-
-    // 1. Z-API Legado Webhook Format (QR Code)
-    if (payload && (payload.instanceId || payload.type === 'ReceivedCallback') && payload.phone) {
-        if (!payload.fromMe && !payload.isGroup) {
-            const fromPhone = normalizeWhatsAppPhone(payload.phone);
-            const text = String(
-                payload.text?.message ||
-                payload.buttonsResponseMessage?.message ||
-                payload.listResponseMessage?.message ||
-                payload.image?.caption ||
-                payload.document?.caption ||
-                (payload.audio ? '[Áudio enviado via WhatsApp]' : '')
-            ).trim();
-            if (fromPhone && text) {
-                messages.push({
-                    provider: 'zapi',
-                    messageId: String(payload.messageId || payload.zaapId || '').trim(),
-                    fromPhone,
-                    contactName: String(payload.senderName || payload.chatName || `WhatsApp ${fromPhone}`).trim(),
+                    contactName: String(payload.senderName || payload.chatName || contactObj.name || msgObj.senderName || `WhatsApp ${fromPhone}`).trim(),
                     text
                 });
             }

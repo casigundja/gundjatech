@@ -95,40 +95,75 @@ async function sendViaZApiOmni(cfg: ResolvedWhatsAppConfig, to: string, body: st
         return { ok: false, provider: 'zapi_omni', error: 'Credenciais Z-API Omni não configuradas (ID do canal / Token).' };
     }
 
-    try {
-        const channelId = cfg.zapiInstanceId.includes('/channels/')
-            ? cfg.zapiInstanceId.split('/channels/')[1].split('/')[0]
-            : cfg.zapiInstanceId;
-        const url = `https://api.omni.z-api.io/v1/channels/${encodeURIComponent(channelId)}/messages`;
-        const headers: Record<string, string> = {
-            Authorization: `Bearer ${cfg.zapiToken}`,
-            'Content-Type': 'application/json'
-        };
-        if (cfg.zapiClientToken) {
-            headers['Client-Token'] = cfg.zapiClientToken;
-        }
-
-        const res = await fetch(url, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-                recipient: { identifier: to },
-                content: {
-                    type: 'TEXT',
-                    body: { message: body.slice(0, 4096) }
-                }
-            })
-        });
-
-        const payload = (await res.json().catch(() => ({}))) as { id?: string; _id?: string; messageId?: string; error?: string; message?: string };
-        if (!res.ok) {
-            return { ok: false, provider: 'zapi_omni', error: payload?.error || payload?.message || `HTTP ${res.status}` };
-        }
-
-        return { ok: true, provider: 'zapi_omni', messageId: payload?.id || payload?._id || payload?.messageId };
-    } catch (err) {
-        return { ok: false, provider: 'zapi_omni', error: err instanceof Error ? err.message : 'Erro de rede Z-API Omni' };
+    const channelId = cfg.zapiInstanceId.includes('/channels/')
+        ? cfg.zapiInstanceId.split('/channels/')[1].split('/')[0]
+        : cfg.zapiInstanceId;
+    const baseHeaders: Record<string, string> = {
+        Authorization: `Bearer ${cfg.zapiToken}`,
+        'Content-Type': 'application/json'
+    };
+    if (cfg.zapiClientToken) {
+        baseHeaders['Client-Token'] = cfg.zapiClientToken;
     }
+
+    const attempts: Array<{ url: string; headers: Record<string, string>; body: Record<string, unknown> }> = [
+        // 1. Z-API Omni v1 send-text (compatível com canais WhatsApp Web Omni)
+        {
+            url: `https://api.omni.z-api.io/v1/channels/${encodeURIComponent(channelId)}/send-text`,
+            headers: baseHeaders,
+            body: { phone: to, message: body.slice(0, 4096) }
+        },
+        // 2. Z-API Omni v1 /messages (envelope unificado)
+        {
+            url: `https://api.omni.z-api.io/v1/channels/${encodeURIComponent(channelId)}/messages`,
+            headers: baseHeaders,
+            body: {
+                recipient: { identifier: to },
+                content: { type: 'TEXT', body: { message: body.slice(0, 4096) } }
+            }
+        },
+        // 3. Z-API Omni v1 com /token/{token}/send-text
+        {
+            url: `https://api.omni.z-api.io/v1/channels/${encodeURIComponent(channelId)}/token/${encodeURIComponent(cfg.zapiToken)}/send-text`,
+            headers: baseHeaders,
+            body: { phone: to, message: body.slice(0, 4096) }
+        }
+    ];
+
+    let lastError = 'Falha ao enviar via Z-API Omni.';
+    for (const attempt of attempts) {
+        try {
+            const res = await fetch(attempt.url, {
+                method: 'POST',
+                headers: attempt.headers,
+                body: JSON.stringify(attempt.body)
+            });
+
+            const payload = (await res.json().catch(() => ({}))) as {
+                id?: string;
+                _id?: string;
+                messageId?: string;
+                zaapId?: string;
+                error?: string;
+                message?: string;
+            };
+
+            if (res.ok) {
+                return {
+                    ok: true,
+                    provider: 'zapi_omni',
+                    messageId: payload?.messageId || payload?.zaapId || payload?.id || payload?._id
+                };
+            }
+
+            lastError = `${attempt.url} -> HTTP ${res.status}: ${payload?.error || payload?.message || 'erro'}`;
+            console.warn('[WhatsApp Z-API Omni]', lastError);
+        } catch (err) {
+            lastError = err instanceof Error ? err.message : 'Erro de rede Z-API Omni';
+        }
+    }
+
+    return { ok: false, provider: 'zapi_omni', error: lastError };
 }
 
 async function sendViaZApi(cfg: ResolvedWhatsAppConfig, to: string, body: string): Promise<WhatsAppSendResult> {
