@@ -179,7 +179,7 @@
                         <a href="{{ route('password.request') }}" class="gt-forgot">Esqueceu a senha?</a>
                     </div>
 
-                    <button type="submit" class="gt-btn-submit">Continuar</button>
+                    <button type="submit" class="gt-btn-submit">Entrar no portal</button>
                 </form>
             </section>
 
