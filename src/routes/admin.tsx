@@ -13,6 +13,7 @@ import { AdminClientsView } from '../views/admin/clients';
 import { AdminRequestsView } from '../views/admin/requests';
 import { AdminServicesView } from '../views/admin/services';
 import { AdminUsersView } from '../views/admin/users';
+import { sendWhatsAppTextMessage } from '../services/whatsapp';
 import { AdminChatView } from '../views/admin/chat';
 import { AdminProjectsView } from '../views/admin/projects';
 import { AdminFinanceView } from '../views/admin/finance';
@@ -629,6 +630,19 @@ adminRoutes.post('/atendimento/:id/mensagem', async (c) => {
     await db.prepare(
         `UPDATE conversations SET last_message_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`
     ).bind(id).run();
+
+    // Se a conversa for do canal WhatsApp, entrega a resposta humana diretamente no WhatsApp do cliente
+    try {
+        const conv = await db.prepare(
+            `SELECT channel, visitor_phone FROM conversations WHERE id = ?`
+        ).bind(id).first<{ channel?: string; visitor_phone?: string }>();
+
+        if (conv?.channel === 'whatsapp' && conv.visitor_phone) {
+            await sendWhatsAppTextMessage(c.env, conv.visitor_phone, message);
+        }
+    } catch (waErr) {
+        console.warn('[Admin Chat] Falha ao entregar resposta no WhatsApp:', waErr);
+    }
 
     return c.redirect(`/admin/atendimento?id=${id}&success=Mensagem enviada com sucesso`);
 });
@@ -1274,11 +1288,16 @@ adminRoutes.get('/crm-autonomo', async (c) => {
     const qualifyingCount = conversations.filter((x) => x.status !== 'closed' && ['new', 'greeting', 'discovery', 'qualifying', 'qualification'].includes(String(x.crm_stage || ''))).length;
     const handoffCount = conversations.filter((x) => x.status === 'waiting_staff' || x.crm_stage === 'handoff_human').length;
 
+    const hasApiKey = Boolean(settingsMap.crm_ai_api_key || c.env.GEMINI_API_KEY || c.env.OPENAI_API_KEY);
+    const safeSettings = { ...settingsMap };
+    delete safeSettings.crm_ai_api_key;
+
     return c.html(
         <AdminCrmView
             currentUser={user}
             conversations={conversations}
-            settings={settingsMap}
+            settings={safeSettings}
+            hasApiKey={hasApiKey}
             stats={{
                 activeAutopilotCount,
                 qualifyingCount,
@@ -1299,9 +1318,15 @@ adminRoutes.post('/crm-autonomo/configuracoes', async (c) => {
         ['crm_ai_enabled', body.crm_ai_enabled ? '1' : '0'],
         ['crm_ai_auto_draft_quotation', body.crm_ai_auto_draft_quotation ? '1' : '0'],
         ['crm_ai_agent_name', String(body.crm_ai_agent_name || 'Assistente IA GundjaTech').trim()],
-        ['crm_ai_provider', String(body.crm_ai_provider || 'workers_ai').trim()],
+        ['crm_ai_provider', String(body.crm_ai_provider || 'auto').trim()],
+        ['crm_ai_model', String(body.crm_ai_model || 'gemini-2.5-flash').trim()],
         ['crm_ai_system_prompt', String(body.crm_ai_system_prompt || '').trim()]
     ];
+
+    const submittedApiKey = String(body.crm_ai_api_key || '').trim();
+    if (submittedApiKey) {
+        pairs.push(['crm_ai_api_key', submittedApiKey]);
+    }
 
     try {
         for (const [key, value] of pairs) {
@@ -1320,8 +1345,9 @@ adminRoutes.post('/crm-autonomo/testar', async (c) => {
     try {
         const agent = new AutonomousCrmAgent(c.env);
         const testReply = await agent.handleIncomingMessage(0, 'Olá, quero um orçamento para um site institucional.', 'Teste Diretoria');
+        const motorTag = testReply?.provider ? `[${testReply.provider}] ` : '';
         const preview = String(testReply?.message || 'Conexão IA validada!').slice(0, 90);
-        return c.redirect(`/admin/crm-autonomo?success=${encodeURIComponent('Conexão IA OK: ' + preview)}`);
+        return c.redirect(`/admin/crm-autonomo?success=${encodeURIComponent('Conexão IA OK ' + motorTag + preview)}`);
     } catch (err: any) {
         return c.redirect(`/admin/crm-autonomo?error=${encodeURIComponent(err?.message || 'Falha ao testar IA')}`);
     }

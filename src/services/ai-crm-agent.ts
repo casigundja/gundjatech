@@ -6,6 +6,7 @@ export interface ChatMessage {
     sender_name?: string;
     message: string;
     is_ai: boolean;
+    provider?: string;
     created_at?: string;
 }
 
@@ -46,27 +47,36 @@ Suas respostas devem ser corteses, altamente profissionais, persuasivas e sucint
 Seu objetivo é acolher o visitante, diagnosticar o desafio técnico dele e orientá-lo a informar detalhes para envio de proposta técnica formal.`;
 
         let agentName = 'Assistente IA GundjaTech';
+        let configuredProvider = 'auto';
+        let configuredModel = '';
+        let dbApiKey = '';
 
         try {
             if (this.env?.DB) {
                 const cfgRows = await this.env.DB.prepare(
-                    `SELECT key, value FROM system_settings WHERE key IN ('crm_ai_system_prompt', 'crm_ai_agent_name')`
+                    `SELECT key, value FROM system_settings WHERE key IN ('crm_ai_system_prompt', 'crm_ai_agent_name', 'crm_ai_provider', 'crm_ai_model', 'crm_ai_api_key')`
                 ).all<{ key: string; value: string }>();
                 for (const row of cfgRows.results || []) {
-                    if (row.key === 'crm_ai_system_prompt' && row.value?.trim()) {
-                        systemPrompt = row.value.trim();
-                    }
-                    if (row.key === 'crm_ai_agent_name' && row.value?.trim()) {
-                        agentName = row.value.trim();
-                    }
+                    const val = String(row.value || '').trim();
+                    if (!val) continue;
+                    if (row.key === 'crm_ai_system_prompt') systemPrompt = val;
+                    if (row.key === 'crm_ai_agent_name') agentName = val;
+                    if (row.key === 'crm_ai_provider') configuredProvider = val;
+                    if (row.key === 'crm_ai_model') configuredModel = val;
+                    if (row.key === 'crm_ai_api_key') dbApiKey = val;
                 }
             }
         } catch {}
 
-        let reply = '';
+        const geminiKey =
+            (dbApiKey && !dbApiKey.startsWith('sk-') ? dbApiKey : '') ||
+            (this.env?.GEMINI_API_KEY || '').trim();
+        const openaiKey =
+            (dbApiKey && dbApiKey.startsWith('sk-') ? dbApiKey : '') ||
+            (this.env?.OPENAI_API_KEY || '').trim();
 
-        // 2. Provedor Primário: Cloudflare Workers AI no Edge (Llama 3.3 70B FP8 Fast -> Llama 3.1 8B)
-        if (this.env?.AI) {
+        const runWorkersAi = async (): Promise<string> => {
+            if (!this.env?.AI) return '';
             const promptMessages = [
                 { role: 'system', content: systemPrompt },
                 ...history.map((h) => ({
@@ -83,7 +93,6 @@ Seu objetivo é acolher o visitante, diagnosticar o desafio técnico dele e orie
             ];
 
             for (const modelId of candidateModels) {
-                if (reply) break;
                 try {
                     const aiResponse = await this.env.AI.run(modelId as any, {
                         messages: promptMessages,
@@ -91,57 +100,81 @@ Seu objetivo é acolher o visitante, diagnosticar o desafio técnico dele e orie
                     }) as { response?: string };
 
                     if (aiResponse?.response) {
-                        reply = aiResponse.response.trim();
+                        return aiResponse.response.trim();
                     }
                 } catch (err) {
                     console.warn(`Workers AI (${modelId}) falhou, tentando próximo:`, err);
                 }
             }
-        }
+            return '';
+        };
 
-        // 3. Provedor Secundário: Google Gemini API (via HTTP fetch nativo)
-        if (!reply && this.env?.GEMINI_API_KEY) {
-            try {
-                const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.env.GEMINI_API_KEY}`;
-                const geminiPayload = {
-                    contents: [
-                        { role: 'user', parts: [{ text: `${systemPrompt}\n\nHistórico:\n${history.map(h => `${h.sender_type}: ${h.message}`).join('\n')}\n\nCliente: ${visitorMessage}` }] }
-                    ],
-                    generationConfig: { maxOutputTokens: 350 }
-                };
+        const runGemini = async (): Promise<string> => {
+            if (!geminiKey) return '';
+            const preferredModel =
+                configuredModel && !configuredModel.startsWith('@cf/') && !configuredModel.startsWith('gpt-')
+                    ? configuredModel
+                    : 'gemini-2.5-flash';
+            const geminiModels = Array.from(new Set([preferredModel, 'gemini-2.5-flash', 'gemini-2.0-flash']));
+            const historyText = history.map((h) => `${h.sender_type === 'client' ? 'Cliente' : 'Assistente'}: ${h.message}`).join('\n');
 
-                const res = await fetch(geminiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(geminiPayload)
-                });
+            for (const modelName of geminiModels) {
+                try {
+                    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent?key=${encodeURIComponent(geminiKey)}`;
+                    const geminiPayload = {
+                        systemInstruction: { parts: [{ text: systemPrompt }] },
+                        contents: [
+                            {
+                                role: 'user',
+                                parts: [
+                                    {
+                                        text: historyText
+                                            ? `Histórico recente:\n${historyText}\n\nNova mensagem do cliente${visitorName ? ` (${visitorName})` : ''}: ${visitorMessage}`
+                                            : `Mensagem do cliente${visitorName ? ` (${visitorName})` : ''}: ${visitorMessage}`
+                                    }
+                                ]
+                            }
+                        ],
+                        generationConfig: { maxOutputTokens: 350, temperature: 0.5 }
+                    };
 
-                if (res.ok) {
-                    const data = await res.json() as any;
-                    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (text) {
-                        reply = text.trim();
+                    const res = await fetch(geminiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(geminiPayload)
+                    });
+
+                    if (res.ok) {
+                        const data = (await res.json()) as any;
+                        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (text) {
+                            return String(text).trim();
+                        }
+                    } else {
+                        console.warn(`Gemini (${modelName}) retornou HTTP ${res.status}`);
                     }
+                } catch (geminiErr) {
+                    console.warn(`Falha no Gemini (${modelName}):`, geminiErr);
                 }
-            } catch (geminiErr) {
-                console.warn('Falha no fallback Gemini:', geminiErr);
             }
-        }
+            return '';
+        };
 
-        // 4. Provedor Terciário: OpenAI API (via HTTP fetch nativo)
-        if (!reply && this.env?.OPENAI_API_KEY) {
+        const runOpenAi = async (): Promise<string> => {
+            if (!openaiKey) return '';
+            const openaiModel = configuredModel && configuredModel.startsWith('gpt-') ? configuredModel : 'gpt-4o-mini';
             try {
                 const res = await fetch('https://api.openai.com/v1/chat/completions', {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${this.env.OPENAI_API_KEY}`,
+                        Authorization: `Bearer ${openaiKey}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: 'gpt-4o-mini',
+                        model: openaiModel,
                         messages: [
                             { role: 'system', content: systemPrompt },
-                            ...history.map(h => ({
+                            ...history.map((h) => ({
                                 role: h.sender_type === 'client' ? 'user' : 'assistant',
                                 content: h.message
                             })),
@@ -152,26 +185,59 @@ Seu objetivo é acolher o visitante, diagnosticar o desafio técnico dele e orie
                 });
 
                 if (res.ok) {
-                    const data = await res.json() as any;
+                    const data = (await res.json()) as any;
                     const text = data?.choices?.[0]?.message?.content;
                     if (text) {
-                        reply = text.trim();
+                        return String(text).trim();
                     }
                 }
             } catch (openaiErr) {
-                console.warn('Falha no fallback OpenAI:', openaiErr);
+                console.warn('Falha no OpenAI:', openaiErr);
+            }
+            return '';
+        };
+
+        let reply = '';
+        let providerUsed = 'local';
+
+        // 2. Executa cadeia em cascata respeitando o provedor escolhido (com fallback automático)
+        const order: Array<'gemini' | 'workers_ai' | 'openai'> =
+            configuredProvider === 'local'
+                ? []
+                : configuredProvider === 'gemini'
+                ? ['gemini', 'workers_ai', 'openai']
+                : configuredProvider === 'openai'
+                ? ['openai', 'workers_ai', 'gemini']
+                : configuredProvider === 'workers_ai'
+                ? ['workers_ai', 'gemini', 'openai']
+                : geminiKey
+                ? ['gemini', 'workers_ai', 'openai']
+                : ['workers_ai', 'gemini', 'openai'];
+
+        for (const engine of order) {
+            if (reply) break;
+            if (engine === 'gemini') {
+                reply = await runGemini();
+                if (reply) providerUsed = 'gemini';
+            } else if (engine === 'workers_ai') {
+                reply = await runWorkersAi();
+                if (reply) providerUsed = 'workers_ai';
+            } else if (engine === 'openai') {
+                reply = await runOpenAi();
+                if (reply) providerUsed = 'openai';
             }
         }
 
-        // 5. Fallback Quaternário Determinístico Inteligente (garante resposta 100% resiliente)
+        // 5. Fallback Determinístico Inteligente (garante resposta 100% resiliente)
         if (!reply) {
             reply = this.runDeterministicFallback(visitorMessage, visitorName);
+            providerUsed = 'local';
         }
 
-        // 6. Persistência da resposta e atualização de inteligência de CRM no D1
+        // 6. Persistência da resposta e atualização de inteligência de CRM no D1 (ignora conversationId <= 0 de teste)
         let msgId: number | undefined;
         try {
-            if (this.env?.DB) {
+            if (this.env?.DB && conversationId > 0) {
                 const res = await this.env.DB.prepare(
                     `INSERT INTO conversation_messages (conversation_id, sender_type, sender_id, message, is_ai, created_at, updated_at)
                      VALUES (?, 'agent', NULL, ?, 1, datetime('now'), datetime('now'))`
@@ -200,9 +266,10 @@ Seu objetivo é acolher o visitante, diagnosticar o desafio técnico dele e orie
         return {
             id: msgId,
             sender_type: 'agent',
-            sender_name: 'GundjaTech AI',
+            sender_name: agentName || 'GundjaTech AI',
             message: reply,
             is_ai: true,
+            provider: providerUsed,
             created_at: new Date().toISOString()
         };
     }

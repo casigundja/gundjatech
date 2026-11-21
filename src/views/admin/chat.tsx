@@ -104,13 +104,20 @@ export const AdminChatView: FC<AdminChatProps> = ({
                                             {c.visitor_objective || c.visitor_email || 'Visitante no site'}
                                         </div>
 
-                                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; gap: 6px; flex-wrap: wrap;">
                                             <span style="color: #16749A; font-weight: 600;">
                                                 {c.ai_enabled ? '🤖 IA Ativa' : '👤 Humano'}
                                             </span>
-                                            <span class="gt-badge gt-badge-info" style="font-size: 10px;">
-                                                {stageText}
-                                            </span>
+                                            <div style="display: flex; align-items: center; gap: 6px;">
+                                                {c.channel === 'whatsapp' && (
+                                                    <span class="gt-badge gt-badge-success" style="font-size: 10px;">
+                                                        WhatsApp
+                                                    </span>
+                                                )}
+                                                <span class="gt-badge gt-badge-info" style="font-size: 10px;">
+                                                    {stageText}
+                                                </span>
+                                            </div>
                                         </div>
                                     </a>
                                 );

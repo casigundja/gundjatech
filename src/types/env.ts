@@ -19,6 +19,12 @@ export interface Env {
     GEMINI_API_KEY?: string;
     OPENAI_API_KEY?: string;
     APP_URL?: string;
+
+    // Meta WhatsApp Cloud API
+    WHATSAPP_VERIFY_TOKEN?: string;
+    WHATSAPP_ACCESS_TOKEN?: string;
+    WHATSAPP_PHONE_NUMBER_ID?: string;
+    WHATSAPP_API_VERSION?: string;
 }
 
 export type UserRole =

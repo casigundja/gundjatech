@@ -10,6 +10,7 @@ interface AdminCrmProps {
     };
     conversations: any[];
     settings: Record<string, string>;
+    hasApiKey?: boolean;
     stats: {
         activeAutopilotCount: number;
         qualifyingCount: number;
@@ -35,15 +36,24 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
     currentUser,
     conversations = [],
     settings = {},
+    hasApiKey = false,
     stats,
     successMessage,
     errorMessage
 }) => {
     const aiEnabled = settings.crm_ai_enabled !== '0';
     const autoDraft = settings.crm_ai_auto_draft_quotation !== '0';
-    const provider = settings.crm_ai_provider || 'workers_ai';
-    const model = settings.crm_ai_model || '@cf/meta/llama-3.1-8b-instruct';
+    const provider = settings.crm_ai_provider || 'auto';
+    const model = settings.crm_ai_model || 'gemini-2.5-flash';
     const agentName = settings.crm_ai_agent_name || 'Assistente IA GundjaTech';
+    const activeMotorLabel =
+        provider === 'gemini' || (provider === 'auto' && hasApiKey)
+            ? `Google Gemini (${model}) + Fallback Workers AI`
+            : provider === 'openai'
+            ? `OpenAI (${model}) + Fallback Workers AI`
+            : provider === 'local'
+            ? 'Motor Comercial Local'
+            : 'Cloudflare Workers AI (Llama 3.3 70B Edge)';
     const systemPrompt =
         settings.crm_ai_system_prompt ||
         'Você é o Assistente Comercial Sênior da GundjaTech (criação de sites, sistemas web, cibersegurança e operação contínua). Qualifique o lead e monte o pré-orçamento no CRM.';
@@ -59,7 +69,7 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
             {/* Sub-Header */}
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
                 <p class="text-xs sm:text-sm text-[#8C95AA]">
-                    Motor ativo: <strong class="text-[#F2C230]">Cloudflare Workers AI ({model})</strong>
+                    Motor ativo: <strong class="text-[#F2C230]">{activeMotorLabel}</strong>
                     <span class="text-[#5D667B]"> • </span>
                     Status global:{' '}
                     <span class={`font-bold ${aiEnabled ? 'text-[#6EE7B7]' : 'text-red-400'}`}>
@@ -214,12 +224,41 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                         </div>
 
                         <div>
-                            <label class="block text-[11px] font-bold text-[#8C95AA] mb-1">Provedor / Modelo</label>
+                            <label class="block text-[11px] font-bold text-[#8C95AA] mb-1">Motor / Provedor de IA</label>
                             <select name="crm_ai_provider" class="w-full rounded-xl bg-[#0D1322] border border-white/10 px-3 py-2 text-white text-xs">
+                                <option value="auto" selected={provider === 'auto'}>Automático (Gemini se houver chave + Workers AI)</option>
+                                <option value="gemini" selected={provider === 'gemini'}>Google Gemini (Primário + Fallback Workers AI)</option>
                                 <option value="workers_ai" selected={provider === 'workers_ai'}>Cloudflare Workers AI (Edge Nativo)</option>
-                                <option value="gemini" selected={provider === 'gemini'}>Google Gemini</option>
+                                <option value="openai" selected={provider === 'openai'}>OpenAI (Primário + Fallback Workers AI)</option>
                                 <option value="local" selected={provider === 'local'}>Motor Comercial Local</option>
                             </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-[#8C95AA] mb-1">Modelo LLM (Opcional)</label>
+                            <input
+                                type="text"
+                                name="crm_ai_model"
+                                value={model}
+                                placeholder="gemini-2.5-flash"
+                                class="w-full rounded-xl bg-[#0D1322] border border-white/10 px-3 py-2 text-white text-xs font-mono"
+                            />
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-[11px] font-bold text-[#8C95AA]">Chave de API (Gemini ou OpenAI)</label>
+                                {hasApiKey && (
+                                    <span class="text-[10px] font-bold text-[#6EE7B7]">✓ Chave configurada</span>
+                                )}
+                            </div>
+                            <input
+                                type="password"
+                                name="crm_ai_api_key"
+                                autocomplete="off"
+                                placeholder={hasApiKey ? 'Deixe em branco para manter a chave atual' : 'AIza... (Gemini) ou sk-... (OpenAI)'}
+                                class="w-full rounded-xl bg-[#0D1322] border border-white/10 px-3 py-2 text-white text-xs font-mono"
+                            />
                         </div>
 
                         <div>
