@@ -122,6 +122,9 @@ export const PortalQuotationsView: FC<PortalQuotationsProps> = ({
         );
     }
 
+    const pendingCount = quotations.filter((q: any) => q.status === 'sent').length;
+    const approvedCount = quotations.filter((q: any) => q.status === 'approved').length;
+
     return (
         <PortalLayout
             title="Orçamentos Recebidos • Portal do Cliente GundjaTech"
@@ -136,6 +139,39 @@ export const PortalQuotationsView: FC<PortalQuotationsProps> = ({
                     <h1 class="gt-font-display text-xl font-extrabold text-white">Orçamentos e Propostas Comerciais</h1>
                     <p class="text-xs text-[#8C95AA] mt-1">Analise os escopos técnicos e aprove suas propostas com segurança e garantia em contrato.</p>
                 </div>
+                <a href="/portal/solicitacoes/nova" class="gt-btn-primary gt-btn-sm">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                    <span>Solicitar Orçamento</span>
+                </a>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+                    <div class="gtb-card-accent-top gtb-card-accent-blue"></div>
+                    <div>
+                        <div class="text-[10.5px] font-bold uppercase tracking-wider text-[#8C95AA]">Total de Propostas</div>
+                        <div class="text-xl font-extrabold text-white mt-0.5">{quotations.length}</div>
+                    </div>
+                    <span class="gtb-pill-neutral">Recebidas</span>
+                </div>
+
+                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+                    <div class="gtb-card-accent-top gtb-card-accent-gold"></div>
+                    <div>
+                        <div class="text-[10.5px] font-bold uppercase tracking-wider text-[#8C95AA]">Aguardando Aprovação</div>
+                        <div class="text-xl font-extrabold text-[#F2C230] mt-0.5">{pendingCount}</div>
+                    </div>
+                    <span class="gt-badge gt-badge-warning">Pendentes</span>
+                </div>
+
+                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+                    <div class="gtb-card-accent-top gtb-card-accent-emerald"></div>
+                    <div>
+                        <div class="text-[10.5px] font-bold uppercase tracking-wider text-[#8C95AA]">Propostas Aprovadas</div>
+                        <div class="text-xl font-extrabold text-emerald-400 mt-0.5">{approvedCount}</div>
+                    </div>
+                    <span class="gt-badge gt-badge-success">Aprovadas</span>
+                </div>
             </div>
 
             {quotations.length === 0 ? (
@@ -144,7 +180,11 @@ export const PortalQuotationsView: FC<PortalQuotationsProps> = ({
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg>
                     </div>
                     <h3 class="text-sm font-extrabold text-white">Nenhum orçamento disponível no momento.</h3>
-                    <p class="text-xs text-[#8C95AA] mt-1">Assim que nossa equipe enviar uma proposta para o seu projeto, ela aparecerá aqui.</p>
+                    <p class="text-xs text-[#8C95AA] mt-1 mb-5 max-w-md mx-auto">Assim que nossa equipe enviar uma proposta comercial para o seu projeto, ela aparecerá aqui pronta para aprovação digital.</p>
+                    <div class="flex items-center justify-center gap-2.5 flex-wrap">
+                        <a href="/portal/solicitacoes/nova" class="gt-btn-primary gt-btn-sm">+ Solicitar Novo Orçamento</a>
+                        <a href="/portal/atendimento" class="gt-btn-outline gt-btn-sm">Falar com Consultor</a>
+                    </div>
                 </div>
             ) : (
                 <div class="gtb-card !p-0 overflow-hidden">

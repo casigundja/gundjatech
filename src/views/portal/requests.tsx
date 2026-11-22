@@ -51,84 +51,139 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                     </a>
                 </div>
 
-                <div class="gtb-card !p-6 max-w-2xl">
-                    <div class="gtb-card-accent-top gtb-card-accent-gold"></div>
-                    <h1 class="gt-font-display text-lg font-extrabold text-white mb-1">Abrir Nova Solicitação</h1>
-                    <p class="text-xs text-[#8C95AA] mb-5">Conte-nos o que sua empresa precisa (novo recurso, site, campanha ou suporte técnico).</p>
-
-                    <form action="/portal/solicitacoes" method="post" class="space-y-4">
-                        <div>
-                            <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
-                                Categoria do Serviço *
-                            </label>
-                            <select name="service_id" required class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white">
-                                <option value="">Selecione o serviço desejado...</option>
-                                {services.map((s: any) => (
-                                    <option value={s.id}>{s.name}</option>
-                                ))}
-                            </select>
+                <div class="gt-grid-detail items-start">
+                    <div class="gtb-card !p-6">
+                        <div class="gtb-card-accent-top gtb-card-accent-gold"></div>
+                        <div class="flex items-center gap-3 pb-4 mb-5 border-b border-white/10">
+                            <span class="w-10 h-10 rounded-xl bg-[#F2C230]/15 border border-[#F2C230]/35 flex items-center justify-center text-[#F2C230] shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            </span>
+                            <div>
+                                <h1 class="gt-font-display text-lg font-extrabold text-white">Abrir Nova Solicitação</h1>
+                                <p class="text-xs text-[#8C95AA] mt-0.5">Descreva o escopo desejado para receber análise técnica e proposta formal.</p>
+                            </div>
                         </div>
 
-                        <div>
-                            <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
-                                Título do Pedido *
-                            </label>
-                            <input
-                                type="text"
-                                name="title"
-                                required
-                                placeholder="Ex: Criação de Landing Page com foco em captação de leads"
-                                class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white"
-                            />
-                        </div>
-
-                        <div>
-                            <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
-                                Descrição Detalhada *
-                            </label>
-                            <textarea
-                                name="description"
-                                rows={5}
-                                required
-                                placeholder="Explique os objetivos, público-alvo e requisitos essenciais do projeto..."
-                                class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white"
-                            ></textarea>
-                        </div>
-
-                        <div class="gt-grid-2">
+                        <form action="/portal/solicitacoes" method="post" class="space-y-4">
                             <div>
                                 <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
-                                    Orçamento Estimado (R$)
+                                    Categoria do Serviço *
+                                </label>
+                                <select name="service_id" required class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white">
+                                    <option value="">Selecione o serviço desejado...</option>
+                                    {services.map((s: any) => (
+                                        <option value={s.id}>{s.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
+                                    Título do Pedido *
                                 </label>
                                 <input
-                                    type="number"
-                                    step="0.01"
-                                    name="estimated_budget"
-                                    placeholder="Ex: 5000.00"
+                                    type="text"
+                                    name="title"
+                                    required
+                                    placeholder="Ex: Criação de Landing Page com foco em captação de leads"
                                     class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white"
                                 />
                             </div>
 
                             <div>
                                 <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
-                                    Prazo Desejado
+                                    Descrição Detalhada *
                                 </label>
-                                <input
-                                    type="date"
-                                    name="desired_deadline"
+                                <textarea
+                                    name="description"
+                                    rows={5}
+                                    required
+                                    placeholder="Explique os objetivos, público-alvo, integrações e requisitos essenciais do projeto..."
                                     class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white"
-                                />
+                                ></textarea>
+                            </div>
+
+                            <div class="gt-grid-2">
+                                <div>
+                                    <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
+                                        Orçamento Estimado (R$)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        name="estimated_budget"
+                                        placeholder="Ex: 5000.00"
+                                        class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
+                                        Prazo Desejado
+                                    </label>
+                                    <input
+                                        type="date"
+                                        name="desired_deadline"
+                                        class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white"
+                                    />
+                                </div>
+                            </div>
+
+                            <div class="pt-3 border-t border-white/10 flex items-center justify-end gap-2.5 flex-wrap">
+                                <a href="/portal/solicitacoes" class="gt-btn-outline gt-btn-sm">Cancelar</a>
+                                <button type="submit" class="gt-btn-primary gt-btn-sm">
+                                    <span>Enviar Solicitação para Análise</span>
+                                    <span>&rarr;</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="gtb-card !p-5">
+                            <div class="gtb-card-accent-top gtb-card-accent-blue"></div>
+                            <h2 class="text-xs font-extrabold uppercase tracking-wider text-[#F2C230] mb-3.5">Como Funciona</h2>
+                            <div class="space-y-3.5">
+                                <div class="flex items-start gap-3">
+                                    <span class="w-6 h-6 rounded-full bg-[#063B5C] border border-[#16749A]/50 text-[#F2C230] text-[11px] font-extrabold flex items-center justify-center shrink-0">1</span>
+                                    <div>
+                                        <div class="text-xs font-bold text-white">Protocolo &amp; Triagem</div>
+                                        <div class="text-[11px] text-[#8C95AA] mt-0.5">Seu pedido recebe um código único GNDJ e entra na fila de engenharia.</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-3">
+                                    <span class="w-6 h-6 rounded-full bg-[#063B5C] border border-[#16749A]/50 text-[#F2C230] text-[11px] font-extrabold flex items-center justify-center shrink-0">2</span>
+                                    <div>
+                                        <div class="text-xs font-bold text-white">Orçamento Transparente</div>
+                                        <div class="text-[11px] text-[#8C95AA] mt-0.5">Enviamos a proposta detalhada com prazo e investimento para aprovação em 1 clique.</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-3">
+                                    <span class="w-6 h-6 rounded-full bg-[#063B5C] border border-[#16749A]/50 text-[#F2C230] text-[11px] font-extrabold flex items-center justify-center shrink-0">3</span>
+                                    <div>
+                                        <div class="text-xs font-bold text-white">Execução &amp; Entregas</div>
+                                        <div class="text-[11px] text-[#8C95AA] mt-0.5">Acompanhe cada etapa, percentual concluído e arquivos direto pelo Portal.</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="pt-2 flex items-center justify-end gap-2.5">
-                            <a href="/portal/solicitacoes" class="gt-btn-outline gt-btn-sm">Cancelar</a>
-                            <button type="submit" class="gt-btn-primary gt-btn-sm">
-                                <span>Enviar Solicitação para Análise</span>
+                        <div class="gtb-card !p-5">
+                            <div class="flex items-center gap-2.5 mb-2">
+                                <span class="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                                </span>
+                                <div class="text-xs font-extrabold text-white">Precisa de ajuda no escopo?</div>
+                            </div>
+                            <p class="text-[11px] text-[#8C95AA] leading-relaxed mb-3.5">
+                                Fale diretamente com nossa equipe técnica no chat em tempo real antes de enviar.
+                            </p>
+                            <a href="/portal/atendimento" class="gt-btn-outline gt-btn-xs w-full justify-center">
+                                <span>Abrir Chat com Engenharia</span>
                                 <span>&rarr;</span>
-                            </button>
+                            </a>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </PortalLayout>
         );
