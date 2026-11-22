@@ -266,6 +266,7 @@ export const AdminClientsView: FC<AdminClientsProps> = ({
                                     <th class="py-2.5 px-4">Canal / E-mail</th>
                                     <th class="py-2.5 px-4">Telefone</th>
                                     <th class="py-2.5 px-4">Categoria</th>
+                                    <th class="py-2.5 px-4">Portal</th>
                                     <th class="py-2.5 px-4 text-right">Ações</th>
                                 </tr>
                             </thead>
@@ -276,6 +277,7 @@ export const AdminClientsView: FC<AdminClientsProps> = ({
                                     const initials = displayName.slice(0, 2).toUpperCase();
                                     const isSyntheticWa = cat === 'whatsapp';
                                     const isActive = cat === 'active';
+                                    const hasPortal = Boolean(c.portal_user_id || c.user_id);
                                     const searchBlob = `${c.company || ''} ${c.name || ''} ${c.email || ''} ${c.phone || ''}`.toLowerCase();
 
                                     const badgeMeta =
@@ -319,8 +321,34 @@ export const AdminClientsView: FC<AdminClientsProps> = ({
                                             <td class="py-2.5 px-4 whitespace-nowrap">
                                                 <span class={`gt-badge ${badgeMeta.cls}`}>{badgeMeta.label}</span>
                                             </td>
+                                            <td class="py-2.5 px-4 whitespace-nowrap">
+                                                {hasPortal ? (
+                                                    <span class="gt-req-pill-neutral">Portal Ativo</span>
+                                                ) : (
+                                                    <span class="text-[11px] font-semibold text-[#8C95AA]">Sem acesso</span>
+                                                )}
+                                            </td>
                                             <td class="py-2.5 px-4 text-right whitespace-nowrap">
                                                 <div class="inline-flex items-center gap-1.5">
+                                                    <button
+                                                        type="button"
+                                                        onclick={`window.gtOpenPortalModal(${JSON.stringify({
+                                                            id: c.id,
+                                                            name: displayName,
+                                                            email: isSyntheticWa ? '' : (c.email || ''),
+                                                            phone: c.phone || '',
+                                                            isActive,
+                                                            hasPortal,
+                                                        })})`}
+                                                        class={hasPortal ? 'gt-btn-outline gt-btn-xs' : 'gt-btn-petrol gt-btn-xs'}
+                                                        title={hasPortal ? 'Gerar novo link de acesso ao Portal' : 'Ativar acesso ao Portal do Cliente'}
+                                                    >
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                                                        </svg>
+                                                        <span>{hasPortal ? 'Enviar Acesso' : 'Ativar Portal'}</span>
+                                                    </button>
+
                                                     <form action={`/admin/clientes/${c.id}/status`} method="post" class="inline-block m-0">
                                                         <input type="hidden" name="status" value={isActive ? 'lead' : 'active'} />
                                                         <button
@@ -363,12 +391,173 @@ export const AdminClientsView: FC<AdminClientsProps> = ({
                 )}
             </div>
 
+            {/* Modal Ativar / Enviar Acesso ao Portal do Cliente */}
+            <div
+                id="gt-portal-access-modal"
+                class="gt-modal-overlay hidden"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="gt-portal-modal-title"
+                onclick="if(event.target===this)window.gtClosePortalModal()"
+            >
+                <div class="gtb-card gt-modal-card max-w-xl !p-0 overflow-hidden">
+                    <div class="gtb-card-accent-top gtb-card-accent-gold"></div>
+
+                    <div class="flex items-start justify-between gap-4 px-6 pt-5 pb-4 border-b border-white/10">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span
+                                class="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center"
+                                style="background: rgba(22, 116, 154, 0.16); border: 1px solid rgba(22, 116, 154, 0.35); color: #16749A;"
+                                aria-hidden="true"
+                            >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                                </svg>
+                            </span>
+                            <div class="min-w-0">
+                                <h2 id="gt-portal-modal-title" class="gt-font-display text-base font-extrabold text-white">Ativar Acesso ao Portal do Cliente</h2>
+                                <p id="gt-portal-modal-subtitle" class="text-xs text-[#8C95AA] mt-0.5">Gere um link único seguro para o cliente criar sua senha pessoal.</p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onclick="window.gtClosePortalModal()"
+                            class="gtb-icon-btn !w-9 !h-9 rounded-xl shrink-0"
+                            aria-label="Fechar modal"
+                        >
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    {/* Etapa 1: Configuração */}
+                    <form id="gt-portal-access-form" class="p-6 space-y-4">
+                        <input type="hidden" id="gt-pa-client-id" />
+
+                        <div id="gt-pa-error" class="hidden rounded-xl p-3 border border-red-500/30 bg-red-500/10 text-xs font-bold text-red-400"></div>
+
+                        <div class="gt-modal-section space-y-3.5">
+                            <div class="gt-modal-section-title">
+                                <span>Credenciais de Acesso</span>
+                            </div>
+
+                            <div class="gt-grid-2">
+                                <div>
+                                    <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">E-mail de Acesso *</label>
+                                    <input
+                                        type="email"
+                                        id="gt-pa-email"
+                                        required
+                                        placeholder="cliente@empresa.com"
+                                        class="gt-modal-input"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">WhatsApp / Telefone</label>
+                                    <input
+                                        type="text"
+                                        id="gt-pa-phone"
+                                        placeholder="+55 11 99999-9999"
+                                        class="gt-modal-input"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="gt-modal-section space-y-2.5">
+                            <label class="flex items-center justify-between gap-3 cursor-pointer">
+                                <div>
+                                    <div class="text-xs font-bold text-white">Enviar convite automaticamente por E-mail</div>
+                                    <div class="text-[11px] text-[#8C95AA]">Dispara o link de primeiro acesso para o e-mail acima</div>
+                                </div>
+                                <input type="checkbox" id="gt-pa-send-email" checked class="gt-switch" />
+                            </label>
+
+                            <label id="gt-pa-promote-row" class="flex items-center justify-between gap-3 pt-2.5 border-t border-white/10 cursor-pointer">
+                                <div>
+                                    <div class="text-xs font-bold text-white">Promover Lead para Cliente Ativo</div>
+                                    <div class="text-[11px] text-[#8C95AA]">Atualiza a categoria automaticamente ao ativar o portal</div>
+                                </div>
+                                <input type="checkbox" id="gt-pa-promote" checked class="gt-switch" />
+                            </label>
+                        </div>
+
+                        <div class="pt-3 border-t border-white/10 flex items-center justify-end gap-2.5">
+                            <button type="button" onclick="window.gtClosePortalModal()" class="gt-btn-outline gt-btn-sm">Cancelar</button>
+                            <button type="submit" id="gt-pa-submit-btn" class="gt-btn-primary gt-btn-sm">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span>Gerar Acesso Seguro</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    {/* Etapa 2: Entrega Multicanal */}
+                    <div id="gt-portal-access-result" class="hidden p-6 space-y-4">
+                        <div id="gt-pa-result-status" class="gt-modal-section text-xs font-semibold"></div>
+
+                        <div class="gt-modal-section space-y-2">
+                            <div class="gt-modal-section-title">
+                                <span>Link Único de Primeiro Acesso</span>
+                            </div>
+                            <input
+                                type="text"
+                                id="gt-pa-link-output"
+                                readonly
+                                onclick="this.select()"
+                                class="gt-modal-input font-mono text-[11.5px]"
+                            />
+                            <p class="text-[11px] text-[#8C95AA]">O cliente clica neste link, define sua própria senha pessoal e já entra no Portal com segurança.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <a
+                                id="gt-pa-wa-btn"
+                                href="#"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="gt-btn-primary gt-btn-sm justify-center"
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                                <span>Enviar via WhatsApp</span>
+                            </a>
+
+                            <button
+                                type="button"
+                                id="gt-pa-copy-msg-btn"
+                                onclick="window.gtCopyPortalMessage()"
+                                class="gt-btn-petrol gt-btn-sm justify-center"
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                                <span id="gt-pa-copy-msg-lbl">Copiar Mensagem</span>
+                            </button>
+                        </div>
+
+                        <div class="pt-3 border-t border-white/10 flex items-center justify-between gap-2.5">
+                            <button
+                                type="button"
+                                onclick="window.gtCopyPortalLink()"
+                                class="gt-btn-outline gt-btn-xs"
+                            >
+                                <span id="gt-pa-copy-link-lbl">Copiar apenas o link</span>
+                            </button>
+                            <button
+                                type="button"
+                                onclick="window.location.reload()"
+                                class="gt-btn-outline gt-btn-sm"
+                            >
+                                Concluir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <script
                 dangerouslySetInnerHTML={{
                     __html: `
                         (function() {
                             var currentCat = ${JSON.stringify(statusFilter || 'all')};
                             var currentQuery = '';
+                            var lastPortalPayload = null;
 
                             function applyClientFilters() {
                                 var rows = document.querySelectorAll('tr[data-client-row="1"]');
@@ -394,6 +583,130 @@ export const AdminClientsView: FC<AdminClientsProps> = ({
                                 currentQuery = String(val || '').toLowerCase().trim();
                                 applyClientFilters();
                             };
+
+                            window.gtOpenPortalModal = function(data) {
+                                var p = document.getElementById('gt-profile-menu'); if (p) p.classList.add('hidden');
+                                var n = document.getElementById('gt-notif-dropdown'); if (n) n.classList.add('hidden');
+                                var modal = document.getElementById('gt-portal-access-modal');
+                                var form = document.getElementById('gt-portal-access-form');
+                                var result = document.getElementById('gt-portal-access-result');
+                                var err = document.getElementById('gt-pa-error');
+                                if (!modal || !form || !result) return;
+
+                                lastPortalPayload = null;
+                                form.classList.remove('hidden');
+                                result.classList.add('hidden');
+                                if (err) { err.classList.add('hidden'); err.textContent = ''; }
+
+                                document.getElementById('gt-pa-client-id').value = data.id;
+                                document.getElementById('gt-pa-email').value = data.email || '';
+                                document.getElementById('gt-pa-phone').value = data.phone || '';
+                                document.getElementById('gt-pa-send-email').checked = true;
+
+                                var titleEl = document.getElementById('gt-portal-modal-title');
+                                var subEl = document.getElementById('gt-portal-modal-subtitle');
+                                var promoteRow = document.getElementById('gt-pa-promote-row');
+                                var promoteInput = document.getElementById('gt-pa-promote');
+
+                                if (titleEl) titleEl.textContent = data.hasPortal ? 'Enviar Novo Acesso ao Portal' : 'Ativar Acesso ao Portal do Cliente';
+                                if (subEl) subEl.textContent = 'Cliente: ' + (data.name || 'Cadastro') + ' — link seguro de definição de senha.';
+                                if (promoteRow) promoteRow.style.display = data.isActive ? 'none' : '';
+                                if (promoteInput) promoteInput.checked = !data.isActive;
+
+                                modal.classList.remove('hidden');
+                                setTimeout(function() {
+                                    var em = document.getElementById('gt-pa-email');
+                                    if (em && !em.value) em.focus();
+                                }, 50);
+                            };
+
+                            window.gtClosePortalModal = function() {
+                                var modal = document.getElementById('gt-portal-access-modal');
+                                if (modal) modal.classList.add('hidden');
+                            };
+
+                            window.gtCopyPortalMessage = function() {
+                                if (!lastPortalPayload || !lastPortalPayload.whatsapp_message) return;
+                                navigator.clipboard.writeText(lastPortalPayload.whatsapp_message).then(function() {
+                                    var lbl = document.getElementById('gt-pa-copy-msg-lbl');
+                                    if (lbl) { lbl.textContent = 'Mensagem copiada!'; setTimeout(function() { lbl.textContent = 'Copiar Mensagem'; }, 2000); }
+                                });
+                            };
+
+                            window.gtCopyPortalLink = function() {
+                                if (!lastPortalPayload || !lastPortalPayload.activate_url) return;
+                                navigator.clipboard.writeText(lastPortalPayload.activate_url).then(function() {
+                                    var lbl = document.getElementById('gt-pa-copy-link-lbl');
+                                    if (lbl) { lbl.textContent = 'Link copiado!'; setTimeout(function() { lbl.textContent = 'Copiar apenas o link'; }, 2000); }
+                                });
+                            };
+
+                            document.addEventListener('keydown', function(e) {
+                                if (e.key === 'Escape') window.gtClosePortalModal();
+                            });
+
+                            var paForm = document.getElementById('gt-portal-access-form');
+                            if (paForm) {
+                                paForm.addEventListener('submit', function(e) {
+                                    e.preventDefault();
+                                    var clientId = document.getElementById('gt-pa-client-id').value;
+                                    var email = document.getElementById('gt-pa-email').value.trim();
+                                    var phone = document.getElementById('gt-pa-phone').value.trim();
+                                    var sendEmail = document.getElementById('gt-pa-send-email').checked;
+                                    var promote = document.getElementById('gt-pa-promote').checked;
+                                    var btn = document.getElementById('gt-pa-submit-btn');
+                                    var err = document.getElementById('gt-pa-error');
+
+                                    if (err) { err.classList.add('hidden'); err.textContent = ''; }
+                                    if (btn) { btn.disabled = true; btn.querySelector('span').textContent = 'Gerando...'; }
+
+                                    fetch('/admin/clientes/' + encodeURIComponent(clientId) + '/ativar-portal', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                                        body: JSON.stringify({
+                                            email: email,
+                                            phone: phone,
+                                            send_email: sendEmail,
+                                            promote_active: promote
+                                        })
+                                    })
+                                    .then(function(r) { return r.json().then(function(d) { return { status: r.status, data: d }; }); })
+                                    .then(function(res) {
+                                        if (btn) { btn.disabled = false; btn.querySelector('span').textContent = 'Gerar Acesso Seguro'; }
+                                        if (!res.data || !res.data.ok) {
+                                            if (err) {
+                                                err.textContent = (res.data && res.data.error) || 'Não foi possível ativar o acesso.';
+                                                err.classList.remove('hidden');
+                                            }
+                                            return;
+                                        }
+                                        lastPortalPayload = res.data;
+                                        document.getElementById('gt-portal-access-form').classList.add('hidden');
+                                        document.getElementById('gt-portal-access-result').classList.remove('hidden');
+                                        document.getElementById('gt-pa-link-output').value = res.data.activate_url || '';
+                                        document.getElementById('gt-pa-wa-btn').href = res.data.whatsapp_url || '#';
+
+                                        var statusBox = document.getElementById('gt-pa-result-status');
+                                        if (statusBox) {
+                                            var lines = ['Acesso ao Portal ativado para ' + res.data.email + '.'];
+                                            if (res.data.promoted) lines.push('Lead promovido para Cliente Ativo.');
+                                            if (sendEmail) {
+                                                lines.push(res.data.email_sent
+                                                    ? 'Convite enviado por e-mail com sucesso!'
+                                                    : 'E-mail não entregue automaticamente (' + (res.data.email_error || 'verifique o domínio no Resend') + '). Use o botão WhatsApp ou Copiar abaixo.');
+                                            }
+                                            statusBox.textContent = lines.join(' ');
+                                        }
+                                    })
+                                    .catch(function() {
+                                        if (btn) { btn.disabled = false; btn.querySelector('span').textContent = 'Gerar Acesso Seguro'; }
+                                        if (err) {
+                                            err.textContent = 'Erro de conexão ao ativar acesso.';
+                                            err.classList.remove('hidden');
+                                        }
+                                    });
+                                });
+                            }
                         })();
                     `
                 }}

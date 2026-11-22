@@ -170,6 +170,39 @@ export async function sendPasswordResetEmail(env: Env, to: string, name: string,
 }
 
 /**
+ * Convite de Primeiro Acesso / Ativação do Portal do Cliente (Link Único Seguro)
+ */
+export async function sendPortalInviteEmail(
+    env: Env,
+    to: string,
+    name: string,
+    activateUrl: string
+): Promise<EmailResult> {
+    const html = renderEmailTemplate(
+        'Seu acesso ao Portal do Cliente está pronto!',
+        `
+        <p>Olá, <strong>${name}</strong>,</p>
+        <p>Ativamos o seu acesso exclusivo ao <strong>Portal do Cliente GundjaTech</strong>. Por lá você poderá acompanhar solicitações em tempo real, aprovar orçamentos, visualizar o progresso de projetos e falar diretamente com nossa equipe.</p>
+        <div style="background-color: #E7F0F5; border-radius: 8px; padding: 14px 18px; margin: 20px 0; border-left: 4px solid #16749A;">
+            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #16749A;">E-mail de Acesso</div>
+            <div style="font-size: 15px; font-weight: 800; color: #063B5C; margin-top: 2px;">${to}</div>
+        </div>
+        <p>Por segurança, nenhuma senha trafega em texto aberto. Clique no botão abaixo para criar sua senha pessoal e entrar no portal:</p>
+        `,
+        {
+            text: 'Criar Minha Senha e Acessar',
+            url: activateUrl
+        }
+    );
+
+    return await sendEmail(env, {
+        to,
+        subject: 'Seu acesso ao Portal do Cliente • GundjaTech',
+        html
+    });
+}
+
+/**
  * Confirmação de Solicitação de Orçamento para o Cliente
  */
 export async function sendQuoteConfirmationEmail(

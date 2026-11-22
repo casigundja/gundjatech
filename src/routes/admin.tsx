@@ -22,7 +22,7 @@ import { AdminProjectsView } from '../views/admin/projects';
 import { AdminFinanceView } from '../views/admin/finance';
 import { AdminDomainsView } from '../views/admin/domains';
 import { AdminCampaignsView } from '../views/admin/campaigns';
-import { sendInvoiceNoticeEmail, sendProjectStartedEmail, sendProjectCompletedEmail } from '../lib/email';
+import { sendInvoiceNoticeEmail, sendProjectStartedEmail, sendProjectCompletedEmail, sendPortalInviteEmail } from '../lib/email';
 import { recordRequestTimeline } from '../lib/timeline';
 
 export const adminRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
@@ -385,7 +385,12 @@ adminRoutes.get('/clientes', async (c) => {
     const search = (c.req.query('search') || '').trim();
     const statusFilter = (c.req.query('status') || '').trim();
 
-    let query = `SELECT * FROM clients WHERE 1=1`;
+    let query = `
+        SELECT clients.*,
+               (SELECT u.id FROM users u WHERE u.id = clients.user_id OR (clients.email IS NOT NULL AND clients.email != '' AND lower(u.email) = lower(clients.email)) LIMIT 1) AS portal_user_id
+        FROM clients
+        WHERE 1=1
+    `;
     const params: any[] = [];
 
     if (search) {
@@ -478,6 +483,122 @@ adminRoutes.post('/clientes/:id/status', async (c) => {
     }
 
     return c.redirect(`/admin/clientes?success=${encodeURIComponent(nextStatus === 'active' ? 'Cliente promovido para Ativo!' : 'Movido para Lead.')}`);
+});
+
+adminRoutes.post('/clientes/:id/ativar-portal', async (c) => {
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+    const body = await getRequestBody(c);
+
+    if (!id || id <= 0) {
+        return c.json({ ok: false, error: 'Cliente inválido.' }, 400);
+    }
+
+    const client = await db.prepare(`SELECT * FROM clients WHERE id = ?`).bind(id).first<any>();
+    if (!client) {
+        return c.json({ ok: false, error: 'Cliente não encontrado.' }, 404);
+    }
+
+    const inputEmail = String(body.email || '').trim().toLowerCase();
+    const targetEmail = (inputEmail || String(client.email || '').trim().toLowerCase());
+    const inputPhone = String(body.phone || '').trim();
+    const targetPhone = inputPhone || String(client.phone || '').trim();
+    const promoteActive = body.promote_active === true || body.promote_active === '1' || body.promote_active === 'true';
+    const shouldSendEmail = body.send_email !== false && body.send_email !== '0' && body.send_email !== 'false';
+
+    if (!targetEmail || !targetEmail.includes('@') || targetEmail.endsWith('.local')) {
+        return c.json({ ok: false, error: 'Informe um endereço de e-mail válido para ativar o acesso ao Portal.' }, 422);
+    }
+
+    const displayName = String(client.name || client.company || 'Cliente').trim();
+
+    // Atualiza e-mail/telefone/status no cadastro do cliente se necessário
+    const nextStatus = promoteActive ? 'active' : (client.status || 'lead');
+    await db.prepare(
+        `UPDATE clients SET email = ?, phone = ?, status = ?, updated_at = datetime('now') WHERE id = ?`
+    ).bind(targetEmail, targetPhone || null, nextStatus, id).run();
+
+    // Localiza ou cria usuário do Portal do Cliente (role = 'client')
+    let existingUser = await db.prepare(
+        `SELECT id, email, role FROM users WHERE id = ? OR lower(email) = lower(?) LIMIT 1`
+    ).bind(client.user_id || 0, targetEmail).first<{ id: number; email: string; role: string }>();
+
+    let userId: number;
+    if (existingUser) {
+        userId = existingUser.id;
+        await db.prepare(
+            `UPDATE users SET is_active = 1, updated_at = datetime('now') WHERE id = ?`
+        ).bind(userId).run();
+    } else {
+        const randomSecret = `${crypto.randomUUID()}-${crypto.randomUUID()}`;
+        const randomHash = await hashPassword(randomSecret);
+        const ins = await db.prepare(
+            `INSERT INTO users (name, email, password, role, is_active, created_at, updated_at)
+             VALUES (?, ?, ?, 'client', 1, datetime('now'), datetime('now'))`
+        ).bind(displayName, targetEmail, randomHash).run();
+        userId = Number(ins.meta?.last_row_id || 0);
+    }
+
+    if (userId > 0) {
+        await db.prepare(
+            `UPDATE clients SET user_id = ?, updated_at = datetime('now') WHERE id = ?`
+        ).bind(userId, id).run();
+    }
+
+    // Gera token único seguro para definição da senha pessoal (/redefinir-senha/:token)
+    const tokenBytes = new Uint8Array(24);
+    crypto.getRandomValues(tokenBytes);
+    const token = Array.from(tokenBytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+
+    await db.prepare(`DELETE FROM password_reset_tokens WHERE email = ?`).bind(targetEmail).run();
+    await db.prepare(
+        `INSERT INTO password_reset_tokens (email, token, created_at) VALUES (?, ?, datetime('now'))`
+    ).bind(targetEmail, token).run();
+
+    const baseUrl = (c.env.APP_URL || new URL(c.req.url).origin).replace(/\/+$/, '');
+    const activateUrl = `${baseUrl}/redefinir-senha/${token}?email=${encodeURIComponent(targetEmail)}`;
+    const portalUrl = `${baseUrl}/login`;
+
+    let emailSent = false;
+    let emailError: string | null = null;
+    if (shouldSendEmail) {
+        try {
+            const res = await sendPortalInviteEmail(c.env, targetEmail, displayName, activateUrl);
+            emailSent = res.success;
+            emailError = res.error || null;
+        } catch (err: any) {
+            emailError = err?.message || 'Erro ao enviar e-mail';
+        }
+    }
+
+    const whatsappMessage =
+        `Olá, *${displayName}*! 👋\n\n` +
+        `Seu acesso exclusivo ao *Portal do Cliente GundjaTech* já está liberado.\n\n` +
+        `📧 *E-mail:* ${targetEmail}\n` +
+        `🔐 *Link único para criar sua senha e acessar:*\n${activateUrl}\n\n` +
+        `Pelo portal você acompanha suas solicitações, aprova orçamentos e conversa direto com nossa equipe.\n` +
+        `Qualquer dúvida, estamos à disposição!`;
+
+    const phoneDigits = targetPhone.replace(/\D/g, '');
+    const whatsappUrl = phoneDigits
+        ? `https://wa.me/${phoneDigits}?text=${encodeURIComponent(whatsappMessage)}`
+        : `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`;
+
+    return c.json({
+        ok: true,
+        client_id: id,
+        user_id: userId,
+        name: displayName,
+        email: targetEmail,
+        phone: targetPhone,
+        promoted: promoteActive && client.status !== 'active',
+        activate_url: activateUrl,
+        portal_url: portalUrl,
+        whatsapp_url: whatsappUrl,
+        whatsapp_message: whatsappMessage,
+        email_sent: emailSent,
+        email_error: emailError,
+    });
 });
 
 adminRoutes.post('/clientes/:id/excluir', async (c) => {
