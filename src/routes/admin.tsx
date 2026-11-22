@@ -589,7 +589,7 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
         return c.redirect(`/admin/solicitacoes/${id}?error=Status inválido`);
     }
 
-    const current = await db.prepare(`SELECT status FROM service_requests WHERE id = ?`).bind(id).first<{ status: string }>();
+    const current = await db.prepare(`SELECT id, status, name, company, email, title, service_title FROM service_requests WHERE id = ?`).bind(id).first<any>();
     if (!current) {
         return c.redirect('/admin/solicitacoes?error=Solicitação não encontrada');
     }
@@ -602,6 +602,23 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
         `INSERT INTO service_request_history (service_request_id, user_id, action, from_status, to_status, notes, created_at)
          VALUES (?, ?, 'status_change', ?, ?, ?, datetime('now'))`
     ).bind(id, user.id, current.status, newStatus, notes).run();
+
+    if (newStatus === 'completed' && current.status !== 'completed' && current.email) {
+        try {
+            const mailRes = await sendProjectCompletedEmail(
+                c.env,
+                String(current.email).trim(),
+                String(current.company || current.name || 'Cliente').trim(),
+                {
+                    title: String(current.service_title || current.title || 'Projeto GundjaTech')
+                }
+            );
+            if (!mailRes.success) {
+                return c.redirect(`/admin/solicitacoes/${id}?error=${encodeURIComponent('Status concluído, mas o e-mail não pôde ser entregue (Resend em modo teste só envia para gundjatech@gmail.com até verificar um domínio próprio).')}`);
+            }
+            return c.redirect(`/admin/solicitacoes/${id}?success=${encodeURIComponent('Status concluído e cliente notificado por e-mail!')}`);
+        } catch {}
+    }
 
     return c.redirect(`/admin/solicitacoes/${id}?success=Status atualizado com sucesso`);
 });
@@ -704,11 +721,14 @@ adminRoutes.post('/solicitacoes/:id/converter', async (c) => {
             }
         }
         if (recipientEmail) {
-            await sendProjectStartedEmail(c.env, recipientEmail, recipientName, {
+            const mailRes = await sendProjectStartedEmail(c.env, recipientEmail, recipientName, {
                 id: newProjectId,
                 title: projectName,
                 protocol: req.protocol || null
             });
+            if (!mailRes.success) {
+                return c.redirect(`/admin/solicitacoes/${id}?error=${encodeURIComponent('Convertido em Projeto, mas o Resend bloqueou envio externo (sem domínio verificado, só entrega para gundjatech@gmail.com).')}`);
+            }
         }
     } catch {}
 
