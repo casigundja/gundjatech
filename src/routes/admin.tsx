@@ -102,7 +102,13 @@ adminRoutes.get('/clientes', async (c) => {
         params.push(s, s, s, s);
     }
 
-    if (statusFilter) {
+    if (statusFilter === 'active') {
+        query += ` AND status = 'active'`;
+    } else if (statusFilter === 'lead') {
+        query += ` AND status != 'active' AND (email IS NULL OR email NOT LIKE '%.local')`;
+    } else if (statusFilter === 'whatsapp') {
+        query += ` AND status != 'active' AND email LIKE '%.local'`;
+    } else if (statusFilter) {
         query += ` AND status = ?`;
         params.push(statusFilter);
     }
@@ -169,9 +175,32 @@ adminRoutes.post('/clientes', async (c) => {
     }
 });
 
+adminRoutes.post('/clientes/:id/status', async (c) => {
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+    const body = await getRequestBody(c);
+    const nextStatus = String(body.status || 'active').trim() === 'active' ? 'active' : 'lead';
+
+    if (id > 0) {
+        await db.prepare(`UPDATE clients SET status = ?, updated_at = datetime('now') WHERE id = ?`).bind(nextStatus, id).run();
+    }
+
+    return c.redirect(`/admin/clientes?success=${encodeURIComponent(nextStatus === 'active' ? 'Cliente promovido para Ativo!' : 'Movido para Lead.')}`);
+});
+
 adminRoutes.post('/clientes/:id/excluir', async (c) => {
     const db = c.env.DB;
     const id = c.req.param('id');
+
+    try {
+        await db.prepare(`UPDATE conversations SET client_id = NULL WHERE client_id = ?`).bind(id).run();
+        await db.prepare(`UPDATE service_requests SET client_id = NULL WHERE client_id = ?`).bind(id).run();
+        await db.prepare(`DELETE FROM quotations WHERE client_id = ?`).bind(id).run();
+        await db.prepare(`DELETE FROM advertising_campaigns WHERE client_id = ?`).bind(id).run();
+        await db.prepare(`DELETE FROM financial_transactions WHERE client_id = ?`).bind(id).run();
+        await db.prepare(`DELETE FROM domains WHERE client_id = ?`).bind(id).run();
+        await db.prepare(`DELETE FROM projects WHERE client_id = ?`).bind(id).run();
+    } catch {}
 
     await db.prepare(`DELETE FROM clients WHERE id = ?`).bind(id).run();
     return c.redirect('/admin/clientes?success=Cliente removido com sucesso');
