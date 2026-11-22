@@ -3006,6 +3006,54 @@ html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-danger {
     margin-bottom: 14px;
 }
 
+/* Numbered Step Timeline & Badges (Fixed Square Dimensions, High Contrast) */
+.gt-step-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+}
+
+.gt-step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    position: relative;
+}
+
+.gt-step-item:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 14px;
+    top: 34px;
+    bottom: -14px;
+    width: 2px;
+    background: linear-gradient(180deg, rgba(22, 116, 154, 0.45) 0%, rgba(22, 116, 154, 0.12) 100%);
+    border-radius: 99px;
+}
+
+.gt-step-badge {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #063B5C 0%, #16749A 100%) !important;
+    border: 1px solid rgba(242, 194, 48, 0.45);
+    color: #F2C230 !important;
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    line-height: 1;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 6px 14px -4px rgba(6, 59, 92, 0.35);
+    position: relative;
+    z-index: 1;
+}
+
+
 
 
 

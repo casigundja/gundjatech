@@ -146,24 +146,24 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                                 <h2 class="text-xs font-extrabold uppercase tracking-wider text-[#16749A]">Fluxo de Atendimento</h2>
                                 <span class="text-[10.5px] font-bold text-[#8C95AA]">3 etapas</span>
                             </div>
-                            <div class="space-y-4">
-                                <div class="flex items-start gap-3">
-                                    <span class="w-7 h-7 rounded-lg bg-[#063B5C] border border-[#16749A]/50 text-[#F2C230] text-xs font-extrabold flex items-center justify-center shrink-0">1</span>
-                                    <div>
+                            <div class="gt-step-list">
+                                <div class="gt-step-item">
+                                    <span class="gt-step-badge">1</span>
+                                    <div class="min-w-0">
                                         <div class="text-xs font-extrabold text-white">Protocolo &amp; Triagem</div>
                                         <div class="text-[11px] text-[#8C95AA] mt-0.5 leading-relaxed">Seu pedido recebe um código único GNDJ e entra na fila prioritária de engenharia.</div>
                                     </div>
                                 </div>
-                                <div class="flex items-start gap-3">
-                                    <span class="w-7 h-7 rounded-lg bg-[#063B5C] border border-[#16749A]/50 text-[#F2C230] text-xs font-extrabold flex items-center justify-center shrink-0">2</span>
-                                    <div>
+                                <div class="gt-step-item">
+                                    <span class="gt-step-badge">2</span>
+                                    <div class="min-w-0">
                                         <div class="text-xs font-extrabold text-white">Orçamento Transparente</div>
                                         <div class="text-[11px] text-[#8C95AA] mt-0.5 leading-relaxed">Enviamos a proposta detalhada com escopo, prazo e valor para aprovação em 1 clique.</div>
                                     </div>
                                 </div>
-                                <div class="flex items-start gap-3">
-                                    <span class="w-7 h-7 rounded-lg bg-[#063B5C] border border-[#16749A]/50 text-[#F2C230] text-xs font-extrabold flex items-center justify-center shrink-0">3</span>
-                                    <div>
+                                <div class="gt-step-item">
+                                    <span class="gt-step-badge">3</span>
+                                    <div class="min-w-0">
                                         <div class="text-xs font-extrabold text-white">Execução &amp; Entregas</div>
                                         <div class="text-[11px] text-[#8C95AA] mt-0.5 leading-relaxed">Acompanhe cada etapa, percentual concluído e arquivos direto pelo Portal.</div>
                                     </div>

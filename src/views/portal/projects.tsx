@@ -77,9 +77,9 @@ export const PortalProjectsView: FC<PortalProjectsProps> = ({
                             <div class="space-y-3">
                                 {stages.map((st: any, idx: number) => (
                                     <div class="flex items-start gap-3.5 p-3.5 rounded-xl bg-[#032033]/40 border border-white/10">
-                                        <div class="w-7 h-7 rounded-full bg-[#063B5C] border border-[#16749A]/40 text-[#F2C230] font-extrabold text-xs flex items-center justify-center shrink-0">
+                                        <span class="gt-step-badge">
                                             {idx + 1}
-                                        </div>
+                                        </span>
                                         <div class="flex-1 min-w-0">
                                             <div class="flex items-center justify-between gap-2 flex-wrap">
                                                 <strong class="text-xs font-extrabold text-white">{st.title}</strong>
