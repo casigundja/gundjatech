@@ -431,7 +431,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                     class="flex items-center gap-3 cursor-pointer text-right"
                                 >
                                     <div class="hidden sm:block leading-tight">
-                                        <div class="text-xs font-bold text-white">{currentUser.name} ({currentUser.role})</div>
+                                        <div class="text-xs font-bold text-white">{currentUser.name}</div>
                                         <div class="text-[10.5px] text-[#8C95AA]">{currentUser.email}</div>
                                     </div>
                                     <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#F2C230] to-[#16749A] p-0.5 shadow-md shrink-0">
