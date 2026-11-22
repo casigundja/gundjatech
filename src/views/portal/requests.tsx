@@ -213,12 +213,30 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                     <div class="gtb-card-accent-top gtb-card-accent-gold"></div>
                     <div class="flex items-start justify-between gap-4 flex-wrap mb-4">
                         <div>
-                            <span class="gt-badge gt-badge-warning mb-2">{reqStatusLabel[requestDetail.status] || requestDetail.status}</span>
-                            <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white">{requestDetail.service_title}</h1>
+                            <span class={`gt-badge ${requestDetail.status === 'approved' || requestDetail.status === 'completed' ? 'gt-badge-success' : 'gt-badge-warning'} mb-2`}>
+                                {reqStatusLabel[requestDetail.status] || requestDetail.status}
+                            </span>
+                            <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white">{requestDetail.service_title || requestDetail.title}</h1>
                             <div class="text-xs text-[#8C95AA] mt-1">
                                 Protocolo: <strong class="text-white font-mono">{requestDetail.protocol}</strong> • Aberta em: {requestDetail.created_at}
                             </div>
                         </div>
+
+                        {requestDetail.status === 'quotation_sent' && (
+                            <div class="flex items-center gap-2.5 flex-wrap">
+                                <form action={`/portal/solicitacoes/${requestDetail.id}/recusar`} method="post" class="m-0">
+                                    <button type="submit" class="gt-btn-danger-ghost gt-btn-sm">
+                                        <span>Solicitar Revisão</span>
+                                    </button>
+                                </form>
+                                <form action={`/portal/solicitacoes/${requestDetail.id}/aprovar`} method="post" class="m-0">
+                                    <button type="submit" class="gt-btn-primary gt-btn-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        <span>Aprovar Orçamento</span>
+                                    </button>
+                                </form>
+                            </div>
+                        )}
                     </div>
 
                     <div class="text-xs text-[#8C95AA] leading-relaxed whitespace-pre-wrap p-4 rounded-xl bg-[#032033]/40 border border-white/10 mb-6">

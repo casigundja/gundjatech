@@ -589,7 +589,7 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
         return c.redirect(`/admin/solicitacoes/${id}?error=Status inválido`);
     }
 
-    const current = await db.prepare(`SELECT id, status, name, company, email, title, service_title FROM service_requests WHERE id = ?`).bind(id).first<any>();
+    const current = await db.prepare(`SELECT id, status, client_id, name, company, email, phone, title, service_title, description, estimated_budget, protocol FROM service_requests WHERE id = ?`).bind(id).first<any>();
     if (!current) {
         return c.redirect('/admin/solicitacoes?error=Solicitação não encontrada');
     }
@@ -602,6 +602,53 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
         `INSERT INTO service_request_history (service_request_id, user_id, action, from_status, to_status, notes, created_at)
          VALUES (?, ?, 'status_change', ?, ?, ?, datetime('now'))`
     ).bind(id, user.id, current.status, newStatus, notes).run();
+
+    // Quando marcado como "Orçamento Enviado", garante que o orçamento chegue ao Portal do Cliente
+    if (newStatus === 'quotation_sent') {
+        try {
+            let clientId = current.client_id;
+            if (!clientId && current.email) {
+                const existingClient = await db.prepare(`SELECT id FROM clients WHERE lower(email) = lower(?)`).bind(current.email).first<{ id: number }>();
+                if (existingClient) {
+                    clientId = existingClient.id;
+                } else {
+                    const insClient = await db.prepare(
+                        `INSERT INTO clients (name, company, email, phone, status, is_active, created_at, updated_at)
+                         VALUES (?, ?, ?, ?, 'lead', 1, datetime('now'), datetime('now'))`
+                    ).bind(current.name || 'Cliente', current.company || null, current.email, current.phone || null).run();
+                    clientId = Number(insClient.meta?.last_row_id || 0) || null;
+                }
+                if (clientId) {
+                    await db.prepare(`UPDATE service_requests SET client_id = ? WHERE id = ?`).bind(clientId, id).run();
+                }
+            }
+
+            if (clientId) {
+                const existingQuote = await db.prepare(
+                    `SELECT id, status FROM quotations WHERE service_request_id = ? ORDER BY id DESC LIMIT 1`
+                ).bind(id).first<{ id: number; status: string }>();
+
+                if (!existingQuote) {
+                    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+                    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                    const refCode = `ORC-${dateStr}-${rand}`;
+                    const amount = Number(current.estimated_budget || 0);
+                    const qTitle = String(current.service_title || current.title || `Proposta • ${current.protocol || id}`).trim();
+                    const qNotes = notes || String(current.description || '').trim() || null;
+
+                    await db.prepare(
+                        `INSERT INTO quotations (reference_code, client_id, service_request_id, title, total_amount, discount_amount, final_amount, status, notes, created_at, updated_at)
+                         VALUES (?, ?, ?, ?, ?, 0, ?, 'sent', ?, datetime('now'), datetime('now'))`
+                    ).bind(refCode, clientId, id, qTitle, amount, amount, qNotes).run();
+                } else if (existingQuote.status === 'draft') {
+                    await db.prepare(
+                        `UPDATE quotations SET status = 'sent', updated_at = datetime('now') WHERE id = ?`
+                    ).bind(existingQuote.id).run();
+                }
+            }
+        } catch {}
+        return c.redirect(`/admin/solicitacoes/${id}?success=${encodeURIComponent('Orçamento enviado e disponibilizado no Portal do Cliente para aprovação!')}`);
+    }
 
     if (newStatus === 'completed' && current.status !== 'completed' && current.email) {
         try {

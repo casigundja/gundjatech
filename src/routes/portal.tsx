@@ -215,17 +215,28 @@ portalRoutes.post('/orcamentos/:id/aprovar', async (c) => {
             'UPDATE service_requests SET status = "approved", updated_at = datetime("now") WHERE id = ?'
         ).bind(quote.service_request_id).run();
 
-        await db.prepare(
-            `INSERT INTO request_status_histories (service_request_id, old_status, new_status, comment, user_id, created_at, updated_at)
-             VALUES (?, 'quotation_sent', 'approved', 'Orçamento aprovado pelo cliente via Portal do Cliente!', ?, datetime('now'), datetime('now'))`
-        ).bind(quote.service_request_id, user.id).run();
+        try {
+            await db.prepare(
+                `INSERT INTO request_status_histories (service_request_id, old_status, new_status, comment, user_id, created_at, updated_at)
+                 VALUES (?, 'quotation_sent', 'approved', 'Orçamento aprovado pelo cliente via Portal do Cliente!', ?, datetime('now'), datetime('now'))`
+            ).bind(quote.service_request_id, user.id).run();
+        } catch {}
+
+        try {
+            await db.prepare(
+                `INSERT INTO service_request_history (service_request_id, user_id, action, from_status, to_status, notes, created_at)
+                 VALUES (?, ?, 'client_approved', 'quotation_sent', 'approved', 'Orçamento aprovado pelo cliente via Portal do Cliente', datetime('now'))`
+            ).bind(quote.service_request_id, user.id).run();
+        } catch {}
     }
 
     // Registra log de auditoria
-    await db.prepare(
-        `INSERT INTO activity_logs (user_id, action, subject_type, subject_id, details, created_at, updated_at)
-         VALUES (?, 'portal.quotation_approved', 'Quotation', ?, ?, datetime('now'), datetime('now'))`
-    ).bind(user.id, quoteId, JSON.stringify({ reference: quote.reference_code })).run();
+    try {
+        await db.prepare(
+            `INSERT INTO activity_logs (user_id, action, subject_type, subject_id, details, created_at, updated_at)
+             VALUES (?, 'portal.quotation_approved', 'Quotation', ?, ?, datetime('now'), datetime('now'))`
+        ).bind(user.id, quoteId, JSON.stringify({ reference: quote.reference_code })).run();
+    } catch {}
 
     return c.redirect('/portal/orcamentos?success=Or%C3%A7amento+aprovado+com+sucesso!+Nossa+equipe+iniciar%C3%A1+o+projeto.');
 });
@@ -245,6 +256,19 @@ portalRoutes.post('/orcamentos/:id/recusar', async (c) => {
     await db.prepare(
         'UPDATE quotations SET status = "rejected", updated_at = datetime("now") WHERE id = ?'
     ).bind(quoteId).run();
+
+    if (quote.service_request_id) {
+        await db.prepare(
+            'UPDATE service_requests SET status = "analyzing", updated_at = datetime("now") WHERE id = ?'
+        ).bind(quote.service_request_id).run();
+
+        try {
+            await db.prepare(
+                `INSERT INTO service_request_history (service_request_id, user_id, action, from_status, to_status, notes, created_at)
+                 VALUES (?, ?, 'client_rejected', 'quotation_sent', 'analyzing', 'Proposta recusada pelo cliente via Portal — aguardando revisão', datetime('now'))`
+            ).bind(quote.service_request_id, user.id).run();
+        } catch {}
+    }
 
     return c.redirect('/portal/orcamentos?success=Proposta+recusada.+Nossa+equipe+entrar%C3%A1+em+contato+para+reajuste.');
 });
@@ -362,6 +386,77 @@ portalRoutes.get('/solicitacoes/:id', async (c) => {
             errorMessage={c.req.query('error')}
         />
     );
+});
+
+portalRoutes.post('/solicitacoes/:id/aprovar', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+    const reqId = Number(c.req.param('id'));
+
+    const request = (await db.prepare(
+        'SELECT * FROM service_requests WHERE id = ? AND client_id = ?'
+    ).bind(reqId, client.id).first()) as any;
+
+    if (!request || request.status !== 'quotation_sent') {
+        return c.redirect(`/portal/solicitacoes/${reqId}?error=Solicita%C3%A7%C3%A3o+n%C3%A3o+est%C3%A1+aguardando+aprova%C3%A7%C3%A3o.`);
+    }
+
+    await db.prepare(
+        'UPDATE service_requests SET status = "approved", updated_at = datetime("now") WHERE id = ?'
+    ).bind(reqId).run();
+
+    try {
+        await db.prepare(
+            'UPDATE quotations SET status = "approved", updated_at = datetime("now") WHERE service_request_id = ? AND status = "sent"'
+        ).bind(reqId).run();
+    } catch {}
+
+    try {
+        await db.prepare(
+            `INSERT INTO request_status_histories (service_request_id, old_status, new_status, comment, user_id, created_at, updated_at)
+             VALUES (?, 'quotation_sent', 'approved', 'Orçamento aprovado pelo cliente via Portal do Cliente!', ?, datetime('now'), datetime('now'))`
+        ).bind(reqId, user.id).run();
+    } catch {}
+
+    try {
+        await db.prepare(
+            `INSERT INTO service_request_history (service_request_id, user_id, action, from_status, to_status, notes, created_at)
+             VALUES (?, ?, 'client_approved', 'quotation_sent', 'approved', 'Orçamento aprovado pelo cliente via Portal do Cliente', datetime('now'))`
+        ).bind(reqId, user.id).run();
+    } catch {}
+
+    return c.redirect(`/portal/solicitacoes/${reqId}?success=Or%C3%A7amento+aprovado+com+sucesso!+Status+atualizado+para+Aprovado+pelo+Cliente.`);
+});
+
+portalRoutes.post('/solicitacoes/:id/recusar', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+    const reqId = Number(c.req.param('id'));
+
+    const request = (await db.prepare(
+        'SELECT * FROM service_requests WHERE id = ? AND client_id = ?'
+    ).bind(reqId, client.id).first()) as any;
+
+    if (!request || request.status !== 'quotation_sent') {
+        return c.redirect(`/portal/solicitacoes/${reqId}?error=Solicita%C3%A7%C3%A3o+n%C3%A3o+est%C3%A1+aguardando+aprova%C3%A7%C3%A3o.`);
+    }
+
+    await db.prepare(
+        'UPDATE service_requests SET status = "analyzing", updated_at = datetime("now") WHERE id = ?'
+    ).bind(reqId).run();
+
+    try {
+        await db.prepare(
+            'UPDATE quotations SET status = "rejected", updated_at = datetime("now") WHERE service_request_id = ? AND status = "sent"'
+        ).bind(reqId).run();
+    } catch {}
+
+    try {
+        await db.prepare(
+            `INSERT INTO service_request_history (service_request_id, user_id, action, from_status, to_status, notes, created_at)
+             VALUES (?, ?, 'client_rejected', 'quotation_sent', 'analyzing', 'Cliente solicitou revisão do orçamento via Portal', datetime('now'))`
+        ).bind(reqId, user.id).run();
+    } catch {}
+
+    return c.redirect(`/portal/solicitacoes/${reqId}?success=Solicita%C3%A7%C3%A3o+de+revis%C3%A3o+enviada+para+nossa+equipe.`);
 });
 
 // 5. Domínios
