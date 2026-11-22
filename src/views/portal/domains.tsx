@@ -25,43 +25,54 @@ export const PortalDomainsView: FC<PortalDomainsProps> = ({
             successMessage={successMessage}
             errorMessage={errorMessage}
         >
-            <div style="margin-bottom: 24px;">
-                <h1 style="font-size: 20px; font-weight: 800; color: #063B5C;">Gestão de Domínios & DNS Blindado</h1>
-                <p style="font-size: 13px; color: #527287; margin-top: 4px;">Monitore o vencimento dos seus domínios, certificados SSL corporativos e zonas DNS.</p>
+            <div class="gt-page-header">
+                <div>
+                    <h1 class="gt-font-display text-xl font-extrabold text-white">Gestão de Domínios &amp; DNS Blindado</h1>
+                    <p class="text-xs text-[#8C95AA] mt-1">Monitore o vencimento dos seus domínios, certificados SSL corporativos e zonas DNS.</p>
+                </div>
             </div>
 
             {domains.length === 0 ? (
-                <div class="gt-card" style="padding: 48px; text-align: center;">
-                    <div style="font-size: 32px; margin-bottom: 12px;">🌐</div>
-                    <h3 style="font-size: 16px; font-weight: 800; color: #063B5C;">Nenhum domínio registrado ou delegado.</h3>
-                    <p style="font-size: 13px; color: #527287; margin-top: 8px;">Caso sua empresa tenha adquirido um domínio conosco, solicite a vinculação pelo suporte.</p>
+                <div class="gtb-card !p-10 text-center">
+                    <div class="w-12 h-12 rounded-2xl bg-[#16749A]/15 border border-[#16749A]/30 flex items-center justify-center text-[#16749A] mx-auto mb-3">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+                    </div>
+                    <h3 class="text-sm font-extrabold text-white">Nenhum domínio registrado ou delegado.</h3>
+                    <p class="text-xs text-[#8C95AA] mt-1">Caso sua empresa tenha adquirido um domínio conosco, solicite a vinculação pelo suporte.</p>
                 </div>
             ) : (
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+                <div class="gt-cards-grid">
                     {domains.map((d: any) => (
-                        <div class="gt-card" style="padding: 24px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                <span class="gt-badge gt-badge-success">{d.status}</span>
-                                <span style="font-size: 11px; color: #8CAAB9;">SSL Ativo</span>
+                        <div class="gtb-card !p-5 flex flex-col justify-between">
+                            <div class="gtb-card-accent-top gtb-card-accent-emerald"></div>
+                            <div>
+                                <div class="flex items-center justify-between gap-2 mb-3">
+                                    <span class="gt-badge gt-badge-success">{d.status === 'active' ? 'Ativo' : d.status}</span>
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                        <span>SSL Ativo</span>
+                                    </span>
+                                </div>
+
+                                <h3 class="text-base font-extrabold text-white mb-1">{d.domain_name}</h3>
+                                <div class="text-xs text-[#8C95AA] mb-4">Registrar: {d.registrar || 'GundjaTech Cloud DNS'}</div>
+
+                                <div class="p-3.5 rounded-xl bg-[#032033]/40 border border-white/10 text-xs space-y-1.5 mb-4">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[#8C95AA]">Expiração:</span>
+                                        <strong class="text-white">{d.expires_at || 'Em monitoramento'}</strong>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[#8C95AA]">Renovação automática:</span>
+                                        <span class="font-bold text-white">{d.auto_renew ? 'Ativada' : 'Manual'}</span>
+                                    </div>
+                                </div>
                             </div>
 
-                            <h3 style="font-size: 18px; font-weight: 800; color: #063B5C; margin-bottom: 4px;">{d.domain_name}</h3>
-                            <div style="font-size: 12px; color: #527287; margin-bottom: 16px;">Registrar: {d.registrar || 'GundjaTech Cloud DNS'}</div>
-
-                            <div style="padding: 12px; background: #F8FAFC; border-radius: 8px; border: 1px solid var(--gt-border); font-size: 12px; color: #063B5C; margin-bottom: 18px;">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                                    <span style="color: #67879C;">Expiração:</span>
-                                    <strong>{d.expires_at || 'Em monitoramento'}</strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #67879C;">Renovação automática:</span>
-                                    <span>{d.auto_renew ? 'Ativada' : 'Manual'}</span>
-                                </div>
-                            </div>
-
-                            <form action={`/portal/dominios/${d.id}/renovacao`} method="post">
-                                <button type="submit" class="gt-btn-outline" style="width: 100%; justify-content: center; font-size: 12px;">
-                                    Solicitar Renovação Anual &rarr;
+                            <form action={`/portal/dominios/${d.id}/renovacao`} method="post" class="m-0">
+                                <button type="submit" class="gt-btn-outline gt-btn-sm w-full justify-center">
+                                    <span>Solicitar Renovação Anual</span>
+                                    <span>&rarr;</span>
                                 </button>
                             </form>
                         </div>

@@ -2682,6 +2682,44 @@ html[data-admin-theme="light"] .gt-confirm-actions {
     gap: 6px !important;
 }
 
+/* ==========================================================================
+   MOBILE & TABLET RESPONSIVENESS GUARANTEES (PORTAL + ADMIN)
+   ========================================================================== */
+@media (max-width: 1023px) {
+    aside.gtb-sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        z-index: 90 !important;
+        height: 100dvh !important;
+        max-width: 84vw !important;
+    }
+}
+
+@media (max-width: 639px) {
+    .gt-page-header .flex {
+        width: 100%;
+    }
+
+    .gt-page-header .flex > a,
+    .gt-page-header .flex > button {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+
+    .gtb-topbar {
+        padding: 0 12px !important;
+        gap: 8px !important;
+    }
+
+    .gtb-topbar-left h1 {
+        font-size: 14px !important;
+        max-width: 140px;
+    }
+}
+
+
 
 
 

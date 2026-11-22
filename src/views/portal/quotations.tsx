@@ -32,59 +32,66 @@ export const PortalQuotationsView: FC<PortalQuotationsProps> = ({
                 successMessage={successMessage}
                 errorMessage={errorMessage}
             >
-                <div style="margin-bottom: 20px;">
-                    <a href="/portal/orcamentos" style="font-size: 13px; font-weight: 700; color: #16749A; text-decoration: none;">&larr; Voltar para Orçamentos</a>
+                <div class="gt-detail-toolbar">
+                    <a href="/portal/orcamentos" class="gt-back-link">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        <span>Voltar para Orçamentos</span>
+                    </a>
                 </div>
 
-                <div class="gt-card" style="padding: 32px; margin-bottom: 24px;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--gt-border); padding-bottom: 20px; margin-bottom: 24px;">
-                        <div>
-                            <span class={`gt-badge ${quotationDetail.status === 'approved' ? 'gt-badge-success' : quotationDetail.status === 'rejected' ? 'gt-badge-danger' : 'gt-badge-warning'}`} style="margin-bottom: 8px;">
+                <div class="gtb-card !p-6">
+                    <div class="gtb-card-accent-top gtb-card-accent-gold"></div>
+                    <div class="flex items-start justify-between gap-4 flex-wrap pb-5 mb-5 border-b border-white/10">
+                        <div class="min-w-0">
+                            <span class={`gt-badge ${quotationDetail.status === 'approved' ? 'gt-badge-success' : quotationDetail.status === 'rejected' ? 'gt-badge-danger' : 'gt-badge-warning'} mb-2`}>
                                 {quotationDetail.status === 'approved' ? 'Aprovado' : quotationDetail.status === 'rejected' ? 'Recusado' : 'Aguardando Aprovação'}
                             </span>
-                            <h1 style="font-size: 22px; font-weight: 800; color: #063B5C;">{quotationDetail.title}</h1>
-                            <div style="font-size: 12px; color: #8CAAB9; margin-top: 4px;">Código: <strong>{quotationDetail.reference_code}</strong> | Validade: {quotationDetail.expires_at || '15 dias'}</div>
+                            <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white">{quotationDetail.title}</h1>
+                            <div class="text-xs text-[#8C95AA] mt-1">
+                                Código: <strong class="text-white font-mono">{quotationDetail.reference_code}</strong> • Validade: {quotationDetail.expires_at || '15 dias'}
+                            </div>
                         </div>
 
                         {canAct && (
-                            <div style="display: flex; gap: 12px;">
-                                <form action={`/portal/orcamentos/${quotationDetail.id}/recusar`} method="post">
-                                    <button type="submit" class="gt-btn-outline" style="color: #991B1B; border-color: #FECACA;">
-                                        Recusar Proposta
+                            <div class="flex items-center gap-2.5 flex-wrap">
+                                <form action={`/portal/orcamentos/${quotationDetail.id}/recusar`} method="post" class="m-0">
+                                    <button type="submit" class="gt-btn-danger-ghost gt-btn-sm">
+                                        <span>Recusar Proposta</span>
                                     </button>
                                 </form>
-                                <form action={`/portal/orcamentos/${quotationDetail.id}/aprovar`} method="post">
-                                    <button type="submit" class="gt-btn-primary">
-                                        ✓ Aprovar Orçamento
+                                <form action={`/portal/orcamentos/${quotationDetail.id}/aprovar`} method="post" class="m-0">
+                                    <button type="submit" class="gt-btn-primary gt-btn-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        <span>Aprovar Orçamento</span>
                                     </button>
                                 </form>
                             </div>
                         )}
                     </div>
 
-                    <h2 style="font-size: 15px; font-weight: 800; color: #063B5C; margin-bottom: 16px;">Itens & Serviços Contemplados</h2>
-                    <div style="overflow-x: auto; margin-bottom: 24px;">
-                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <h2 class="text-sm font-extrabold text-white mb-3">Itens &amp; Serviços Contemplados</h2>
+                    <div class="gt-table-wrap mb-6">
+                        <table>
                             <thead>
-                                <tr style="background: #F4F8FA; border-bottom: 1px solid var(--gt-border); text-align: left; color: #67879C; font-size: 11px; text-transform: uppercase;">
-                                    <th style="padding: 12px 16px;">Descrição do Serviço</th>
-                                    <th style="padding: 12px 16px; text-align: center;">Qtd</th>
-                                    <th style="padding: 12px 16px; text-align: right;">Valor Unitário</th>
-                                    <th style="padding: 12px 16px; text-align: right;">Total</th>
+                                <tr class="border-b border-white/10 text-left text-[11px] uppercase text-[#8C95AA]">
+                                    <th class="py-3 px-4">Descrição do Serviço</th>
+                                    <th class="py-3 px-4 text-center">Qtd</th>
+                                    <th class="py-3 px-4 text-right">Valor Unitário</th>
+                                    <th class="py-3 px-4 text-right">Total</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {items.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} style="padding: 16px; text-align: center; color: #8CAAB9;">Pacote fechado de engenharia web.</td>
+                                        <td colSpan={4} class="py-4 px-4 text-center text-xs text-[#8C95AA]">Pacote fechado de engenharia web.</td>
                                     </tr>
                                 ) : (
                                     items.map((it: any) => (
-                                        <tr style="border-bottom: 1px solid var(--gt-border);">
-                                            <td style="padding: 14px 16px; font-weight: 600; color: #063B5C;">{it.description}</td>
-                                            <td style="padding: 14px 16px; text-align: center; color: #527287;">{it.quantity || 1}</td>
-                                            <td style="padding: 14px 16px; text-align: right; color: #527287;">R$ {Number(it.unit_price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                                            <td style="padding: 14px 16px; text-align: right; font-weight: 700; color: #063B5C;">R$ {Number(it.total_price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                        <tr class="border-b border-white/5">
+                                            <td class="py-3.5 px-4 text-xs font-bold text-white">{it.description}</td>
+                                            <td class="py-3.5 px-4 text-xs text-center text-[#8C95AA]">{it.quantity || 1}</td>
+                                            <td class="py-3.5 px-4 text-xs text-right text-[#8C95AA]">R$ {Number(it.unit_price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                            <td class="py-3.5 px-4 text-xs text-right font-extrabold text-white">R$ {Number(it.total_price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                                         </tr>
                                     ))
                                 )}
@@ -92,21 +99,21 @@ export const PortalQuotationsView: FC<PortalQuotationsProps> = ({
                         </table>
                     </div>
 
-                    <div style="display: flex; justify-content: flex-end;">
-                        <div style="width: 280px; background: #F8FAFC; border: 1px solid var(--gt-border); border-radius: 12px; padding: 18px;">
-                            <div style="display: flex; justify-content: space-between; font-size: 13px; color: #527287; margin-bottom: 8px;">
+                    <div class="flex justify-end">
+                        <div class="w-full sm:w-80 p-4 rounded-xl bg-[#032033]/50 border border-white/10 space-y-2">
+                            <div class="flex justify-between text-xs text-[#8C95AA]">
                                 <span>Subtotal</span>
                                 <span>R$ {Number(quotationDetail.total_amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                             </div>
                             {Number(quotationDetail.discount_amount || 0) > 0 && (
-                                <div style="display: flex; justify-content: space-between; font-size: 13px; color: #166534; margin-bottom: 8px;">
+                                <div class="flex justify-between text-xs text-emerald-400">
                                     <span>Desconto comercial</span>
                                     <span>- R$ {Number(quotationDetail.discount_amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                 </div>
                             )}
-                            <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 800; color: #063B5C; border-top: 1px solid var(--gt-border); padding-top: 10px;">
+                            <div class="flex justify-between text-sm font-extrabold text-white pt-2.5 border-t border-white/10">
                                 <span>Investimento Final</span>
-                                <span style="color: #063B5C;">R$ {Number(quotationDetail.final_amount || quotationDetail.total_amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                <span class="text-[#F2C230]">R$ {Number(quotationDetail.final_amount || quotationDetail.total_amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                             </div>
                         </div>
                     </div>
@@ -124,49 +131,58 @@ export const PortalQuotationsView: FC<PortalQuotationsProps> = ({
             successMessage={successMessage}
             errorMessage={errorMessage}
         >
-            <div style="margin-bottom: 24px;">
-                <h1 style="font-size: 20px; font-weight: 800; color: #063B5C;">Orçamentos e Propostas</h1>
-                <p style="font-size: 13px; color: #527287; margin-top: 4px;">Analise os escopos e aprove suas propostas com segurança jurídica e garantia em contrato.</p>
+            <div class="gt-page-header">
+                <div>
+                    <h1 class="gt-font-display text-xl font-extrabold text-white">Orçamentos e Propostas Comerciais</h1>
+                    <p class="text-xs text-[#8C95AA] mt-1">Analise os escopos técnicos e aprove suas propostas com segurança e garantia em contrato.</p>
+                </div>
             </div>
 
             {quotations.length === 0 ? (
-                <div class="gt-card" style="padding: 48px; text-align: center;">
-                    <div style="font-size: 32px; margin-bottom: 12px;">📑</div>
-                    <h3 style="font-size: 16px; font-weight: 800; color: #063B5C;">Nenhum orçamento disponível no momento.</h3>
-                    <p style="font-size: 13px; color: #527287; margin-top: 8px;">Assim que nossa equipe enviar uma proposta para o seu projeto, ela aparecerá aqui.</p>
+                <div class="gtb-card !p-10 text-center">
+                    <div class="w-12 h-12 rounded-2xl bg-[#F2C230]/15 border border-[#F2C230]/30 flex items-center justify-center text-[#F2C230] mx-auto mb-3">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg>
+                    </div>
+                    <h3 class="text-sm font-extrabold text-white">Nenhum orçamento disponível no momento.</h3>
+                    <p class="text-xs text-[#8C95AA] mt-1">Assim que nossa equipe enviar uma proposta para o seu projeto, ela aparecerá aqui.</p>
                 </div>
             ) : (
-                <div class="gt-card" style="overflow: hidden;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                        <thead>
-                            <tr style="background: #F4F8FA; border-bottom: 1px solid var(--gt-border); text-align: left; color: #67879C; font-size: 11px; text-transform: uppercase;">
-                                <th style="padding: 14px 20px;">Referência</th>
-                                <th style="padding: 14px 20px;">Título / Escopo</th>
-                                <th style="padding: 14px 20px;">Valor</th>
-                                <th style="padding: 14px 20px;">Status</th>
-                                <th style="padding: 14px 20px; text-align: right;">Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {quotations.map((q: any) => (
-                                <tr style="border-bottom: 1px solid var(--gt-border);">
-                                    <td style="padding: 14px 20px; font-weight: 700; color: #063B5C;">{q.reference_code}</td>
-                                    <td style="padding: 14px 20px; font-weight: 600; color: #063B5C;">{q.title}</td>
-                                    <td style="padding: 14px 20px; font-weight: 700; color: #16749A;">R$ {Number(q.final_amount || q.total_amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                                    <td style="padding: 14px 20px;">
-                                        <span class={`gt-badge ${q.status === 'approved' ? 'gt-badge-success' : q.status === 'rejected' ? 'gt-badge-danger' : 'gt-badge-warning'}`}>
-                                            {q.status}
-                                        </span>
-                                    </td>
-                                    <td style="padding: 14px 20px; text-align: right;">
-                                        <a href={`/portal/orcamentos/${q.id}`} class="gt-btn-outline" style="font-size: 12px; padding: 6px 12px;">
-                                            Ver Proposta &rarr;
-                                        </a>
-                                    </td>
+                <div class="gtb-card !p-0 overflow-hidden">
+                    <div class="gt-table-wrap">
+                        <table>
+                            <thead>
+                                <tr class="border-b border-white/10 text-left text-[11px] uppercase text-[#8C95AA]">
+                                    <th class="py-3.5 px-5">Referência</th>
+                                    <th class="py-3.5 px-5">Título / Escopo</th>
+                                    <th class="py-3.5 px-5">Valor</th>
+                                    <th class="py-3.5 px-5">Status</th>
+                                    <th class="py-3.5 px-5 text-right">Ação</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {quotations.map((q: any) => (
+                                    <tr class="border-b border-white/5">
+                                        <td class="py-3.5 px-5 text-xs font-extrabold font-mono text-white">{q.reference_code}</td>
+                                        <td class="py-3.5 px-5 text-xs font-bold text-white">{q.title}</td>
+                                        <td class="py-3.5 px-5 text-xs font-extrabold text-[#F2C230]">
+                                            R$ {Number(q.final_amount || q.total_amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                        </td>
+                                        <td class="py-3.5 px-5">
+                                            <span class={`gt-badge ${q.status === 'approved' ? 'gt-badge-success' : q.status === 'rejected' ? 'gt-badge-danger' : 'gt-badge-warning'}`}>
+                                                {q.status === 'approved' ? 'Aprovado' : q.status === 'rejected' ? 'Recusado' : 'Aguardando'}
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-5 text-right">
+                                            <a href={`/portal/orcamentos/${q.id}`} class="gt-btn-outline gt-btn-xs">
+                                                <span>Ver Proposta</span>
+                                                <span>&rarr;</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
         </PortalLayout>

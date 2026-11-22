@@ -25,37 +25,48 @@ export const PortalCampaignsView: FC<PortalCampaignsProps> = ({
             successMessage={successMessage}
             errorMessage={errorMessage}
         >
-            <div style="margin-bottom: 24px;">
-                <h1 style="font-size: 20px; font-weight: 800; color: #063B5C;">Gestão de Campanhas de Tráfego Pago</h1>
-                <p style="font-size: 13px; color: #527287; margin-top: 4px;">Acompanhe investimento, conversões e ROI de campanhas no Meta Ads e Google Ads.</p>
+            <div class="gt-page-header">
+                <div>
+                    <h1 class="gt-font-display text-xl font-extrabold text-white">Gestão de Campanhas de Tráfego Pago</h1>
+                    <p class="text-xs text-[#8C95AA] mt-1">Acompanhe investimento, conversões e ROI de campanhas no Meta Ads e Google Ads.</p>
+                </div>
             </div>
 
             {campaigns.length === 0 ? (
-                <div class="gt-card" style="padding: 48px; text-align: center;">
-                    <div style="font-size: 32px; margin-bottom: 12px;">📈</div>
-                    <h3 style="font-size: 16px; font-weight: 800; color: #063B5C;">Nenhuma campanha de mídia ativa no momento.</h3>
-                    <p style="font-size: 13px; color: #527287; margin-top: 8px;">Deseja atrair mais clientes qualificados para o seu site? Converse com nosso time de Growth.</p>
+                <div class="gtb-card !p-10 text-center">
+                    <div class="w-12 h-12 rounded-2xl bg-[#F2C230]/15 border border-[#F2C230]/30 flex items-center justify-center text-[#F2C230] mx-auto mb-3">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    </div>
+                    <h3 class="text-sm font-extrabold text-white">Nenhuma campanha de mídia ativa no momento.</h3>
+                    <p class="text-xs text-[#8C95AA] mt-1">Deseja atrair mais clientes qualificados para o seu site? Converse com nosso time de Growth.</p>
                 </div>
             ) : (
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+                <div class="gt-cards-grid">
                     {campaigns.map((c: any) => (
-                        <div class="gt-card" style="padding: 24px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <div class="gtb-card !p-5">
+                            <div class="gtb-card-accent-top gtb-card-accent-gold"></div>
+                            <div class="flex items-center justify-between gap-2 mb-3">
                                 <span class="gt-badge gt-badge-info">{c.platform}</span>
-                                <span class={`gt-badge ${c.status === 'active' ? 'gt-badge-success' : 'gt-badge-warning'}`}>{c.status}</span>
+                                <span class={`gt-badge ${c.status === 'active' ? 'gt-badge-success' : 'gt-badge-warning'}`}>
+                                    {c.status === 'active' ? 'Ativa' : c.status}
+                                </span>
                             </div>
 
-                            <h3 style="font-size: 17px; font-weight: 800; color: #063B5C; margin-bottom: 6px;">{c.name}</h3>
-                            <div style="font-size: 12px; color: #527287; margin-bottom: 16px;">Objetivo: {c.objective || 'Captação de Leads Qualificados'}</div>
+                            <h3 class="text-base font-extrabold text-white mb-1">{c.name}</h3>
+                            <div class="text-xs text-[#8C95AA] mb-4">Objetivo: {c.objective || 'Captação de Leads Qualificados'}</div>
 
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; background: #F8FAFC; border-radius: 8px; border: 1px solid var(--gt-border); margin-bottom: 16px;">
+                            <div class="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-[#032033]/40 border border-white/10">
                                 <div>
-                                    <div style="font-size: 10px; color: #67879C; text-transform: uppercase; font-weight: 700;">Orçamento</div>
-                                    <div style="font-size: 14px; font-weight: 800; color: #063B5C;">R$ {Number(c.budget || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                                    <div class="text-[10px] font-bold uppercase tracking-wider text-[#8C95AA]">Orçamento</div>
+                                    <div class="text-sm font-extrabold text-white mt-0.5">
+                                        R$ {Number(c.budget || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    </div>
                                 </div>
                                 <div>
-                                    <div style="font-size: 10px; color: #67879C; text-transform: uppercase; font-weight: 700;">Investido</div>
-                                    <div style="font-size: 14px; font-weight: 800; color: #16749A;">R$ {Number(c.spent || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                                    <div class="text-[10px] font-bold uppercase tracking-wider text-[#8C95AA]">Investido</div>
+                                    <div class="text-sm font-extrabold text-[#F2C230] mt-0.5">
+                                        R$ {Number(c.spent || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    </div>
                                 </div>
                             </div>
                         </div>
