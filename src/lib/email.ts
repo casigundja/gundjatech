@@ -296,3 +296,83 @@ export async function sendInvoiceNoticeEmail(
         html
     });
 }
+
+/**
+ * Notificação de Início de Projeto para o Cliente (quando solicitação/orçamento é convertido em projeto)
+ */
+export async function sendProjectStartedEmail(
+    env: Env,
+    to: string,
+    clientName: string,
+    project: {
+        id?: number;
+        title: string;
+        protocol?: string | null;
+    }
+): Promise<EmailResult> {
+    const baseUrl = env.APP_URL || 'http://localhost';
+    const projectUrl = project.id ? `${baseUrl}/portal/projetos/${project.id}` : `${baseUrl}/portal/projetos`;
+
+    const html = renderEmailTemplate(
+        'Seu projeto foi iniciado!',
+        `
+        <p>Olá, <strong>${clientName}</strong>,</p>
+        <p>Temos o prazer de informar que sua demanda foi aprovada e oficialmente convertida em projeto na <strong>GundjaTech</strong>.</p>
+        <div style="background-color: #E7F0F5; border-radius: 10px; padding: 16px 20px; margin: 20px 0; border-left: 4px solid #16749A;">
+            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #16749A;">Projeto em Andamento</div>
+            <div style="font-size: 17px; font-weight: 800; color: #063B5C; margin-top: 4px;">${project.title}</div>
+            ${project.protocol ? `<div style="font-size: 12px; color: #527287; margin-top: 4px;">Referência: <strong>${project.protocol}</strong></div>` : ''}
+        </div>
+        <p>Nossa equipe técnica já deu início ao planejamento e execução das etapas. Você pode acompanhar o progresso, cronograma e entregáveis em tempo real pelo seu Portal do Cliente:</p>
+        `,
+        {
+            text: 'Acompanhar Meu Projeto',
+            url: projectUrl
+        }
+    );
+
+    return await sendEmail(env, {
+        to,
+        subject: `Projeto Iniciado: ${project.title} • GundjaTech`,
+        html
+    });
+}
+
+/**
+ * Notificação de Conclusão de Projeto para o Cliente
+ */
+export async function sendProjectCompletedEmail(
+    env: Env,
+    to: string,
+    clientName: string,
+    project: {
+        id?: number;
+        title: string;
+    }
+): Promise<EmailResult> {
+    const baseUrl = env.APP_URL || 'http://localhost';
+    const projectUrl = project.id ? `${baseUrl}/portal/projetos/${project.id}` : `${baseUrl}/portal/projetos`;
+
+    const html = renderEmailTemplate(
+        'Seu projeto foi concluído com sucesso!',
+        `
+        <p>Olá, <strong>${clientName}</strong>,</p>
+        <p>É com grande satisfação que informamos que todas as etapas do seu projeto foram finalizadas pela equipe da <strong>GundjaTech</strong>:</p>
+        <div style="background-color: #ECFDF5; border-radius: 10px; padding: 16px 20px; margin: 20px 0; border-left: 4px solid #10B981;">
+            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #047857;">Projeto Concluído • 100%</div>
+            <div style="font-size: 17px; font-weight: 800; color: #063B5C; margin-top: 4px;">${project.title}</div>
+        </div>
+        <p>Acesse o Portal do Cliente para revisar as entregas, baixar arquivos disponíveis ou falar com nosso time para suporte contínuo e próximos passos:</p>
+        `,
+        {
+            text: 'Acessar Entregas no Portal',
+            url: projectUrl
+        }
+    );
+
+    return await sendEmail(env, {
+        to,
+        subject: `Projeto Concluído: ${project.title} • GundjaTech`,
+        html
+    });
+}

@@ -22,7 +22,7 @@ import { AdminProjectsView } from '../views/admin/projects';
 import { AdminFinanceView } from '../views/admin/finance';
 import { AdminDomainsView } from '../views/admin/domains';
 import { AdminCampaignsView } from '../views/admin/campaigns';
-import { sendInvoiceNoticeEmail } from '../lib/email';
+import { sendInvoiceNoticeEmail, sendProjectStartedEmail, sendProjectCompletedEmail } from '../lib/email';
 
 export const adminRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -665,10 +665,11 @@ adminRoutes.post('/solicitacoes/:id/converter', async (c) => {
         .slice(0, 48) || 'projeto';
     const projectSlug = `${baseSlug}-${Date.now().toString(36)}`;
 
-    await db.prepare(
+    const insProj = await db.prepare(
         `INSERT INTO projects (client_id, name, title, slug, description, status, priority, progress_percentage, start_date, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, 'planning', 'high', 0, date('now'), datetime('now'), datetime('now'))`
     ).bind(clientId, projectName, projectName, projectSlug, projectDesc).run();
+    const newProjectId = Number(insProj.meta?.last_row_id || 0) || undefined;
 
     // Atualiza solicitação para approved
     await db.prepare(
@@ -681,7 +682,27 @@ adminRoutes.post('/solicitacoes/:id/converter', async (c) => {
          VALUES (?, ?, 'converted_to_project', ?, 'approved', 'Convertido em Projeto pela administração', datetime('now'))`
     ).bind(id, user.id, req.status).run();
 
-    return c.redirect(`/admin/solicitacoes/${id}?success=Solicitação convertida em Projeto com sucesso!`);
+    // Notifica o cliente por e-mail sobre o início do projeto
+    try {
+        let recipientEmail = String(req.email || '').trim();
+        let recipientName = String(req.company || req.name || 'Cliente').trim();
+        if (!recipientEmail && clientId) {
+            const clientRow = await db.prepare(`SELECT name, company, email FROM clients WHERE id = ?`).bind(clientId).first<any>();
+            if (clientRow?.email) {
+                recipientEmail = String(clientRow.email).trim();
+                recipientName = String(clientRow.company || clientRow.name || recipientName).trim();
+            }
+        }
+        if (recipientEmail) {
+            await sendProjectStartedEmail(c.env, recipientEmail, recipientName, {
+                id: newProjectId,
+                title: projectName,
+                protocol: req.protocol || null
+            });
+        }
+    } catch {}
+
+    return c.redirect(`/admin/solicitacoes/${id}?success=Solicitação convertida em Projeto com sucesso! Cliente notificado por e-mail.`);
 });
 
 adminRoutes.post('/solicitacoes/:id/excluir', async (c) => {
@@ -1229,15 +1250,42 @@ adminRoutes.post('/projetos/:id', async (c) => {
     const body = await getRequestBody(c);
 
     const status = String(body.status || 'planning').trim();
-    const progress = Math.min(100, Math.max(0, Number(body.progress_percentage) || 0));
+    const progress = status === 'completed' ? 100 : Math.min(100, Math.max(0, Number(body.progress_percentage) || 0));
     const startDate = String(body.start_date || '').trim() || null;
     const expectedEndDate = String(body.expected_end_date || '').trim() || null;
+
+    // Busca estado anterior do projeto + dados do cliente para notificação de conclusão
+    let previousProject: any = null;
+    try {
+        previousProject = await db.prepare(
+            `SELECT p.id, p.title, p.name, p.status, c.name AS client_name, c.company AS client_company, c.email AS client_email
+             FROM projects p
+             LEFT JOIN clients c ON c.id = p.client_id
+             WHERE p.id = ?`
+        ).bind(id).first<any>();
+    } catch {}
 
     await db.prepare(
         `UPDATE projects 
          SET status = ?, progress_percentage = ?, start_date = ?, expected_end_date = ?, updated_at = datetime('now')
          WHERE id = ?`
     ).bind(status, progress, startDate, expectedEndDate, id).run();
+
+    // Se acabou de ser marcado como concluído, notifica o cliente por e-mail
+    if (status === 'completed' && previousProject && previousProject.status !== 'completed' && previousProject.client_email) {
+        try {
+            await sendProjectCompletedEmail(
+                c.env,
+                String(previousProject.client_email).trim(),
+                String(previousProject.client_company || previousProject.client_name || 'Cliente').trim(),
+                {
+                    id: Number(id),
+                    title: String(previousProject.title || previousProject.name || 'Projeto GundjaTech')
+                }
+            );
+        } catch {}
+        return c.redirect(`/admin/projetos/${id}?success=Projeto concluído e cliente notificado por e-mail!`);
+    }
 
     return c.redirect(`/admin/projetos/${id}?success=Projeto atualizado com sucesso`);
 });
@@ -1859,16 +1907,36 @@ adminRoutes.post('/orcamentos/:id/converter-projeto', async (c) => {
         ? `Originado do orçamento ${quotation.reference_code} (Valor: R$ ${Number(quotation.final_amount || quotation.total_amount || 0).toFixed(2)}).\n\n${quotation.notes}`
         : `Projeto originado do orçamento ${quotation.reference_code}.`;
 
-    await db.prepare(
+    const insProj = await db.prepare(
         `INSERT INTO projects (client_id, name, title, slug, description, status, priority, progress_percentage, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, 'planning', 'high', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
     ).bind(quotation.client_id, projectName, projectName, projectSlug, description).run();
+    const newProjectId = Number(insProj.meta?.last_row_id || 0) || undefined;
 
     await db.prepare(
         `UPDATE quotations SET status = 'approved', updated_at = CURRENT_TIMESTAMP WHERE id = ?`
     ).bind(id).run();
 
-    return c.redirect('/admin/projetos?success=Orçamento aprovado e convertido em Projeto com sucesso!');
+    // Notifica o cliente por e-mail sobre o início do projeto
+    try {
+        if (quotation.client_id) {
+            const clientRow = await db.prepare(`SELECT name, company, email FROM clients WHERE id = ?`).bind(quotation.client_id).first<any>();
+            if (clientRow?.email) {
+                await sendProjectStartedEmail(
+                    c.env,
+                    String(clientRow.email).trim(),
+                    String(clientRow.company || clientRow.name || 'Cliente').trim(),
+                    {
+                        id: newProjectId,
+                        title: projectName,
+                        protocol: quotation.reference_code || null
+                    }
+                );
+            }
+        }
+    } catch {}
+
+    return c.redirect('/admin/projetos?success=Orçamento aprovado e convertido em Projeto com sucesso! Cliente notificado por e-mail.');
 });
 
 adminRoutes.post('/orcamentos/:id/excluir', async (c) => {
