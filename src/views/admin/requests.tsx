@@ -332,45 +332,101 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                             </div>
                         </div>
 
-                        {/* Linha do Tempo Vertical */}
+                        {/* Linha do Tempo / Feed de Atividades */}
                         <div>
-                            <div class="flex items-center justify-between gap-2 mb-3">
-                                <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Linha do Tempo / Histórico</h2>
-                                <span class="text-[11px] font-bold text-[#8C95AA]">{history.length} {history.length === 1 ? 'registro' : 'registros'}</span>
+                            <div class="flex items-center justify-between gap-2 mb-2.5">
+                                <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Histórico de Atividades</h2>
+                                <span class="text-[11px] font-semibold text-[#8C95AA]">{history.length} {history.length === 1 ? 'evento' : 'eventos'}</span>
                             </div>
 
                             {history.length === 0 ? (
                                 <div class="gtb-surface-box rounded-xl p-4 text-xs text-[#8C95AA]">
-                                    Nenhum histórico de movimentação registrado.
+                                    Nenhuma movimentação registrada ainda.
                                 </div>
                             ) : (
-                                <div class="gt-timeline">
-                                    {history.map((h: any) => {
-                                        const st = h.new_status || h.to_status || h.status_to || h.action;
-                                        const stMeta = STATUS_META[st];
-                                        const stLabel = stMeta?.label || st;
-                                        const actionTag = h.action && ACTION_LABELS[h.action] ? ACTION_LABELS[h.action] : null;
-                                        const noteText = h.comment || h.notes;
+                                <div class="gt-activity-feed" id="gt-request-activity-feed">
+                                    {history.map((h: any, idx: number) => {
+                                        const fromSt = h.from_status || h.old_status || h.status_from || '';
+                                        const toSt = h.to_status || h.new_status || h.status_to || '';
+                                        const fromLabel = fromSt ? (STATUS_META[fromSt]?.label || fromSt) : '';
+                                        const toLabel = toSt ? (STATUS_META[toSt]?.label || toSt) : (ACTION_LABELS[h.action] || h.action || 'Atualização');
+                                        const hasTransition = Boolean(fromLabel && toLabel && fromSt !== toSt);
+                                        const actionKey = String(h.action || '');
+                                        const noteText = String(h.comment || h.notes || '').trim();
+                                        const authorName = h.user_name ? String(h.user_name).trim() : null;
+                                        const isDanger = toSt === 'cancelled' || actionKey === 'cancelled';
+                                        const isHiddenExtra = idx >= 5;
+
+                                        // Evita repetir nota quando o próprio título já comunica a ação
+                                        const isRedundantNote =
+                                            (actionKey === 'edited' && /atualizados pela administra/i.test(noteText)) ||
+                                            (actionKey === 'converted_to_project' && /^convertido em projeto pela administra/i.test(noteText));
+                                        const showNote = Boolean(noteText && !isRedundantNote);
+
                                         return (
-                                            <div class="gt-timeline-item">
-                                                <span class={`gt-timeline-dot ${st === 'cancelled' ? 'gt-timeline-dot--danger' : ''}`} aria-hidden="true"></span>
-                                                <div class="flex items-center justify-between gap-2 flex-wrap">
-                                                    <div class="flex items-center gap-2 flex-wrap">
-                                                        <strong class="text-xs font-extrabold text-white">{stLabel}</strong>
-                                                        {actionTag && (
-                                                            <span class="text-[11px] font-semibold text-[#8C95AA]">· {actionTag}</span>
+                                            <div
+                                                class={`gt-activity-item ${idx === 0 ? 'is-latest' : ''}`}
+                                                data-extra-history={isHiddenExtra ? '1' : undefined}
+                                                style={isHiddenExtra ? 'display: none;' : undefined}
+                                            >
+                                                <div class="gt-activity-rail" aria-hidden="true">
+                                                    <span class={`gt-activity-node ${isDanger ? 'gt-activity-node--danger' : ''}`}>
+                                                        {actionKey === 'edited' ? (
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                                                        ) : actionKey === 'converted_to_project' ? (
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                                                        ) : isDanger ? (
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                                        ) : toSt === 'completed' || toSt === 'approved' ? (
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                        ) : (
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                                                         )}
-                                                    </div>
-                                                    <span class="text-[11px] font-medium text-[#8C95AA]">
-                                                        {formatDateBrt(h.created_at)}
                                                     </span>
                                                 </div>
-                                                {noteText && (
-                                                    <p class="text-xs text-[#D5DCEB] mt-1.5 leading-relaxed">{noteText}</p>
-                                                )}
+
+                                                <div class="gt-activity-body">
+                                                    <div class="gt-activity-head">
+                                                        <div class="gt-activity-title">
+                                                            {actionKey === 'edited' ? (
+                                                                <span>Dados da solicitação editados</span>
+                                                            ) : actionKey === 'converted_to_project' ? (
+                                                                <span>Convertido em Projeto</span>
+                                                            ) : hasTransition ? (
+                                                                <>
+                                                                    <span class="gt-activity-from">{fromLabel}</span>
+                                                                    <span class="gt-activity-arrow">→</span>
+                                                                    <span>{toLabel}</span>
+                                                                </>
+                                                            ) : (
+                                                                <span>{toLabel}</span>
+                                                            )}
+                                                        </div>
+                                                        <span class="gt-activity-time">{formatDateBrt(h.created_at)}</span>
+                                                    </div>
+
+                                                    {authorName && (
+                                                        <div class="gt-activity-meta">por {authorName}</div>
+                                                    )}
+
+                                                    {showNote && (
+                                                        <div class="gt-activity-note">{noteText}</div>
+                                                    )}
+                                                </div>
                                             </div>
                                         );
                                     })}
+
+                                    {history.length > 5 && (
+                                        <button
+                                            type="button"
+                                            id="gt-toggle-history-btn"
+                                            onclick={`(function(btn){var feed=document.getElementById('gt-request-activity-feed');if(!feed)return;var expanded=btn.dataset.expanded==='1';feed.querySelectorAll('[data-extra-history="1"]').forEach(function(el){el.style.display=expanded?'none':'flex';});btn.dataset.expanded=expanded?'0':'1';btn.textContent=expanded?'Mostrar mais ${history.length - 5} ${history.length - 5 === 1 ? 'evento' : 'eventos'}':'Mostrar menos';})(this)`}
+                                            class="gt-activity-more-btn"
+                                        >
+                                            Mostrar mais {history.length - 5} {history.length - 5 === 1 ? 'evento' : 'eventos'}
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>
