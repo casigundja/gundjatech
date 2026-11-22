@@ -127,7 +127,7 @@ export const PortalQuotationsView: FC<PortalQuotationsProps> = ({
 
     return (
         <PortalLayout
-            title="Orçamentos Recebidos • Portal do Cliente GundjaTech"
+            title="Orçamento • Portal do Cliente GundjaTech"
             activeNav="quotations"
             currentUser={currentUser}
             clientName={clientName}
@@ -136,7 +136,7 @@ export const PortalQuotationsView: FC<PortalQuotationsProps> = ({
         >
             <div class="gt-page-header">
                 <div>
-                    <h1 class="gt-font-display text-xl font-extrabold text-white">Orçamentos e Propostas Comerciais</h1>
+                    <h1 class="gt-font-display text-xl font-extrabold text-white">Orçamentos Recebidos</h1>
                     <p class="text-xs text-[#8C95AA] mt-1">Analise os escopos técnicos e aprove suas propostas com segurança e garantia em contrato.</p>
                 </div>
                 <a href="/portal/solicitacoes/nova" class="gt-btn-primary gt-btn-sm">

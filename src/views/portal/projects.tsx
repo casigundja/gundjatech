@@ -122,7 +122,7 @@ export const PortalProjectsView: FC<PortalProjectsProps> = ({
 
     return (
         <PortalLayout
-            title="Meus Projetos • Portal do Cliente GundjaTech"
+            title="Projetos • Portal do Cliente GundjaTech"
             activeNav="projects"
             currentUser={currentUser}
             clientName={clientName}

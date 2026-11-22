@@ -20,7 +20,7 @@ export const PortalChatView: FC<PortalChatProps> = ({
 }) => {
     return (
         <PortalLayout
-            title="Falar com Atendimento • Portal do Cliente GundjaTech"
+            title="Atendimento • Portal do Cliente GundjaTech"
             activeNav="chat"
             currentUser={currentUser}
             clientName={clientName}
@@ -29,7 +29,7 @@ export const PortalChatView: FC<PortalChatProps> = ({
         >
             <div class="gt-page-header">
                 <div>
-                    <h1 class="gt-font-display text-xl font-extrabold text-white">Canal Direto com o Time de Engenharia</h1>
+                    <h1 class="gt-font-display text-xl font-extrabold text-white">Canal Direto com o Time</h1>
                     <p class="text-xs text-[#8C95AA] mt-1">Tire dúvidas técnicas, envie instruções ou solicite atualizações em tempo real.</p>
                 </div>
             </div>

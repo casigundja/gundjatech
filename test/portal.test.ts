@@ -391,7 +391,7 @@ describe('Fase 4 - Módulo 4: Portal do Cliente Multi-tenant', () => {
 
         expect(chatRes.status).toBe(200);
         const chatHtml = await chatRes.text();
-        expect(chatHtml).toContain('Canal Direto com o Time de Engenharia');
+        expect(chatHtml).toContain('Canal Direto com o Time');
         expect(chatHtml).toContain('Olá, gostaria de verificar o prazo de entrega.');
 
         const sendRes = await app.request('/portal/atendimento/1/mensagem', {

@@ -253,7 +253,7 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
 
     return (
         <PortalLayout
-            title="Minhas Solicitações • Portal do Cliente GundjaTech"
+            title="Solicitações • Portal do Cliente GundjaTech"
             activeNav="requests"
             currentUser={currentUser}
             clientName={clientName}

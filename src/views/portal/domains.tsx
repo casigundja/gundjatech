@@ -18,7 +18,7 @@ export const PortalDomainsView: FC<PortalDomainsProps> = ({
 }) => {
     return (
         <PortalLayout
-            title="Meus Domínios • Portal do Cliente GundjaTech"
+            title="Domínios • Portal do Cliente GundjaTech"
             activeNav="domains"
             currentUser={currentUser}
             clientName={clientName}
@@ -27,7 +27,7 @@ export const PortalDomainsView: FC<PortalDomainsProps> = ({
         >
             <div class="gt-page-header">
                 <div>
-                    <h1 class="gt-font-display text-xl font-extrabold text-white">Gestão de Domínios &amp; DNS Blindado</h1>
+                    <h1 class="gt-font-display text-xl font-extrabold text-white">Gestão de Domínios</h1>
                     <p class="text-xs text-[#8C95AA] mt-1">Monitore o vencimento dos seus domínios, certificados SSL corporativos e zonas DNS.</p>
                 </div>
             </div>
