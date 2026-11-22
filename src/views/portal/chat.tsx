@@ -62,7 +62,7 @@ export const PortalChatView: FC<PortalChatProps> = ({
                     id="portal-messages"
                     data-conv-id={conversation?.id || 0}
                     data-last-id={messages.length > 0 ? messages[messages.length - 1].id : 0}
-                    class="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-3.5"
+                    class="gt-chat-canvas flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-3.5"
                 >
                     {messages.length === 0 ? (
                         <div class="text-center m-auto py-8 max-w-md">
@@ -82,12 +82,12 @@ export const PortalChatView: FC<PortalChatProps> = ({
                         messages.map((m: any) => {
                             const isMe = m.sender_type === 'client' || m.sender_type === 'user';
                             return (
-                                <div style={`display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'};`}>
-                                    <div style={`max-width: 82%; padding: 11px 15px; border-radius: 14px; font-size: 12.5px; line-height: 1.5; ${isMe ? 'background: linear-gradient(135deg, #063B5C 0%, #16749A 100%); color: #FFFFFF; border-bottom-right-radius: 3px;' : 'background: rgba(22, 116, 154, 0.12); color: inherit; border: 1px solid rgba(22, 116, 154, 0.28); border-bottom-left-radius: 3px;'}`}>
-                                        <div style={`font-size: 10px; font-weight: 800; margin-bottom: 3px; ${isMe ? 'color: #F2C230;' : 'color: #16749A;'}`}>
+                                <div class={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                                    <div class={isMe ? 'gt-chat-bubble-me' : 'gt-chat-bubble-them'}>
+                                        <div class={isMe ? 'gt-chat-sender-me' : 'gt-chat-sender-them'}>
                                             {isMe ? 'Você' : (m.is_ai ? 'GundjaTech AI (Atendimento)' : 'Engenharia GundjaTech')}
                                         </div>
-                                        <div>{m.message}</div>
+                                        <div class="gt-chat-msg-text">{m.message}</div>
                                     </div>
                                     <span class="text-[10px] text-[#8C95AA] mt-1 px-1">{m.created_at?.slice(11, 16) || ''}</span>
                                 </div>
@@ -151,10 +151,17 @@ export const PortalChatView: FC<PortalChatProps> = ({
                                     var isMe = m.sender_type === 'client' || m.sender_type === 'user';
                                     if (!isMe) hasStaff = true;
                                     var wrap = document.createElement('div');
-                                    wrap.style.cssText = 'display:flex;flex-direction:column;align-items:' + (isMe ? 'flex-end' : 'flex-start') + ';';
+                                    wrap.className = 'flex flex-col ' + (isMe ? 'items-end' : 'items-start');
                                     var b = document.createElement('div');
-                                    b.style.cssText = 'max-width:82%;padding:11px 15px;border-radius:14px;font-size:12.5px;line-height:1.5;' + (isMe ? 'background:linear-gradient(135deg,#063B5C 0%,#16749A 100%);color:#fff;' : 'background:rgba(22,116,154,0.12);border:1px solid rgba(22,116,154,0.28);');
-                                    b.textContent = m.message;
+                                    b.className = isMe ? 'gt-chat-bubble-me' : 'gt-chat-bubble-them';
+                                    var s = document.createElement('div');
+                                    s.className = isMe ? 'gt-chat-sender-me' : 'gt-chat-sender-them';
+                                    s.textContent = isMe ? 'Você' : (m.is_ai ? 'GundjaTech AI (Atendimento)' : 'Engenharia GundjaTech');
+                                    var txt = document.createElement('div');
+                                    txt.className = 'gt-chat-msg-text';
+                                    txt.textContent = m.message;
+                                    b.appendChild(s);
+                                    b.appendChild(txt);
                                     wrap.appendChild(b);
                                     box.appendChild(wrap);
                                 });
