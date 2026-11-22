@@ -4,6 +4,7 @@ import { AutonomousCrmAgent } from '../services/ai-crm-agent';
 import {
     markWhatsAppMessageRead,
     normalizeWhatsAppPhone,
+    sameWhatsAppPhone,
     sendWhatsAppTextMessage,
     type WhatsAppProvider
 } from '../services/whatsapp';
@@ -13,6 +14,7 @@ export const whatsappRoutes = new Hono<{ Bindings: Env; Variables: AppVariables 
 interface NormalizedIncomingMessage {
     provider: WhatsAppProvider;
     messageId: string;
+    quotedMessageId?: string;
     fromPhone: string;
     contactName: string;
     text: string;
@@ -94,6 +96,14 @@ function parseIncomingWebhook(payload: any): {
                 messages.push({
                     provider: detectedProvider,
                     messageId: String(payload.messageId || payload.zaapId || msgObj._id || msgObj.id || payload.eventId || '').trim(),
+                    quotedMessageId: String(
+                        payload.referenceMessageId ||
+                        payload.quotedMessageId ||
+                        msgObj.referenceMessageId ||
+                        msgObj.quotedMessageId ||
+                        msgObj.context?.id ||
+                        ''
+                    ).trim() || undefined,
                     fromPhone,
                     contactName: String(payload.senderName || payload.chatName || contactObj.name || msgObj.senderName || `WhatsApp ${fromPhone}`).trim(),
                     text
@@ -209,14 +219,21 @@ whatsappRoutes.post('/', async (c) => {
         } catch {}
     }
 
-    // Verifica se a sincronização WhatsApp está pausada em /admin/configuracoes
+    // Carrega status da sincronização WhatsApp e número do Diretor em /admin/configuracoes
+    let syncPaused = false;
+    let directorPhone = '';
     if (c.env?.DB) {
         try {
-            const syncCfg = await c.env.DB.prepare(
-                `SELECT value FROM system_settings WHERE key = 'whatsapp_sync_enabled'`
-            ).first<{ value: string }>();
-            if (syncCfg && syncCfg.value === '0') {
-                return c.json({ ok: true, paused: true, processed: [] });
+            const cfgRows = await c.env.DB.prepare(
+                `SELECT key, value FROM system_settings WHERE key IN ('whatsapp_sync_enabled', 'whatsapp_director_phone')`
+            ).all<{ key: string; value: string }>();
+            for (const row of cfgRows.results || []) {
+                if (row.key === 'whatsapp_sync_enabled' && row.value === '0') {
+                    syncPaused = true;
+                }
+                if (row.key === 'whatsapp_director_phone' && row.value) {
+                    directorPhone = normalizeWhatsAppPhone(row.value);
+                }
             }
         } catch {}
     }
@@ -237,7 +254,7 @@ whatsappRoutes.post('/', async (c) => {
     const processed: Array<{ provider: WhatsAppProvider; messageId: string; conversationId?: number; replied: boolean }> = [];
 
     for (const incoming of messages) {
-        const { provider, messageId, fromPhone, contactName, text } = incoming;
+        const { provider, messageId, quotedMessageId, fromPhone, contactName, text } = incoming;
 
         // Deduplicação contra retentativas de webhook
         if (messageId && c.env?.KV_CACHE) {
@@ -247,6 +264,69 @@ whatsappRoutes.post('/', async (c) => {
                 if (alreadySeen) continue;
                 await c.env.KV_CACHE.put(dedupKey, '1', { expirationTtl: 3600 });
             } catch {}
+        }
+
+        // Ponte Bidirecional: Se quem respondeu no WhatsApp é o Diretor, injeta a resposta direto no Chat do Site!
+        if (directorPhone && sameWhatsAppPhone(fromPhone, directorPhone) && c.env?.DB) {
+            let targetConvId = 0;
+            let cleanReplyText = text.trim();
+
+            const explicitMatch = cleanReplyText.match(/^#(\d+)\s+([\s\S]+)$/);
+            if (explicitMatch) {
+                targetConvId = Number(explicitMatch[1]);
+                cleanReplyText = explicitMatch[2].trim();
+            }
+
+            if (!targetConvId && quotedMessageId && c.env?.KV_CACHE) {
+                try {
+                    const mapped = await c.env.KV_CACHE.get(`wa:director:msg:${quotedMessageId}`);
+                    if (mapped) targetConvId = Number(mapped);
+                } catch {}
+            }
+
+            if (!targetConvId && c.env?.KV_CACHE) {
+                try {
+                    const active = await c.env.KV_CACHE.get('wa:director:active_conv');
+                    if (active) targetConvId = Number(active);
+                } catch {}
+            }
+
+            if (!targetConvId) {
+                try {
+                    const latestSiteConv = await c.env.DB.prepare(
+                        `SELECT id FROM conversations
+                         WHERE channel = 'website_chat' AND status != 'closed'
+                           AND (ai_enabled = 0 OR crm_stage = 'handoff_human' OR status = 'waiting_staff')
+                         ORDER BY last_message_at DESC, id DESC LIMIT 1`
+                    ).first<{ id: number }>();
+                    if (latestSiteConv?.id) targetConvId = latestSiteConv.id;
+                } catch {}
+            }
+
+            if (targetConvId > 0 && cleanReplyText) {
+                try {
+                    await c.env.DB.prepare(
+                        `INSERT INTO conversation_messages (conversation_id, sender_type, message, is_ai, created_at, updated_at)
+                         VALUES (?, 'staff', ?, 0, datetime('now'), datetime('now'))`
+                    ).bind(targetConvId, cleanReplyText).run();
+
+                    await c.env.DB.prepare(
+                        `UPDATE conversations
+                         SET status = 'open', last_message_at = datetime('now'), updated_at = datetime('now')
+                         WHERE id = ?`
+                    ).bind(targetConvId).run();
+
+                    processed.push({ provider, messageId, conversationId: targetConvId, replied: true });
+                    continue;
+                } catch (err) {
+                    console.error('[WhatsApp Director Bridge] Erro ao encaminhar resposta ao site:', err);
+                }
+            }
+        }
+
+        // Se a sincronização automática WhatsApp 1 estiver pausada, não processa leads/IA
+        if (syncPaused) {
+            continue;
         }
 
         let globalAiEnabled = true;

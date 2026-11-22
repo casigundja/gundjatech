@@ -13,6 +13,16 @@ export function normalizeWhatsAppPhone(phone: string): string {
     return String(phone || '').replace(/\D+/g, '');
 }
 
+export function sameWhatsAppPhone(a: string, b: string): boolean {
+    const da = normalizeWhatsAppPhone(a);
+    const db = normalizeWhatsAppPhone(b);
+    if (!da || !db) return false;
+    if (da === db) return true;
+    const va = getBrazilPhoneVariants(da);
+    const vb = getBrazilPhoneVariants(db);
+    return va.some((x) => vb.includes(x));
+}
+
 function getBrazilPhoneVariants(digits: string): string[] {
     const variants = [digits];
     if (digits.startsWith('55') && digits.length === 12) {
@@ -357,14 +367,26 @@ export async function sendDirectorWhatsAppAlert(
         params.visitorPhone ? `*Telefone:* ${params.visitorPhone}` : '',
         `*Mensagem:* "${params.message.slice(0, 600)}"`,
         '',
+        '↩️ *Responda aqui mesmo no WhatsApp* para enviar direto ao cliente no site.',
         params.originUrl
-            ? `🔗 Responder no painel:\n${params.originUrl}/admin/atendimento?id=${params.conversationId}`
-            : `ID da conversa: #${params.conversationId}`
+            ? `🔗 Painel: ${params.originUrl}/admin/atendimento?id=${params.conversationId}`
+            : `Conversa #${params.conversationId}`
     ].filter(Boolean);
 
-    return sendWhatsAppTextMessage(env, cfg.directorPhone, lines.join('\n'), cfg.provider, {
+    const result = await sendWhatsAppTextMessage(env, cfg.directorPhone, lines.join('\n'), cfg.provider, {
         bypassSyncPause: true
     });
+
+    if (env?.KV_CACHE && params.conversationId > 0) {
+        try {
+            await env.KV_CACHE.put('wa:director:active_conv', String(params.conversationId), { expirationTtl: 86400 });
+            if (result.messageId) {
+                await env.KV_CACHE.put(`wa:director:msg:${result.messageId}`, String(params.conversationId), { expirationTtl: 86400 });
+            }
+        } catch {}
+    }
+
+    return result;
 }
 
 export async function markWhatsAppMessageRead(env: Env, messageId: string): Promise<void> {
