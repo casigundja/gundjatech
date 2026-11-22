@@ -85,6 +85,54 @@ body.gt-admin-boost .gt-font-display {
     width: 76px;
 }
 
+.gtb-sidebar.is-collapsed .gtb-brand-word,
+.gtb-sidebar.is-collapsed .gtb-section-head,
+.gtb-sidebar.is-collapsed .gtb-promo-card,
+.gtb-sidebar.is-collapsed .gtb-nav-item > div > span,
+.gtb-sidebar.is-collapsed .gtb-count-circle {
+    display: none !important;
+}
+
+.gtb-sidebar.is-collapsed .gtb-sidebar-brand-row {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.gtb-sidebar.is-collapsed nav {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.gtb-sidebar.is-collapsed .gtb-nav-item {
+    justify-content: center;
+    padding: 11px 0;
+    width: 100%;
+}
+
+.gtb-sidebar.is-collapsed .gtb-nav-item > div {
+    justify-content: center;
+    gap: 0;
+}
+
+.gtb-sidebar-collapse-btn {
+    display: none;
+}
+
+@media (min-width: 1024px) {
+    .gtb-sidebar-collapse-btn {
+        display: inline-flex;
+    }
+}
+
+.gtb-sidebar-collapse-btn svg {
+    transition: transform 0.2s ease;
+}
+
+body.gt-sidebar-is-collapsed .gtb-sidebar-collapse-btn svg {
+    transform: rotate(180deg);
+}
+
 .gtb-brand-badge {
     width: 34px;
     height: 34px;
@@ -2319,7 +2367,11 @@ html[data-admin-theme="light"] .gt-req-step::after {
 }
 
 .gt-req-step.is-done::after {
-    background: #10B981;
+    background: #16749A;
+}
+
+html[data-admin-theme="light"] .gt-req-step.is-done::after {
+    background: #063B5C;
 }
 
 .gt-req-step-dot {
@@ -2346,17 +2398,24 @@ html[data-admin-theme="light"] .gt-req-step-dot {
 }
 
 .gt-req-step.is-done .gt-req-step-dot {
-    background: #10B981;
-    border-color: #10B981;
+    background: #16749A;
+    border-color: #16749A;
     color: #FFFFFF;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+    box-shadow: 0 0 0 3px rgba(22, 116, 154, 0.16);
+}
+
+html[data-admin-theme="light"] .gt-req-step.is-done .gt-req-step-dot {
+    background: #063B5C;
+    border-color: #063B5C;
+    color: #FFFFFF;
+    box-shadow: 0 0 0 3px rgba(6, 59, 92, 0.12);
 }
 
 .gt-req-step.is-active .gt-req-step-dot {
     background: var(--gtb-gold);
     border-color: var(--gtb-gold);
     color: #063B5C;
-    box-shadow: 0 0 0 4px rgba(242, 194, 48, 0.26);
+    box-shadow: 0 0 0 4px rgba(242, 194, 48, 0.24);
 }
 
 .gt-req-step-label {
@@ -2367,11 +2426,11 @@ html[data-admin-theme="light"] .gt-req-step-dot {
 }
 
 .gt-req-step.is-done .gt-req-step-label {
-    color: #34D399;
+    color: #A9C2D4;
 }
 
 html[data-admin-theme="light"] .gt-req-step.is-done .gt-req-step-label {
-    color: #047857;
+    color: #063B5C;
 }
 
 .gt-req-step.is-active .gt-req-step-label {
@@ -2380,6 +2439,25 @@ html[data-admin-theme="light"] .gt-req-step.is-done .gt-req-step-label {
 }
 
 html[data-admin-theme="light"] .gt-req-step.is-active .gt-req-step-label {
+    color: #063B5C;
+}
+
+.gt-req-pill-neutral {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: 7px;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    background: rgba(231, 240, 245, 0.08);
+    border: 1px solid rgba(231, 240, 245, 0.18);
+    color: #E7F0F5;
+}
+
+html[data-admin-theme="light"] .gt-req-pill-neutral {
+    background: #EDF4F8;
+    border-color: #CFE0EC;
     color: #063B5C;
 }
 
@@ -2451,7 +2529,7 @@ html[data-admin-theme="light"] .gt-req-meta-icon--gold {
 .gt-req-briefing {
     border-radius: 14px;
     border: 1px solid var(--gtb-border);
-    border-left: 4px solid var(--gtb-gold);
+    border-left: 3px solid #16749A;
     background: rgba(255, 255, 255, 0.03);
     padding: 16px 18px;
 }
@@ -2459,7 +2537,7 @@ html[data-admin-theme="light"] .gt-req-meta-icon--gold {
 html[data-admin-theme="light"] .gt-req-briefing {
     background: #F8FBFD;
     border-color: #DCE8F0;
-    border-left-color: #F2C230;
+    border-left-color: #063B5C;
 }
 
 .gt-req-kv-list {
@@ -2506,18 +2584,22 @@ html[data-admin-theme="light"] .gt-req-kv-val {
     content: "";
     position: absolute;
     left: 9px;
-    top: 10px;
-    bottom: 10px;
+    top: 12px;
+    bottom: 12px;
     width: 2px;
-    background: linear-gradient(180deg, rgba(242, 194, 48, 0.55) 0%, rgba(22, 116, 154, 0.28) 100%);
+    background: rgba(231, 240, 245, 0.14);
     border-radius: 999px;
+}
+
+html[data-admin-theme="light"] .gt-timeline::before {
+    background: #D4E3ED;
 }
 
 .gt-timeline-item {
     position: relative;
-    border-radius: 13px;
+    border-radius: 12px;
     padding: 12px 15px;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.025);
     border: 1px solid var(--gtb-border);
     transition: border-color 0.15s ease;
 }
@@ -2525,47 +2607,46 @@ html[data-admin-theme="light"] .gt-req-kv-val {
 html[data-admin-theme="light"] .gt-timeline-item {
     background: #FFFFFF;
     border-color: #DCE8F0;
-    box-shadow: 0 2px 8px rgba(6, 59, 92, 0.04);
 }
 
 .gt-timeline-item:first-child {
-    border-color: rgba(242, 194, 48, 0.35);
+    border-color: rgba(22, 116, 154, 0.45);
+    background: rgba(22, 116, 154, 0.08);
 }
 
 html[data-admin-theme="light"] .gt-timeline-item:first-child {
-    border-color: rgba(242, 194, 48, 0.7);
-    background: #FFFDF7;
+    border-color: #B8D4E6;
+    background: #F5FAFD;
 }
 
 .gt-timeline-dot {
     position: absolute;
-    left: -22px;
+    left: -21px;
     top: 16px;
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border-radius: 999px;
-    background: var(--gtb-gold);
+    background: #5E7D94;
     border: 2px solid var(--gtb-card);
-    box-shadow: 0 0 0 3px rgba(242, 194, 48, 0.22);
 }
 
 html[data-admin-theme="light"] .gt-timeline-dot {
+    background: #8FA9BC;
     border-color: #FFFFFF;
 }
 
-.gt-timeline-dot--success {
-    background: #10B981;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22);
-}
-
-.gt-timeline-dot--info {
-    background: #16749A;
+.gt-timeline-item:first-child .gt-timeline-dot {
+    background: #063B5C;
     box-shadow: 0 0 0 3px rgba(22, 116, 154, 0.22);
 }
 
+html[data-admin-theme="dark"] .gt-timeline-item:first-child .gt-timeline-dot {
+    background: var(--gtb-gold);
+    box-shadow: 0 0 0 3px rgba(242, 194, 48, 0.22);
+}
+
 .gt-timeline-dot--danger {
-    background: #EF4444;
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.22);
+    background: #DC2626 !important;
 }
 
 .gt-quick-action-btn {

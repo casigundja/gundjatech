@@ -198,11 +198,11 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                         {/* Cabeçalho Hero */}
                         <div class="space-y-4 pb-5 border-b border-white/10">
                             <div class="flex items-center justify-between gap-3 flex-wrap">
-                                <div class="flex items-center gap-2.5 flex-wrap">
-                                    <span class="gtb-badge-pill font-mono">{requestDetail.protocol}</span>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="gt-req-pill-neutral font-mono">{requestDetail.protocol}</span>
                                     <span class={`gt-badge ${meta.badgeClass}`}>{meta.label}</span>
                                     {isConvertedToProject && (
-                                        <span class="gt-badge gt-badge-info">Projeto Vinculado</span>
+                                        <span class="gt-req-pill-neutral">Projeto Vinculado</span>
                                     )}
                                 </div>
                                 <span class="text-[11px] font-semibold text-[#8C95AA]">
@@ -314,7 +314,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                                 <div class="gt-req-kv-key">{item.key}</div>
                                                 <div class="gt-req-kv-val">
                                                     {item.isUrl ? (
-                                                        <a href={item.value} target="_blank" rel="noopener noreferrer" class="text-[#16749A] hover:underline">
+                                                        <a href={item.value} target="_blank" rel="noopener noreferrer" class="text-[#16749A] hover:underline block truncate" title={item.value}>
                                                             {item.value} ↗
                                                         </a>
                                                     ) : (
@@ -353,20 +353,20 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                         const noteText = h.comment || h.notes;
                                         return (
                                             <div class="gt-timeline-item">
-                                                <span class={`gt-timeline-dot ${stMeta?.dotClass || ''}`} aria-hidden="true"></span>
+                                                <span class={`gt-timeline-dot ${st === 'cancelled' ? 'gt-timeline-dot--danger' : ''}`} aria-hidden="true"></span>
                                                 <div class="flex items-center justify-between gap-2 flex-wrap">
                                                     <div class="flex items-center gap-2 flex-wrap">
-                                                        <span class={`gt-badge ${stMeta?.badgeClass || 'gt-badge-warning'}`}>{stLabel}</span>
+                                                        <strong class="text-xs font-extrabold text-white">{stLabel}</strong>
                                                         {actionTag && (
-                                                            <span class="text-[11px] font-bold text-[#8C95AA]">{actionTag}</span>
+                                                            <span class="text-[11px] font-semibold text-[#8C95AA]">· {actionTag}</span>
                                                         )}
                                                     </div>
-                                                    <span class="text-[11px] font-semibold text-[#8C95AA]">
+                                                    <span class="text-[11px] font-medium text-[#8C95AA]">
                                                         {formatDateBrt(h.created_at)}
                                                     </span>
                                                 </div>
                                                 {noteText && (
-                                                    <p class="text-xs text-[#D5DCEB] mt-2 leading-relaxed">{noteText}</p>
+                                                    <p class="text-xs text-[#D5DCEB] mt-1.5 leading-relaxed">{noteText}</p>
                                                 )}
                                             </div>
                                         );

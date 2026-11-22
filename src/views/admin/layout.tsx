@@ -43,7 +43,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
-                <link rel="stylesheet" href="/css/gt-admin.css?v=38" />
+                <link rel="stylesheet" href="/css/gt-admin.css?v=39" />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
@@ -65,6 +65,26 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                         var saved = 'dark';
                         try { saved = localStorage.getItem('gt_admin_theme') || 'dark'; } catch (e) {}
                         applyAdminTheme(saved);
+
+                        function applySidebarCollapsed(collapsed) {
+                            var aside = document.getElementById('gt-admin-sidebar');
+                            var btn = document.getElementById('gt-sidebar-collapse-btn');
+                            if (aside) aside.classList.toggle('is-collapsed', !!collapsed);
+                            if (document.body) document.body.classList.toggle('gt-sidebar-is-collapsed', !!collapsed);
+                            if (btn) btn.setAttribute('title', collapsed ? 'Expandir menu' : 'Recolher menu');
+                        }
+                        window.GT_ToggleAdminSidebar = function () {
+                            var aside = document.getElementById('gt-admin-sidebar');
+                            if (!aside) return;
+                            var next = !aside.classList.contains('is-collapsed');
+                            applySidebarCollapsed(next);
+                            try { localStorage.setItem('gt_admin_sidebar_collapsed', next ? '1' : '0'); } catch (e) {}
+                        };
+                        document.addEventListener('DOMContentLoaded', function () {
+                            var collapsed = false;
+                            try { collapsed = localStorage.getItem('gt_admin_sidebar_collapsed') === '1'; } catch (e) {}
+                            if (collapsed) applySidebarCollapsed(true);
+                        });
                     })();
                 ` }} />
                 <style dangerouslySetInnerHTML={{ __html: `
@@ -184,7 +204,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 >
                     <div class="flex flex-col min-h-0 flex-1">
                         {/* Brand Header */}
-                        <div class="h-[72px] flex items-center justify-between px-4 shrink-0">
+                        <div class="gtb-sidebar-brand-row h-[72px] flex items-center justify-between px-4 shrink-0">
                             <a href="/admin/dashboard" class="flex items-center gap-2.5 no-underline">
                                 <span class="gtb-brand-badge">
                                     <img src="/img/favicon.svg?v=gt-icon4" alt="GundjaTech" class="w-5 h-5 object-contain" />
@@ -359,6 +379,20 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                 aria-label="Abrir menu"
                             >
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                            </button>
+                            <button
+                                type="button"
+                                id="gt-sidebar-collapse-btn"
+                                onclick="window.GT_ToggleAdminSidebar && window.GT_ToggleAdminSidebar()"
+                                class="gtb-sidebar-collapse-btn gtb-icon-btn rounded-xl shrink-0"
+                                title="Recolher menu"
+                                aria-label="Recolher ou expandir menu lateral"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect width="18" height="18" x="3" y="3" rx="2" />
+                                    <path d="M9 3v18" />
+                                    <path d="m15 9-3 3 3 3" />
+                                </svg>
                             </button>
                             <h1 class="gt-font-display gtb-topbar-title hidden md:block text-lg sm:text-xl font-bold tracking-tight truncate">
                                 {headerTitle}
