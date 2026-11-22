@@ -15,6 +15,14 @@ uploadRoutes.get('/uploads/:key{.*}', async (c) => {
         return c.text('Key do arquivo não fornecida', 400);
     }
 
+    // Bloqueia acesso não-autenticado para arquivos armazenados sob o prefixo private/
+    if (key.startsWith('private/')) {
+        const user = c.get('user');
+        if (!user) {
+            return c.json({ error: 'Unauthenticated', message: 'Autenticação obrigatória para acessar arquivos privados.' }, 401);
+        }
+    }
+
     if (!c.env.UPLOADS_BUCKET) {
         return c.text('Bucket R2 não configurado no runtime', 500);
     }

@@ -27,6 +27,8 @@ export interface Env {
     WHATSAPP_ACCESS_TOKEN?: string;
     WHATSAPP_PHONE_NUMBER_ID?: string;
     WHATSAPP_API_VERSION?: string;
+    WHATSAPP_APP_SECRET?: string;
+    WHATSAPP_WEBHOOK_SECRET?: string;
 }
 
 export type UserRole =

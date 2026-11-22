@@ -55,6 +55,9 @@ async function createSecurityMockEnv() {
         prepare: (query: string) => {
             const q = query.toLowerCase();
             return {
+                first: async <T>(): Promise<T | null> => ({ total: 0, total_income: 0, pending_income: 0 } as unknown as T),
+                all: async <T>(): Promise<{ results: T[] }> => ({ results: [] }),
+                run: async () => ({ meta: { changes: 0, last_row_id: 0 } }),
                 bind: (...params: any[]) => ({
                     first: async <T>(): Promise<T | null> => {
                         if (q.includes('from users where lower(email) =') || q.includes('from users where email =')) {
@@ -265,5 +268,46 @@ describe('Auditoria de Blindagem de Segurança (P0/P1/P2)', () => {
         }
 
         expect(lastStatus).toBe(429);
+    });
+
+    it('P2: deve ocultar /admin/usuarios e /admin/configuracoes na sidebar para cargo "attendant"', async () => {
+        const { env } = await createSecurityMockEnv();
+        const attendantCookie = await signedCookie('sess_attendant');
+
+        const res = await app.request('/admin/dashboard', {
+            headers: { Cookie: attendantCookie }
+        }, env);
+
+        expect(res.status).toBe(200);
+        const html = await res.text();
+        const sidebarMatch = html.match(/<aside id="gt-admin-sidebar"[\s\S]*?<\/aside>/);
+        const sidebarHtml = sidebarMatch ? sidebarMatch[0] : html;
+        expect(sidebarHtml).toContain('/admin/atendimento');
+        expect(sidebarHtml).not.toContain('href="/admin/usuarios"');
+        expect(sidebarHtml).not.toContain('href="/admin/configuracoes"');
+        expect(sidebarHtml).not.toContain('href="/admin/financeiro"');
+    });
+
+    it('P2: deve bloquear acesso anônimo a arquivos sob o prefixo /uploads/private/*', async () => {
+        const { env } = await createSecurityMockEnv();
+
+        const res = await app.request('/uploads/private/contrato-sigiloso.pdf', {}, env);
+        expect(res.status).toBe(401);
+    });
+
+    it('P2: deve rejeitar webhook WhatsApp com assinatura HMAC inválida quando WHATSAPP_APP_SECRET estiver configurado', async () => {
+        const { env } = await createSecurityMockEnv();
+        (env as any).WHATSAPP_APP_SECRET = 'meta_app_secret_top_secret';
+
+        const res = await app.request('/api/webhooks/whatsapp', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Hub-Signature-256': 'sha256=assinatura_falsa_invalida'
+            },
+            body: JSON.stringify({ object: 'whatsapp_business_account', entry: [] })
+        }, env);
+
+        expect(res.status).toBe(401);
     });
 });

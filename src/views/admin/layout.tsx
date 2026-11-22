@@ -1,4 +1,6 @@
 import type { FC, PropsWithChildren } from 'hono/jsx';
+import { hasPermission } from '../../lib/rbac';
+import type { UserRole } from '../../types/env';
 
 interface AdminLayoutProps {
     title?: string;
@@ -23,6 +25,8 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
 }) => {
     const initials = (currentUser.name || 'GT').slice(0, 2).toUpperCase();
     const headerTitle = title.split('•')[0].trim() || 'Dashboard';
+    const role = (currentUser.role || 'client') as UserRole;
+    const can = (permission: string) => hasPermission(role, permission);
 
     return (
         <html lang="pt-BR" class="h-full dark">
@@ -210,97 +214,125 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                 </div>
                             </a>
 
-                            <a href="/admin/campanhas" class={`gtb-nav-item ${activeNav === 'campaigns' ? 'is-active' : ''}`} title="Tráfego & Analytics">
-                                <div class="flex items-center gap-3">
-                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                                    <span>Tráfego &amp; Analytics</span>
-                                </div>
-                            </a>
-
-                            <a href="/admin/financeiro" class={`gtb-nav-item ${activeNav === 'finance' ? 'is-active' : ''}`} title="Receita & Caixa">
-                                <div class="flex items-center gap-3">
-                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                                    <span>Receita &amp; Caixa</span>
-                                </div>
-                            </a>
-
-                            <a href="/admin/projetos" class={`gtb-nav-item ${activeNav === 'projects' ? 'is-active' : ''}`} title="Projetos">
-                                <div class="flex items-center gap-3">
-                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-                                    <span>Projetos</span>
-                                </div>
-                            </a>
-
-                            <a href="/admin/servicos" class={`gtb-nav-item ${activeNav === 'services' ? 'is-active' : ''}`} title="Serviços & Soluções">
-                                <div class="flex items-center gap-3">
-                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"/></svg>
-                                    <span>Serviços &amp; Soluções</span>
-                                </div>
-                            </a>
-
-                            <a href="/admin/clientes" class={`gtb-nav-item ${activeNav === 'clients' ? 'is-active' : ''}`} title="Clientes">
-                                <div class="flex items-center gap-3">
-                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                    <span>Clientes</span>
-                                </div>
-                            </a>
-
-                            <a href="/admin/solicitacoes" class={`gtb-nav-item ${activeNav === 'requests' ? 'is-active' : ''}`} title="Solicitações">
-                                <div class="flex items-center gap-3">
-                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                    <span>Solicitações</span>
-                                </div>
-                                <span id="gt-sidebar-requests-badge" class="gtb-count-circle hidden">0</span>
-                            </a>
-
-                            <div class="gtb-section-head pt-4 border-t border-white/5 mt-2">
-                                <span>Workspaces</span>
-                            </div>
-
-                            <a href="/admin/orcamentos" class={`gtb-nav-item ${activeNav === 'quotations' ? 'is-active' : ''}`} title="Orçamentos">
-                                <div class="flex items-center gap-3">
-                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                                    <span>Orçamentos</span>
-                                </div>
-                            </a>
-
-                            <a href="/admin/dominios" class={`gtb-nav-item ${activeNav === 'domains' ? 'is-active' : ''}`} title="Domínios & DNS">
-                                <div class="flex items-center gap-3">
-                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
-                                    <span>Domínios &amp; DNS</span>
-                                </div>
-                            </a>
-
-                            <a href="/admin/usuarios" class={`gtb-nav-item ${activeNav === 'users' ? 'is-active' : ''}`} title="Equipe & Usuários">
-                                <div class="flex items-center gap-3">
-                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                                    <span>Equipe &amp; Usuários</span>
-                                </div>
-                            </a>
-
-                            <div class="pt-3 mt-2 border-t border-white/5 space-y-1">
-                                <a href="/admin/crm-autonomo" class={`gtb-nav-item ${activeNav === 'crm' ? 'is-active' : ''}`} title="CRM Autônomo IA">
+                            {can('campaigns.view') && (
+                                <a href="/admin/campanhas" class={`gtb-nav-item ${activeNav === 'campaigns' ? 'is-active' : ''}`} title="Tráfego & Analytics">
                                     <div class="flex items-center gap-3">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                                        <span>CRM Autônomo IA</span>
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                                        <span>Tráfego &amp; Analytics</span>
                                     </div>
                                 </a>
+                            )}
 
-                                <a href="/admin/atendimento" class={`gtb-nav-item ${activeNav === 'chat' ? 'is-active' : ''}`} title="Suporte & Chat">
+                            {can('finance.view') && (
+                                <a href="/admin/financeiro" class={`gtb-nav-item ${activeNav === 'finance' ? 'is-active' : ''}`} title="Receita & Caixa">
                                     <div class="flex items-center gap-3">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                        <span>Suporte &amp; Chat</span>
-                                    </div>
-                                    <span id="gt-sidebar-chats-badge" class="gtb-count-circle hidden">0</span>
-                                </a>
-
-                                <a href="/admin/configuracoes" class={`gtb-nav-item ${activeNav === 'settings' ? 'is-active' : ''}`} title="Configurações">
-                                    <div class="flex items-center gap-3">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                                        <span>Configurações</span>
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                        <span>Receita &amp; Caixa</span>
                                     </div>
                                 </a>
-                            </div>
+                            )}
+
+                            {can('projects.view') && (
+                                <a href="/admin/projetos" class={`gtb-nav-item ${activeNav === 'projects' ? 'is-active' : ''}`} title="Projetos">
+                                    <div class="flex items-center gap-3">
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                                        <span>Projetos</span>
+                                    </div>
+                                </a>
+                            )}
+
+                            {can('services.view') && (
+                                <a href="/admin/servicos" class={`gtb-nav-item ${activeNav === 'services' ? 'is-active' : ''}`} title="Serviços & Soluções">
+                                    <div class="flex items-center gap-3">
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"/></svg>
+                                        <span>Serviços &amp; Soluções</span>
+                                    </div>
+                                </a>
+                            )}
+
+                            {can('clients.view') && (
+                                <a href="/admin/clientes" class={`gtb-nav-item ${activeNav === 'clients' ? 'is-active' : ''}`} title="Clientes">
+                                    <div class="flex items-center gap-3">
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                        <span>Clientes</span>
+                                    </div>
+                                </a>
+                            )}
+
+                            {can('requests.view') && (
+                                <a href="/admin/solicitacoes" class={`gtb-nav-item ${activeNav === 'requests' ? 'is-active' : ''}`} title="Solicitações">
+                                    <div class="flex items-center gap-3">
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        <span>Solicitações</span>
+                                    </div>
+                                    <span id="gt-sidebar-requests-badge" class="gtb-count-circle hidden">0</span>
+                                </a>
+                            )}
+
+                            {(can('quotations.view') || can('domains.view') || can('users.manage')) && (
+                                <div class="gtb-section-head pt-4 border-t border-white/5 mt-2">
+                                    <span>Workspaces</span>
+                                </div>
+                            )}
+
+                            {can('quotations.view') && (
+                                <a href="/admin/orcamentos" class={`gtb-nav-item ${activeNav === 'quotations' ? 'is-active' : ''}`} title="Orçamentos">
+                                    <div class="flex items-center gap-3">
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                        <span>Orçamentos</span>
+                                    </div>
+                                </a>
+                            )}
+
+                            {can('domains.view') && (
+                                <a href="/admin/dominios" class={`gtb-nav-item ${activeNav === 'domains' ? 'is-active' : ''}`} title="Domínios & DNS">
+                                    <div class="flex items-center gap-3">
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+                                        <span>Domínios &amp; DNS</span>
+                                    </div>
+                                </a>
+                            )}
+
+                            {can('users.manage') && (
+                                <a href="/admin/usuarios" class={`gtb-nav-item ${activeNav === 'users' ? 'is-active' : ''}`} title="Equipe & Usuários">
+                                    <div class="flex items-center gap-3">
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                        <span>Equipe &amp; Usuários</span>
+                                    </div>
+                                </a>
+                            )}
+
+                            {(can('chat.manage') || can('chat.view') || can('settings.manage')) && (
+                                <div class="pt-3 mt-2 border-t border-white/5 space-y-1">
+                                    {can('chat.manage') && (
+                                        <a href="/admin/crm-autonomo" class={`gtb-nav-item ${activeNav === 'crm' ? 'is-active' : ''}`} title="CRM Autônomo IA">
+                                            <div class="flex items-center gap-3">
+                                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                                <span>CRM Autônomo IA</span>
+                                            </div>
+                                        </a>
+                                    )}
+
+                                    {can('chat.view') && (
+                                        <a href="/admin/atendimento" class={`gtb-nav-item ${activeNav === 'chat' ? 'is-active' : ''}`} title="Suporte & Chat">
+                                            <div class="flex items-center gap-3">
+                                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                <span>Suporte &amp; Chat</span>
+                                            </div>
+                                            <span id="gt-sidebar-chats-badge" class="gtb-count-circle hidden">0</span>
+                                        </a>
+                                    )}
+
+                                    {can('settings.manage') && (
+                                        <a href="/admin/configuracoes" class={`gtb-nav-item ${activeNav === 'settings' ? 'is-active' : ''}`} title="Configurações">
+                                            <div class="flex items-center gap-3">
+                                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                                                <span>Configurações</span>
+                                            </div>
+                                        </a>
+                                    )}
+                                </div>
+                            )}
                         </nav>
                     </div>
 

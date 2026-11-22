@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { AppVariables, Env } from '../types/env';
 import { AutonomousCrmAgent } from '../services/ai-crm-agent';
+import { hmacVerify } from '../lib/crypto';
 import {
     markWhatsAppMessageRead,
     normalizeWhatsAppPhone,
@@ -202,9 +203,35 @@ whatsappRoutes.get('/', (c) => {
  * registra no CRM/Inbox e aciona o Agente IA autônomo.
  */
 whatsappRoutes.post('/', async (c) => {
+    const rawBody = await c.req.text();
+
+    // 1. Validação opcional de assinatura HMAC-SHA256 da Meta (X-Hub-Signature-256)
+    const appSecret = (c.env?.WHATSAPP_APP_SECRET || '').trim();
+    if (appSecret) {
+        const sigHeader = (c.req.header('x-hub-signature-256') || '').trim();
+        const providedHex = sigHeader.startsWith('sha256=') ? sigHeader.slice(7) : '';
+        if (!providedHex || !(await hmacVerify(rawBody, providedHex, appSecret))) {
+            return c.json({ ok: false, error: 'Invalid webhook signature' }, 401);
+        }
+    }
+
+    // 2. Validação opcional de token secreto para Z-API / Evolution API
+    const webhookSecret = (c.env?.WHATSAPP_WEBHOOK_SECRET || '').trim();
+    if (webhookSecret) {
+        const providedToken = (
+            c.req.query('token') ||
+            c.req.header('x-webhook-secret') ||
+            c.req.header('client-token') ||
+            ''
+        ).trim();
+        if (providedToken !== webhookSecret) {
+            return c.json({ ok: false, error: 'Invalid webhook token' }, 401);
+        }
+    }
+
     let payload: any;
     try {
-        payload = await c.req.json();
+        payload = JSON.parse(rawBody);
     } catch {
         return c.json({ ok: false, error: 'Invalid JSON payload' }, 400);
     }
