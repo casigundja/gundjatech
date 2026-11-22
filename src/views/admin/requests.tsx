@@ -37,6 +37,8 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
     // ----------------------------------------------------
     if (requestDetail) {
         const meta = STATUS_META[requestDetail.status] || { label: requestDetail.status || 'Novo', badgeClass: 'gt-badge-warning' };
+        const isConvertedToProject = history.some((h: any) => h.action === 'converted_to_project');
+        const canConvert = !isConvertedToProject && requestDetail.status !== 'cancelled' && requestDetail.status !== 'completed';
 
         return (
             <AdminLayout
@@ -56,16 +58,26 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                     </a>
 
                     <div class="gt-detail-toolbar-actions">
-                        <form action={`/admin/solicitacoes/${requestDetail.id}/converter`} method="post" class="m-0">
-                            <button type="submit" data-loading-text="Convertendo..." class="gt-btn-primary gt-btn-sm">
+                        {canConvert ? (
+                            <form action={`/admin/solicitacoes/${requestDetail.id}/converter`} method="post" class="m-0">
+                                <button type="submit" data-loading-text="Convertendo..." class="gt-btn-primary gt-btn-sm">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
+                                        <path d="M12 10v6" />
+                                        <path d="M9 13h6" />
+                                    </svg>
+                                    <span>Converter em Projeto</span>
+                                </button>
+                            </form>
+                        ) : isConvertedToProject ? (
+                            <a href="/admin/projetos" class="gt-btn-petrol gt-btn-sm">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
-                                    <path d="M12 10v6" />
-                                    <path d="M9 13h6" />
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                    <path d="m9 11 3 3L22 4" />
                                 </svg>
-                                <span>Converter em Projeto</span>
-                            </button>
-                        </form>
+                                <span>Ver em Projetos</span>
+                            </a>
+                        ) : null}
 
                         {requestDetail.status !== 'cancelled' && (
                             <form action={`/admin/solicitacoes/${requestDetail.id}/cancelar`} method="post" class="m-0">

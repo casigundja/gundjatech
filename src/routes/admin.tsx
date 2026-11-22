@@ -638,6 +638,16 @@ adminRoutes.post('/solicitacoes/:id/converter', async (c) => {
         return c.redirect('/admin/solicitacoes?error=Solicitação não encontrada');
     }
 
+    // Impede conversão duplicada em projeto
+    try {
+        const alreadyConverted = await db.prepare(
+            `SELECT id FROM service_request_history WHERE service_request_id = ? AND action = 'converted_to_project' LIMIT 1`
+        ).bind(id).first();
+        if (alreadyConverted) {
+            return c.redirect(`/admin/solicitacoes/${id}?error=Esta solicitação já foi convertida em Projeto.`);
+        }
+    } catch {}
+
     // Garante que existe cliente associado
     let clientId = req.client_id;
     if (!clientId) {
