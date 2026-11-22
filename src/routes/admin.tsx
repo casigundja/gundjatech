@@ -485,7 +485,41 @@ const toggleServiceHandler = async (c: any) => {
 };
 
 adminRoutes.post('/servicos/:id/toggle', toggleServiceHandler);
-adminRoutes.post('/servicos/:id/excluir', toggleServiceHandler);
+
+adminRoutes.post('/servicos/:id/editar', async (c) => {
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+    const body = await getRequestBody(c);
+
+    const title = String(body.title || body.name || '').trim();
+    const category = String(body.category || body.category_id || 'sites').trim();
+    const price = Math.max(0, Number(body.price || body.base_price) || 0);
+    const summary = String(body.summary || body.short_description || '').trim() || null;
+    const isActive = body.is_active === '0' || body.is_active === 0 ? 0 : 1;
+
+    if (!title) {
+        return c.redirect('/admin/servicos?error=Título do serviço é obrigatório.');
+    }
+
+    await db.prepare(
+        `UPDATE services
+         SET title = ?, category = ?, price = ?, summary = ?, is_active = ?, updated_at = datetime('now')
+         WHERE id = ?`
+    ).bind(title, category, price, summary, isActive, id).run();
+
+    return c.redirect('/admin/servicos?success=Pacote de serviço atualizado com sucesso!');
+});
+
+adminRoutes.post('/servicos/:id/excluir', async (c) => {
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+
+    if (id > 0) {
+        await db.prepare(`DELETE FROM services WHERE id = ?`).bind(id).run();
+    }
+
+    return c.redirect('/admin/servicos?success=Pacote de serviço excluído com sucesso.');
+});
 
 // ==========================================
 // 5. EQUIPE & USUÁRIOS (RBAC)
