@@ -229,7 +229,6 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
                                     <span>Projetos</span>
                                 </div>
-                                <span class="gtb-badge-pill">PRO</span>
                             </a>
 
                             <a href="/admin/servicos" class={`gtb-nav-item ${activeNav === 'services' ? 'is-active' : ''}`} title="Serviços & Soluções">
@@ -285,7 +284,6 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                                         <span>CRM Autônomo IA</span>
                                     </div>
-                                    <span class="gtb-badge-pill">AUTO</span>
                                 </a>
 
                                 <a href="/admin/atendimento" class={`gtb-nav-item ${activeNav === 'chat' ? 'is-active' : ''}`} title="Suporte & Chat">
