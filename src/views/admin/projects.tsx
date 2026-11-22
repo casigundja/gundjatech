@@ -63,6 +63,21 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                         <span class="text-xs text-[#8C95AA]">
                             Etapas: <strong class="text-white">{completedStages}/{stages.length}</strong>
                         </span>
+                        <form
+                            action={`/admin/projetos/${projectDetail.id}/excluir`}
+                            method="post"
+                            class="m-0"
+                            data-confirm="Deseja realmente excluir este projeto e todas as suas etapas?"
+                        >
+                            <button type="submit" class="gt-btn-danger-ghost gt-btn-xs">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 6h18" />
+                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                </svg>
+                                <span>Excluir Projeto</span>
+                            </button>
+                        </form>
                     </div>
                 </div>
 
@@ -422,13 +437,34 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                                         <span class="text-[11px] text-[#8C95AA]">
                                             Início: <strong class="text-white">{p.start_date ? new Date(p.start_date).toLocaleDateString('pt-BR') : '—'}</strong>
                                         </span>
-                                        <a href={`/admin/projetos/${p.id}`} class="gt-btn-outline gt-btn-xs">
-                                            <span>Gerenciar</span>
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M5 12h14" />
-                                                <path d="m12 5 7 7-7 7" />
-                                            </svg>
-                                        </a>
+                                        <div class="inline-flex items-center gap-1.5">
+                                            <a href={`/admin/projetos/${p.id}`} class="gt-btn-outline gt-btn-xs">
+                                                <span>Gerenciar</span>
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M5 12h14" />
+                                                    <path d="m12 5 7 7-7 7" />
+                                                </svg>
+                                            </a>
+                                            <form
+                                                action={`/admin/projetos/${p.id}/excluir`}
+                                                method="post"
+                                                class="inline-block m-0"
+                                                data-confirm="Deseja realmente excluir este projeto permanentemente?"
+                                            >
+                                                <button
+                                                    type="submit"
+                                                    class="gt-btn-danger-ghost gt-btn-icon-only"
+                                                    title="Excluir projeto"
+                                                    aria-label="Excluir projeto"
+                                                >
+                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M3 6h18" />
+                                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                                    </svg>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
                             </article>

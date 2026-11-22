@@ -914,6 +914,21 @@ adminRoutes.post('/projetos/:id', async (c) => {
     return c.redirect(`/admin/projetos/${id}?success=Projeto atualizado com sucesso`);
 });
 
+adminRoutes.post('/projetos/:id/excluir', async (c) => {
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+
+    if (id > 0) {
+        try {
+            await db.prepare(`DELETE FROM project_stages WHERE project_id = ?`).bind(id).run();
+            await db.prepare(`DELETE FROM project_attachments WHERE project_id = ?`).bind(id).run();
+            await db.prepare(`DELETE FROM projects WHERE id = ?`).bind(id).run();
+        } catch {}
+    }
+
+    return c.redirect('/admin/projetos?success=Projeto excluído com sucesso.');
+});
+
 adminRoutes.post('/projetos/:id/etapas', async (c) => {
     const db = c.env.DB;
     const id = c.req.param('id');
@@ -1034,6 +1049,8 @@ adminRoutes.post('/financeiro', async (c) => {
     const body = await getRequestBody(c);
 
     const clientId = Number(body.client_id);
+    const typeRaw = String(body.type || 'income').trim();
+    const txType = typeRaw === 'expense' ? 'expense' : 'income';
     const description = String(body.description || '').trim();
     const amount = Number(body.amount);
     const dueDate = String(body.due_date || '').trim();
@@ -1044,9 +1061,10 @@ adminRoutes.post('/financeiro', async (c) => {
         return c.redirect('/admin/financeiro?error=Preencha todos os campos obrigatórios');
     }
 
+    const txTypeSql = txType === 'expense' ? "'expense'" : "'income'";
     await db.prepare(
         `INSERT INTO financial_transactions (client_id, type, category, description, amount, status, due_date, payment_method, invoice_number, created_at, updated_at)
-         VALUES (?, 'income', 'contract', ?, ?, 'pending', ?, ?, ?, datetime('now'), datetime('now'))`
+         VALUES (?, ${txTypeSql}, 'contract', ?, ?, 'pending', ?, ?, ?, datetime('now'), datetime('now'))`
     ).bind(clientId, description, amount, dueDate, paymentMethod, invoiceNumber).run();
 
     try {
@@ -1086,6 +1104,17 @@ adminRoutes.post('/financeiro/:id/cancelar', async (c) => {
     ).bind(id).run();
 
     return c.redirect('/admin/financeiro?success=Fatura cancelada');
+});
+
+adminRoutes.post('/financeiro/:id/excluir', async (c) => {
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+
+    if (id > 0) {
+        await db.prepare(`DELETE FROM financial_transactions WHERE id = ?`).bind(id).run();
+    }
+
+    return c.redirect('/admin/financeiro?success=Lançamento financeiro excluído com sucesso.');
 });
 
 // ==========================================
