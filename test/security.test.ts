@@ -238,4 +238,32 @@ describe('Auditoria de Blindagem de Segurança (P0/P1/P2)', () => {
         expect(res.headers.get('content-type')).toContain('application/pdf');
         expect(res.headers.get('content-disposition')).toContain('contrato.pdf');
     });
+
+    it('P2: deve aplicar Rate Limiting (429 Too Many Requests) ao exceder tentativas em /auth/login', async () => {
+        const { env } = await createSecurityMockEnv();
+        const rlStore = new Map<string, string>();
+        env.KV_CACHE = {
+            get: async (k: string) => rlStore.get(k) ?? null,
+            put: async (k: string, v: string) => { rlStore.set(k, v); }
+        } as any;
+
+        let lastStatus = 0;
+        for (let i = 0; i < 16; i++) {
+            const res = await app.request('/auth/login', {
+                method: 'POST',
+                headers: {
+                    'cf-connecting-ip': '203.0.113.99',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    Accept: 'application/json'
+                },
+                body: new URLSearchParams({
+                    email: 'naoexiste@gundjatech.com',
+                    password: 'errada'
+                }).toString()
+            }, env);
+            lastStatus = res.status;
+        }
+
+        expect(lastStatus).toBe(429);
+    });
 });

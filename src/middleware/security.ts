@@ -58,3 +58,52 @@ export const csrfProtection: MiddlewareHandler<{ Bindings: Env; Variables: AppVa
 
     await next();
 };
+
+/**
+ * Rate Limiter distribuído via Cloudflare KV_CACHE (proteção contra brute-force e spam).
+ * Faz fallback silencioso caso KV_CACHE não esteja disponível no ambiente de teste.
+ */
+export function rateLimit(options: {
+    keyPrefix: string;
+    maxRequests: number;
+    windowSeconds: number;
+    message?: string;
+}): MiddlewareHandler<{ Bindings: Env; Variables: AppVariables }> {
+    return async (c, next) => {
+        const kv = c.env?.KV_CACHE;
+        if (!kv || typeof kv.get !== 'function' || typeof kv.put !== 'function') {
+            return next();
+        }
+
+        const ip =
+            c.req.header('cf-connecting-ip') ||
+            c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
+            'unknown';
+        const windowBucket = Math.floor(Date.now() / (options.windowSeconds * 1000));
+        const key = `rl:${options.keyPrefix}:${ip}:${windowBucket}`;
+
+        try {
+            const raw = await kv.get(key);
+            const current = raw ? parseInt(raw, 10) || 0 : 0;
+
+            if (current >= options.maxRequests) {
+                const msg =
+                    options.message ||
+                    'Muitas tentativas em sequência. Aguarde alguns minutos e tente novamente.';
+                c.header('Retry-After', String(options.windowSeconds));
+                if (c.req.path.startsWith('/api/') || c.req.header('accept')?.includes('application/json')) {
+                    return c.json({ error: 'Too Many Requests', message: msg }, 429);
+                }
+                return c.text(msg, 429);
+            }
+
+            await kv.put(key, String(current + 1), {
+                expirationTtl: Math.max(60, options.windowSeconds + 10)
+            });
+        } catch {
+            // Falha de KV não deve derrubar o fluxo principal
+        }
+
+        await next();
+    };
+}

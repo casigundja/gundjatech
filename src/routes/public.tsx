@@ -3,6 +3,7 @@ import { Env, AppVariables } from '../types/env';
 import { renderPublicBladePage, renderPublicLayoutShell } from '../views/public-blade-templates';
 import { getRequestBody } from '../lib/request';
 import { sendQuoteConfirmationEmail, sendNewLeadStaffNotification } from '../lib/email';
+import { rateLimit } from '../middleware/security';
 
 export const publicRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -150,7 +151,7 @@ publicRoutes.get('/solicitar-orcamento', async (c) => {
     );
 });
 
-publicRoutes.post('/solicitar-orcamento', async (c) => {
+publicRoutes.post('/solicitar-orcamento', rateLimit({ keyPrefix: 'public_quote', maxRequests: 10, windowSeconds: 600 }), async (c) => {
     const body = await getRequestBody(c);
     const contactName = String(body.contact_name || '').trim();
     const companyName = String(body.company_name || '').trim();
@@ -409,7 +410,7 @@ publicRoutes.get('/acompanhar-solicitacao', async (c) => {
 // ----------------------------------------------------
 // API RÁPIDA DE CAPTAÇÃO DE LEADS & WHATSAPP (Idêntico ao PublicController.php)
 // ----------------------------------------------------
-publicRoutes.post('/api/lead', async (c) => {
+publicRoutes.post('/api/lead', rateLimit({ keyPrefix: 'public_lead', maxRequests: 15, windowSeconds: 600 }), async (c) => {
     const body = await getRequestBody(c);
 
     if (body.sobrenome_hp) {
@@ -616,7 +617,7 @@ publicRoutes.get('/blog/:slug', (c) => c.html(renderPublicBladePage('blog-sample
 
 publicRoutes.get('/contato', (c) => c.html(renderPublicBladePage('contact', c.get('user'))));
 
-publicRoutes.post('/contato', async (c) => {
+publicRoutes.post('/contato', rateLimit({ keyPrefix: 'public_contact', maxRequests: 10, windowSeconds: 600 }), async (c) => {
     const body = await getRequestBody(c);
     const name = String(body.name || body.nome || '').trim();
     const email = String(body.email || '').trim().toLowerCase();

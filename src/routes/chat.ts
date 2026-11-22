@@ -4,6 +4,7 @@ import { getRequestBody } from '../lib/request';
 import { AutonomousCrmAgent } from '../services/ai-crm-agent';
 import { generateRandomToken } from '../lib/crypto';
 import { sendDirectorWhatsAppAlert } from '../services/whatsapp';
+import { rateLimit } from '../middleware/security';
 
 export const chatRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -20,7 +21,7 @@ function isHumanHandoffRequest(text: string): boolean {
 // ----------------------------------------------------
 // INICIAR CONVERSA (START CHAT) - Paridade com Laravel apiChatStart
 // ----------------------------------------------------
-chatRoutes.post('/start', async (c) => {
+chatRoutes.post('/start', rateLimit({ keyPrefix: 'chat_start', maxRequests: 15, windowSeconds: 600 }), async (c) => {
     const body = await getRequestBody(c);
 
     // Proteção antispam honeypot

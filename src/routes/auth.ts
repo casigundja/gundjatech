@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { Env, AppVariables, UserRole } from '../types/env';
 import { requireAuth, requireGuest } from '../middleware/auth';
+import { rateLimit } from '../middleware/security';
 import { verifyPassword, hashPassword } from '../lib/password';
 import { createSession, destroySession, destroyAllUserSessions } from '../lib/session';
 import { findUserByEmail, createUser, updateUserPassword } from '../lib/users';
@@ -26,7 +27,7 @@ authRoutes.get('/login', requireGuest, (c) => {
     );
 });
 
-authRoutes.post('/login', async (c) => {
+authRoutes.post('/login', rateLimit({ keyPrefix: 'auth_login', maxRequests: 15, windowSeconds: 300 }), async (c) => {
     const body = await c.req.parseBody();
     const email = String(body.email || '').trim().toLowerCase();
     const password = String(body.password || '');
@@ -141,7 +142,7 @@ authRoutes.get('/cadastro', requireGuest, (c) => {
     );
 });
 
-authRoutes.post('/cadastro', async (c) => {
+authRoutes.post('/cadastro', rateLimit({ keyPrefix: 'auth_register', maxRequests: 10, windowSeconds: 600 }), async (c) => {
     const body = await c.req.parseBody();
     const name = String(body.name || '').trim();
     const email = String(body.email || '').trim().toLowerCase();
