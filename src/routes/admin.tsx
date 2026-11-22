@@ -1187,6 +1187,39 @@ adminRoutes.post('/campanhas/:id/toggle', async (c) => {
     return c.redirect('/admin/campanhas?success=Status da campanha alterado');
 });
 
+adminRoutes.post('/campanhas/:id/editar', async (c) => {
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+    const body = await getRequestBody(c);
+
+    const name = String(body.name || '').trim();
+    const platform = String(body.platform || 'google_ads').trim();
+    const statusRaw = String(body.status || 'active').trim();
+    const status = ['active', 'paused', 'completed'].includes(statusRaw) ? statusRaw : 'active';
+    const budget = Math.max(0, Number(body.budget) || 0);
+    const spentAmount = Math.max(0, Number(body.spent_amount) || 0);
+
+    if (!name) {
+        return c.redirect('/admin/campanhas?error=O nome da campanha é obrigatório.');
+    }
+
+    await db.prepare(
+        `UPDATE advertising_campaigns
+         SET name = ?, platform = ?, status = ?, budget = ?, spent_amount = ?, updated_at = datetime('now')
+         WHERE id = ?`
+    ).bind(name, platform, status, budget, spentAmount, id).run();
+
+    return c.redirect('/admin/campanhas?success=Campanha atualizada com sucesso!');
+});
+
+adminRoutes.post('/campanhas/:id/excluir', async (c) => {
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+
+    await db.prepare(`DELETE FROM advertising_campaigns WHERE id = ?`).bind(id).run();
+    return c.redirect('/admin/campanhas?success=Campanha excluída com sucesso.');
+});
+
 // ==========================================
 // 11. ORÇAMENTOS & PROPOSTAS COMERCIAIS
 // ==========================================
