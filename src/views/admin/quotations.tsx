@@ -306,30 +306,38 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                 </div>
             </div>
 
-            {/* 4 KPI Cards Executivos */}
+            {/* 4 KPI Cards Executivos Compactos */}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div class="gtb-card gtb-kpi-gold !p-5 flex flex-col justify-between gap-2">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Volume em Propostas</span>
-                    <div class="gt-font-display text-xl sm:text-2xl font-extrabold text-white">{formatBRL(totalValue)}</div>
-                    <div class="text-[11px] text-[#8C95AA]">{quotations.length} proposta(s) registrada(s)</div>
+                <div class="gtb-card gtb-kpi-gold !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Volume em Propostas</span>
+                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-white mt-0.5 block">{formatBRL(totalValue)}</span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-md bg-white/10 text-[10px] font-bold text-[#D5DCEB]">{quotations.length} prop.</span>
                 </div>
 
-                <div class="gtb-card gtb-kpi-petrol !p-5 flex flex-col justify-between gap-2">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Aprovadas</span>
-                    <div class="gt-font-display text-xl sm:text-2xl font-extrabold text-[#34D399]">{formatBRL(approvedValue)}</div>
-                    <div class="text-[11px] text-[#8C95AA]">{approvedList.length} fechada(s)</div>
+                <div class="gtb-card gtb-kpi-petrol !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Aprovadas</span>
+                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-[#34D399] mt-0.5 block">{formatBRL(approvedValue)}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-success">{approvedList.length} aprov.</span>
                 </div>
 
-                <div class="gtb-card gtb-kpi-blue !p-5 flex flex-col justify-between gap-2">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Enviadas (Aguardando)</span>
-                    <div class="gt-font-display text-xl sm:text-2xl font-extrabold text-white">{sentCount}</div>
-                    <div class="text-[11px] text-[#8C95AA]">em negociação com cliente</div>
+                <div class="gtb-card gtb-kpi-blue !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Enviadas (Aguardando)</span>
+                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{sentCount}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-info">Enviado</span>
                 </div>
 
-                <div class="gtb-card !p-5 flex flex-col justify-between gap-2">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Rascunhos / IA</span>
-                    <div class="gt-font-display text-xl sm:text-2xl font-extrabold text-[#F2C230]">{draftCount}</div>
-                    <div class="text-[11px] text-[#8C95AA]">pendentes de revisão/envio</div>
+                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Rascunhos / IA</span>
+                        <span class="gt-font-display text-xl font-extrabold text-[#F2C230] mt-0.5 block">{draftCount}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-warning">Rascunho</span>
                 </div>
             </div>
 

@@ -331,27 +331,35 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                 </button>
             </div>
 
-            {/* 4 KPIs Executivos */}
+            {/* 4 KPIs Executivos Compactos */}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div class="gtb-card gtb-kpi-gold !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total de Projetos</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-white">{projects.length}</div>
-                    <div class="text-[11px] text-[#8C95AA]">na carteira técnica</div>
+                <div class="gtb-card gtb-kpi-gold !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total de Projetos</span>
+                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{projects.length}</span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-md bg-white/10 text-[10px] font-bold text-[#D5DCEB]">Carteira</span>
                 </div>
-                <div class="gtb-card gtb-kpi-blue !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Em Desenvolvimento</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-[#F2C230]">{inProgressCount}</div>
-                    <div class="text-[11px] text-[#8C95AA]">em execução ativa</div>
+                <div class="gtb-card gtb-kpi-blue !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Em Desenvolvimento</span>
+                        <span class="gt-font-display text-xl font-extrabold text-[#F2C230] mt-0.5 block">{inProgressCount}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-warning">Ativo</span>
                 </div>
-                <div class="gtb-card !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Em Homologação</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-white">{reviewingCount}</div>
-                    <div class="text-[11px] text-[#8C95AA]">aguardando aprovação</div>
+                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Em Homologação</span>
+                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{reviewingCount}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-info">Revisão</span>
                 </div>
-                <div class="gtb-card gtb-kpi-petrol !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Entregues</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-[#34D399]">{completedCount}</div>
-                    <div class="text-[11px] text-[#8C95AA]">concluídos com sucesso</div>
+                <div class="gtb-card gtb-kpi-petrol !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Entregues</span>
+                        <span class="gt-font-display text-xl font-extrabold text-[#34D399] mt-0.5 block">{completedCount}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-success">Concluído</span>
                 </div>
             </div>
 

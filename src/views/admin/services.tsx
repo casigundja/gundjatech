@@ -185,27 +185,35 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                 </a>
             </div>
 
-            {/* 4 KPIs Executivos */}
+            {/* 4 KPIs Executivos Compactos */}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div class="gtb-card gtb-kpi-gold !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total de Pacotes</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-white">{services.length}</div>
-                    <div class="text-[11px] text-[#8C95AA]">no catálogo comercial</div>
+                <div class="gtb-card gtb-kpi-gold !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total de Pacotes</span>
+                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{services.length}</span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-md bg-white/10 text-[10px] font-bold text-[#D5DCEB]">Catálogo</span>
                 </div>
-                <div class="gtb-card gtb-kpi-petrol !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Serviços Ativos</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-[#34D399]">{activeCount}</div>
-                    <div class="text-[11px] text-[#8C95AA]">visíveis para clientes</div>
+                <div class="gtb-card gtb-kpi-petrol !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Serviços Ativos</span>
+                        <span class="gt-font-display text-xl font-extrabold text-[#34D399] mt-0.5 block">{activeCount}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-success">Ativo</span>
                 </div>
-                <div class="gtb-card !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Pausados / Inativos</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-white">{inactiveCount}</div>
-                    <div class="text-[11px] text-[#8C95AA]">ocultos no site</div>
+                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Pausados / Inativos</span>
+                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{inactiveCount}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-warning">Inativo</span>
                 </div>
-                <div class="gtb-card gtb-kpi-blue !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Ticket Médio Base</span>
-                    <div class="gt-font-display text-xl sm:text-2xl font-extrabold text-[#F2C230]">{formatBRL(avgPrice)}</div>
-                    <div class="text-[11px] text-[#8C95AA]">média dos pacotes</div>
+                <div class="gtb-card gtb-kpi-blue !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Ticket Médio Base</span>
+                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-[#F2C230] mt-0.5 block">{formatBRL(avgPrice)}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-info">Média</span>
                 </div>
             </div>
 

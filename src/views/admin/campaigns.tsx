@@ -94,30 +94,38 @@ export const AdminCampaignsView: FC<AdminCampaignsProps> = ({
                 </button>
             </div>
 
-            {/* 4 KPIs Executivos */}
+            {/* 4 KPIs Executivos Compactos */}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div class="gtb-card gtb-kpi-gold !p-5 flex flex-col justify-between gap-2">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Orçamento Total</span>
-                    <div class="gt-font-display text-xl sm:text-2xl font-extrabold text-white">{formatCurrency(totalBudget)}</div>
-                    <div class="text-[11px] text-[#8C95AA]">{campaigns.length} campanha(s) cadastrada(s)</div>
+                <div class="gtb-card gtb-kpi-gold !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Orçamento Total</span>
+                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-white mt-0.5 block">{formatCurrency(totalBudget)}</span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-md bg-white/10 text-[10px] font-bold text-[#D5DCEB]">{campaigns.length} camp.</span>
                 </div>
 
-                <div class="gtb-card gtb-kpi-blue !p-5 flex flex-col justify-between gap-2">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Investimento Executado</span>
-                    <div class="gt-font-display text-xl sm:text-2xl font-extrabold text-[#F2C230]">{formatCurrency(totalSpent)}</div>
-                    <div class="text-[11px] text-[#8C95AA]">{overallPct}% do orçamento total</div>
+                <div class="gtb-card gtb-kpi-blue !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Investimento Executado</span>
+                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-[#F2C230] mt-0.5 block">{formatCurrency(totalSpent)}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-warning">{overallPct}%</span>
                 </div>
 
-                <div class="gtb-card !p-5 flex flex-col justify-between gap-2">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Saldo Disponível</span>
-                    <div class="gt-font-display text-xl sm:text-2xl font-extrabold text-white">{formatCurrency(remainingBudget)}</div>
-                    <div class="text-[11px] text-[#8C95AA]">disponível para alocação</div>
+                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Saldo Disponível</span>
+                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-white mt-0.5 block">{formatCurrency(remainingBudget)}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-info">Saldo</span>
                 </div>
 
-                <div class="gtb-card gtb-kpi-petrol !p-5 flex flex-col justify-between gap-2">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Campanhas no Ar</span>
-                    <div class="gt-font-display text-xl sm:text-2xl font-extrabold text-[#34D399]">{activeCount}</div>
-                    <div class="text-[11px] text-[#8C95AA]">em veiculação ativa</div>
+                <div class="gtb-card gtb-kpi-petrol !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Campanhas no Ar</span>
+                        <span class="gt-font-display text-xl font-extrabold text-[#34D399] mt-0.5 block">{activeCount}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-success">Ativa</span>
                 </div>
             </div>
 

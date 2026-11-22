@@ -58,33 +58,38 @@ export const AdminUsersView: FC<AdminUsersProps> = ({
                 </button>
             </div>
 
-            {/* 4 KPI Cards de Papéis (RBAC Executive Overview) */}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="gtb-card gtb-kpi-gold flex flex-col justify-between gap-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#F2C230]">Super Administrador</span>
-                        <span class="w-2 h-2 rounded-full bg-[#F2C230]"></span>
+            {/* 4 KPI Cards de Papéis (RBAC Executive Overview — Padronizados Compactos) */}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div class="gtb-card gtb-kpi-gold !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#F2C230]">Super Administrador</span>
+                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{superAdminCount}</span>
                     </div>
-                    <div class="gt-font-display text-2xl font-extrabold text-white">{superAdminCount}</div>
-                    <div class="text-[11px] text-[#8C95AA]">usuário(s) ativo(s)</div>
+                    <span class="gt-badge gt-badge-warning">Super</span>
                 </div>
 
-                <div class="gtb-card gtb-kpi-blue flex flex-col justify-between gap-2">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Administrador</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-white">{adminCount}</div>
-                    <div class="text-[11px] text-[#8C95AA]">usuário(s) ativo(s)</div>
+                <div class="gtb-card gtb-kpi-blue !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Administrador</span>
+                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{adminCount}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-info">Admin</span>
                 </div>
 
-                <div class="gtb-card gtb-kpi-petrol flex flex-col justify-between gap-2">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Equipe Operacional</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-white">{teamCount}</div>
-                    <div class="text-[11px] text-[#8C95AA]">usuário(s) ativo(s)</div>
+                <div class="gtb-card gtb-kpi-petrol !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Equipe Operacional</span>
+                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{teamCount}</span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-md bg-white/10 text-[10px] font-bold text-[#D5DCEB]">Equipe</span>
                 </div>
 
-                <div class="gtb-card flex flex-col justify-between gap-2">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Cliente</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-white">{clientCount}</div>
-                    <div class="text-[11px] text-[#8C95AA]">usuário(s) ativo(s)</div>
+                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Cliente</span>
+                        <span class="gt-font-display text-xl font-extrabold text-[#34D399] mt-0.5 block">{clientCount}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-success">Portal</span>
                 </div>
             </div>
 

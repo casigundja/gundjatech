@@ -216,27 +216,35 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                 </a>
             </div>
 
-            {/* 4 KPIs Executivos */}
+            {/* 4 KPIs Executivos Compactos */}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div class="gtb-card gtb-kpi-gold !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total no Pipeline</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-white">{requests.length}</div>
-                    <div class="text-[11px] text-[#8C95AA]">solicitações registradas</div>
+                <div class="gtb-card gtb-kpi-gold !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total no Pipeline</span>
+                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{requests.length}</span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-md bg-white/10 text-[10px] font-bold text-[#D5DCEB]">Total</span>
                 </div>
-                <div class="gtb-card gtb-kpi-blue !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Novas / Pendentes</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-[#F2C230]">{newCount}</div>
-                    <div class="text-[11px] text-[#8C95AA]">aguardando triagem</div>
+                <div class="gtb-card gtb-kpi-blue !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Novas / Pendentes</span>
+                        <span class="gt-font-display text-xl font-extrabold text-[#F2C230] mt-0.5 block">{newCount}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-warning">Triagem</span>
                 </div>
-                <div class="gtb-card !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Em Análise / Proposta</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-white">{analyzingCount}</div>
-                    <div class="text-[11px] text-[#8C95AA]">em negociação ativa</div>
+                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Em Análise / Proposta</span>
+                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{analyzingCount}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-info">Análise</span>
                 </div>
-                <div class="gtb-card gtb-kpi-petrol !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Aprovadas / Concluídas</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-[#34D399]">{approvedCount}</div>
-                    <div class="text-[11px] text-[#8C95AA]">convertidas em entrega</div>
+                <div class="gtb-card gtb-kpi-petrol !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Aprovadas / Concluídas</span>
+                        <span class="gt-font-display text-xl font-extrabold text-[#34D399] mt-0.5 block">{approvedCount}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-success">Aprovado</span>
                 </div>
             </div>
 

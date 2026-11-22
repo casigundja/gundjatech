@@ -66,27 +66,35 @@ export const AdminDomainsView: FC<AdminDomainsProps> = ({
                 </button>
             </div>
 
-            {/* 4 KPIs Executivos */}
+            {/* 4 KPIs Executivos Compactos */}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div class="gtb-card gtb-kpi-gold !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Domínios Monitorados</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-white">{domains.length}</div>
-                    <div class="text-[11px] text-[#8C95AA]">zonas DNS sob gestão</div>
+                <div class="gtb-card gtb-kpi-gold !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Domínios Monitorados</span>
+                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{domains.length}</span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-md bg-white/10 text-[10px] font-bold text-[#D5DCEB]">Zonas DNS</span>
                 </div>
-                <div class="gtb-card gtb-kpi-petrol !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Ativos &amp; SSL</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-[#34D399]">{activeCount}</div>
-                    <div class="text-[11px] text-[#8C95AA]">protegidos na borda</div>
+                <div class="gtb-card gtb-kpi-petrol !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Ativos &amp; SSL</span>
+                        <span class="gt-font-display text-xl font-extrabold text-[#34D399] mt-0.5 block">{activeCount}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-success">Ativo</span>
                 </div>
-                <div class="gtb-card gtb-kpi-blue !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Renovação Automática</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-white">{autoRenewCount}</div>
-                    <div class="text-[11px] text-[#8C95AA]">habilitada pela GundjaTech</div>
+                <div class="gtb-card gtb-kpi-blue !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Renovação Automática</span>
+                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{autoRenewCount}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-info">Auto</span>
                 </div>
-                <div class="gtb-card !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Expirando (30 dias)</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-[#F2C230]">{expiringCount}</div>
-                    <div class="text-[11px] text-[#8C95AA]">requerem atenção</div>
+                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Expirando (30 dias)</span>
+                        <span class="gt-font-display text-xl font-extrabold text-[#F2C230] mt-0.5 block">{expiringCount}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-warning">Alerta</span>
                 </div>
             </div>
 

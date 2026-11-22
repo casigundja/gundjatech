@@ -69,30 +69,38 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                 </button>
             </div>
 
-            {/* 4 KPIs Executivos */}
+            {/* 4 KPIs Executivos Compactos */}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div class="gtb-card gtb-kpi-gold !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total Faturado</span>
-                    <div class="gt-font-display text-xl sm:text-2xl font-extrabold text-white">{formatCurrency(metrics.totalInvoiced)}</div>
-                    <div class="text-[11px] text-[#8C95AA]">{transactions.length} lançamento(s)</div>
+                <div class="gtb-card gtb-kpi-gold !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total Faturado</span>
+                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-white mt-0.5 block">{formatCurrency(metrics.totalInvoiced)}</span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-md bg-white/10 text-[10px] font-bold text-[#D5DCEB]">{transactions.length} lanç.</span>
                 </div>
 
-                <div class="gtb-card gtb-kpi-petrol !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Recebido / Liquidado</span>
-                    <div class="gt-font-display text-xl sm:text-2xl font-extrabold text-[#34D399]">{formatCurrency(metrics.totalReceived)}</div>
-                    <div class="text-[11px] text-[#8C95AA]">em caixa confirmado</div>
+                <div class="gtb-card gtb-kpi-petrol !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Recebido / Liquidado</span>
+                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-[#34D399] mt-0.5 block">{formatCurrency(metrics.totalReceived)}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-success">Pago</span>
                 </div>
 
-                <div class="gtb-card gtb-kpi-blue !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">A Receber (Pendente)</span>
-                    <div class="gt-font-display text-xl sm:text-2xl font-extrabold text-[#F2C230]">{formatCurrency(metrics.totalPending)}</div>
-                    <div class="text-[11px] text-[#8C95AA]">aguardando liquidação</div>
+                <div class="gtb-card gtb-kpi-blue !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">A Receber (Pendente)</span>
+                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-[#F2C230] mt-0.5 block">{formatCurrency(metrics.totalPending)}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-warning">Pendente</span>
                 </div>
 
-                <div class="gtb-card !p-5 flex flex-col justify-between gap-1.5">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Em Atraso (Vencido)</span>
-                    <div class="gt-font-display text-xl sm:text-2xl font-extrabold text-[#F87171]">{formatCurrency(metrics.totalOverdue)}</div>
-                    <div class="text-[11px] text-[#8C95AA]">faturas vencidas</div>
+                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Em Atraso (Vencido)</span>
+                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-[#F87171] mt-0.5 block">{formatCurrency(metrics.totalOverdue)}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-danger">Vencido</span>
                 </div>
             </div>
 

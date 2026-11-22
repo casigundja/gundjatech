@@ -84,38 +84,38 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                 </div>
             </div>
 
-            {/* ROW 1: 4 AUTONOMOUS CRM KPI CARDS */}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <a href="/admin/atendimento?status=open" class="gtb-card gtb-kpi-gold flex flex-col justify-between gap-3 no-underline cursor-pointer hover:border-[#F2C230]/50 hover:-translate-y-0.5 transition-all">
-                    <span class="text-xs font-semibold text-[#D5DCEB]">Em Piloto Automático</span>
-                    <div class="flex items-baseline justify-between">
-                        <span class="gt-font-display text-2xl font-extrabold text-white">{stats.activeAutopilotCount}</span>
-                        <span class="px-2 py-0.5 rounded-full bg-[#F2C230]/15 text-[#F2C230] text-[10px] font-bold">IA Ativa</span>
+            {/* ROW 1: 4 AUTONOMOUS CRM KPI CARDS (Padronizados Compactos) */}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <a href="/admin/atendimento?status=open" class="gtb-card gtb-kpi-gold !p-4 flex items-center justify-between gap-2 no-underline cursor-pointer hover:-translate-y-0.5 transition">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Piloto Automático</span>
+                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{stats.activeAutopilotCount}</span>
                     </div>
+                    <span class="gt-badge gt-badge-warning">IA Ativa</span>
                 </a>
 
-                <a href="/admin/atendimento?status=open" class="gtb-card gtb-kpi-blue flex flex-col justify-between gap-3 no-underline cursor-pointer hover:border-[#38BDF8]/50 hover:-translate-y-0.5 transition-all">
-                    <span class="text-xs font-semibold text-[#D5DCEB]">Em Qualificação</span>
-                    <div class="flex items-baseline justify-between">
-                        <span class="gt-font-display text-2xl font-extrabold text-white">{stats.qualifyingCount}</span>
-                        <span class="px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300 text-[10px] font-bold">Coletando Escopo</span>
+                <a href="/admin/atendimento?status=open" class="gtb-card gtb-kpi-blue !p-4 flex items-center justify-between gap-2 no-underline cursor-pointer hover:-translate-y-0.5 transition">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Em Qualificação</span>
+                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{stats.qualifyingCount}</span>
                     </div>
+                    <span class="gt-badge gt-badge-info">Escopo</span>
                 </a>
 
-                <a href="/admin/orcamentos" class="gtb-card gtb-kpi-petrol flex flex-col justify-between gap-3 no-underline cursor-pointer hover:border-[#6EE7B7]/50 hover:-translate-y-0.5 transition-all">
-                    <span class="text-xs font-semibold text-[#D5DCEB]">Pré-Orçamentos IA</span>
-                    <div class="flex items-baseline justify-between">
-                        <span class="gt-font-display text-2xl font-extrabold text-white">{stats.aiQuotationsCount}</span>
-                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/15 text-[#6EE7B7] text-[10px] font-bold">Gerados</span>
+                <a href="/admin/orcamentos" class="gtb-card gtb-kpi-petrol !p-4 flex items-center justify-between gap-2 no-underline cursor-pointer hover:-translate-y-0.5 transition">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Pré-Orçamentos IA</span>
+                        <span class="gt-font-display text-xl font-extrabold text-[#34D399] mt-0.5 block">{stats.aiQuotationsCount}</span>
                     </div>
+                    <span class="gt-badge gt-badge-success">Gerados</span>
                 </a>
 
-                <a href="/admin/atendimento?status=open" class="gtb-card flex flex-col justify-between gap-3 no-underline cursor-pointer hover:border-amber-400/50 hover:-translate-y-0.5 transition-all">
-                    <span class="text-xs font-semibold text-[#D5DCEB]">Transferidos p/ Humano</span>
-                    <div class="flex items-baseline justify-between">
-                        <span class="gt-font-display text-2xl font-extrabold text-white">{stats.handoffCount}</span>
-                        <span class="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 text-[10px] font-bold">Handoff</span>
+                <a href="/admin/atendimento?status=open" class="gtb-card !p-4 flex items-center justify-between gap-2 no-underline cursor-pointer hover:-translate-y-0.5 transition">
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Transferidos Humano</span>
+                        <span class="gt-font-display text-xl font-extrabold text-[#F2C230] mt-0.5 block">{stats.handoffCount}</span>
                     </div>
+                    <span class="gt-badge gt-badge-warning">Handoff</span>
                 </a>
             </div>
 
