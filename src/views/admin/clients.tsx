@@ -12,140 +12,10 @@ interface AdminClientsProps {
     errorMessage?: string | null;
 }
 
-function renderClientRow(c: any, categoryKey: 'active' | 'lead' | 'whatsapp') {
-    const displayName = c.company || c.name || 'Cliente';
-    const initials = displayName.slice(0, 2).toUpperCase();
-    const isSyntheticWa = String(c.email || '').endsWith('.local');
-    const isActive = c.status === 'active';
-
-    const badgeMeta =
-        categoryKey === 'active'
-            ? { label: 'Cliente Ativo', cls: 'gt-badge-success' }
-            : categoryKey === 'whatsapp'
-            ? { label: 'Lead WhatsApp', cls: 'gt-badge-info' }
-            : { label: 'Lead Comercial', cls: 'gt-badge-warning' };
-
-    return (
-        <tr class="hover:bg-white/[0.02] transition">
-            <td class="py-3.5 px-5">
-                <div class="flex items-center gap-3">
-                    <div class="gtb-avatar-inner w-9 h-9 rounded-xl border border-[#16749A]/40 flex items-center justify-center font-extrabold text-xs shrink-0">
-                        {initials}
-                    </div>
-                    <div class="min-w-0">
-                        <div class="font-bold text-white truncate max-w-[240px]">{displayName}</div>
-                        {c.company && c.name && c.company !== c.name && (
-                            <div class="text-[11px] text-[#8C95AA]">Contato: {c.name}</div>
-                        )}
-                    </div>
-                </div>
-            </td>
-            <td class="py-3.5 px-5 whitespace-nowrap">
-                {isSyntheticWa ? (
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-emerald-500/15 text-[#6EE7B7] text-[10.5px] font-bold">
-                        <span>WhatsApp Direto</span>
-                    </span>
-                ) : (
-                    <span class="text-[#D5DCEB]">{c.email || '—'}</span>
-                )}
-            </td>
-            <td class="py-3.5 px-5 font-mono text-[#8C95AA] whitespace-nowrap">{c.phone || '—'}</td>
-            <td class="py-3.5 px-5 whitespace-nowrap">
-                <span class={`gt-badge ${badgeMeta.cls}`}>{badgeMeta.label}</span>
-            </td>
-            <td class="py-3.5 px-5 text-right whitespace-nowrap">
-                <div class="inline-flex items-center gap-1.5">
-                    <form action={`/admin/clientes/${c.id}/status`} method="post" class="inline-block m-0">
-                        <input type="hidden" name="status" value={isActive ? 'lead' : 'active'} />
-                        <button
-                            type="submit"
-                            data-loading-text="..."
-                            class={isActive ? 'gt-btn-outline gt-btn-xs' : 'gt-btn-primary gt-btn-xs'}
-                            title={isActive ? 'Mover para Leads' : 'Promover para Cliente Ativo'}
-                        >
-                            {isActive ? (
-                                <span>Mover p/ Lead</span>
-                            ) : (
-                                <>
-                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="20 6 9 17 4 12" />
-                                    </svg>
-                                    <span>Ativar Cliente</span>
-                                </>
-                            )}
-                        </button>
-                    </form>
-
-                    <form
-                        action={`/admin/clientes/${c.id}/excluir`}
-                        method="post"
-                        class="inline-block m-0"
-                        data-confirm="Deseja realmente excluir este cadastro permanentemente?"
-                    >
-                        <button
-                            type="submit"
-                            class="gt-btn-danger-ghost gt-btn-icon-only"
-                            title="Excluir cadastro"
-                            aria-label="Excluir cadastro"
-                        >
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M3 6h18" />
-                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                            </svg>
-                        </button>
-                    </form>
-                </div>
-            </td>
-        </tr>
-    );
-}
-
-function renderCategorySection(
-    title: string,
-    subtitle: string,
-    accentClass: string,
-    badgeText: string,
-    items: any[],
-    categoryKey: 'active' | 'lead' | 'whatsapp'
-) {
-    return (
-        <section class={`gtb-card ${accentClass} !p-0 overflow-hidden`}>
-            <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between gap-3 flex-wrap">
-                <div>
-                    <div class="flex items-center gap-2.5">
-                        <h2 class="gt-font-display text-sm sm:text-base font-extrabold text-white">{title}</h2>
-                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-white/10 text-white">
-                            {items.length}
-                        </span>
-                    </div>
-                    <p class="text-[11.5px] text-[#8C95AA] mt-0.5">{subtitle}</p>
-                </div>
-                <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">{badgeText}</span>
-            </div>
-
-            {items.length === 0 ? (
-                <div class="gt-empty-state !py-7">Nenhum registro nesta categoria.</div>
-            ) : (
-                <div class="gt-table-wrap">
-                    <table class="w-full text-left text-xs">
-                        <thead>
-                            <tr class="border-b border-white/10 text-[10.5px] uppercase tracking-wider text-[#8C95AA]">
-                                <th class="py-3 px-5">Empresa / Contato</th>
-                                <th class="py-3 px-5">E-mail / Canal</th>
-                                <th class="py-3 px-5">Telefone</th>
-                                <th class="py-3 px-5">Categoria</th>
-                                <th class="py-3 px-5 text-right">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-white/5">
-                            {items.map((c: any) => renderClientRow(c, categoryKey))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-        </section>
-    );
+function getClientCategory(c: any): 'active' | 'whatsapp' | 'lead' {
+    if (c.status === 'active') return 'active';
+    if (String(c.email || '').endsWith('.local')) return 'whatsapp';
+    return 'lead';
 }
 
 export const AdminClientsView: FC<AdminClientsProps> = ({
@@ -242,10 +112,12 @@ export const AdminClientsView: FC<AdminClientsProps> = ({
         );
     }
 
-    // Separa os registros nas 3 categorias claras: Ativos, Leads (Site/Form) e Leads (WhatsApp)
-    const activeClients = clients.filter((c) => c.status === 'active');
-    const whatsappLeads = clients.filter((c) => c.status !== 'active' && String(c.email || '').endsWith('.local'));
-    const siteLeads = clients.filter((c) => c.status !== 'active' && !String(c.email || '').endsWith('.local'));
+    const activeClients = clients.filter((c) => getClientCategory(c) === 'active');
+    const siteLeads = clients.filter((c) => getClientCategory(c) === 'lead');
+    const whatsappLeads = clients.filter((c) => getClientCategory(c) === 'whatsapp');
+
+    // Ordena: Ativos -> Leads do Site -> Leads WhatsApp
+    const sortedClients = [...activeClients, ...siteLeads, ...whatsappLeads];
 
     return (
         <AdminLayout
@@ -258,11 +130,11 @@ export const AdminClientsView: FC<AdminClientsProps> = ({
             <div class="gt-page-header !mb-0">
                 <div>
                     <h1 class="gt-font-display text-xl sm:text-2xl font-extrabold text-white">Diretório de Clientes &amp; Leads</h1>
-                    <p class="text-xs sm:text-sm text-[#8C95AA] mt-1">
-                        Organizado por categoria: Clientes Ativos, Leads do Site e Contatos via WhatsApp.
+                    <p class="text-xs text-[#8C95AA] mt-0.5">
+                        Gestão centralizada de Clientes Ativos, Leads do Site e Contatos via WhatsApp.
                     </p>
                 </div>
-                <a href="/admin/clientes/novo" class="gt-btn-primary">
+                <a href="/admin/clientes/novo" class="gt-btn-primary gt-btn-sm">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M5 12h14" />
                         <path d="M12 5v14" />
@@ -271,118 +143,261 @@ export const AdminClientsView: FC<AdminClientsProps> = ({
                 </a>
             </div>
 
-            {/* 4 KPIs Executivos Clicáveis por Categoria */}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <a href="/admin/clientes" class="gtb-card gtb-kpi-gold !p-5 flex flex-col justify-between gap-1.5 no-underline hover:-translate-y-0.5 transition">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total Geral</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-white">{clients.length}</div>
-                    <div class="text-[11px] text-[#8C95AA]">todos os registros</div>
-                </a>
-                <a href="/admin/clientes?status=active" class="gtb-card gtb-kpi-petrol !p-5 flex flex-col justify-between gap-1.5 no-underline hover:-translate-y-0.5 transition">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">1. Clientes Ativos</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-[#34D399]">{activeClients.length}</div>
-                    <div class="text-[11px] text-[#8C95AA]">com contrato ou entrega</div>
-                </a>
-                <a href="/admin/clientes?status=lead" class="gtb-card gtb-kpi-blue !p-5 flex flex-col justify-between gap-1.5 no-underline hover:-translate-y-0.5 transition">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">2. Leads (Site / E-mail)</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-[#F2C230]">{siteLeads.length}</div>
-                    <div class="text-[11px] text-[#8C95AA]">prospecção e formulários</div>
-                </a>
-                <a href="/admin/clientes?status=whatsapp" class="gtb-card !p-5 flex flex-col justify-between gap-1.5 no-underline hover:-translate-y-0.5 transition">
-                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">3. Leads WhatsApp</span>
-                    <div class="gt-font-display text-2xl font-extrabold text-white">{whatsappLeads.length}</div>
-                    <div class="text-[11px] text-[#8C95AA]">captados direto no WhatsApp</div>
-                </a>
+            {/* 4 KPIs Compactos Clicáveis */}
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+                <button
+                    type="button"
+                    data-cat-trigger="all"
+                    onclick="window.gtFilterClientTab('all')"
+                    class="gtb-card gtb-kpi-gold !p-4 text-left cursor-pointer border-0 flex items-center justify-between gap-2 hover:-translate-y-0.5 transition"
+                >
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total Geral</span>
+                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{clients.length}</span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-md bg-white/10 text-[10px] font-bold text-[#D5DCEB]">Todos</span>
+                </button>
+
+                <button
+                    type="button"
+                    data-cat-trigger="active"
+                    onclick="window.gtFilterClientTab('active')"
+                    class="gtb-card gtb-kpi-petrol !p-4 text-left cursor-pointer border-0 flex items-center justify-between gap-2 hover:-translate-y-0.5 transition"
+                >
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Clientes Ativos</span>
+                        <span class="gt-font-display text-xl font-extrabold text-[#34D399] mt-0.5 block">{activeClients.length}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-success">Ativo</span>
+                </button>
+
+                <button
+                    type="button"
+                    data-cat-trigger="lead"
+                    onclick="window.gtFilterClientTab('lead')"
+                    class="gtb-card gtb-kpi-blue !p-4 text-left cursor-pointer border-0 flex items-center justify-between gap-2 hover:-translate-y-0.5 transition"
+                >
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Leads do Site</span>
+                        <span class="gt-font-display text-xl font-extrabold text-[#F2C230] mt-0.5 block">{siteLeads.length}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-warning">Lead</span>
+                </button>
+
+                <button
+                    type="button"
+                    data-cat-trigger="whatsapp"
+                    onclick="window.gtFilterClientTab('whatsapp')"
+                    class="gtb-card !p-4 text-left cursor-pointer border-0 flex items-center justify-between gap-2 hover:-translate-y-0.5 transition"
+                >
+                    <div>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Leads WhatsApp</span>
+                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{whatsappLeads.length}</span>
+                    </div>
+                    <span class="gt-badge gt-badge-info">WhatsApp</span>
+                </button>
             </div>
 
-            {/* Abas de Categoria + Busca */}
-            <div class="gtb-card !p-4 space-y-3.5">
-                <div class="flex items-center justify-between gap-3 flex-wrap">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <a
-                            href="/admin/clientes"
-                            class={statusFilter === '' ? 'gt-btn-primary gt-btn-xs' : 'gt-btn-outline gt-btn-xs'}
+            {/* Card Único Otimizado: Abas de Categoria + Busca Instantânea + Tabela Compacta */}
+            <div class="gtb-card !p-0 overflow-hidden">
+                {/* Barra Integrada de Abas & Busca */}
+                <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between gap-3 flex-wrap">
+                    <div class="flex items-center gap-1.5 flex-wrap" id="gt-client-tabs">
+                        <button
+                            type="button"
+                            data-tab="all"
+                            onclick="window.gtFilterClientTab('all')"
+                            class={`gt-btn-xs ${!statusFilter ? 'gt-btn-primary' : 'gt-btn-outline'}`}
                         >
-                            Todos ({clients.length})
-                        </a>
-                        <a
-                            href="/admin/clientes?status=active"
-                            class={statusFilter === 'active' ? 'gt-btn-primary gt-btn-xs' : 'gt-btn-outline gt-btn-xs'}
+                            <span>Todos ({clients.length})</span>
+                        </button>
+                        <button
+                            type="button"
+                            data-tab="active"
+                            onclick="window.gtFilterClientTab('active')"
+                            class={`gt-btn-xs ${statusFilter === 'active' ? 'gt-btn-primary' : 'gt-btn-outline'}`}
                         >
-                            Clientes Ativos ({activeClients.length})
-                        </a>
-                        <a
-                            href="/admin/clientes?status=lead"
-                            class={statusFilter === 'lead' ? 'gt-btn-primary gt-btn-xs' : 'gt-btn-outline gt-btn-xs'}
+                            <span>Ativos ({activeClients.length})</span>
+                        </button>
+                        <button
+                            type="button"
+                            data-tab="lead"
+                            onclick="window.gtFilterClientTab('lead')"
+                            class={`gt-btn-xs ${statusFilter === 'lead' ? 'gt-btn-primary' : 'gt-btn-outline'}`}
                         >
-                            Leads do Site ({siteLeads.length})
-                        </a>
-                        <a
-                            href="/admin/clientes?status=whatsapp"
-                            class={statusFilter === 'whatsapp' ? 'gt-btn-primary gt-btn-xs' : 'gt-btn-outline gt-btn-xs'}
+                            <span>Leads Site ({siteLeads.length})</span>
+                        </button>
+                        <button
+                            type="button"
+                            data-tab="whatsapp"
+                            onclick="window.gtFilterClientTab('whatsapp')"
+                            class={`gt-btn-xs ${statusFilter === 'whatsapp' ? 'gt-btn-primary' : 'gt-btn-outline'}`}
                         >
-                            Leads WhatsApp ({whatsappLeads.length})
-                        </a>
+                            <span>WhatsApp ({whatsappLeads.length})</span>
+                        </button>
                     </div>
-                </div>
 
-                <form action="/admin/clientes" method="get" class="gt-filter-bar">
-                    <div class="gt-filter-input">
+                    <form action="/admin/clientes" method="get" class="flex items-center gap-2 flex-1 sm:flex-initial min-w-[220px] max-w-xs m-0">
                         <input
                             type="text"
+                            id="gt-client-search"
                             name="search"
                             value={search}
-                            placeholder="Buscar por empresa, nome, e-mail ou telefone..."
-                            class="w-full rounded-xl px-3.5 py-2.5 text-[13px]"
+                            oninput="window.gtFilterClientSearch(this.value)"
+                            placeholder="Filtrar por nome, empresa, e-mail..."
+                            class="w-full rounded-lg px-3 py-1.5 text-xs"
                         />
+                        {search && (
+                            <a href="/admin/clientes" class="text-[11px] font-bold text-[#F2C230] underline shrink-0">
+                                Limpar
+                            </a>
+                        )}
+                    </form>
+                </div>
+
+                {sortedClients.length === 0 ? (
+                    <div class="gt-empty-state !py-8">Nenhum cliente ou lead encontrado.</div>
+                ) : (
+                    <div class="gt-table-wrap">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="border-b border-white/10 text-[10px] uppercase tracking-wider text-[#8C95AA]">
+                                    <th class="py-2.5 px-4">Empresa / Contato</th>
+                                    <th class="py-2.5 px-4">Canal / E-mail</th>
+                                    <th class="py-2.5 px-4">Telefone</th>
+                                    <th class="py-2.5 px-4">Categoria</th>
+                                    <th class="py-2.5 px-4 text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-white/5" id="gt-clients-tbody">
+                                {sortedClients.map((c: any) => {
+                                    const cat = getClientCategory(c);
+                                    const displayName = c.company || c.name || 'Cliente';
+                                    const initials = displayName.slice(0, 2).toUpperCase();
+                                    const isSyntheticWa = cat === 'whatsapp';
+                                    const isActive = cat === 'active';
+                                    const searchBlob = `${c.company || ''} ${c.name || ''} ${c.email || ''} ${c.phone || ''}`.toLowerCase();
+
+                                    const badgeMeta =
+                                        cat === 'active'
+                                            ? { label: 'Ativo', cls: 'gt-badge-success' }
+                                            : cat === 'whatsapp'
+                                            ? { label: 'WhatsApp', cls: 'gt-badge-info' }
+                                            : { label: 'Lead Site', cls: 'gt-badge-warning' };
+
+                                    return (
+                                        <tr
+                                            data-client-row="1"
+                                            data-client-cat={cat}
+                                            data-client-search={searchBlob}
+                                            style={statusFilter && statusFilter !== cat ? 'display: none;' : ''}
+                                            class="hover:bg-white/[0.02] transition"
+                                        >
+                                            <td class="py-2.5 px-4">
+                                                <div class="flex items-center gap-2.5">
+                                                    <div class="gtb-avatar-inner w-8 h-8 rounded-lg border border-[#16749A]/40 flex items-center justify-center font-extrabold text-[11px] shrink-0">
+                                                        {initials}
+                                                    </div>
+                                                    <div class="min-w-0">
+                                                        <div class="font-bold text-white truncate max-w-[240px] leading-tight">{displayName}</div>
+                                                        {c.company && c.name && c.company !== c.name && (
+                                                            <div class="text-[10.5px] text-[#8C95AA] truncate max-w-[240px]">Contato: {c.name}</div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="py-2.5 px-4 whitespace-nowrap">
+                                                {isSyntheticWa ? (
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-500/15 text-[#6EE7B7] text-[10px] font-bold">
+                                                        WhatsApp Direto
+                                                    </span>
+                                                ) : (
+                                                    <span class="text-[#D5DCEB] text-xs">{c.email || '—'}</span>
+                                                )}
+                                            </td>
+                                            <td class="py-2.5 px-4 font-mono text-[11.5px] text-[#8C95AA] whitespace-nowrap">{c.phone || '—'}</td>
+                                            <td class="py-2.5 px-4 whitespace-nowrap">
+                                                <span class={`gt-badge ${badgeMeta.cls}`}>{badgeMeta.label}</span>
+                                            </td>
+                                            <td class="py-2.5 px-4 text-right whitespace-nowrap">
+                                                <div class="inline-flex items-center gap-1.5">
+                                                    <form action={`/admin/clientes/${c.id}/status`} method="post" class="inline-block m-0">
+                                                        <input type="hidden" name="status" value={isActive ? 'lead' : 'active'} />
+                                                        <button
+                                                            type="submit"
+                                                            data-loading-text="..."
+                                                            class={isActive ? 'gt-btn-outline gt-btn-xs' : 'gt-btn-primary gt-btn-xs'}
+                                                            title={isActive ? 'Mover para Lead' : 'Promover para Cliente Ativo'}
+                                                        >
+                                                            {isActive ? 'Mover p/ Lead' : 'Ativar'}
+                                                        </button>
+                                                    </form>
+
+                                                    <form
+                                                        action={`/admin/clientes/${c.id}/excluir`}
+                                                        method="post"
+                                                        class="inline-block m-0"
+                                                        data-confirm="Deseja realmente excluir este cadastro permanentemente?"
+                                                    >
+                                                        <button
+                                                            type="submit"
+                                                            class="gt-btn-danger-ghost gt-btn-icon-only"
+                                                            title="Excluir cadastro"
+                                                            aria-label="Excluir cadastro"
+                                                        >
+                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                <path d="M3 6h18" />
+                                                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                                            </svg>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="gt-filter-select">
-                        <select name="status" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]">
-                            <option value="">Todas as Categorias</option>
-                            <option value="active" selected={statusFilter === 'active'}>1. Clientes Ativos</option>
-                            <option value="lead" selected={statusFilter === 'lead'}>2. Leads (Site / E-mail)</option>
-                            <option value="whatsapp" selected={statusFilter === 'whatsapp'}>3. Leads WhatsApp</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="gt-btn-outline gt-btn-sm">Filtrar</button>
-                    {(search || statusFilter) && (
-                        <a href="/admin/clientes" class="text-xs font-bold text-[#F2C230] underline">Limpar</a>
-                    )}
-                </form>
+                )}
             </div>
 
-            {/* Seções Separadas por Categoria */}
-            <div class="space-y-6">
-                {(!statusFilter || statusFilter === 'active') &&
-                    renderCategorySection(
-                        '1. Clientes Ativos',
-                        'Empresas e clientes com contrato ativo, projeto em andamento ou operação recorrente.',
-                        'gtb-kpi-petrol',
-                        'Carteira Ativa',
-                        activeClients,
-                        'active'
-                    )}
+            <script
+                dangerouslySetInnerHTML={{
+                    __html: `
+                        (function() {
+                            var currentCat = ${JSON.stringify(statusFilter || 'all')};
+                            var currentQuery = '';
 
-                {(!statusFilter || statusFilter === 'lead') &&
-                    renderCategorySection(
-                        '2. Leads Comerciais (Site & Formulários)',
-                        'Contatos que solicitaram orçamento ou iniciaram atendimento pelo site institucional.',
-                        'gtb-kpi-gold',
-                        'Funil do Site',
-                        siteLeads,
-                        'lead'
-                    )}
+                            function applyClientFilters() {
+                                var rows = document.querySelectorAll('tr[data-client-row="1"]');
+                                rows.forEach(function(row) {
+                                    var rCat = row.getAttribute('data-client-cat');
+                                    var rSearch = row.getAttribute('data-client-search') || '';
+                                    var matchCat = (currentCat === 'all' || !currentCat || rCat === currentCat);
+                                    var matchQuery = (!currentQuery || rSearch.indexOf(currentQuery) !== -1);
+                                    row.style.display = (matchCat && matchQuery) ? '' : 'none';
+                                });
+                            }
 
-                {(!statusFilter || statusFilter === 'whatsapp') &&
-                    renderCategorySection(
-                        '3. Contatos & Leads via WhatsApp',
-                        'Visitantes captados automaticamente pelo canal oficial de WhatsApp.',
-                        'gtb-kpi-blue',
-                        'Canal WhatsApp',
-                        whatsappLeads,
-                        'whatsapp'
-                    )}
-            </div>
+                            window.gtFilterClientTab = function(cat) {
+                                currentCat = cat || 'all';
+                                document.querySelectorAll('#gt-client-tabs button[data-tab]').forEach(function(btn) {
+                                    var active = btn.getAttribute('data-tab') === currentCat;
+                                    btn.className = 'gt-btn-xs ' + (active ? 'gt-btn-primary' : 'gt-btn-outline');
+                                });
+                                applyClientFilters();
+                            };
+
+                            window.gtFilterClientSearch = function(val) {
+                                currentQuery = String(val || '').toLowerCase().trim();
+                                applyClientFilters();
+                            };
+                        })();
+                    `
+                }}
+            />
         </AdminLayout>
     );
 };
