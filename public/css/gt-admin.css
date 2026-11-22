@@ -2369,17 +2369,41 @@ html[data-admin-theme="dark"] .gt-btn-danger-ghost {
 }
 
 .gt-btn-sm {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 7px !important;
     height: 36px;
     padding: 0 14px !important;
     font-size: 12px !important;
+    line-height: 1 !important;
     border-radius: 10px !important;
+    white-space: nowrap !important;
+}
+
+.gt-btn-sm svg,
+.gt-btn-xs svg,
+.gt-btn-primary svg,
+.gt-btn-outline svg,
+.gt-btn-petrol svg,
+.gt-btn-danger-ghost svg {
+    flex-shrink: 0;
+    display: inline-block;
 }
 
 .gt-btn-xs {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
     height: 30px;
     padding: 0 11px !important;
     font-size: 11px !important;
+    line-height: 1 !important;
     border-radius: 8px !important;
+    white-space: nowrap !important;
 }
 
 .gt-btn-icon-only {

@@ -39,7 +39,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
-                <link rel="stylesheet" href="/css/gt-admin.css?v=26" />
+                <link rel="stylesheet" href="/css/gt-admin.css?v=27" />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
@@ -108,9 +108,16 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                         padding: 8px 16px;
                         border-radius: 10px;
                         text-decoration: none;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 7px;
+                        white-space: nowrap;
+                        line-height: 1;
                         border: 1px solid var(--gt-border);
                         cursor: pointer;
                         font-size: 13px;
+                        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
                     }
                     .gt-btn-outline:hover {
                         background: rgba(22, 116, 154, 0.2);

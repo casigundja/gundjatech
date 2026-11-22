@@ -25,6 +25,7 @@ function getBrazilPhoneVariants(digits: string): string[] {
 
 interface ResolvedWhatsAppConfig {
     provider: WhatsAppProvider;
+    syncEnabled: boolean;
     // Meta Cloud API
     metaAccessToken: string;
     metaPhoneNumberId: string;
@@ -42,6 +43,7 @@ interface ResolvedWhatsAppConfig {
 async function resolveWhatsAppConfig(env: Env): Promise<ResolvedWhatsAppConfig> {
     const cfg: ResolvedWhatsAppConfig = {
         provider: 'meta',
+        syncEnabled: true,
         metaAccessToken: (env.WHATSAPP_ACCESS_TOKEN || '').trim(),
         metaPhoneNumberId: (env.WHATSAPP_PHONE_NUMBER_ID || '').trim(),
         metaApiVersion: (env.WHATSAPP_API_VERSION || 'v21.0').trim(),
@@ -58,6 +60,7 @@ async function resolveWhatsAppConfig(env: Env): Promise<ResolvedWhatsAppConfig> 
             const rows = await env.DB.prepare(
                 `SELECT key, value FROM system_settings WHERE key IN (
                     'whatsapp_provider',
+                    'whatsapp_sync_enabled',
                     'whatsapp_access_token',
                     'whatsapp_phone_number_id',
                     'whatsapp_zapi_instance_id',
@@ -71,6 +74,10 @@ async function resolveWhatsAppConfig(env: Env): Promise<ResolvedWhatsAppConfig> 
 
             for (const row of rows.results || []) {
                 const val = String(row.value || '').trim();
+                if (row.key === 'whatsapp_sync_enabled') {
+                    cfg.syncEnabled = val !== '0';
+                    continue;
+                }
                 if (!val) continue;
                 if (row.key === 'whatsapp_provider' && (val === 'zapi' || val === 'zapi_omni' || val === 'evolution' || val === 'meta')) {
                     cfg.provider = val;
@@ -291,6 +298,10 @@ export async function sendWhatsAppTextMessage(
 
     const cfg = await resolveWhatsAppConfig(env);
     const provider = preferredProvider || cfg.provider;
+
+    if (!cfg.syncEnabled) {
+        return { ok: false, provider, error: 'Sincronização WhatsApp pausada nas configurações.' };
+    }
 
     if (provider === 'zapi_omni') {
         return sendViaZApiOmni(cfg, to, body);

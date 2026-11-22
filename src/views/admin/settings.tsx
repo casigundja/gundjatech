@@ -166,7 +166,9 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                             <div class="min-w-0">
                                 <div class="text-xs font-bold text-white leading-tight">Sincronização WhatsApp Ativa</div>
                                 <div class="text-[10.5px] text-[#8C95AA] mt-0.5">
-                                    Desative para pausar o recebimento e respostas automáticas no WhatsApp
+                                    {whatsappSyncEnabled
+                                        ? 'Ativa — clique para pausar imediatamente recebimento e envios no WhatsApp'
+                                        : 'Pausada — clique para reativar imediatamente a sincronização com o WhatsApp'}
                                 </div>
                             </div>
                             <input
@@ -174,6 +176,7 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                                 name="whatsapp_sync_enabled"
                                 value="1"
                                 checked={whatsappSyncEnabled}
+                                onchange="this.form.submit()"
                                 class="gt-switch"
                             />
                         </label>
