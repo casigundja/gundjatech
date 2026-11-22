@@ -9,6 +9,8 @@
   "vars": {
     "APP_ENV": "production",
     "APP_URL": "https://gundjatech.casimirogundja.workers.dev",
+    "EMAIL_FROM": "GundjaTech <onboarding@resend.dev>",
+    "STAFF_NOTIFY_EMAIL": "gundjatech@gmail.com",
     "WHATSAPP_API_VERSION": "v21.0"
   },
   "assets": {

@@ -88,7 +88,7 @@ export function renderEmailTemplate(title: string, bodyContent: string, actionBu
  * Se a API Key não estiver configurada (desenvolvimento / testes), simula o envio com sucesso
  */
 export async function sendEmail(env: Env, options: EmailOptions): Promise<EmailResult> {
-    const fromAddress = options.from || 'GundjaTech <contato@gundjatech.com>';
+    const fromAddress = options.from || env.EMAIL_FROM || 'GundjaTech <contato@gundjatech.com>';
     const toList = Array.isArray(options.to) ? options.to : [options.to];
 
     // Se não houver chave do Resend configurada, realiza fallback mock sem quebrar
@@ -245,7 +245,7 @@ export async function sendNewLeadStaffNotification(
     );
 
     return await sendEmail(env, {
-        to: 'comercial@gundjatech.com',
+        to: env.STAFF_NOTIFY_EMAIL || 'comercial@gundjatech.com',
         subject: `[LEAD] ${lead.company || lead.name} - ${lead.serviceTitle || 'Nova Solicitação'}`,
         html
     });

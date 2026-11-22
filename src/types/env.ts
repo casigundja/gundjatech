@@ -19,6 +19,8 @@ export interface Env {
     GEMINI_API_KEY?: string;
     OPENAI_API_KEY?: string;
     APP_URL?: string;
+    EMAIL_FROM?: string;
+    STAFF_NOTIFY_EMAIL?: string;
 
     // Meta WhatsApp Cloud API
     WHATSAPP_VERIFY_TOKEN?: string;
