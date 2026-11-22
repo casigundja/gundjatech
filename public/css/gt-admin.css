@@ -2828,7 +2828,72 @@ body.gt-admin-boost .gt-badge-danger {
 }
 
 .gt-portal-sidebar-footer {
-    border-color: rgba(255, 255, 255, 0.08);
+    padding: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.gt-portal-footer-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 12px;
+    background: rgba(22, 116, 154, 0.12);
+    border: 1px solid rgba(22, 116, 154, 0.28);
+    transition: border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.gt-portal-footer-card:hover {
+    border-color: rgba(242, 194, 48, 0.45);
+}
+
+.gt-portal-footer-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+    text-decoration: none;
+}
+
+.gt-portal-footer-avatar {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #063B5C 0%, #16749A 100%);
+    border: 1.5px solid rgba(242, 194, 48, 0.65);
+    color: #F2C230 !important;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px -4px rgba(6, 59, 92, 0.4);
+}
+
+.gt-portal-logout-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #9BB4C7;
+    cursor: pointer;
+    transition: all 0.16s ease;
+}
+
+.gt-portal-logout-btn:hover {
+    background: rgba(239, 68, 68, 0.14);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #F87171;
 }
 
 .gt-portal-user-name {
@@ -2854,8 +2919,30 @@ html[data-admin-theme="light"] .gt-portal-ws-name {
 }
 
 html[data-admin-theme="light"] .gt-portal-sidebar-footer {
-    border-color: #D4E3ED !important;
-    background: #F6FAFC !important;
+    border-top-color: #D4E3ED !important;
+    background: #FFFFFF !important;
+}
+
+html[data-admin-theme="light"] .gt-portal-footer-card {
+    background: #F4F8FB !important;
+    border: 1px solid #D4E3ED !important;
+}
+
+html[data-admin-theme="light"] .gt-portal-footer-card:hover {
+    background: #EEF5F9 !important;
+    border-color: #16749A !important;
+}
+
+html[data-admin-theme="light"] .gt-portal-logout-btn {
+    background: #FFFFFF !important;
+    border: 1px solid #CFE0EB !important;
+    color: #527287 !important;
+}
+
+html[data-admin-theme="light"] .gt-portal-logout-btn:hover {
+    background: #FEF2F2 !important;
+    border-color: #FECACA !important;
+    color: #DC2626 !important;
 }
 
 html[data-admin-theme="light"] .gt-portal-user-name {

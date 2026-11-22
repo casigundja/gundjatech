@@ -42,7 +42,7 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
-                <link rel="stylesheet" href="/css/gt-admin.css?v=34" />
+                <link rel="stylesheet" href="/css/gt-admin.css?v=35" />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
@@ -195,25 +195,26 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                     </div>
 
                     {/* Sidebar Footer / User Info */}
-                    <div class="gt-portal-sidebar-footer p-3 border-t flex items-center justify-between gap-2">
-                        <a href="/minha-conta" class="flex items-center gap-2.5 min-w-0 no-underline group" title="Minha Conta">
-                            <span class="gtb-avatar shrink-0">
-                                <span class="gtb-avatar-inner">{initials}</span>
-                            </span>
-                            <div class="min-w-0">
-                                <div class="gt-portal-user-name text-xs font-bold truncate group-hover:text-[#F2C230] transition-colors">{currentUser.name}</div>
-                                <div class="gt-portal-user-email text-[10.5px] truncate">{currentUser.email}</div>
-                            </div>
-                        </a>
-                        <form action="/auth/logout" method="post" class="m-0 shrink-0">
-                            <button
-                                type="submit"
-                                title="Sair do Portal"
-                                class="gtb-icon-btn !w-8 !h-8 rounded-lg text-[#8C95AA] hover:text-red-500 cursor-pointer"
-                            >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                            </button>
-                        </form>
+                    <div class="gt-portal-sidebar-footer">
+                        <div class="gt-portal-footer-card">
+                            <a href="/minha-conta" class="gt-portal-footer-user" title="Minha Conta">
+                                <span class="gt-portal-footer-avatar">{initials}</span>
+                                <div class="min-w-0 flex-1">
+                                    <div class="gt-portal-user-name text-xs font-extrabold truncate">{currentUser.name}</div>
+                                    <div class="gt-portal-user-email text-[10.5px] truncate">{currentUser.email}</div>
+                                </div>
+                            </a>
+                            <form action="/auth/logout" method="post" class="m-0 shrink-0">
+                                <button
+                                    type="submit"
+                                    title="Sair do Portal"
+                                    aria-label="Sair do Portal"
+                                    class="gt-portal-logout-btn"
+                                >
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </aside>
 
