@@ -670,6 +670,46 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
     return c.redirect(`/admin/solicitacoes/${id}?success=Status atualizado com sucesso`);
 });
 
+adminRoutes.post('/solicitacoes/:id/editar', async (c) => {
+    const user = c.get('user')!;
+    const db = c.env.DB;
+    const id = c.req.param('id');
+    const body = await getRequestBody(c);
+
+    const serviceTitle = String(body.service_title || body.title || '').trim();
+    const name = String(body.name || '').trim() || null;
+    const company = String(body.company || '').trim() || null;
+    const email = String(body.email || '').trim().toLowerCase() || null;
+    const phone = String(body.phone || '').trim() || null;
+    const description = String(body.description || '').trim();
+    const estimatedBudgetRaw = String(body.estimated_budget || '').trim();
+    const estimatedBudget = estimatedBudgetRaw !== '' ? Number(estimatedBudgetRaw) : null;
+
+    if (!serviceTitle || !description) {
+        return c.redirect(`/admin/solicitacoes/${id}?error=Título e descrição são obrigatórios.`);
+    }
+
+    const current = await db.prepare(`SELECT id, status FROM service_requests WHERE id = ?`).bind(id).first<{ id: number; status: string }>();
+    if (!current) {
+        return c.redirect('/admin/solicitacoes?error=Solicitação não encontrada.');
+    }
+
+    await db.prepare(
+        `UPDATE service_requests
+         SET title = ?, service_title = ?, name = COALESCE(?, name), company = ?, email = COALESCE(?, email), phone = ?, description = ?, estimated_budget = ?, updated_at = datetime('now')
+         WHERE id = ?`
+    ).bind(serviceTitle, serviceTitle, name, company, email, phone, description, estimatedBudget, id).run();
+
+    try {
+        await db.prepare(
+            `INSERT INTO service_request_history (service_request_id, user_id, action, from_status, to_status, notes, created_at)
+             VALUES (?, ?, 'edited', ?, ?, 'Dados da solicitação atualizados pela administração', datetime('now'))`
+        ).bind(id, user.id, current.status, current.status).run();
+    } catch {}
+
+    return c.redirect(`/admin/solicitacoes/${id}?success=Solicitação atualizada com sucesso!`);
+});
+
 adminRoutes.post('/solicitacoes/:id/cancelar', async (c) => {
     const user = c.get('user')!;
     const db = c.env.DB;

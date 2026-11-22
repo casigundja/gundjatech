@@ -79,6 +79,18 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                             </a>
                         ) : null}
 
+                        <button
+                            type="button"
+                            onclick="document.getElementById('gt-edit-request-modal').classList.remove('hidden')"
+                            class="gt-btn-outline gt-btn-sm"
+                        >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20h9" />
+                                <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                            </svg>
+                            <span>Editar</span>
+                        </button>
+
                         {requestDetail.status !== 'cancelled' && (
                             <form action={`/admin/solicitacoes/${requestDetail.id}/cancelar`} method="post" class="m-0">
                                 <button type="submit" data-loading-text="Cancelando..." class="gt-btn-outline gt-btn-sm">
@@ -194,6 +206,135 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                             </button>
                         </form>
                     </aside>
+                </div>
+
+                {/* Modal Editar Solicitação */}
+                <div
+                    id="gt-edit-request-modal"
+                    class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4"
+                    onclick="if(event.target===this)this.classList.add('hidden')"
+                >
+                    <div class="gtb-card gt-modal-card max-w-xl !p-6">
+                        <div class="gtb-card-accent-top gtb-card-accent-gold"></div>
+                        <div class="flex items-center justify-between gap-3 pb-3.5 mb-4 border-b border-white/10">
+                            <div>
+                                <h2 class="gt-font-display text-base font-extrabold text-white">Editar Solicitação</h2>
+                                <p class="text-[11px] text-[#8C95AA] mt-0.5">Atualize título, dados do cliente, valor estimado e descrição.</p>
+                            </div>
+                            <button
+                                type="button"
+                                onclick="document.getElementById('gt-edit-request-modal').classList.add('hidden')"
+                                class="gtb-icon-btn !w-8 !h-8 rounded-lg"
+                                aria-label="Fechar"
+                            >
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+
+                        <form action={`/admin/solicitacoes/${requestDetail.id}/editar`} method="post" class="space-y-4">
+                            <div>
+                                <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
+                                    Título da Solicitação *
+                                </label>
+                                <input
+                                    type="text"
+                                    name="service_title"
+                                    required
+                                    value={requestDetail.service_title || requestDetail.title || ''}
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white"
+                                />
+                            </div>
+
+                            <div class="gt-grid-2">
+                                <div>
+                                    <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
+                                        Nome do Contato
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value={requestDetail.name || ''}
+                                        class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
+                                        Empresa
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="company"
+                                        value={requestDetail.company || ''}
+                                        class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white"
+                                    />
+                                </div>
+                            </div>
+
+                            <div class="gt-grid-2">
+                                <div>
+                                    <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
+                                        E-mail
+                                    </label>
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={requestDetail.email || ''}
+                                        class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
+                                        Telefone / WhatsApp
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="phone"
+                                        value={requestDetail.phone || ''}
+                                        class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
+                                    Orçamento Estimado (R$)
+                                </label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    name="estimated_budget"
+                                    value={requestDetail.estimated_budget ?? ''}
+                                    placeholder="Ex: 2500.00"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
+                                    Descrição da Demanda *
+                                </label>
+                                <textarea
+                                    name="description"
+                                    rows={4}
+                                    required
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white"
+                                >{requestDetail.description || requestDetail.briefing || ''}</textarea>
+                            </div>
+
+                            <div class="pt-3 border-t border-white/10 flex items-center justify-end gap-2.5">
+                                <button
+                                    type="button"
+                                    onclick="document.getElementById('gt-edit-request-modal').classList.add('hidden')"
+                                    class="gt-btn-outline gt-btn-sm"
+                                >
+                                    Cancelar
+                                </button>
+                                <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm">
+                                    <span>Salvar Alterações</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </AdminLayout>
         );
