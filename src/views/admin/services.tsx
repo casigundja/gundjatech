@@ -10,6 +10,17 @@ interface AdminServicesProps {
     errorMessage?: string | null;
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+    sites: 'Websites & Portais',
+    ecommerce: 'E-commerce B2B/B2C',
+    software: 'Software & SaaS',
+    infra: 'Infra & Cloudflare'
+};
+
+function formatBRL(val: number): string {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(val || 0));
+}
+
 export const AdminServicesView: FC<AdminServicesProps> = ({
     currentUser,
     services = [],
@@ -27,18 +38,26 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                 successMessage={successMessage}
                 errorMessage={errorMessage}
             >
-                <div style="margin-bottom: 20px;">
-                    <a href="/admin/servicos" style="font-size: 13px; font-weight: 700; color: #F2C230; text-decoration: none;">&larr; Voltar para Serviços</a>
+                <div class="gt-detail-toolbar">
+                    <a href="/admin/servicos" class="gt-back-link">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5" />
+                            <path d="m12 19-7-7 7-7" />
+                        </svg>
+                        <span>Voltar para Serviços</span>
+                    </a>
                 </div>
 
-                <div class="gt-card" style="max-width: 680px; padding: 32px;">
-                    <h1 style="font-size: 20px; font-weight: 800; color: #FFFFFF; margin-bottom: 6px;">Cadastrar Novo Pacote de Serviço</h1>
-                    <p style="font-size: 13px; color: #8CAAB9; margin-bottom: 24px;">Configure o título, descrição, categoria e valores de referência.</p>
+                <section class="gtb-card gtb-kpi-gold max-w-2xl space-y-5">
+                    <div>
+                        <h1 class="gt-font-display text-xl font-extrabold text-white">Cadastrar Novo Pacote de Serviço</h1>
+                        <p class="text-xs text-[#8C95AA] mt-1">Configure o título, descrição, categoria e valores de referência.</p>
+                    </div>
 
-                    <form action="/admin/servicos" method="post" style="display: flex; flex-direction: column; gap: 18px;">
+                    <form action="/admin/servicos" method="post" class="space-y-4">
                         <div>
-                            <label style="display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #8CAAB9; margin-bottom: 6px;">Categoria do Serviço *</label>
-                            <select name="category_id" required style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--gt-border); background: #032033; color: #FFFFFF; font-size: 13px;">
+                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Categoria do Serviço *</label>
+                            <select name="category_id" required class="w-full rounded-xl px-3.5 py-2.5 text-[13px]">
                                 <option value="">Selecione uma categoria...</option>
                                 {categories.map((c: any) => (
                                     <option value={c.id}>{c.name}</option>
@@ -47,34 +66,55 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                         </div>
 
                         <div>
-                            <label style="display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #8CAAB9; margin-bottom: 6px;">Nome do Pacote *</label>
-                            <input type="text" name="name" required placeholder="Ex: Criação de E-commerce B2B com Checkout Customizado" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--gt-border); background: #032033; color: #FFFFFF; font-size: 13px;" />
+                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Nome do Pacote *</label>
+                            <input
+                                type="text"
+                                name="name"
+                                required
+                                placeholder="Ex: Criação de E-commerce B2B com Checkout Customizado"
+                                class="w-full rounded-xl px-3.5 py-2.5 text-[13px]"
+                            />
                         </div>
 
                         <div>
-                            <label style="display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #8CAAB9; margin-bottom: 6px;">Descrição Resumida</label>
-                            <input type="text" name="short_description" placeholder="Ex: Arquitetura completa, catálogo dinâmico e integração com ERP" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--gt-border); background: #032033; color: #FFFFFF; font-size: 13px;" />
+                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Descrição Resumida</label>
+                            <input
+                                type="text"
+                                name="short_description"
+                                placeholder="Ex: Arquitetura completa, catálogo dinâmico e integração com ERP"
+                                class="w-full rounded-xl px-3.5 py-2.5 text-[13px]"
+                            />
                         </div>
 
                         <div class="gt-grid-2">
                             <div>
-                                <label style="display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #8CAAB9; margin-bottom: 6px;">Preço Base de Referência (R$)</label>
-                                <input type="number" step="0.01" name="base_price" placeholder="4800.00" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--gt-border); background: #032033; color: #FFFFFF; font-size: 13px;" />
+                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Preço Base de Referência (R$)</label>
+                                <input type="number" step="0.01" min="0" name="base_price" placeholder="4800.00" class="w-full rounded-xl px-3.5 py-2.5 text-[13px] font-mono" />
                             </div>
                             <div>
-                                <label style="display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #8CAAB9; margin-bottom: 6px;">Prazo Estimado (Dias)</label>
-                                <input type="number" name="estimated_days" placeholder="30" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--gt-border); background: #032033; color: #FFFFFF; font-size: 13px;" />
+                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Prazo Estimado (Dias)</label>
+                                <input type="number" min="1" name="estimated_days" placeholder="30" class="w-full rounded-xl px-3.5 py-2.5 text-[13px] font-mono" />
                             </div>
                         </div>
 
-                        <button type="submit" class="gt-btn-primary" style="justify-content: center; padding: 12px; margin-top: 8px;">
-                            Cadastrar Pacote &rarr;
-                        </button>
+                        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-white/10">
+                            <a href="/admin/servicos" class="gt-btn-outline gt-btn-sm">Cancelar</a>
+                            <button type="submit" data-loading-text="Cadastrando..." class="gt-btn-primary gt-btn-sm">
+                                Cadastrar Pacote
+                            </button>
+                        </div>
                     </form>
-                </div>
+                </section>
             </AdminLayout>
         );
     }
+
+    const activeCount = services.filter((s) => s.is_active).length;
+    const inactiveCount = services.length - activeCount;
+    const avgPrice =
+        services.length > 0
+            ? services.reduce((acc, s) => acc + Number(s.base_price || s.price || 0), 0) / services.length
+            : 0;
 
     return (
         <AdminLayout
@@ -84,54 +124,102 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
             successMessage={successMessage}
             errorMessage={errorMessage}
         >
-            <div class="gt-page-header">
+            <div class="gt-page-header !mb-0">
                 <div>
-                    <h1 style="font-size: 20px; font-weight: 800; color: #FFFFFF;">Catálogo de Pacotes e Soluções Digitais</h1>
-                    <p style="font-size: 13px; color: #8CAAB9; margin-top: 4px;">Gerencie os serviços ofertados no site institucional e disponíveis no formulário de orçamento.</p>
+                    <h1 class="gt-font-display text-xl sm:text-2xl font-extrabold text-white">
+                        Catálogo de Pacotes e Soluções Digitais
+                    </h1>
+                    <p class="text-xs sm:text-sm text-[#8C95AA] mt-1">
+                        Gerencie os serviços ofertados no site institucional e disponíveis no formulário de orçamento.
+                    </p>
                 </div>
-                <a href="/admin/servicos/novo" class="gt-btn-primary">+ Novo Pacote</a>
+                <a href="/admin/servicos/novo" class="gt-btn-primary">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14" />
+                        <path d="M12 5v14" />
+                    </svg>
+                    <span>Novo Pacote</span>
+                </a>
             </div>
 
-            <div class="gt-card" style="overflow: hidden;">
+            {/* 4 KPIs Executivos */}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div class="gtb-card gtb-kpi-gold !p-5 flex flex-col justify-between gap-1.5">
+                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total de Pacotes</span>
+                    <div class="gt-font-display text-2xl font-extrabold text-white">{services.length}</div>
+                    <div class="text-[11px] text-[#8C95AA]">no catálogo comercial</div>
+                </div>
+                <div class="gtb-card gtb-kpi-petrol !p-5 flex flex-col justify-between gap-1.5">
+                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Serviços Ativos</span>
+                    <div class="gt-font-display text-2xl font-extrabold text-[#34D399]">{activeCount}</div>
+                    <div class="text-[11px] text-[#8C95AA]">visíveis para clientes</div>
+                </div>
+                <div class="gtb-card !p-5 flex flex-col justify-between gap-1.5">
+                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Pausados / Inativos</span>
+                    <div class="gt-font-display text-2xl font-extrabold text-white">{inactiveCount}</div>
+                    <div class="text-[11px] text-[#8C95AA]">ocultos no site</div>
+                </div>
+                <div class="gtb-card gtb-kpi-blue !p-5 flex flex-col justify-between gap-1.5">
+                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Ticket Médio Base</span>
+                    <div class="gt-font-display text-xl sm:text-2xl font-extrabold text-[#F2C230]">{formatBRL(avgPrice)}</div>
+                    <div class="text-[11px] text-[#8C95AA]">média dos pacotes</div>
+                </div>
+            </div>
+
+            {/* Tabela de Serviços */}
+            <div class="gtb-card !p-0 overflow-hidden">
                 {services.length === 0 ? (
                     <div class="gt-empty-state">Nenhum serviço cadastrado.</div>
                 ) : (
                     <div class="gt-table-wrap">
-                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <table class="w-full text-left text-xs">
                             <thead>
-                                <tr style="background: rgba(3, 32, 51, 0.8); border-bottom: 1px solid var(--gt-border); text-align: left; color: #8CAAB9; font-size: 11px; text-transform: uppercase;">
-                                    <th style="padding: 14px 20px;">Serviço / Pacote</th>
-                                    <th style="padding: 14px 20px;">Categoria</th>
-                                    <th style="padding: 14px 20px;">Preço Base</th>
-                                    <th style="padding: 14px 20px;">Status</th>
-                                    <th style="padding: 14px 20px; text-align: right;">Ações</th>
+                                <tr class="border-b border-white/10 text-[10.5px] uppercase tracking-wider text-[#8C95AA]">
+                                    <th class="py-3.5 px-5">Serviço / Pacote</th>
+                                    <th class="py-3.5 px-5">Categoria</th>
+                                    <th class="py-3.5 px-5">Preço Base</th>
+                                    <th class="py-3.5 px-5">Status</th>
+                                    <th class="py-3.5 px-5 text-right">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                {services.map((s: any) => (
-                                    <tr style="border-bottom: 1px solid var(--gt-border);">
-                                        <td style="padding: 14px 20px; min-width: 220px;">
-                                            <div style="font-weight: 700; color: #FFFFFF;">{s.name}</div>
-                                            <div style="font-size: 11px; color: #8CAAB9;">{s.short_description || s.slug}</div>
-                                        </td>
-                                        <td style="padding: 14px 20px; color: #B5D1E2; white-space: nowrap;">{s.category_name || 'Geral'}</td>
-                                        <td style="padding: 14px 20px; font-weight: 700; color: #F2C230; white-space: nowrap;">
-                                            R$ {Number(s.base_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                        </td>
-                                        <td style="padding: 14px 20px; white-space: nowrap;">
-                                            <span class={`gt-badge ${s.is_active ? 'gt-badge-success' : 'gt-badge-warning'}`}>
-                                                {s.is_active ? 'Ativo' : 'Inativo'}
-                                            </span>
-                                        </td>
-                                        <td style="padding: 14px 20px; text-align: right; white-space: nowrap;">
-                                            <form action={`/admin/servicos/${s.id}/excluir`} method="post" style="display: inline-block;">
-                                                <button type="submit" onclick="return confirm('Deseja desativar este serviço?')" style="background: none; border: none; color: #F87171; font-size: 12px; cursor: pointer; padding: 4px 8px;">
-                                                    Desativar
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                ))}
+                            <tbody class="divide-y divide-white/5">
+                                {services.map((s: any) => {
+                                    const title = s.name || s.title || 'Serviço';
+                                    const desc = s.short_description || s.summary || s.slug || '';
+                                    const catLabel = s.category_name || CATEGORY_LABELS[s.category] || 'Geral';
+                                    const price = Number(s.base_price ?? s.price ?? 0);
+
+                                    return (
+                                        <tr class="hover:bg-white/[0.02] transition">
+                                            <td class="py-3.5 px-5 min-w-[240px]">
+                                                <div class="font-bold text-white text-[13px]">{title}</div>
+                                                {desc && <div class="text-[11px] text-[#8C95AA] mt-0.5 leading-snug">{desc}</div>}
+                                            </td>
+                                            <td class="py-3.5 px-5 whitespace-nowrap">
+                                                <span class="gt-badge gt-badge-info">{catLabel}</span>
+                                            </td>
+                                            <td class="py-3.5 px-5 font-mono font-extrabold text-[#F2C230] whitespace-nowrap">
+                                                {formatBRL(price)}
+                                            </td>
+                                            <td class="py-3.5 px-5 whitespace-nowrap">
+                                                <span class={`gt-badge ${s.is_active ? 'gt-badge-success' : 'gt-badge-warning'}`}>
+                                                    {s.is_active ? 'Ativo' : 'Inativo'}
+                                                </span>
+                                            </td>
+                                            <td class="py-3.5 px-5 text-right whitespace-nowrap">
+                                                <form action={`/admin/servicos/${s.id}/excluir`} method="post" class="inline-block m-0">
+                                                    <button
+                                                        type="submit"
+                                                        data-loading-text="..."
+                                                        class={s.is_active ? 'gt-btn-outline gt-btn-xs' : 'gt-btn-petrol gt-btn-xs'}
+                                                    >
+                                                        {s.is_active ? 'Desativar' : 'Reativar'}
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
