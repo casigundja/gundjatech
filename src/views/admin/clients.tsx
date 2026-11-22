@@ -144,7 +144,7 @@ export const AdminClientsView: FC<AdminClientsProps> = ({
             </div>
 
             {/* 4 KPIs Compactos Clicáveis */}
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 <button
                     type="button"
                     data-cat-trigger="all"

@@ -2635,6 +2635,54 @@ html[data-admin-theme="light"] .gt-confirm-actions {
     box-shadow: 0 6px 16px rgba(185, 28, 28, 0.32);
 }
 
+/* ==========================================================================
+   GLOBAL CARD & SECTION SPACING GUARANTEES (Missing Tailwind Utilities)
+   ========================================================================== */
+.gt-admin-main > * + * {
+    margin-top: 22px !important;
+}
+
+.space-y-6 > * + * {
+    margin-top: 24px !important;
+}
+
+.space-y-5 > * + * {
+    margin-top: 20px !important;
+}
+
+.space-y-4 > * + * {
+    margin-top: 16px !important;
+}
+
+.space-y-3\.5 > * + * {
+    margin-top: 14px !important;
+}
+
+.space-y-2\.5 > * + * {
+    margin-top: 10px !important;
+}
+
+.gap-5 {
+    gap: 20px !important;
+}
+
+.gap-4 {
+    gap: 16px !important;
+}
+
+.gap-3\.5 {
+    gap: 14px !important;
+}
+
+.gap-2\.5 {
+    gap: 10px !important;
+}
+
+.gap-1\.5 {
+    gap: 6px !important;
+}
+
+
 
 
 
