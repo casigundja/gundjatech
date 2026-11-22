@@ -3140,6 +3140,125 @@ html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-danger {
     z-index: 1;
 }
 
+/* ==========================================================================
+   ENTERPRISE SUPPORT CHAT WORKSPACE (PORTAL)
+   ========================================================================== */
+.gt-portal-chat-box {
+    height: calc(100vh - 215px);
+    min-height: 460px;
+    max-height: 660px;
+}
+
+.gt-chat-brand-icon {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #063B5C 0%, #16749A 100%);
+    border: 1px solid rgba(242, 194, 48, 0.45);
+    color: #F2C230 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 6px 14px -4px rgba(6, 59, 92, 0.35);
+}
+
+.gt-chat-canvas {
+    background-image: radial-gradient(rgba(22, 116, 154, 0.14) 1px, transparent 1px);
+    background-size: 18px 18px;
+}
+
+html[data-admin-theme="light"] .gt-chat-canvas {
+    background-color: #F3F8FB !important;
+    background-image: radial-gradient(rgba(6, 59, 92, 0.08) 1px, transparent 1px);
+    background-size: 18px 18px;
+}
+
+.gt-chat-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.gt-chat-row.is-me {
+    justify-content: flex-end;
+}
+
+.gt-chat-row.is-them {
+    justify-content: flex-start;
+}
+
+.gt-chat-mini-avatar {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 9px;
+    font-size: 10px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-bottom: 18px;
+}
+
+.gt-chat-mini-avatar.is-team {
+    background: linear-gradient(135deg, #063B5C 0%, #16749A 100%);
+    color: #F2C230 !important;
+    border: 1px solid rgba(242, 194, 48, 0.45);
+}
+
+.gt-chat-mini-avatar.is-me {
+    background: #F2C230;
+    color: #063B5C !important;
+    border: 1px solid rgba(6, 59, 92, 0.2);
+}
+
+.gt-chat-quick-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-align: left;
+    background: rgba(22, 116, 154, 0.1);
+    border: 1px solid rgba(22, 116, 154, 0.25);
+    color: #E7F0F5;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.gt-chat-quick-btn:hover {
+    background: rgba(22, 116, 154, 0.22);
+    border-color: #F2C230;
+    color: #FFFFFF;
+}
+
+html[data-admin-theme="light"] .gt-chat-quick-btn {
+    background: #F4F8FB !important;
+    border: 1px solid #D4E3ED !important;
+    color: #063B5C !important;
+}
+
+html[data-admin-theme="light"] .gt-chat-quick-btn:hover {
+    background: #E7F0F5 !important;
+    border-color: #16749A !important;
+    color: #063B5C !important;
+}
+
+@media (max-width: 767px) {
+    .gt-portal-chat-box {
+        height: 68dvh;
+        min-height: 380px;
+    }
+}
+
+
 
 
 
