@@ -51,33 +51,58 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                 successMessage={successMessage}
                 errorMessage={errorMessage}
             >
-                <div class="flex items-center justify-between gap-3 flex-wrap">
-                    <a href="/admin/orcamentos" class="text-xs font-bold text-[#F2C230] no-underline hover:underline">
-                        &larr; Voltar para Orçamentos
+                <div class="gt-detail-toolbar gt-no-print">
+                    <a href="/admin/orcamentos" class="gt-back-link">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5" />
+                            <path d="m12 19-7-7 7-7" />
+                        </svg>
+                        <span>Voltar para Orçamentos</span>
                     </a>
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <button type="button" onclick="window.print()" class="gt-btn-outline !py-1.5 !px-3 !text-xs">
-                            🖨️ Imprimir / PDF
+                    <div class="gt-detail-toolbar-actions">
+                        <button type="button" onclick="window.print()" class="gt-btn-outline gt-btn-sm">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 6 2 18 2 18 9" />
+                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                                <rect width="12" height="8" x="6" y="14" />
+                            </svg>
+                            <span>Imprimir / PDF</span>
                         </button>
                         {quotationDetail.status !== 'sent' && quotationDetail.status !== 'approved' && (
                             <form action={`/admin/orcamentos/${quotationDetail.id}/status`} method="post" class="m-0">
                                 <input type="hidden" name="status" value="sent" />
-                                <button type="submit" data-loading-text="Enviando..." class="gt-btn-outline !py-1.5 !px-3 !text-xs">
-                                    Marcar como Enviado
+                                <button type="submit" data-loading-text="Enviando..." class="gt-btn-outline gt-btn-sm">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="m22 2-7 20-4-9-9-4Z" />
+                                        <path d="M22 2 11 13" />
+                                    </svg>
+                                    <span>Marcar como Enviado</span>
                                 </button>
                             </form>
                         )}
                         {quotationDetail.status !== 'approved' && (
                             <form action={`/admin/orcamentos/${quotationDetail.id}/status`} method="post" class="m-0">
                                 <input type="hidden" name="status" value="approved" />
-                                <button type="submit" data-loading-text="Aprovando..." class="btn-primary !py-1.5 !px-3.5 !text-xs">
-                                    ✓ Aprovar Proposta
+                                <button type="submit" data-loading-text="Aprovando..." class="gt-btn-primary gt-btn-sm">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                    <span>Aprovar Proposta</span>
                                 </button>
                             </form>
                         )}
                         <form action={`/admin/orcamentos/${quotationDetail.id}/converter-projeto`} method="post" class="m-0">
-                            <button type="submit" data-loading-text="Convertendo..." class="btn-primary !py-1.5 !px-3.5 !text-xs">
-                                🚀 Converter em Projeto
+                            <button
+                                type="submit"
+                                data-loading-text="Convertendo..."
+                                class={quotationDetail.status === 'approved' ? 'gt-btn-primary gt-btn-sm' : 'gt-btn-petrol gt-btn-sm'}
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
+                                    <path d="M12 10v6" />
+                                    <path d="M9 13h6" />
+                                </svg>
+                                <span>Converter em Projeto</span>
                             </button>
                         </form>
                     </div>
@@ -174,9 +199,14 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                                 >{quotationDetail.notes || ''}</textarea>
                             </div>
 
-                            <div class="flex items-center justify-between gap-3 pt-2 flex-wrap">
-                                <button type="submit" data-loading-text="Salvando..." class="btn-primary py-2.5 px-6 text-xs">
-                                    ✓ Salvar Alterações da Proposta
+                            <div class="flex items-center justify-between gap-3 pt-2 flex-wrap gt-no-print">
+                                <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                                        <polyline points="17 21 17 13 7 13 7 21" />
+                                        <polyline points="7 3 7 8 15 8" />
+                                    </svg>
+                                    <span>Salvar Alterações</span>
                                 </button>
                             </div>
                         </form>
@@ -206,11 +236,11 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                             <div>Validade: <strong class="text-white">{quotationDetail.expires_at ? String(quotationDetail.expires_at).slice(0, 10) : 'Sem prazo'}</strong></div>
                         </div>
 
-                        <div class="pt-3 border-t border-white/10 space-y-2">
+                        <div class="pt-3 border-t border-white/10 space-y-2 gt-no-print">
                             {quotationDetail.status !== 'rejected' && (
                                 <form action={`/admin/orcamentos/${quotationDetail.id}/status`} method="post" class="m-0">
                                     <input type="hidden" name="status" value="rejected" />
-                                    <button type="submit" data-loading-text="Atualizando..." class="gt-btn-outline w-full py-2 text-xs">
+                                    <button type="submit" data-loading-text="Atualizando..." class="gt-btn-outline gt-btn-sm w-full justify-center">
                                         Marcar como Recusado
                                     </button>
                                 </form>
@@ -221,8 +251,13 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                                 class="m-0"
                                 onsubmit="return confirm('Deseja realmente excluir este orçamento?')"
                             >
-                                <button type="submit" data-loading-text="Excluindo..." class="w-full py-2 px-3 rounded-xl bg-red-500/15 text-red-400 hover:bg-red-500/25 font-bold text-xs cursor-pointer border-0 transition">
-                                    Excluir Orçamento
+                                <button type="submit" data-loading-text="Excluindo..." class="gt-btn-danger-ghost gt-btn-sm w-full">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 6h18" />
+                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                    </svg>
+                                    <span>Excluir Orçamento</span>
                                 </button>
                             </form>
                         </div>
@@ -371,14 +406,17 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                                             </td>
                                             <td class="py-3.5 px-5 text-right whitespace-nowrap">
                                                 <div class="inline-flex items-center gap-1.5">
-                                                    <a href={`/admin/orcamentos/${q.id}`} class="gt-btn-outline !py-1 !px-2.5 !text-[11px]">
+                                                    <a href={`/admin/orcamentos/${q.id}`} class="gt-btn-outline gt-btn-xs">
                                                         Gerenciar
                                                     </a>
                                                     {q.status !== 'approved' && (
                                                         <form action={`/admin/orcamentos/${q.id}/status`} method="post" class="inline-block m-0">
                                                             <input type="hidden" name="status" value="approved" />
-                                                            <button type="submit" data-loading-text="..." class="btn-primary !py-1 !px-2.5 !text-[11px]" title="Aprovar orçamento">
-                                                                ✓ Aprovar
+                                                            <button type="submit" data-loading-text="..." class="gt-btn-primary gt-btn-xs" title="Aprovar orçamento">
+                                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                                    <polyline points="20 6 9 17 4 12" />
+                                                                </svg>
+                                                                <span>Aprovar</span>
                                                             </button>
                                                         </form>
                                                     )}
@@ -388,8 +426,12 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                                                         class="inline-block m-0"
                                                         onsubmit="return confirm('Deseja realmente excluir este orçamento?')"
                                                     >
-                                                        <button type="submit" class="px-2 py-1 rounded-lg bg-red-500/15 text-red-400 hover:bg-red-500/25 font-bold text-[11px] cursor-pointer border-0 transition" title="Excluir orçamento">
-                                                            ✕
+                                                        <button type="submit" class="gt-btn-danger-ghost gt-btn-icon-only" title="Excluir orçamento" aria-label="Excluir orçamento">
+                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                <path d="M3 6h18" />
+                                                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                                            </svg>
                                                         </button>
                                                     </form>
                                                 </div>
@@ -502,7 +544,7 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                             >
                                 Cancelar
                             </button>
-                            <button type="submit" data-loading-text="Criando..." class="btn-primary py-2.5 px-5 text-xs">
+                            <button type="submit" data-loading-text="Criando..." class="gt-btn-primary">
                                 Criar Orçamento
                             </button>
                         </div>
