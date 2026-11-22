@@ -1585,6 +1585,7 @@ adminRoutes.post('/configuracoes', async (c) => {
         ['company_email', String(body.company_email || '').trim(), 'general'],
         ['company_phone', String(body.company_phone || '').trim(), 'general'],
         ['company_whatsapp', String(body.company_whatsapp || '').trim(), 'general'],
+        ['whatsapp_director_phone', String(body.whatsapp_director_phone || '').replace(/\D+/g, ''), 'integrations'],
         ['company_address', String(body.company_address || '').trim(), 'general'],
         ['whatsapp_sync_enabled', body.whatsapp_sync_enabled ? '1' : '0', 'integrations']
     ];

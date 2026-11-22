@@ -114,7 +114,7 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
 
                     <div class="gt-grid-2">
                         <div>
-                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">WhatsApp Oficial (somente números)</label>
+                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">WhatsApp 1 — Oficial / IA (somente números)</label>
                             <input
                                 type="text"
                                 name="company_whatsapp"
@@ -122,17 +122,30 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                                 placeholder="5519953248420"
                                 class="w-full rounded-xl px-3.5 py-2.5 text-[13px] font-mono"
                             />
+                            <p class="text-[10.5px] text-[#8C95AA] mt-1">Número dos botões do site e canal de atendimento com IA.</p>
                         </div>
                         <div>
-                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Endereço / Sede</label>
+                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">WhatsApp 2 — Diretor / Humano (somente números)</label>
                             <input
                                 type="text"
-                                name="company_address"
-                                value={settings.company_address || ''}
-                                placeholder="São Paulo - SP • Atendimento Nacional"
-                                class="w-full rounded-xl px-3.5 py-2.5 text-[13px]"
+                                name="whatsapp_director_phone"
+                                value={settings.whatsapp_director_phone || ''}
+                                placeholder="5519999999999"
+                                class="w-full rounded-xl px-3.5 py-2.5 text-[13px] font-mono"
                             />
+                            <p class="text-[10.5px] text-[#8C95AA] mt-1">Recebe alertas quando cliente do chat do site solicita falar com humano.</p>
                         </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Endereço / Sede</label>
+                        <input
+                            type="text"
+                            name="company_address"
+                            value={settings.company_address || ''}
+                            placeholder="São Paulo - SP • Atendimento Nacional"
+                            class="w-full rounded-xl px-3.5 py-2.5 text-[13px]"
+                        />
                     </div>
 
                     <div class="pt-2">

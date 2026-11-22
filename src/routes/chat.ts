@@ -3,8 +3,19 @@ import { Env, AppVariables } from '../types/env';
 import { getRequestBody } from '../lib/request';
 import { AutonomousCrmAgent } from '../services/ai-crm-agent';
 import { generateRandomToken } from '../lib/crypto';
+import { sendDirectorWhatsAppAlert } from '../services/whatsapp';
 
 export const chatRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
+
+function isHumanHandoffRequest(text: string): boolean {
+    const normalized = String(text || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    return /(falar com (um |o |a )?(humano|atendente|pessoa|alguem|diretor|consultor|especialista|gerente|vendedor)|atendimento humano|transferir para humano|suporte humano|quero (um )?humano|quero falar com (uma )?pessoa|chamar (um )?(humano|atendente|diretor))/.test(
+        normalized
+    );
+}
 
 // ----------------------------------------------------
 // INICIAR CONVERSA (START CHAT) - Paridade com Laravel apiChatStart
@@ -104,11 +115,63 @@ chatRoutes.post('/start', async (c) => {
         console.error('Erro ao persistir chat:', err);
     }
 
-    // 5. Agente de IA autônomo gera a resposta se habilitado
+    // 5. Verifica se o visitante já solicitou atendimento humano ou se aciona a IA
+    const originUrl = new URL(c.req.url).origin;
     let aiReply = null;
-    if (globalAiEnabled) {
+    let handedOff = isHumanHandoffRequest(mensagem);
+
+    if (handedOff) {
+        const handoffMsg = 'Perfeito! Já notifiquei nosso diretor comercial no WhatsApp com os seus dados e mensagem. Em instantes ele dará continuidade ao seu atendimento.';
+        let handoffMsgId: number | undefined;
+        try {
+            if (c.env?.DB) {
+                await c.env.DB.prepare(
+                    `UPDATE conversations SET ai_enabled = 0, crm_stage = 'handoff_human', status = 'waiting_staff', updated_at = datetime('now') WHERE id = ?`
+                ).bind(conversationId).run();
+                const res = await c.env.DB.prepare(
+                    `INSERT INTO conversation_messages (conversation_id, sender_type, message, is_ai, created_at, updated_at)
+                     VALUES (?, 'agent', ?, 1, datetime('now'), datetime('now'))`
+                ).bind(conversationId, handoffMsg).run();
+                handoffMsgId = Number(res.meta.last_row_id);
+            }
+        } catch {}
+
+        aiReply = {
+            id: handoffMsgId,
+            sender_type: 'agent' as const,
+            sender_name: 'Assistente IA GundjaTech',
+            message: handoffMsg,
+            is_ai: true,
+            handoff: true,
+            created_at: new Date().toISOString()
+        };
+
+        try {
+            await sendDirectorWhatsAppAlert(c.env, {
+                conversationId,
+                visitorName: nome,
+                visitorEmail: email,
+                visitorPhone: telefone || null,
+                message: mensagem,
+                originUrl
+            });
+        } catch {}
+    } else if (globalAiEnabled) {
         const agent = new AutonomousCrmAgent(c.env);
         aiReply = await agent.handleIncomingMessage(conversationId, mensagem, nome);
+        if (aiReply?.handoff) {
+            handedOff = true;
+            try {
+                await sendDirectorWhatsAppAlert(c.env, {
+                    conversationId,
+                    visitorName: nome,
+                    visitorEmail: email,
+                    visitorPhone: telefone || null,
+                    message: mensagem,
+                    originUrl
+                });
+            } catch {}
+        }
     }
 
     const initialMessage = {
@@ -125,9 +188,9 @@ chatRoutes.post('/start', async (c) => {
         conversation_id: conversationId,
         visitor_token: visitorToken,
         protocol,
-        status: 'open',
-        ai_enabled: globalAiEnabled,
-        crm_stage: 'qualifying',
+        status: handedOff ? 'waiting_staff' : 'open',
+        ai_enabled: handedOff ? false : globalAiEnabled,
+        crm_stage: handedOff ? 'handoff_human' : 'qualifying',
         ai_reply: aiReply,
         messages: aiReply ? [initialMessage, aiReply] : [initialMessage]
     }, 201);
@@ -145,14 +208,30 @@ chatRoutes.post('/message', async (c) => {
         return c.json({ ok: false, error: 'Parâmetros inválidos' }, 422);
     }
 
-    let conversation: { id: number; status: string; visitor_name: string | null; ai_enabled?: number } | null = null;
+    let conversation: {
+        id: number;
+        status: string;
+        visitor_name: string | null;
+        visitor_email?: string | null;
+        visitor_phone?: string | null;
+        ai_enabled?: number;
+        crm_stage?: string | null;
+    } | null = null;
     let globalAiEnabled = true;
 
     try {
         if (c.env?.DB) {
             conversation = await c.env.DB.prepare(
-                `SELECT id, status, visitor_name, ai_enabled FROM conversations WHERE session_id = ?`
-            ).bind(visitorToken).first<{ id: number; status: string; visitor_name: string | null; ai_enabled?: number }>();
+                `SELECT id, status, visitor_name, visitor_email, visitor_phone, ai_enabled, crm_stage FROM conversations WHERE session_id = ?`
+            ).bind(visitorToken).first<{
+                id: number;
+                status: string;
+                visitor_name: string | null;
+                visitor_email?: string | null;
+                visitor_phone?: string | null;
+                ai_enabled?: number;
+                crm_stage?: string | null;
+            }>();
 
             try {
                 const aiCfg = await c.env.DB.prepare(
@@ -191,11 +270,82 @@ chatRoutes.post('/message', async (c) => {
         }
     } catch {}
 
-    const shouldRunAi = globalAiEnabled && (conversation ? Boolean(conversation.ai_enabled ?? 1) : true);
+    const originUrl = new URL(c.req.url).origin;
+    const alreadyHandedOff = conversation
+        ? conversation.ai_enabled === 0 || conversation.crm_stage === 'handoff_human' || conversation.status === 'waiting_staff'
+        : false;
+    const requestedHumanNow = isHumanHandoffRequest(message);
+    const shouldRunAi = globalAiEnabled && !alreadyHandedOff && !requestedHumanNow;
+
     let aiReply = null;
-    if (shouldRunAi) {
+    let currentStatus = conversation?.status || 'open';
+
+    if (requestedHumanNow && !alreadyHandedOff) {
+        currentStatus = 'waiting_staff';
+        const handoffMsg = 'Perfeito! Já transferi sua conversa e enviei uma notificação direta no WhatsApp do nosso diretor comercial. Em instantes ele falará com você por aqui.';
+        let handoffMsgId: number | undefined;
+        try {
+            if (c.env?.DB) {
+                await c.env.DB.prepare(
+                    `UPDATE conversations SET ai_enabled = 0, crm_stage = 'handoff_human', status = 'waiting_staff', updated_at = datetime('now') WHERE id = ?`
+                ).bind(convId).run();
+                const res = await c.env.DB.prepare(
+                    `INSERT INTO conversation_messages (conversation_id, sender_type, message, is_ai, created_at, updated_at)
+                     VALUES (?, 'agent', ?, 1, datetime('now'), datetime('now'))`
+                ).bind(convId, handoffMsg).run();
+                handoffMsgId = Number(res.meta.last_row_id);
+            }
+        } catch {}
+
+        aiReply = {
+            id: handoffMsgId,
+            sender_type: 'agent' as const,
+            sender_name: 'Assistente IA GundjaTech',
+            message: handoffMsg,
+            is_ai: true,
+            handoff: true,
+            created_at: new Date().toISOString()
+        };
+
+        try {
+            await sendDirectorWhatsAppAlert(c.env, {
+                conversationId: convId,
+                visitorName,
+                visitorEmail: conversation?.visitor_email || null,
+                visitorPhone: conversation?.visitor_phone || null,
+                message,
+                originUrl
+            });
+        } catch {}
+    } else if (alreadyHandedOff) {
+        // Conversa já transferida para humano: encaminha novas mensagens do site para o WhatsApp do Diretor
+        try {
+            await sendDirectorWhatsAppAlert(c.env, {
+                conversationId: convId,
+                visitorName,
+                visitorEmail: conversation?.visitor_email || null,
+                visitorPhone: conversation?.visitor_phone || null,
+                message,
+                originUrl,
+                isFollowUp: true
+            });
+        } catch {}
+    } else if (shouldRunAi) {
         const agent = new AutonomousCrmAgent(c.env);
         aiReply = await agent.handleIncomingMessage(convId, message, visitorName);
+        if (aiReply?.handoff) {
+            currentStatus = 'waiting_staff';
+            try {
+                await sendDirectorWhatsAppAlert(c.env, {
+                    conversationId: convId,
+                    visitorName,
+                    visitorEmail: conversation?.visitor_email || null,
+                    visitorPhone: conversation?.visitor_phone || null,
+                    message,
+                    originUrl
+                });
+            } catch {}
+        }
     }
 
     return c.json({
@@ -209,7 +359,7 @@ chatRoutes.post('/message', async (c) => {
             created_at: new Date().toISOString()
         },
         ai_reply: aiReply,
-        status: conversation?.status || 'open'
+        status: currentStatus
     });
 });
 

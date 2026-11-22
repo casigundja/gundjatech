@@ -26,6 +26,7 @@ function getBrazilPhoneVariants(digits: string): string[] {
 interface ResolvedWhatsAppConfig {
     provider: WhatsAppProvider;
     syncEnabled: boolean;
+    directorPhone: string;
     // Meta Cloud API
     metaAccessToken: string;
     metaPhoneNumberId: string;
@@ -44,6 +45,7 @@ async function resolveWhatsAppConfig(env: Env): Promise<ResolvedWhatsAppConfig> 
     const cfg: ResolvedWhatsAppConfig = {
         provider: 'meta',
         syncEnabled: true,
+        directorPhone: '',
         metaAccessToken: (env.WHATSAPP_ACCESS_TOKEN || '').trim(),
         metaPhoneNumberId: (env.WHATSAPP_PHONE_NUMBER_ID || '').trim(),
         metaApiVersion: (env.WHATSAPP_API_VERSION || 'v21.0').trim(),
@@ -61,6 +63,7 @@ async function resolveWhatsAppConfig(env: Env): Promise<ResolvedWhatsAppConfig> 
                 `SELECT key, value FROM system_settings WHERE key IN (
                     'whatsapp_provider',
                     'whatsapp_sync_enabled',
+                    'whatsapp_director_phone',
                     'whatsapp_access_token',
                     'whatsapp_phone_number_id',
                     'whatsapp_zapi_instance_id',
@@ -79,6 +82,10 @@ async function resolveWhatsAppConfig(env: Env): Promise<ResolvedWhatsAppConfig> 
                     continue;
                 }
                 if (!val) continue;
+                if (row.key === 'whatsapp_director_phone') {
+                    cfg.directorPhone = normalizeWhatsAppPhone(val);
+                    continue;
+                }
                 if (row.key === 'whatsapp_provider' && (val === 'zapi' || val === 'zapi_omni' || val === 'evolution' || val === 'meta')) {
                     cfg.provider = val;
                 }
@@ -287,7 +294,8 @@ export async function sendWhatsAppTextMessage(
     env: Env,
     toPhone: string,
     bodyText: string,
-    preferredProvider?: WhatsAppProvider
+    preferredProvider?: WhatsAppProvider,
+    options?: { bypassSyncPause?: boolean }
 ): Promise<WhatsAppSendResult> {
     const to = normalizeWhatsAppPhone(toPhone);
     const body = String(bodyText || '').trim();
@@ -299,7 +307,7 @@ export async function sendWhatsAppTextMessage(
     const cfg = await resolveWhatsAppConfig(env);
     const provider = preferredProvider || cfg.provider;
 
-    if (!cfg.syncEnabled) {
+    if (!cfg.syncEnabled && !options?.bypassSyncPause) {
         return { ok: false, provider, error: 'Sincronização WhatsApp pausada nas configurações.' };
     }
 
@@ -313,6 +321,50 @@ export async function sendWhatsAppTextMessage(
         return sendViaEvolution(cfg, to, body);
     }
     return sendViaMeta(cfg, to, body);
+}
+
+/**
+ * Envia alerta imediato para o WhatsApp 2 (Diretor / Atendimento Humano)
+ * quando um visitante do chat do site solicita falar com um humano ou ocorre handoff.
+ * Funciona independentemente da pausa da sincronização automática da IA no WhatsApp 1.
+ */
+export async function sendDirectorWhatsAppAlert(
+    env: Env,
+    params: {
+        conversationId: number;
+        visitorName: string;
+        visitorEmail?: string | null;
+        visitorPhone?: string | null;
+        message: string;
+        originUrl?: string;
+        isFollowUp?: boolean;
+    }
+): Promise<WhatsAppSendResult> {
+    const cfg = await resolveWhatsAppConfig(env);
+    if (!cfg.directorPhone) {
+        return { ok: false, provider: cfg.provider, error: 'WhatsApp do Diretor não configurado em /admin/configuracoes.' };
+    }
+
+    const header = params.isFollowUp
+        ? '💬 *Nova mensagem (Atendimento Humano — Site)*'
+        : '🔔 *Solicitação de Atendimento Humano — Chat do Site*';
+
+    const lines = [
+        header,
+        '',
+        `*Cliente:* ${params.visitorName || 'Visitante'}`,
+        params.visitorEmail ? `*E-mail:* ${params.visitorEmail}` : '',
+        params.visitorPhone ? `*Telefone:* ${params.visitorPhone}` : '',
+        `*Mensagem:* "${params.message.slice(0, 600)}"`,
+        '',
+        params.originUrl
+            ? `🔗 Responder no painel:\n${params.originUrl}/admin/atendimento?id=${params.conversationId}`
+            : `ID da conversa: #${params.conversationId}`
+    ].filter(Boolean);
+
+    return sendWhatsAppTextMessage(env, cfg.directorPhone, lines.join('\n'), cfg.provider, {
+        bypassSyncPause: true
+    });
 }
 
 export async function markWhatsAppMessageRead(env: Env, messageId: string): Promise<void> {

@@ -7,6 +7,7 @@ export interface ChatMessage {
     message: string;
     is_ai: boolean;
     provider?: string;
+    handoff?: boolean;
     created_at?: string;
 }
 
@@ -266,8 +267,9 @@ Seu objetivo é acolher o visitante, diagnosticar o desafio técnico dele e orie
                     await this.env.DB.prepare(
                         `UPDATE conversations
                          SET lead_score = lead_score + 10,
-                             crm_stage = 'handoff',
-                             ai_autopilot = 0,
+                             crm_stage = 'handoff_human',
+                             status = 'waiting_staff',
+                             ai_enabled = 0,
                              last_message_at = datetime('now'),
                              updated_at = datetime('now')
                          WHERE id = ?`
@@ -298,6 +300,7 @@ Seu objetivo é acolher o visitante, diagnosticar o desafio técnico dele e orie
             message: reply,
             is_ai: true,
             provider: providerUsed,
+            handoff: shouldHandoff,
             created_at: new Date().toISOString()
         };
     }
