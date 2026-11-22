@@ -16,11 +16,13 @@ interface PortalRequestsProps {
 
 const reqStatusLabel: Record<string, string> = {
     new: 'Nova',
+    analyzing: 'Em Análise Técnica',
     in_review: 'Em Análise',
     quotation_sent: 'Orçamento Enviado',
-    approved: 'Aprovada',
+    approved: 'Aprovado pelo Cliente',
     in_progress: 'Em Execução',
-    completed: 'Concluída'
+    completed: 'Concluído',
+    cancelled: 'Cancelado'
 };
 
 export const PortalRequestsView: FC<PortalRequestsProps> = ({

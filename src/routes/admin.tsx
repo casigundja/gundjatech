@@ -23,6 +23,7 @@ import { AdminFinanceView } from '../views/admin/finance';
 import { AdminDomainsView } from '../views/admin/domains';
 import { AdminCampaignsView } from '../views/admin/campaigns';
 import { sendInvoiceNoticeEmail, sendProjectStartedEmail, sendProjectCompletedEmail } from '../lib/email';
+import { recordRequestTimeline } from '../lib/timeline';
 
 export const adminRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -85,7 +86,7 @@ adminRoutes.get('/relatorio/exportar', async (c) => {
     try {
         const sRes = await db.prepare(`SELECT title, slug, category, price, is_active FROM services ORDER BY order_position ASC, id ASC`).all();
         servicesList = sRes.results || [];
-    } catch {}
+    } catch { }
 
     const fmtBRL = (val: number) =>
         new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(val || 0));
@@ -250,18 +251,18 @@ adminRoutes.get('/relatorio/exportar', async (c) => {
     <th class="tbl-head" align="left">Detalhamento / Contexto</th>
   </tr>
   ${kpiRows
-      .map((row, idx) => {
-          const base = idx % 2 === 0 ? 'cell-even' : 'cell-odd';
-          const valCls = row.highlight ? 'cell-gold' : `${base} cell-val`;
-          return `<tr height="30" style="mso-height-source:userset;height:22.5pt;">
+            .map((row, idx) => {
+                const base = idx % 2 === 0 ? 'cell-even' : 'cell-odd';
+                const valCls = row.highlight ? 'cell-gold' : `${base} cell-val`;
+                return `<tr height="30" style="mso-height-source:userset;height:22.5pt;">
     <td class="${base} cell-area">${esc(row.area)}</td>
     <td class="${base} cell-metric">${esc(row.metric)}</td>
     <td class="${valCls}">${esc(row.value)}</td>
     <td class="cell-badge">${esc(row.status)}</td>
     <td class="${base}">${esc(row.note)}</td>
   </tr>`;
-      })
-      .join('\n  ')}
+            })
+            .join('\n  ')}
 
   <tr height="18"><td colspan="5"></td></tr>
 
@@ -276,10 +277,9 @@ adminRoutes.get('/relatorio/exportar', async (c) => {
     <th class="tbl-head" align="center">Disponibilidade</th>
     <th class="tbl-head" align="left">Identificador (Slug)</th>
   </tr>
-  ${
-      servicesList.length === 0
-          ? `<tr height="32" style="mso-height-source:userset;height:24pt;"><td colspan="5" class="cell-empty">Nenhum pacote de serviço cadastrado.</td></tr>`
-          : servicesList
+  ${servicesList.length === 0
+            ? `<tr height="32" style="mso-height-source:userset;height:24pt;"><td colspan="5" class="cell-empty">Nenhum pacote de serviço cadastrado.</td></tr>`
+            : servicesList
                 .map((s: any, idx: number) => {
                     const base = idx % 2 === 0 ? 'cell-even' : 'cell-odd';
                     const catLabel = catPt[s.category] || s.category || 'Websites & Portais';
@@ -293,7 +293,7 @@ adminRoutes.get('/relatorio/exportar', async (c) => {
   </tr>`;
                 })
                 .join('\n  ')
-  }
+        }
 
   <tr height="18"><td colspan="5"></td></tr>
 
@@ -308,10 +308,9 @@ adminRoutes.get('/relatorio/exportar', async (c) => {
     <th class="tbl-head" align="center">Status</th>
     <th class="tbl-head" align="center">Data de Registro</th>
   </tr>
-  ${
-      recentRequests.length === 0
-          ? `<tr height="32" style="mso-height-source:userset;height:24pt;"><td colspan="5" class="cell-empty">Nenhuma solicitação registrada no período atual.</td></tr>`
-          : recentRequests
+  ${recentRequests.length === 0
+            ? `<tr height="32" style="mso-height-source:userset;height:24pt;"><td colspan="5" class="cell-empty">Nenhuma solicitação registrada no período atual.</td></tr>`
+            : recentRequests
                 .map((r: any, idx: number) => {
                     const base = idx % 2 === 0 ? 'cell-even' : 'cell-odd';
                     const st = statusPt[r.status] || r.status || 'Novo';
@@ -325,7 +324,7 @@ adminRoutes.get('/relatorio/exportar', async (c) => {
   </tr>`;
                 })
                 .join('\n  ')
-  }
+        }
 
   <tr height="18"><td colspan="5"></td></tr>
 
@@ -340,10 +339,9 @@ adminRoutes.get('/relatorio/exportar', async (c) => {
     <th class="tbl-head" align="center">Categoria</th>
     <th class="tbl-head" align="center">Data de Cadastro</th>
   </tr>
-  ${
-      recentClients.length === 0
-          ? `<tr height="32" style="mso-height-source:userset;height:24pt;"><td colspan="5" class="cell-empty">Nenhum cliente ou lead cadastrado no momento.</td></tr>`
-          : recentClients
+  ${recentClients.length === 0
+            ? `<tr height="32" style="mso-height-source:userset;height:24pt;"><td colspan="5" class="cell-empty">Nenhum cliente ou lead cadastrado no momento.</td></tr>`
+            : recentClients
                 .map((cl: any, idx: number) => {
                     const base = idx % 2 === 0 ? 'cell-even' : 'cell-odd';
                     const isWa = String(cl.email || '').endsWith('.local');
@@ -359,7 +357,7 @@ adminRoutes.get('/relatorio/exportar', async (c) => {
   </tr>`;
                 })
                 .join('\n  ')
-  }
+        }
 
   <tr height="18"><td colspan="5"></td></tr>
   <tr height="32" style="mso-height-source:userset;height:24pt;">
@@ -494,7 +492,7 @@ adminRoutes.post('/clientes/:id/excluir', async (c) => {
         await db.prepare(`DELETE FROM financial_transactions WHERE client_id = ?`).bind(id).run();
         await db.prepare(`DELETE FROM domains WHERE client_id = ?`).bind(id).run();
         await db.prepare(`DELETE FROM projects WHERE client_id = ?`).bind(id).run();
-    } catch {}
+    } catch { }
 
     await db.prepare(`DELETE FROM clients WHERE id = ?`).bind(id).run();
     return c.redirect('/admin/clientes?success=Cliente removido com sucesso');
@@ -598,10 +596,14 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
         `UPDATE service_requests SET status = ?, updated_at = datetime('now') WHERE id = ?`
     ).bind(newStatus, id).run();
 
-    await db.prepare(
-        `INSERT INTO service_request_history (service_request_id, user_id, action, from_status, to_status, notes, created_at)
-         VALUES (?, ?, 'status_change', ?, ?, ?, datetime('now'))`
-    ).bind(id, user.id, current.status, newStatus, notes).run();
+    await recordRequestTimeline(db, {
+        serviceRequestId: id,
+        userId: user.id,
+        action: 'status_change',
+        fromStatus: current.status,
+        toStatus: newStatus,
+        notes
+    });
 
     // Quando marcado como "Orçamento Enviado", garante que o orçamento chegue ao Portal do Cliente
     if (newStatus === 'quotation_sent') {
@@ -646,7 +648,7 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
                     ).bind(existingQuote.id).run();
                 }
             }
-        } catch {}
+        } catch { }
         return c.redirect(`/admin/solicitacoes/${id}?success=${encodeURIComponent('Orçamento enviado e disponibilizado no Portal do Cliente para aprovação!')}`);
     }
 
@@ -664,7 +666,7 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
                 return c.redirect(`/admin/solicitacoes/${id}?error=${encodeURIComponent('Status concluído, mas o e-mail não pôde ser entregue (Resend em modo teste só envia para gundjatech@gmail.com até verificar um domínio próprio).')}`);
             }
             return c.redirect(`/admin/solicitacoes/${id}?success=${encodeURIComponent('Status concluído e cliente notificado por e-mail!')}`);
-        } catch {}
+        } catch { }
     }
 
     return c.redirect(`/admin/solicitacoes/${id}?success=Status atualizado com sucesso`);
@@ -700,12 +702,14 @@ adminRoutes.post('/solicitacoes/:id/editar', async (c) => {
          WHERE id = ?`
     ).bind(serviceTitle, serviceTitle, name, company, email, phone, description, estimatedBudget, id).run();
 
-    try {
-        await db.prepare(
-            `INSERT INTO service_request_history (service_request_id, user_id, action, from_status, to_status, notes, created_at)
-             VALUES (?, ?, 'edited', ?, ?, 'Dados da solicitação atualizados pela administração', datetime('now'))`
-        ).bind(id, user.id, current.status, current.status).run();
-    } catch {}
+    await recordRequestTimeline(db, {
+        serviceRequestId: Number(id),
+        userId: user.id,
+        action: 'edited',
+        fromStatus: current.status,
+        toStatus: current.status,
+        notes: 'Dados da solicitação atualizados pela administração',
+    });
 
     return c.redirect(`/admin/solicitacoes/${id}?success=Solicitação atualizada com sucesso!`);
 });
@@ -724,10 +728,14 @@ adminRoutes.post('/solicitacoes/:id/cancelar', async (c) => {
         `UPDATE service_requests SET status = 'cancelled', updated_at = datetime('now') WHERE id = ?`
     ).bind(id).run();
 
-    await db.prepare(
-        `INSERT INTO service_request_history (service_request_id, user_id, action, from_status, to_status, notes, created_at)
-         VALUES (?, ?, 'cancelled', ?, 'cancelled', 'Solicitação cancelada pela administração', datetime('now'))`
-    ).bind(id, user.id, current.status).run();
+    await recordRequestTimeline(db, {
+        serviceRequestId: Number(id),
+        userId: user.id,
+        action: 'cancelled',
+        fromStatus: current.status,
+        toStatus: 'cancelled',
+        notes: 'Solicitação cancelada pela administração',
+    });
 
     return c.redirect(`/admin/solicitacoes/${id}?success=Solicitação cancelada`);
 });
@@ -750,7 +758,7 @@ adminRoutes.post('/solicitacoes/:id/converter', async (c) => {
         if (alreadyConverted) {
             return c.redirect(`/admin/solicitacoes/${id}?error=Esta solicitação já foi convertida em Projeto.`);
         }
-    } catch {}
+    } catch { }
 
     // Garante que existe cliente associado
     let clientId = req.client_id;
@@ -790,11 +798,15 @@ adminRoutes.post('/solicitacoes/:id/converter', async (c) => {
         `UPDATE service_requests SET status = 'approved', client_id = ?, updated_at = datetime('now') WHERE id = ?`
     ).bind(clientId, id).run();
 
-    // Histórico
-    await db.prepare(
-        `INSERT INTO service_request_history (service_request_id, user_id, action, from_status, to_status, notes, created_at)
-         VALUES (?, ?, 'converted_to_project', ?, 'approved', 'Convertido em Projeto pela administração', datetime('now'))`
-    ).bind(id, user.id, req.status).run();
+    // Histórico (sincronizado entre Admin e Portal do Cliente)
+    await recordRequestTimeline(db, {
+        serviceRequestId: id,
+        userId: user.id,
+        action: 'converted_to_project',
+        fromStatus: req.status,
+        toStatus: 'approved',
+        notes: 'Convertido em Projeto pela administração'
+    });
 
     // Notifica o cliente por e-mail sobre o início do projeto
     try {
@@ -817,7 +829,7 @@ adminRoutes.post('/solicitacoes/:id/converter', async (c) => {
                 return c.redirect(`/admin/solicitacoes/${id}?error=${encodeURIComponent('Convertido em Projeto, mas o Resend bloqueou envio externo (sem domínio verificado, só entrega para gundjatech@gmail.com).')}`);
             }
         }
-    } catch {}
+    } catch { }
 
     return c.redirect(`/admin/solicitacoes/${id}?success=Solicitação convertida em Projeto com sucesso! Cliente notificado por e-mail.`);
 });
@@ -830,7 +842,7 @@ adminRoutes.post('/solicitacoes/:id/excluir', async (c) => {
         try {
             await db.prepare(`DELETE FROM service_request_history WHERE service_request_id = ?`).bind(id).run();
             await db.prepare(`DELETE FROM service_requests WHERE id = ?`).bind(id).run();
-        } catch {}
+        } catch { }
     }
 
     return c.redirect('/admin/solicitacoes?success=Solicitação excluída com sucesso.');
@@ -1237,7 +1249,7 @@ adminRoutes.post('/atendimento/:id/excluir', async (c) => {
         try {
             await db.prepare(`DELETE FROM conversation_messages WHERE conversation_id = ?`).bind(id).run();
             await db.prepare(`DELETE FROM conversations WHERE id = ?`).bind(id).run();
-        } catch {}
+        } catch { }
     }
 
     const referer = c.req.header('referer') || '';
@@ -1313,9 +1325,9 @@ adminRoutes.post('/projetos', async (c) => {
 
     try {
         await db.prepare(
-            `INSERT INTO projects (client_id, title, slug, description, status, progress_percentage, start_date, expected_end_date, created_at, updated_at)
-             VALUES (?, ?, ?, ?, 'planning', 0, ?, ?, datetime('now'), datetime('now'))`
-        ).bind(clientId, title, slug, description, startDate, expectedEndDate).run();
+            `INSERT INTO projects (client_id, name, title, slug, description, status, progress_percentage, start_date, expected_end_date, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, 'planning', 0, ?, ?, datetime('now'), datetime('now'))`
+        ).bind(clientId, title, title, slug, description, startDate, expectedEndDate).run();
 
         return c.redirect('/admin/projetos?success=Projeto cadastrado com sucesso');
     } catch (err: any) {
@@ -1362,6 +1374,7 @@ adminRoutes.get('/projetos/:id', async (c) => {
 });
 
 adminRoutes.post('/projetos/:id', async (c) => {
+    const user = c.get('user')!;
     const db = c.env.DB;
     const id = c.req.param('id');
     const body = await getRequestBody(c);
@@ -1371,16 +1384,16 @@ adminRoutes.post('/projetos/:id', async (c) => {
     const startDate = String(body.start_date || '').trim() || null;
     const expectedEndDate = String(body.expected_end_date || '').trim() || null;
 
-    // Busca estado anterior do projeto + dados do cliente para notificação de conclusão
+    // Busca estado anterior do projeto + dados do cliente para sincronização e notificação
     let previousProject: any = null;
     try {
         previousProject = await db.prepare(
-            `SELECT p.id, p.title, p.name, p.status, c.name AS client_name, c.company AS client_company, c.email AS client_email
+            `SELECT p.id, p.client_id, p.title, p.name, p.status, c.name AS client_name, c.company AS client_company, c.email AS client_email
              FROM projects p
              LEFT JOIN clients c ON c.id = p.client_id
              WHERE p.id = ?`
         ).bind(id).first<any>();
-    } catch {}
+    } catch { }
 
     await db.prepare(
         `UPDATE projects 
@@ -1388,10 +1401,42 @@ adminRoutes.post('/projetos/:id', async (c) => {
          WHERE id = ?`
     ).bind(status, progress, startDate, expectedEndDate, id).run();
 
+    // Sincroniza Projeto -> Solicitação vinculada quando entra em execução ou é concluído
+    if (previousProject && previousProject.client_id && previousProject.status !== status && (status === 'in_progress' || status === 'completed')) {
+        try {
+            const projTitle = String(previousProject.title || previousProject.name || '').trim();
+            if (projTitle) {
+                const linkedReq = await db.prepare(
+                    `SELECT id, status FROM service_requests
+                     WHERE client_id = ? AND (lower(service_title) = lower(?) OR lower(title) = lower(?))
+                     ORDER BY id DESC LIMIT 1`
+                ).bind(previousProject.client_id, projTitle, projTitle).first<{ id: number; status: string }>();
+
+                if (linkedReq && linkedReq.status !== status) {
+                    await db.prepare(
+                        `UPDATE service_requests SET status = ?, updated_at = datetime('now') WHERE id = ?`
+                    ).bind(status, linkedReq.id).run();
+
+                    await recordRequestTimeline(db, {
+                        serviceRequestId: linkedReq.id,
+                        userId: user.id,
+                        action: status === 'completed' ? 'project_completed' : 'project_in_progress',
+                        fromStatus: linkedReq.status,
+                        toStatus: status,
+                        notes: status === 'completed'
+                            ? `Projeto #${id} concluído e entregue pela equipe GundjaTech`
+                            : `Projeto #${id} iniciado — em execução pela equipe GundjaTech`,
+                    });
+                }
+            }
+        } catch { }
+    }
+
     // Se acabou de ser marcado como concluído, notifica o cliente por e-mail
     if (status === 'completed' && previousProject && previousProject.status !== 'completed' && previousProject.client_email) {
+        let emailResult: { success: boolean; error?: string } = { success: false };
         try {
-            await sendProjectCompletedEmail(
+            emailResult = await sendProjectCompletedEmail(
                 c.env,
                 String(previousProject.client_email).trim(),
                 String(previousProject.client_company || previousProject.client_name || 'Cliente').trim(),
@@ -1400,8 +1445,11 @@ adminRoutes.post('/projetos/:id', async (c) => {
                     title: String(previousProject.title || previousProject.name || 'Projeto GundjaTech')
                 }
             );
-        } catch {}
-        return c.redirect(`/admin/projetos/${id}?success=Projeto concluído e cliente notificado por e-mail!`);
+        } catch { }
+        const msg = emailResult.success
+            ? 'Projeto concluído, solicitação sincronizada e cliente notificado por e-mail!'
+            : `Projeto concluído e solicitação sincronizada! (Aviso de e-mail: ${emailResult.error || 'não enviado'})`;
+        return c.redirect(`/admin/projetos/${id}?success=${encodeURIComponent(msg)}`);
     }
 
     return c.redirect(`/admin/projetos/${id}?success=Projeto atualizado com sucesso`);
@@ -1416,7 +1464,7 @@ adminRoutes.post('/projetos/:id/excluir', async (c) => {
             await db.prepare(`DELETE FROM project_stages WHERE project_id = ?`).bind(id).run();
             await db.prepare(`DELETE FROM project_attachments WHERE project_id = ?`).bind(id).run();
             await db.prepare(`DELETE FROM projects WHERE id = ?`).bind(id).run();
-        } catch {}
+        } catch { }
     }
 
     return c.redirect('/admin/projetos?success=Projeto excluído com sucesso.');
@@ -1858,12 +1906,12 @@ adminRoutes.get('/orcamentos', async (c) => {
     try {
         const res = await db.prepare(query).bind(...params).all();
         quotations = res.results || [];
-    } catch {}
+    } catch { }
 
     try {
         const clientsRes = await db.prepare('SELECT id, name, company FROM clients ORDER BY name ASC').all();
         clients = clientsRes.results || [];
-    } catch {}
+    } catch { }
 
     return c.html(
         <AdminQuotationsView
@@ -1975,6 +2023,7 @@ adminRoutes.post('/orcamentos/:id', async (c) => {
 });
 
 adminRoutes.post('/orcamentos/:id/status', async (c) => {
+    const user = c.get('user')!;
     const db = c.env.DB;
     const id = Number(c.req.param('id'));
     const body = await c.req.parseBody();
@@ -1985,9 +2034,40 @@ adminRoutes.post('/orcamentos/:id/status', async (c) => {
         return c.redirect(`/admin/orcamentos/${id}?error=Status inválido.`);
     }
 
+    const quotation = await db.prepare('SELECT id, reference_code, service_request_id, status FROM quotations WHERE id = ?').bind(id).first<any>();
+
     await db.prepare(
         `UPDATE quotations SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
     ).bind(status, id).run();
+
+    // Sincroniza Orçamento -> Solicitação vinculada e linha do tempo unificada
+    if (quotation?.service_request_id) {
+        const mappedReqStatus: Record<string, { status: string; note: string }> = {
+            sent: { status: 'quotation_sent', note: `Orçamento ${quotation.reference_code || `#${id}`} enviado ao cliente` },
+            approved: { status: 'approved', note: `Orçamento ${quotation.reference_code || `#${id}`} marcado como aprovado pela administração` },
+            rejected: { status: 'analyzing', note: `Orçamento ${quotation.reference_code || `#${id}`} recusado — retornou para análise` },
+        };
+        const sync = mappedReqStatus[status];
+        if (sync) {
+            try {
+                const reqRow = await db.prepare('SELECT id, status FROM service_requests WHERE id = ?').bind(quotation.service_request_id).first<{ id: number; status: string }>();
+                if (reqRow && reqRow.status !== sync.status) {
+                    await db.prepare(
+                        `UPDATE service_requests SET status = ?, updated_at = datetime('now') WHERE id = ?`
+                    ).bind(sync.status, reqRow.id).run();
+
+                    await recordRequestTimeline(db, {
+                        serviceRequestId: reqRow.id,
+                        userId: user.id,
+                        action: `quotation_${status}`,
+                        fromStatus: reqRow.status,
+                        toStatus: sync.status,
+                        notes: sync.note,
+                    });
+                }
+            } catch { }
+        }
+    }
 
     const labels: Record<string, string> = {
         draft: 'Rascunho',
@@ -2003,6 +2083,7 @@ adminRoutes.post('/orcamentos/:id/status', async (c) => {
 });
 
 adminRoutes.post('/orcamentos/:id/converter-projeto', async (c) => {
+    const user = c.get('user')!;
     const db = c.env.DB;
     const id = Number(c.req.param('id'));
 
@@ -2034,6 +2115,27 @@ adminRoutes.post('/orcamentos/:id/converter-projeto', async (c) => {
         `UPDATE quotations SET status = 'approved', updated_at = CURRENT_TIMESTAMP WHERE id = ?`
     ).bind(id).run();
 
+    // Sincroniza a solicitação vinculada ao orçamento e registra na linha do tempo unificada
+    if (quotation.service_request_id) {
+        try {
+            const reqRow = await db.prepare('SELECT id, status FROM service_requests WHERE id = ?').bind(quotation.service_request_id).first<{ id: number; status: string }>();
+            if (reqRow) {
+                await db.prepare(
+                    `UPDATE service_requests SET status = 'in_progress', updated_at = datetime('now') WHERE id = ?`
+                ).bind(reqRow.id).run();
+
+                await recordRequestTimeline(db, {
+                    serviceRequestId: reqRow.id,
+                    userId: user.id,
+                    action: 'converted_to_project',
+                    fromStatus: reqRow.status,
+                    toStatus: 'in_progress',
+                    notes: `Orçamento ${quotation.reference_code || `#${id}`} convertido em Projeto #${newProjectId || ''} pela administração`,
+                });
+            }
+        } catch { }
+    }
+
     // Notifica o cliente por e-mail sobre o início do projeto
     try {
         if (quotation.client_id) {
@@ -2051,7 +2153,7 @@ adminRoutes.post('/orcamentos/:id/converter-projeto', async (c) => {
                 );
             }
         }
-    } catch {}
+    } catch { }
 
     return c.redirect('/admin/projetos?success=Orçamento aprovado e convertido em Projeto com sucesso! Cliente notificado por e-mail.');
 });
@@ -2082,7 +2184,7 @@ adminRoutes.get('/crm-autonomo', async (c) => {
             `SELECT * FROM conversations ORDER BY updated_at DESC LIMIT 30`
         ).all();
         conversations = convRes.results || [];
-    } catch {}
+    } catch { }
 
     try {
         const setRes = await db.prepare(
@@ -2091,14 +2193,14 @@ adminRoutes.get('/crm-autonomo', async (c) => {
         for (const row of setRes.results || []) {
             settingsMap[row.key] = row.value || '';
         }
-    } catch {}
+    } catch { }
 
     try {
         const qRes = await db.prepare(
             `SELECT COUNT(*) as total FROM quotations WHERE reference_code LIKE 'ORC-AI-%'`
         ).first<{ total: number }>();
         aiQuotationsCount = qRes?.total ?? 0;
-    } catch {}
+    } catch { }
 
     const activeAutopilotCount = conversations.filter((x) => x.ai_enabled && x.status !== 'closed').length;
     const qualifyingCount = conversations.filter((x) => x.status !== 'closed' && ['new', 'greeting', 'discovery', 'qualifying', 'qualification'].includes(String(x.crm_stage || ''))).length;
@@ -2152,7 +2254,7 @@ adminRoutes.post('/crm-autonomo/configuracoes', async (c) => {
                  ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`
             ).bind(key, value).run();
         }
-    } catch {}
+    } catch { }
 
     return c.redirect('/admin/crm-autonomo?success=Configurações do CRM Autônomo IA salvas com sucesso');
 });
@@ -2183,7 +2285,7 @@ adminRoutes.get('/configuracoes', async (c) => {
         for (const row of res.results || []) {
             settingsMap[row.key] = row.value || '';
         }
-    } catch {}
+    } catch { }
 
     const activeProvider = settingsMap.whatsapp_provider || 'zapi_omni';
     const whatsappSyncEnabled = settingsMap.whatsapp_sync_enabled !== '0';
@@ -2191,8 +2293,8 @@ adminRoutes.get('/configuracoes', async (c) => {
         activeProvider === 'zapi' || activeProvider === 'zapi_omni'
             ? Boolean(settingsMap.whatsapp_zapi_instance_id && settingsMap.whatsapp_zapi_token)
             : activeProvider === 'evolution'
-            ? Boolean(settingsMap.whatsapp_evolution_url && settingsMap.whatsapp_evolution_instance && settingsMap.whatsapp_evolution_api_key)
-            : Boolean((c.env.WHATSAPP_ACCESS_TOKEN || settingsMap.whatsapp_access_token) && (c.env.WHATSAPP_PHONE_NUMBER_ID || settingsMap.whatsapp_phone_number_id));
+                ? Boolean(settingsMap.whatsapp_evolution_url && settingsMap.whatsapp_evolution_instance && settingsMap.whatsapp_evolution_api_key)
+                : Boolean((c.env.WHATSAPP_ACCESS_TOKEN || settingsMap.whatsapp_access_token) && (c.env.WHATSAPP_PHONE_NUMBER_ID || settingsMap.whatsapp_phone_number_id));
 
     let whatsappLastError: string | null = null;
     if (c.env?.KV_CACHE) {
@@ -2204,7 +2306,7 @@ adminRoutes.get('/configuracoes', async (c) => {
                     whatsappLastError = parsed.error;
                 }
             }
-        } catch {}
+        } catch { }
     }
 
     settingsMap.has_zapi_token = settingsMap.whatsapp_zapi_token ? '1' : '';
@@ -2274,7 +2376,7 @@ adminRoutes.post('/configuracoes', async (c) => {
                  ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`
             ).bind(key, value, groupName).run();
         }
-    } catch {}
+    } catch { }
 
     return c.redirect('/admin/configuracoes?success=Configurações gerais salvas com sucesso');
 });
@@ -2338,7 +2440,7 @@ adminRoutes.get('/atendimento/resumo', async (c) => {
                 url: `/admin/atendimento?id=${conv.id}`
             });
         }
-    } catch {}
+    } catch { }
 
     return c.json({
         ok: true,

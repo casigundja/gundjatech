@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/auth';
 import { getRequestBody } from '../lib/request';
 import { ensureClientProfile, getPortalDashboard } from '../lib/client-portal';
 import { getFile, streamR2Response } from '../lib/storage';
+import { recordRequestTimeline } from '../lib/timeline';
 import { AutonomousCrmAgent } from '../services/ai-crm-agent';
 import { PortalDashboardView } from '../views/portal/dashboard';
 import { PortalProjectsView } from '../views/portal/projects';
@@ -209,25 +210,20 @@ portalRoutes.post('/orcamentos/:id/aprovar', async (c) => {
         'UPDATE quotations SET status = "approved", updated_at = datetime("now") WHERE id = ?'
     ).bind(quoteId).run();
 
-    // Se estiver associado a uma service_request, atualiza a solicitação também
+    // Se estiver associado a uma service_request, atualiza a solicitação e sincroniza ambas as timelines
     if (quote.service_request_id) {
         await db.prepare(
             'UPDATE service_requests SET status = "approved", updated_at = datetime("now") WHERE id = ?'
         ).bind(quote.service_request_id).run();
 
-        try {
-            await db.prepare(
-                `INSERT INTO request_status_histories (service_request_id, old_status, new_status, comment, user_id, created_at, updated_at)
-                 VALUES (?, 'quotation_sent', 'approved', 'Orçamento aprovado pelo cliente via Portal do Cliente!', ?, datetime('now'), datetime('now'))`
-            ).bind(quote.service_request_id, user.id).run();
-        } catch {}
-
-        try {
-            await db.prepare(
-                `INSERT INTO service_request_history (service_request_id, user_id, action, from_status, to_status, notes, created_at)
-                 VALUES (?, ?, 'client_approved', 'quotation_sent', 'approved', 'Orçamento aprovado pelo cliente via Portal do Cliente', datetime('now'))`
-            ).bind(quote.service_request_id, user.id).run();
-        } catch {}
+        await recordRequestTimeline(db, {
+            serviceRequestId: quote.service_request_id,
+            userId: user.id,
+            action: 'client_approved',
+            fromStatus: 'quotation_sent',
+            toStatus: 'approved',
+            notes: 'Orçamento aprovado pelo cliente via Portal do Cliente'
+        });
     }
 
     // Registra log de auditoria
@@ -262,12 +258,14 @@ portalRoutes.post('/orcamentos/:id/recusar', async (c) => {
             'UPDATE service_requests SET status = "analyzing", updated_at = datetime("now") WHERE id = ?'
         ).bind(quote.service_request_id).run();
 
-        try {
-            await db.prepare(
-                `INSERT INTO service_request_history (service_request_id, user_id, action, from_status, to_status, notes, created_at)
-                 VALUES (?, ?, 'client_rejected', 'quotation_sent', 'analyzing', 'Proposta recusada pelo cliente via Portal — aguardando revisão', datetime('now'))`
-            ).bind(quote.service_request_id, user.id).run();
-        } catch {}
+        await recordRequestTimeline(db, {
+            serviceRequestId: Number(quote.service_request_id),
+            userId: user.id,
+            action: 'client_rejected',
+            fromStatus: 'quotation_sent',
+            toStatus: 'analyzing',
+            notes: 'Proposta recusada pelo cliente via Portal — aguardando revisão',
+        });
     }
 
     return c.redirect('/portal/orcamentos?success=Proposta+recusada.+Nossa+equipe+entrar%C3%A1+em+contato+para+reajuste.');
@@ -352,10 +350,14 @@ portalRoutes.post('/solicitacoes', async (c) => {
 
     const newReqId = Number(insertRes.meta.last_row_id);
 
-    await db.prepare(
-        `INSERT INTO request_status_histories (service_request_id, old_status, new_status, comment, user_id, created_at, updated_at)
-         VALUES (?, NULL, 'new', 'Solicitação aberta diretamente pelo Portal do Cliente.', ?, datetime('now'), datetime('now'))`
-    ).bind(newReqId, user.id).run();
+    await recordRequestTimeline(db, {
+        serviceRequestId: newReqId,
+        userId: user.id,
+        action: 'created',
+        fromStatus: null,
+        toStatus: 'new',
+        notes: 'Solicitação aberta diretamente pelo Portal do Cliente.'
+    });
 
     return c.redirect(`/portal/solicitacoes/${newReqId}?success=Solicita%C3%A7%C3%A3o+criada+com+sucesso!+Protocolo:+${protocol}`);
 });
@@ -410,19 +412,14 @@ portalRoutes.post('/solicitacoes/:id/aprovar', async (c) => {
         ).bind(reqId).run();
     } catch {}
 
-    try {
-        await db.prepare(
-            `INSERT INTO request_status_histories (service_request_id, old_status, new_status, comment, user_id, created_at, updated_at)
-             VALUES (?, 'quotation_sent', 'approved', 'Orçamento aprovado pelo cliente via Portal do Cliente!', ?, datetime('now'), datetime('now'))`
-        ).bind(reqId, user.id).run();
-    } catch {}
-
-    try {
-        await db.prepare(
-            `INSERT INTO service_request_history (service_request_id, user_id, action, from_status, to_status, notes, created_at)
-             VALUES (?, ?, 'client_approved', 'quotation_sent', 'approved', 'Orçamento aprovado pelo cliente via Portal do Cliente', datetime('now'))`
-        ).bind(reqId, user.id).run();
-    } catch {}
+    await recordRequestTimeline(db, {
+        serviceRequestId: reqId,
+        userId: user.id,
+        action: 'client_approved',
+        fromStatus: 'quotation_sent',
+        toStatus: 'approved',
+        notes: 'Orçamento aprovado pelo cliente via Portal do Cliente!',
+    });
 
     return c.redirect(`/portal/solicitacoes/${reqId}?success=Or%C3%A7amento+aprovado+com+sucesso!+Status+atualizado+para+Aprovado+pelo+Cliente.`);
 });
@@ -449,12 +446,14 @@ portalRoutes.post('/solicitacoes/:id/recusar', async (c) => {
         ).bind(reqId).run();
     } catch {}
 
-    try {
-        await db.prepare(
-            `INSERT INTO service_request_history (service_request_id, user_id, action, from_status, to_status, notes, created_at)
-             VALUES (?, ?, 'client_rejected', 'quotation_sent', 'analyzing', 'Cliente solicitou revisão do orçamento via Portal', datetime('now'))`
-        ).bind(reqId, user.id).run();
-    } catch {}
+    await recordRequestTimeline(db, {
+        serviceRequestId: reqId,
+        userId: user.id,
+        action: 'client_rejected',
+        fromStatus: 'quotation_sent',
+        toStatus: 'analyzing',
+        notes: 'Cliente solicitou revisão do orçamento via Portal',
+    });
 
     return c.redirect(`/portal/solicitacoes/${reqId}?success=Solicita%C3%A7%C3%A3o+de+revis%C3%A3o+enviada+para+nossa+equipe.`);
 });
