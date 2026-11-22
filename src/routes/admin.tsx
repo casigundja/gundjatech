@@ -66,6 +66,12 @@ adminRoutes.get('/relatorio/exportar', async (c) => {
     const period = Number(c.req.query('period') || 30);
     const stats = await getAdminDashboardStats(db, period);
 
+    let servicesList: any[] = [];
+    try {
+        const sRes = await db.prepare(`SELECT title, slug, category, price, is_active FROM services ORDER BY order_position ASC, id ASC`).all();
+        servicesList = sRes.results || [];
+    } catch {}
+
     const fmtBRL = (val: number) =>
         new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(val || 0));
     const esc = (s: any) =>
@@ -75,7 +81,7 @@ adminRoutes.get('/relatorio/exportar', async (c) => {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
 
-    const emittedAt = new Date().toLocaleString('pt-BR');
+    const emittedAt = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
     const emitterName = user?.name || 'Diretoria GundjaTech';
 
     const statusPt: Record<string, string> = {
@@ -88,9 +94,74 @@ adminRoutes.get('/relatorio/exportar', async (c) => {
         cancelled: 'Cancelado'
     };
 
-    const monthlySeries = Array.isArray((stats as any).monthlyRevenueSeries) ? (stats as any).monthlyRevenueSeries : [];
+    const catPt: Record<string, string> = {
+        sites: 'Websites & Portais',
+        ecommerce: 'E-commerce B2B/B2C',
+        software: 'Software & SaaS',
+        infra: 'Infra & Cloudflare'
+    };
+
     const recentRequests = Array.isArray(stats.recentRequests) ? stats.recentRequests : [];
-    const recentClients = Array.isArray((stats as any).recentClients) ? (stats as any).recentClients : [];
+    const recentClients = Array.isArray(stats.recentClients) ? stats.recentClients : [];
+
+    const kpiRows = [
+        {
+            area: 'Financeiro & Caixa',
+            metric: 'Receita Recebida (Liquidada)',
+            value: fmtBRL(stats.monthlyRevenue),
+            status: 'Caixa Confirmado',
+            note: `Total liquidado nos últimos ${period} dias`,
+            highlight: true
+        },
+        {
+            area: 'Financeiro & Caixa',
+            metric: 'Faturas a Receber (Pendente)',
+            value: fmtBRL(stats.pendingReceivables),
+            status: stats.pendingReceivables > 0 ? 'Aguardando Baixa' : 'Sem Pendências',
+            note: 'Cobranças emitidas aguardando liquidação',
+            highlight: false
+        },
+        {
+            area: 'Comercial & Propostas',
+            metric: 'Orçamentos & Propostas Emitidas',
+            value: `${stats.totalQuotations} proposta(s)`,
+            status: `${stats.approvedQuotations} Aprovada(s)`,
+            note: `Em aberto: ${fmtBRL(stats.openQuotationsValue || 0)}`,
+            highlight: false
+        },
+        {
+            area: 'Carteira de Clientes',
+            metric: 'Total de Clientes & Leads',
+            value: `${stats.totalClients} registro(s)`,
+            status: `${stats.activeClients} Ativo(s)`,
+            note: `${stats.leadClients} lead(s) em qualificação comercial`,
+            highlight: false
+        },
+        {
+            area: 'Pipeline de Entrada',
+            metric: 'Solicitações Comerciais & Briefings',
+            value: `${stats.totalRequests} solicitação(ões)`,
+            status: `${stats.pendingRequests} Pendente(s)`,
+            note: 'Demandas recebidas pelo site e canais digitais',
+            highlight: false
+        },
+        {
+            area: 'Operação & Engenharia',
+            metric: 'Projetos Técnicos em Execução',
+            value: `${stats.activeProjects} projeto(s)`,
+            status: `${stats.totalProjects} no Histórico`,
+            note: 'Planejamento, desenvolvimento e homologação',
+            highlight: false
+        },
+        {
+            area: 'Atendimento & CRM IA',
+            metric: 'Conversas Ativas (Site & WhatsApp)',
+            value: `${stats.openConversations} conversa(s)`,
+            status: 'Monitoramento Ativo',
+            note: 'Central de Atendimento e Agente Autônomo IA',
+            highlight: false
+        }
+    ];
 
     const excelHtml = `\uFEFF<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
 <head>
@@ -100,9 +171,10 @@ adminRoutes.get('/relatorio/exportar', async (c) => {
   <x:ExcelWorkbook>
     <x:ExcelWorksheets>
       <x:ExcelWorksheet>
-        <x:Name>Relatório GundjaTech</x:Name>
+        <x:Name>Relatorio Executivo</x:Name>
         <x:WorksheetOptions>
           <x:DisplayGridlines/>
+          <x:FitToPage/>
         </x:WorksheetOptions>
       </x:ExcelWorksheet>
     </x:ExcelWorksheets>
@@ -110,188 +182,172 @@ adminRoutes.get('/relatorio/exportar', async (c) => {
 </xml>
 <![endif]-->
 <style>
-  body, table { font-family: 'Segoe UI', Calibri, Arial, sans-serif; font-size: 11pt; color: #063B5C; }
-  table { border-collapse: collapse; width: 100%; }
-  td, th { padding: 8px 12px; vertical-align: middle; }
-  .banner-top { background-color: #063B5C; color: #FFFFFF; font-size: 16pt; font-weight: bold; height: 42px; border-bottom: 3px solid #F2C230; }
-  .banner-sub { background-color: #063B5C; color: #E7F0F5; font-size: 10pt; height: 26px; border-bottom: 3px solid #F2C230; }
+  body, table { font-family: 'Segoe UI', Calibri, Arial, sans-serif; font-size: 10.5pt; color: #063B5C; }
+  table { border-collapse: collapse; table-layout: fixed; }
+  td, th { padding: 9px 14px; vertical-align: middle; white-space: nowrap; mso-number-format: "\\@"; }
+  .banner-top { background-color: #063B5C; color: #FFFFFF; font-size: 15pt; font-weight: bold; border-top: 2px solid #063B5C; border-left: 2px solid #063B5C; border-right: 2px solid #063B5C; }
+  .banner-sub { background-color: #063B5C; color: #E7F0F5; font-size: 10pt; border-bottom: 3px solid #F2C230; border-left: 2px solid #063B5C; border-right: 2px solid #063B5C; }
   .gold-text { color: #F2C230; font-weight: bold; }
-  .sec-head { background-color: #16749A; color: #FFFFFF; font-size: 11pt; font-weight: bold; text-transform: uppercase; height: 32px; border: 1px solid #063B5C; }
-  .tbl-head { background-color: #063B5C; color: #F2C230; font-size: 10pt; font-weight: bold; text-transform: uppercase; height: 28px; border: 1px solid #16749A; }
-  .row-even { background-color: #FFFFFF; color: #063B5C; border: 1px solid #D5E3EC; height: 26px; }
-  .row-odd { background-color: #E7F0F5; color: #063B5C; border: 1px solid #D5E3EC; height: 26px; }
-  .val-bold { font-weight: bold; color: #063B5C; text-align: right; }
-  .val-gold { font-weight: bold; color: #063B5C; background-color: #FEF7DC; text-align: right; border: 1px solid #F2C230; }
-  .val-green { font-weight: bold; color: #065F46; background-color: #D1FAE5; text-align: center; }
-  .val-badge { font-weight: bold; color: #063B5C; background-color: #E7F0F5; text-align: center; }
-  .footer-bar { background-color: #063B5C; color: #F2C230; font-size: 9.5pt; font-weight: bold; text-align: center; height: 28px; }
+  .sec-head { background-color: #16749A; color: #FFFFFF; font-size: 11pt; font-weight: bold; text-transform: uppercase; border: 1px solid #063B5C; }
+  .tbl-head { background-color: #063B5C; color: #F2C230; font-size: 9.5pt; font-weight: bold; text-transform: uppercase; border: 1px solid #16749A; }
+  .cell-even { background-color: #FFFFFF; color: #063B5C; border: 1px solid #C8DBE6; }
+  .cell-odd { background-color: #E7F0F5; color: #063B5C; border: 1px solid #C8DBE6; }
+  .cell-area { font-weight: bold; color: #16749A; }
+  .cell-metric { font-weight: bold; color: #063B5C; }
+  .cell-val { font-weight: bold; color: #063B5C; text-align: right; }
+  .cell-gold { font-weight: bold; color: #063B5C; background-color: #FEF7DC; text-align: right; border: 1px solid #F2C230; }
+  .cell-green { font-weight: bold; color: #065F46; background-color: #D1FAE5; text-align: center; border: 1px solid #A7F3D0; }
+  .cell-badge { font-weight: bold; color: #063B5C; background-color: #E7F0F5; text-align: center; border: 1px solid #C8DBE6; }
+  .cell-empty { background-color: #FFFFFF; color: #5C768D; font-style: italic; text-align: center; border: 1px solid #C8DBE6; }
+  .footer-bar { background-color: #063B5C; color: #F2C230; font-size: 9.5pt; font-weight: bold; text-align: center; border-top: 2px solid #F2C230; }
 </style>
 </head>
 <body>
 <table>
-  <col width="240">
-  <col width="210">
-  <col width="220">
-  <col width="160">
-  <col width="150">
+  <col width="220" style="mso-width-source:userset;width:165pt;">
+  <col width="310" style="mso-width-source:userset;width:232pt;">
+  <col width="190" style="mso-width-source:userset;width:142pt;">
+  <col width="190" style="mso-width-source:userset;width:142pt;">
+  <col width="310" style="mso-width-source:userset;width:232pt;">
 
-  <!-- Cabeçalho Institucional GundjaTech (Paleta 3) -->
-  <tr>
+  <!-- CABEÇALHO INSTITUCIONAL GUNDJATECH (PALETA 3) -->
+  <tr height="44" style="mso-height-source:userset;height:33pt;">
     <td colspan="5" class="banner-top">
       GUNDJA<span class="gold-text">TECH</span> &bull; RELATÓRIO EXECUTIVO DE GESTÃO &amp; PERFORMANCE
     </td>
   </tr>
-  <tr>
+  <tr height="30" style="mso-height-source:userset;height:22.5pt;">
     <td colspan="5" class="banner-sub">
-      Período analisado: <b>Últimos ${period} dias</b> &nbsp;|&nbsp; Emitido em: <b>${esc(emittedAt)}</b> &nbsp;|&nbsp; Responsável: <b>${esc(emitterName)}</b>
+      Período analisado: <b>Últimos ${period} dias</b> &nbsp;&bull;&nbsp; Emitido em: <b>${esc(emittedAt)} (BRT)</b> &nbsp;&bull;&nbsp; Responsável: <b>${esc(emitterName)}</b>
     </td>
   </tr>
-  <tr><td colspan="5" height="12"></td></tr>
+  <tr height="16"><td colspan="5"></td></tr>
 
-  <!-- SEÇÃO 1: INDICADORES EXECUTIVOS (KPIs) -->
-  <tr>
+  <!-- SEÇÃO 1: INDICADORES EXECUTIVOS (KPIs) — 5 Colunas Independentes sem mesclagem -->
+  <tr height="34" style="mso-height-source:userset;height:25.5pt;">
     <td colspan="5" class="sec-head">1. Resumo Executivo &amp; Indicadores-Chave (KPIs)</td>
   </tr>
-  <tr>
-    <th colspan="2" class="tbl-head" align="left">Indicador Operacional / Financeiro</th>
+  <tr height="30" style="mso-height-source:userset;height:22.5pt;">
+    <th class="tbl-head" align="left">Área / Módulo</th>
+    <th class="tbl-head" align="left">Indicador Operacional</th>
     <th class="tbl-head" align="right">Resultado Atual</th>
-    <th colspan="2" class="tbl-head" align="left">Detalhamento / Contexto</th>
+    <th class="tbl-head" align="center">Status</th>
+    <th class="tbl-head" align="left">Detalhamento / Contexto</th>
   </tr>
-  <tr class="row-even">
-    <td colspan="2"><b>Receita Recebida / Liquidada</b></td>
-    <td class="val-gold">${esc(fmtBRL(stats.monthlyRevenue))}</td>
-    <td colspan="2">Total recebido e confirmado em caixa (${period}d)</td>
-  </tr>
-  <tr class="row-odd">
-    <td colspan="2"><b>Faturas a Receber (Pendente)</b></td>
-    <td class="val-bold">${esc(fmtBRL(stats.pendingReceivables))}</td>
-    <td colspan="2">Lançamentos aguardando liquidação</td>
-  </tr>
-  <tr class="row-even">
-    <td colspan="2"><b>Carteira Total de Clientes &amp; Leads</b></td>
-    <td class="val-bold">${stats.totalClients}</td>
-    <td colspan="2">${stats.activeClients} cliente(s) ativo(s) &bull; ${stats.leadClients} lead(s) em prospecção</td>
-  </tr>
-  <tr class="row-odd">
-    <td colspan="2"><b>Clientes Ativos</b></td>
-    <td class="val-bold">${stats.activeClients}</td>
-    <td colspan="2">Contratos ou entregas em andamento</td>
-  </tr>
-  <tr class="row-even">
-    <td colspan="2"><b>Leads em Prospecção</b></td>
-    <td class="val-bold">${stats.leadClients}</td>
-    <td colspan="2">Captados via Site Institucional e WhatsApp</td>
-  </tr>
-  <tr class="row-odd">
-    <td colspan="2"><b>Solicitações Comerciais &amp; Briefings</b></td>
-    <td class="val-bold">${stats.totalRequests}</td>
-    <td colspan="2">${stats.pendingRequests} pendente(s) de triagem</td>
-  </tr>
-  <tr class="row-even">
-    <td colspan="2"><b>Projetos Técnicos Ativos</b></td>
-    <td class="val-bold">${stats.activeProjects}</td>
-    <td colspan="2">Em planejamento, desenvolvimento ou homologação</td>
-  </tr>
-  <tr class="row-odd">
-    <td colspan="2"><b>Orçamentos &amp; Propostas Emitidas</b></td>
-    <td class="val-bold">${stats.totalQuotations}</td>
-    <td colspan="2">${stats.approvedQuotations} proposta(s) aprovada(s) &bull; Volume: ${esc(fmtBRL((stats as any).totalQuotationValue || 0))}</td>
-  </tr>
-
-  <tr><td colspan="5" height="14"></td></tr>
-
-  <!-- SEÇÃO 2: SÉRIE HISTÓRICA DE RECEITA (12 MESES) -->
-  <tr>
-    <td colspan="5" class="sec-head">2. Evolução Mensal de Receita (Últimos 12 Meses)</td>
-  </tr>
-  <tr>
-    <th class="tbl-head" align="left">Mês de Referência</th>
-    <th class="tbl-head" align="right">Recebido / Liquidado (R$)</th>
-    <th class="tbl-head" align="right">A Receber / Previsto (R$)</th>
-    <th colspan="2" class="tbl-head" align="right">Volume Total no Mês</th>
-  </tr>
-  ${monthlySeries
-      .map((m: any, idx: number) => {
-          const rec = Number(m.received || 0);
-          const pend = Number(m.pending || 0);
-          const cls = idx % 2 === 0 ? 'row-even' : 'row-odd';
-          return `<tr class="${cls}">
-    <td><b>${esc(m.label)}</b></td>
-    <td class="val-bold">${esc(fmtBRL(rec))}</td>
-    <td class="val-bold">${esc(fmtBRL(pend))}</td>
-    <td colspan="2" class="val-gold">${esc(fmtBRL(rec + pend))}</td>
+  ${kpiRows
+      .map((row, idx) => {
+          const base = idx % 2 === 0 ? 'cell-even' : 'cell-odd';
+          const valCls = row.highlight ? 'cell-gold' : `${base} cell-val`;
+          return `<tr height="30" style="mso-height-source:userset;height:22.5pt;">
+    <td class="${base} cell-area">${esc(row.area)}</td>
+    <td class="${base} cell-metric">${esc(row.metric)}</td>
+    <td class="${valCls}">${esc(row.value)}</td>
+    <td class="cell-badge">${esc(row.status)}</td>
+    <td class="${base}">${esc(row.note)}</td>
   </tr>`;
       })
       .join('\n  ')}
 
-  <tr><td colspan="5" height="14"></td></tr>
+  <tr height="18"><td colspan="5"></td></tr>
+
+  <!-- SEÇÃO 2: CATÁLOGO DE PACOTES & SOLUÇÕES DIGITAIS -->
+  <tr height="34" style="mso-height-source:userset;height:25.5pt;">
+    <td colspan="5" class="sec-head">2. Catálogo Ativo de Pacotes &amp; Soluções Digitais (${servicesList.length})</td>
+  </tr>
+  <tr height="30" style="mso-height-source:userset;height:22.5pt;">
+    <th class="tbl-head" align="left">Categoria</th>
+    <th class="tbl-head" align="left">Pacote / Solução Digital</th>
+    <th class="tbl-head" align="right">Preço Base (R$)</th>
+    <th class="tbl-head" align="center">Disponibilidade</th>
+    <th class="tbl-head" align="left">Identificador (Slug)</th>
+  </tr>
+  ${
+      servicesList.length === 0
+          ? `<tr height="32" style="mso-height-source:userset;height:24pt;"><td colspan="5" class="cell-empty">Nenhum pacote de serviço cadastrado.</td></tr>`
+          : servicesList
+                .map((s: any, idx: number) => {
+                    const base = idx % 2 === 0 ? 'cell-even' : 'cell-odd';
+                    const catLabel = catPt[s.category] || s.category || 'Websites & Portais';
+                    const stCls = s.is_active ? 'cell-green' : 'cell-badge';
+                    return `<tr height="30" style="mso-height-source:userset;height:22.5pt;">
+    <td class="${base} cell-area">${esc(catLabel)}</td>
+    <td class="${base} cell-metric">${esc(s.title)}</td>
+    <td class="${base} cell-val">${esc(fmtBRL(s.price || 0))}</td>
+    <td class="${stCls}">${s.is_active ? 'Ativo no Site' : 'Inativo'}</td>
+    <td class="${base}">${esc(s.slug || '—')}</td>
+  </tr>`;
+                })
+                .join('\n  ')
+  }
+
+  <tr height="18"><td colspan="5"></td></tr>
 
   <!-- SEÇÃO 3: ÚLTIMAS SOLICITAÇÕES DE CLIENTES -->
-  <tr>
+  <tr height="34" style="mso-height-source:userset;height:25.5pt;">
     <td colspan="5" class="sec-head">3. Últimas Solicitações &amp; Pipeline de Entrada (${recentRequests.length})</td>
   </tr>
-  <tr>
+  <tr height="30" style="mso-height-source:userset;height:22.5pt;">
     <th class="tbl-head" align="left">Protocolo</th>
-    <th class="tbl-head" align="left">Demanda / Serviço</th>
+    <th class="tbl-head" align="left">Demanda / Serviço Solicitado</th>
     <th class="tbl-head" align="left">Cliente / Empresa</th>
     <th class="tbl-head" align="center">Status</th>
-    <th class="tbl-head" align="center">Data</th>
+    <th class="tbl-head" align="center">Data de Registro</th>
   </tr>
   ${
       recentRequests.length === 0
-          ? `<tr class="row-even"><td colspan="5" align="center">Nenhuma solicitação registrada no período.</td></tr>`
+          ? `<tr height="32" style="mso-height-source:userset;height:24pt;"><td colspan="5" class="cell-empty">Nenhuma solicitação registrada no período atual.</td></tr>`
           : recentRequests
                 .map((r: any, idx: number) => {
-                    const cls = idx % 2 === 0 ? 'row-even' : 'row-odd';
+                    const base = idx % 2 === 0 ? 'cell-even' : 'cell-odd';
                     const st = statusPt[r.status] || r.status || 'Novo';
                     const dt = r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : '—';
-                    return `<tr class="${cls}">
-    <td><b>${esc(r.protocol)}</b></td>
-    <td>${esc(r.service_title || r.title || 'Solicitação Digital')}</td>
-    <td>${esc(r.company || r.name || 'Cliente')}</td>
-    <td class="val-badge">${esc(st)}</td>
-    <td align="center">${esc(dt)}</td>
+                    return `<tr height="30" style="mso-height-source:userset;height:22.5pt;">
+    <td class="${base} cell-area">${esc(r.protocol)}</td>
+    <td class="${base} cell-metric">${esc(r.service_title || r.title || 'Solicitação Digital')}</td>
+    <td class="${base}">${esc(r.company || r.name || 'Cliente')}</td>
+    <td class="cell-badge">${esc(st)}</td>
+    <td class="${base}" align="center">${esc(dt)}</td>
   </tr>`;
                 })
                 .join('\n  ')
   }
 
-  <tr><td colspan="5" height="14"></td></tr>
+  <tr height="18"><td colspan="5"></td></tr>
 
-  <!-- SEÇÃO 4: CLIENTES & LEADS RECENTES -->
-  <tr>
+  <!-- SEÇÃO 4: DIRETÓRIO DE CLIENTES & LEADS -->
+  <tr height="34" style="mso-height-source:userset;height:25.5pt;">
     <td colspan="5" class="sec-head">4. Diretório Recente de Clientes &amp; Leads (${recentClients.length})</td>
   </tr>
-  <tr>
+  <tr height="30" style="mso-height-source:userset;height:22.5pt;">
     <th class="tbl-head" align="left">Empresa / Nome</th>
-    <th class="tbl-head" align="left">E-mail / Canal</th>
+    <th class="tbl-head" align="left">E-mail / Canal de Origem</th>
     <th class="tbl-head" align="left">Telefone / WhatsApp</th>
     <th class="tbl-head" align="center">Categoria</th>
-    <th class="tbl-head" align="center">Cadastro</th>
+    <th class="tbl-head" align="center">Data de Cadastro</th>
   </tr>
   ${
       recentClients.length === 0
-          ? `<tr class="row-even"><td colspan="5" align="center">Nenhum cliente ou lead cadastrado no momento.</td></tr>`
+          ? `<tr height="32" style="mso-height-source:userset;height:24pt;"><td colspan="5" class="cell-empty">Nenhum cliente ou lead cadastrado no momento.</td></tr>`
           : recentClients
                 .map((cl: any, idx: number) => {
-                    const cls = idx % 2 === 0 ? 'row-even' : 'row-odd';
+                    const base = idx % 2 === 0 ? 'cell-even' : 'cell-odd';
                     const isWa = String(cl.email || '').endsWith('.local');
                     const catLabel = cl.status === 'active' ? 'Cliente Ativo' : isWa ? 'Lead WhatsApp' : 'Lead Site';
-                    const catClass = cl.status === 'active' ? 'val-green' : 'val-badge';
+                    const catClass = cl.status === 'active' ? 'cell-green' : 'cell-badge';
                     const dt = cl.created_at ? new Date(cl.created_at).toLocaleDateString('pt-BR') : '—';
-                    return `<tr class="${cls}">
-    <td><b>${esc(cl.company || cl.name || 'Cliente')}</b></td>
-    <td>${isWa ? 'WhatsApp Direto' : esc(cl.email || '—')}</td>
-    <td>${esc(cl.phone || '—')}</td>
+                    return `<tr height="30" style="mso-height-source:userset;height:22.5pt;">
+    <td class="${base} cell-metric">${esc(cl.company || cl.name || 'Cliente')}</td>
+    <td class="${base}">${isWa ? 'WhatsApp Direto' : esc(cl.email || '—')}</td>
+    <td class="${base}">${esc(cl.phone || '—')}</td>
     <td class="${catClass}">${esc(catLabel)}</td>
-    <td align="center">${esc(dt)}</td>
+    <td class="${base}" align="center">${esc(dt)}</td>
   </tr>`;
                 })
                 .join('\n  ')
   }
 
-  <tr><td colspan="5" height="14"></td></tr>
-  <tr>
+  <tr height="18"><td colspan="5"></td></tr>
+  <tr height="32" style="mso-height-source:userset;height:24pt;">
     <td colspan="5" class="footer-bar">
       GUNDJATECH &bull; ENGENHARIA DIGITAL, SISTEMAS WEB, CIBERSEGURANÇA E OPERAÇÃO CONTÍNUA &bull; gundjatech.com
     </td>
