@@ -39,7 +39,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
-                <link rel="stylesheet" href="/css/gt-admin.css?v=27" />
+                <link rel="stylesheet" href="/css/gt-admin.css?v=28" />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
@@ -745,8 +745,104 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                         });
                     })();
 
+                    // Modal corporativo de confirmação (substitui todos os window.confirm nativos do navegador)
+                    function initCorporateConfirmModal() {
+                        var overlay = document.getElementById('gt-confirm-modal');
+                        if (!overlay || overlay.dataset.gtBound === '1') return;
+                        overlay.dataset.gtBound = '1';
+                        var titleEl = document.getElementById('gt-confirm-title');
+                        var msgEl = document.getElementById('gt-confirm-message');
+                        var subEl = document.getElementById('gt-confirm-subnote');
+                        var btnCancel = document.getElementById('gt-confirm-cancel');
+                        var btnOk = document.getElementById('gt-confirm-ok');
+                        var pendingForm = null;
+
+                        function extractConfirmMsg(attrVal) {
+                            if (!attrVal) return '';
+                            var m = attrVal.match(/confirm\\(\\s*(['"])([\\s\\S]*?)\\1\\s*\\)/);
+                            return m ? m[2] : '';
+                        }
+
+                        // Converte automaticamente onsubmit="return confirm('...')" e onclick="return confirm('...')"
+                        document.querySelectorAll('form[onsubmit*="confirm("]').forEach(function (f) {
+                            var msg = extractConfirmMsg(f.getAttribute('onsubmit'));
+                            if (msg) {
+                                f.setAttribute('data-confirm', msg);
+                                f.removeAttribute('onsubmit');
+                            }
+                        });
+                        document.querySelectorAll('button[onclick*="confirm("], input[onclick*="confirm("]').forEach(function (b) {
+                            var msg = extractConfirmMsg(b.getAttribute('onclick'));
+                            var f = b.closest('form');
+                            if (msg && f) {
+                                f.setAttribute('data-confirm', msg);
+                                b.removeAttribute('onclick');
+                            }
+                        });
+
+                        function closeModal() {
+                            overlay.classList.remove('is-open');
+                            overlay.setAttribute('aria-hidden', 'true');
+                            pendingForm = null;
+                            if (btnOk) {
+                                btnOk.disabled = false;
+                                btnOk.innerHTML = 'Confirmar Exclusão';
+                            }
+                        }
+
+                        function openModal(form, message) {
+                            pendingForm = form;
+                            var isDelete = /excluir|remover|apagar|deletar/i.test(message);
+                            if (titleEl) titleEl.textContent = isDelete ? 'Confirmar Exclusão' : 'Confirmar Ação';
+                            if (msgEl) msgEl.textContent = message;
+                            if (subEl) subEl.style.display = isDelete ? 'block' : 'none';
+                            if (btnOk) {
+                                btnOk.disabled = false;
+                                btnOk.textContent = isDelete ? 'Sim, Excluir' : 'Confirmar';
+                            }
+                            overlay.classList.add('is-open');
+                            overlay.setAttribute('aria-hidden', 'false');
+                            if (btnCancel) btnCancel.focus();
+                        }
+
+                        document.addEventListener('submit', function (ev) {
+                            var form = ev.target;
+                            if (!form || form.tagName !== 'FORM') return;
+                            var msg = form.getAttribute('data-confirm');
+                            if (!msg || form.dataset.gtConfirmed === '1') return;
+                            ev.preventDefault();
+                            ev.stopImmediatePropagation();
+                            openModal(form, msg);
+                        }, true);
+
+                        if (btnCancel) btnCancel.addEventListener('click', closeModal);
+                        overlay.addEventListener('click', function (ev) {
+                            if (ev.target === overlay) closeModal();
+                        });
+                        document.addEventListener('keydown', function (ev) {
+                            if (ev.key === 'Escape' && overlay.classList.contains('is-open')) closeModal();
+                        });
+                        if (btnOk) {
+                            btnOk.addEventListener('click', function () {
+                                if (!pendingForm) return;
+                                var formToRun = pendingForm;
+                                formToRun.dataset.gtConfirmed = '1';
+                                btnOk.disabled = true;
+                                btnOk.innerHTML = '<span class="gt-btn-spinner" aria-hidden="true"></span><span>Processando...</span>';
+                                formToRun.submit();
+                            });
+                        }
+                    }
+
+                    if (document.readyState === 'loading') {
+                        document.addEventListener('DOMContentLoaded', initCorporateConfirmModal);
+                    } else {
+                        setTimeout(initCorporateConfirmModal, 0);
+                    }
+
                     // Feedback visual imediato (spinner + "Processando...") em qualquer submit do painel
                     document.addEventListener('submit', function (ev) {
+                        if (ev.defaultPrevented) return;
                         var form = ev.target;
                         if (!form || form.tagName !== 'FORM') return;
                         var btn = ev.submitter || form.querySelector('button[type="submit"], button:not([type])');
@@ -755,11 +851,41 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                         btn.classList.add('gt-btn-loading');
                         btn.setAttribute('aria-busy', 'true');
                         btn.innerHTML = '<span class="gt-btn-spinner" aria-hidden="true"></span><span>' + label + '</span>';
-                    }, true);
+                    }, false);
 
                     checkGlobalUpdates();
                 })();
                 ` }} />
+
+                {/* Modal Global Corporativo de Confirmação */}
+                <div id="gt-confirm-modal" class="gt-confirm-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="gt-confirm-title">
+                    <div class="gt-confirm-dialog">
+                        <div class="gt-confirm-header">
+                            <div class="gt-confirm-icon" aria-hidden="true">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 6h18" />
+                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                    <line x1="10" x2="10" y1="11" y2="17" />
+                                    <line x1="14" x2="14" y1="11" y2="17" />
+                                </svg>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <h3 id="gt-confirm-title" class="gt-confirm-title">Confirmar Exclusão</h3>
+                                <p id="gt-confirm-message" class="gt-confirm-message">Deseja realmente continuar com esta ação?</p>
+                                <p id="gt-confirm-subnote" class="gt-confirm-subnote">Esta ação é permanente e não poderá ser desfeita.</p>
+                            </div>
+                        </div>
+                        <div class="gt-confirm-actions">
+                            <button type="button" id="gt-confirm-cancel" class="gt-btn-outline gt-btn-sm">
+                                Cancelar
+                            </button>
+                            <button type="button" id="gt-confirm-ok" class="gt-btn-danger-solid">
+                                Sim, Excluir
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </body>
         </html>
     );
