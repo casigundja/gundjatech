@@ -262,7 +262,7 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
         >
             <div class="gt-page-header">
                 <div>
-                    <h1 class="gt-font-display text-xl font-extrabold text-white">Minhas Solicitações de Serviço</h1>
+                    <h1 class="gt-font-display text-xl font-extrabold text-white">Solicitações de Serviço</h1>
                     <p class="text-xs text-[#8C95AA] mt-1">Consulte e acompanhe suas demandas, orçamentos solicitados e prazos.</p>
                 </div>
                 <a href="/portal/solicitacoes/nova" class="gt-btn-primary gt-btn-sm">

@@ -131,7 +131,7 @@ export const PortalProjectsView: FC<PortalProjectsProps> = ({
         >
             <div class="gt-page-header">
                 <div>
-                    <h1 class="gt-font-display text-xl font-extrabold text-white">Meus Projetos em Andamento</h1>
+                    <h1 class="gt-font-display text-xl font-extrabold text-white">Projetos em Andamento</h1>
                     <p class="text-xs text-[#8C95AA] mt-1">Acompanhe o status técnico, sprints e entregas dos seus produtos contratados.</p>
                 </div>
                 <a href="/portal/solicitacoes/nova" class="gt-btn-primary gt-btn-sm">
