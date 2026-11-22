@@ -2719,6 +2719,175 @@ html[data-admin-theme="light"] .gt-confirm-actions {
     }
 }
 
+/* ==========================================================================
+   SHARED BUTTONS, BADGES & PORTAL DARK/LIGHT MODE HARMONIZATION
+   ========================================================================== */
+body.gt-admin-boost .gt-btn-primary {
+    background: linear-gradient(135deg, #F8CE4A 0%, #F2C230 55%, #E0B020 100%) !important;
+    color: #063B5C !important;
+    font-weight: 800 !important;
+    padding: 9px 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: none;
+    cursor: pointer;
+    font-size: 12.5px;
+    white-space: nowrap;
+    box-shadow: 0 6px 16px -6px rgba(242, 194, 48, 0.45);
+}
+
+body.gt-admin-boost .gt-btn-primary:hover {
+    filter: brightness(1.04);
+    box-shadow: 0 10px 20px -6px rgba(242, 194, 48, 0.55);
+}
+
+body.gt-admin-boost .gt-btn-primary svg,
+body.gt-admin-boost .gt-btn-primary span {
+    color: #063B5C !important;
+}
+
+body.gt-admin-boost .gt-btn-outline {
+    background: rgba(255, 255, 255, 0.04);
+    color: #E7F0F5;
+    font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 10px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    white-space: nowrap;
+    line-height: 1;
+    border: 1px solid rgba(22, 116, 154, 0.42);
+    cursor: pointer;
+    font-size: 12.5px;
+}
+
+body.gt-admin-boost .gt-btn-outline:hover {
+    background: rgba(22, 116, 154, 0.18);
+    border-color: #16749A;
+    color: #FFFFFF;
+}
+
+body.gt-admin-boost .gt-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 10.5px !important;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1.25;
+    white-space: nowrap;
+}
+
+body.gt-admin-boost .gt-badge-success {
+    background: rgba(16, 185, 129, 0.18);
+    color: #34D399;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+body.gt-admin-boost .gt-badge-warning {
+    background: rgba(242, 194, 48, 0.18);
+    color: #F2C230;
+    border: 1px solid rgba(242, 194, 48, 0.38);
+}
+
+body.gt-admin-boost .gt-badge-info {
+    background: rgba(22, 116, 154, 0.22);
+    color: #60A5FA;
+    border: 1px solid rgba(22, 116, 154, 0.4);
+}
+
+body.gt-admin-boost .gt-badge-danger {
+    background: rgba(239, 68, 68, 0.18);
+    color: #F87171;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+/* Portal Sidebar Workspace Card & Footer — Dark Mode */
+.gt-portal-workspace-card {
+    background: rgba(22, 116, 154, 0.14);
+    border: 1px solid rgba(22, 116, 154, 0.32);
+}
+
+.gt-portal-ws-label {
+    color: #8CAAB9;
+}
+
+.gt-portal-ws-name {
+    color: #FFFFFF;
+}
+
+.gt-portal-sidebar-footer {
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.gt-portal-user-name {
+    color: #FFFFFF;
+}
+
+.gt-portal-user-email {
+    color: #8C95AA;
+}
+
+/* Portal Sidebar Workspace Card & Footer — Light Mode */
+html[data-admin-theme="light"] .gt-portal-workspace-card {
+    background: #EEF5F9 !important;
+    border: 1px solid #CFE0EB !important;
+}
+
+html[data-admin-theme="light"] .gt-portal-ws-label {
+    color: #527287 !important;
+}
+
+html[data-admin-theme="light"] .gt-portal-ws-name {
+    color: #063B5C !important;
+}
+
+html[data-admin-theme="light"] .gt-portal-sidebar-footer {
+    border-color: #D4E3ED !important;
+    background: #F6FAFC !important;
+}
+
+html[data-admin-theme="light"] .gt-portal-user-name {
+    color: #063B5C !important;
+}
+
+html[data-admin-theme="light"] .gt-portal-user-email {
+    color: #527287 !important;
+}
+
+html[data-admin-theme="light"] .gtb-topbar-left h1 {
+    color: #063B5C !important;
+}
+
+html[data-admin-theme="dark"] .gtb-topbar-left h1 {
+    color: #FFFFFF !important;
+}
+
+/* Theme Switch Orb Active Indicators */
+html[data-admin-theme="light"] .gtb-theme-orb[data-theme-orb="light"] {
+    background: #F2C230 !important;
+    color: #063B5C !important;
+    box-shadow: 0 2px 8px rgba(242, 194, 48, 0.45);
+}
+
+html[data-admin-theme="dark"] .gtb-theme-orb[data-theme-orb="dark"] {
+    background: #16749A !important;
+    color: #F2C230 !important;
+    box-shadow: 0 2px 8px rgba(22, 116, 154, 0.45);
+}
+
+
 
 
 

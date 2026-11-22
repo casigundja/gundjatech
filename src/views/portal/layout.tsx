@@ -26,7 +26,6 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
     const initials = (currentUser.name || 'GT').slice(0, 2).toUpperCase();
     const displayName = clientName || currentUser.name;
     const headerTitle = title.split('•')[0].trim() || 'Início & Resumo';
-    const isStaff = currentUser.role === 'admin' || currentUser.role === 'superadmin' || currentUser.role === 'staff';
 
     return (
         <html lang="pt-BR" class="h-full" data-admin-theme="light">
@@ -43,7 +42,7 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
-                <link rel="stylesheet" href="/css/gt-admin.css?v=30" />
+                <link rel="stylesheet" href="/css/gt-admin.css?v=31" />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
@@ -116,15 +115,15 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                         </div>
 
                         {/* Active Client Workspace Card */}
-                        <div class="mx-3 mt-3 mb-1 px-3.5 py-3 rounded-xl bg-[#063B5C]/25 border border-[#16749A]/25">
+                        <div class="gt-portal-workspace-card mx-3 mt-3 mb-1 px-3.5 py-3 rounded-xl">
                             <div class="flex items-center justify-between gap-2">
-                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Área do Cliente</span>
-                                <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                <span class="gt-portal-ws-label text-[10px] font-extrabold uppercase tracking-wider">Área do Cliente</span>
+                                <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-500">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                     Online
                                 </span>
                             </div>
-                            <div class="text-xs font-extrabold text-white truncate mt-1" title={displayName}>
+                            <div class="gt-portal-ws-name text-xs font-extrabold truncate mt-1" title={displayName}>
                                 {displayName}
                             </div>
                         </div>
@@ -201,21 +200,21 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                     </div>
 
                     {/* Sidebar Footer / User Info */}
-                    <div class="p-3 border-t border-white/5 flex items-center justify-between gap-2">
+                    <div class="gt-portal-sidebar-footer p-3 border-t flex items-center justify-between gap-2">
                         <a href="/minha-conta" class="flex items-center gap-2.5 min-w-0 no-underline group" title="Minha Conta">
                             <span class="gtb-avatar shrink-0">
                                 <span class="gtb-avatar-inner">{initials}</span>
                             </span>
                             <div class="min-w-0">
-                                <div class="text-xs font-bold text-white truncate group-hover:text-[#F2C230] transition-colors">{currentUser.name}</div>
-                                <div class="text-[10.5px] text-[#8C95AA] truncate">{currentUser.email}</div>
+                                <div class="gt-portal-user-name text-xs font-bold truncate group-hover:text-[#F2C230] transition-colors">{currentUser.name}</div>
+                                <div class="gt-portal-user-email text-[10.5px] truncate">{currentUser.email}</div>
                             </div>
                         </a>
                         <form action="/auth/logout" method="post" class="m-0 shrink-0">
                             <button
                                 type="submit"
                                 title="Sair do Portal"
-                                class="gtb-icon-btn !w-8 !h-8 rounded-lg text-[#8C95AA] hover:text-red-400 cursor-pointer"
+                                class="gtb-icon-btn !w-8 !h-8 rounded-lg text-[#8C95AA] hover:text-red-500 cursor-pointer"
                             >
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
                             </button>
@@ -262,13 +261,6 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                                     <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
                                 </button>
                             </div>
-
-                            {isStaff && (
-                                <a href="/admin/dashboard" class="gt-btn-outline gt-btn-sm hidden sm:inline-flex" title="Voltar ao Painel Administrativo">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                    <span>Painel Admin</span>
-                                </a>
-                            )}
 
                             <a href="/portal/solicitacoes/nova" class="gt-btn-primary gt-btn-sm">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>

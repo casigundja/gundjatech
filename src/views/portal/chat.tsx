@@ -34,7 +34,7 @@ export const PortalChatView: FC<PortalChatProps> = ({
                 </div>
             </div>
 
-            <div class="gtb-card !p-0 flex flex-col overflow-hidden" style="height: calc(100vh - 205px); min-height: 440px;">
+            <div class="gtb-card !p-0 flex flex-col overflow-hidden" style="height: calc(100vh - 225px); min-height: 400px; max-height: 640px;">
                 <div class="px-5 py-3.5 border-b border-white/10 flex items-center justify-between gap-3 flex-wrap">
                     <div class="flex items-center gap-3 min-w-0">
                         <span class="w-9 h-9 rounded-xl bg-[#16749A]/20 border border-[#16749A]/35 flex items-center justify-center text-[#F2C230] shrink-0">
@@ -52,7 +52,10 @@ export const PortalChatView: FC<PortalChatProps> = ({
                             </div>
                         </div>
                     </div>
-                    <span class="gt-badge gt-badge-success">Chat Ativo</span>
+                    <span class="gt-badge gt-badge-success">
+                        <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+                        <span>Chat Ativo</span>
+                    </span>
                 </div>
 
                 <div
