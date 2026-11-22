@@ -61,25 +61,248 @@ adminRoutes.get('/', handleDashboard);
 adminRoutes.get('/dashboard', handleDashboard);
 
 adminRoutes.get('/relatorio/exportar', async (c) => {
+    const user = c.get('user');
     const db = c.env.DB;
     const period = Number(c.req.query('period') || 30);
     const stats = await getAdminDashboardStats(db, period);
-    const csvLines = [
-        'Metrica,Valor',
-        `"Clientes Totais",${stats.totalClients}`,
-        `"Clientes Ativos",${stats.activeClients}`,
-        `"Leads",${stats.leadClients}`,
-        `"Solicitacoes Totais",${stats.totalRequests}`,
-        `"Solicitacoes Pendentes",${stats.pendingRequests}`,
-        `"Projetos Ativos",${stats.activeProjects}`,
-        `"Orcamentos Emitidos",${stats.totalQuotations}`,
-        `"Orcamentos Aprovados",${stats.approvedQuotations}`,
-        `"Receita Recebida (R$)",${stats.monthlyRevenue}`,
-        `"A Receber (R$)",${stats.pendingReceivables}`
-    ];
-    c.header('Content-Type', 'text/csv; charset=utf-8');
-    c.header('Content-Disposition', `attachment; filename="relatorio-gundjatech-${period}d.csv"`);
-    return c.body(csvLines.join('\n'));
+
+    const fmtBRL = (val: number) =>
+        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(val || 0));
+    const esc = (s: any) =>
+        String(s ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+
+    const emittedAt = new Date().toLocaleString('pt-BR');
+    const emitterName = user?.name || 'Diretoria GundjaTech';
+
+    const statusPt: Record<string, string> = {
+        new: 'Novo',
+        analyzing: 'Em Análise',
+        quotation_sent: 'Orçamento Enviado',
+        approved: 'Aprovado',
+        in_progress: 'Em Execução',
+        completed: 'Concluído',
+        cancelled: 'Cancelado'
+    };
+
+    const monthlySeries = Array.isArray((stats as any).monthlyRevenueSeries) ? (stats as any).monthlyRevenueSeries : [];
+    const recentRequests = Array.isArray(stats.recentRequests) ? stats.recentRequests : [];
+    const recentClients = Array.isArray((stats as any).recentClients) ? (stats as any).recentClients : [];
+
+    const excelHtml = `\uFEFF<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="UTF-8">
+<!--[if gte mso 9]>
+<xml>
+  <x:ExcelWorkbook>
+    <x:ExcelWorksheets>
+      <x:ExcelWorksheet>
+        <x:Name>Relatório GundjaTech</x:Name>
+        <x:WorksheetOptions>
+          <x:DisplayGridlines/>
+        </x:WorksheetOptions>
+      </x:ExcelWorksheet>
+    </x:ExcelWorksheets>
+  </x:ExcelWorkbook>
+</xml>
+<![endif]-->
+<style>
+  body, table { font-family: 'Segoe UI', Calibri, Arial, sans-serif; font-size: 11pt; color: #063B5C; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { padding: 8px 12px; vertical-align: middle; }
+  .banner-top { background-color: #063B5C; color: #FFFFFF; font-size: 16pt; font-weight: bold; height: 42px; border-bottom: 3px solid #F2C230; }
+  .banner-sub { background-color: #063B5C; color: #E7F0F5; font-size: 10pt; height: 26px; border-bottom: 3px solid #F2C230; }
+  .gold-text { color: #F2C230; font-weight: bold; }
+  .sec-head { background-color: #16749A; color: #FFFFFF; font-size: 11pt; font-weight: bold; text-transform: uppercase; height: 32px; border: 1px solid #063B5C; }
+  .tbl-head { background-color: #063B5C; color: #F2C230; font-size: 10pt; font-weight: bold; text-transform: uppercase; height: 28px; border: 1px solid #16749A; }
+  .row-even { background-color: #FFFFFF; color: #063B5C; border: 1px solid #D5E3EC; height: 26px; }
+  .row-odd { background-color: #E7F0F5; color: #063B5C; border: 1px solid #D5E3EC; height: 26px; }
+  .val-bold { font-weight: bold; color: #063B5C; text-align: right; }
+  .val-gold { font-weight: bold; color: #063B5C; background-color: #FEF7DC; text-align: right; border: 1px solid #F2C230; }
+  .val-green { font-weight: bold; color: #065F46; background-color: #D1FAE5; text-align: center; }
+  .val-badge { font-weight: bold; color: #063B5C; background-color: #E7F0F5; text-align: center; }
+  .footer-bar { background-color: #063B5C; color: #F2C230; font-size: 9.5pt; font-weight: bold; text-align: center; height: 28px; }
+</style>
+</head>
+<body>
+<table>
+  <col width="240">
+  <col width="210">
+  <col width="220">
+  <col width="160">
+  <col width="150">
+
+  <!-- Cabeçalho Institucional GundjaTech (Paleta 3) -->
+  <tr>
+    <td colspan="5" class="banner-top">
+      GUNDJA<span class="gold-text">TECH</span> &bull; RELATÓRIO EXECUTIVO DE GESTÃO &amp; PERFORMANCE
+    </td>
+  </tr>
+  <tr>
+    <td colspan="5" class="banner-sub">
+      Período analisado: <b>Últimos ${period} dias</b> &nbsp;|&nbsp; Emitido em: <b>${esc(emittedAt)}</b> &nbsp;|&nbsp; Responsável: <b>${esc(emitterName)}</b>
+    </td>
+  </tr>
+  <tr><td colspan="5" height="12"></td></tr>
+
+  <!-- SEÇÃO 1: INDICADORES EXECUTIVOS (KPIs) -->
+  <tr>
+    <td colspan="5" class="sec-head">1. Resumo Executivo &amp; Indicadores-Chave (KPIs)</td>
+  </tr>
+  <tr>
+    <th colspan="2" class="tbl-head" align="left">Indicador Operacional / Financeiro</th>
+    <th class="tbl-head" align="right">Resultado Atual</th>
+    <th colspan="2" class="tbl-head" align="left">Detalhamento / Contexto</th>
+  </tr>
+  <tr class="row-even">
+    <td colspan="2"><b>Receita Recebida / Liquidada</b></td>
+    <td class="val-gold">${esc(fmtBRL(stats.monthlyRevenue))}</td>
+    <td colspan="2">Total recebido e confirmado em caixa (${period}d)</td>
+  </tr>
+  <tr class="row-odd">
+    <td colspan="2"><b>Faturas a Receber (Pendente)</b></td>
+    <td class="val-bold">${esc(fmtBRL(stats.pendingReceivables))}</td>
+    <td colspan="2">Lançamentos aguardando liquidação</td>
+  </tr>
+  <tr class="row-even">
+    <td colspan="2"><b>Carteira Total de Clientes &amp; Leads</b></td>
+    <td class="val-bold">${stats.totalClients}</td>
+    <td colspan="2">${stats.activeClients} cliente(s) ativo(s) &bull; ${stats.leadClients} lead(s) em prospecção</td>
+  </tr>
+  <tr class="row-odd">
+    <td colspan="2"><b>Clientes Ativos</b></td>
+    <td class="val-bold">${stats.activeClients}</td>
+    <td colspan="2">Contratos ou entregas em andamento</td>
+  </tr>
+  <tr class="row-even">
+    <td colspan="2"><b>Leads em Prospecção</b></td>
+    <td class="val-bold">${stats.leadClients}</td>
+    <td colspan="2">Captados via Site Institucional e WhatsApp</td>
+  </tr>
+  <tr class="row-odd">
+    <td colspan="2"><b>Solicitações Comerciais &amp; Briefings</b></td>
+    <td class="val-bold">${stats.totalRequests}</td>
+    <td colspan="2">${stats.pendingRequests} pendente(s) de triagem</td>
+  </tr>
+  <tr class="row-even">
+    <td colspan="2"><b>Projetos Técnicos Ativos</b></td>
+    <td class="val-bold">${stats.activeProjects}</td>
+    <td colspan="2">Em planejamento, desenvolvimento ou homologação</td>
+  </tr>
+  <tr class="row-odd">
+    <td colspan="2"><b>Orçamentos &amp; Propostas Emitidas</b></td>
+    <td class="val-bold">${stats.totalQuotations}</td>
+    <td colspan="2">${stats.approvedQuotations} proposta(s) aprovada(s) &bull; Volume: ${esc(fmtBRL((stats as any).totalQuotationValue || 0))}</td>
+  </tr>
+
+  <tr><td colspan="5" height="14"></td></tr>
+
+  <!-- SEÇÃO 2: SÉRIE HISTÓRICA DE RECEITA (12 MESES) -->
+  <tr>
+    <td colspan="5" class="sec-head">2. Evolução Mensal de Receita (Últimos 12 Meses)</td>
+  </tr>
+  <tr>
+    <th class="tbl-head" align="left">Mês de Referência</th>
+    <th class="tbl-head" align="right">Recebido / Liquidado (R$)</th>
+    <th class="tbl-head" align="right">A Receber / Previsto (R$)</th>
+    <th colspan="2" class="tbl-head" align="right">Volume Total no Mês</th>
+  </tr>
+  ${monthlySeries
+      .map((m: any, idx: number) => {
+          const rec = Number(m.received || 0);
+          const pend = Number(m.pending || 0);
+          const cls = idx % 2 === 0 ? 'row-even' : 'row-odd';
+          return `<tr class="${cls}">
+    <td><b>${esc(m.label)}</b></td>
+    <td class="val-bold">${esc(fmtBRL(rec))}</td>
+    <td class="val-bold">${esc(fmtBRL(pend))}</td>
+    <td colspan="2" class="val-gold">${esc(fmtBRL(rec + pend))}</td>
+  </tr>`;
+      })
+      .join('\n  ')}
+
+  <tr><td colspan="5" height="14"></td></tr>
+
+  <!-- SEÇÃO 3: ÚLTIMAS SOLICITAÇÕES DE CLIENTES -->
+  <tr>
+    <td colspan="5" class="sec-head">3. Últimas Solicitações &amp; Pipeline de Entrada (${recentRequests.length})</td>
+  </tr>
+  <tr>
+    <th class="tbl-head" align="left">Protocolo</th>
+    <th class="tbl-head" align="left">Demanda / Serviço</th>
+    <th class="tbl-head" align="left">Cliente / Empresa</th>
+    <th class="tbl-head" align="center">Status</th>
+    <th class="tbl-head" align="center">Data</th>
+  </tr>
+  ${
+      recentRequests.length === 0
+          ? `<tr class="row-even"><td colspan="5" align="center">Nenhuma solicitação registrada no período.</td></tr>`
+          : recentRequests
+                .map((r: any, idx: number) => {
+                    const cls = idx % 2 === 0 ? 'row-even' : 'row-odd';
+                    const st = statusPt[r.status] || r.status || 'Novo';
+                    const dt = r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : '—';
+                    return `<tr class="${cls}">
+    <td><b>${esc(r.protocol)}</b></td>
+    <td>${esc(r.service_title || r.title || 'Solicitação Digital')}</td>
+    <td>${esc(r.company || r.name || 'Cliente')}</td>
+    <td class="val-badge">${esc(st)}</td>
+    <td align="center">${esc(dt)}</td>
+  </tr>`;
+                })
+                .join('\n  ')
+  }
+
+  <tr><td colspan="5" height="14"></td></tr>
+
+  <!-- SEÇÃO 4: CLIENTES & LEADS RECENTES -->
+  <tr>
+    <td colspan="5" class="sec-head">4. Diretório Recente de Clientes &amp; Leads (${recentClients.length})</td>
+  </tr>
+  <tr>
+    <th class="tbl-head" align="left">Empresa / Nome</th>
+    <th class="tbl-head" align="left">E-mail / Canal</th>
+    <th class="tbl-head" align="left">Telefone / WhatsApp</th>
+    <th class="tbl-head" align="center">Categoria</th>
+    <th class="tbl-head" align="center">Cadastro</th>
+  </tr>
+  ${
+      recentClients.length === 0
+          ? `<tr class="row-even"><td colspan="5" align="center">Nenhum cliente ou lead cadastrado no momento.</td></tr>`
+          : recentClients
+                .map((cl: any, idx: number) => {
+                    const cls = idx % 2 === 0 ? 'row-even' : 'row-odd';
+                    const isWa = String(cl.email || '').endsWith('.local');
+                    const catLabel = cl.status === 'active' ? 'Cliente Ativo' : isWa ? 'Lead WhatsApp' : 'Lead Site';
+                    const catClass = cl.status === 'active' ? 'val-green' : 'val-badge';
+                    const dt = cl.created_at ? new Date(cl.created_at).toLocaleDateString('pt-BR') : '—';
+                    return `<tr class="${cls}">
+    <td><b>${esc(cl.company || cl.name || 'Cliente')}</b></td>
+    <td>${isWa ? 'WhatsApp Direto' : esc(cl.email || '—')}</td>
+    <td>${esc(cl.phone || '—')}</td>
+    <td class="${catClass}">${esc(catLabel)}</td>
+    <td align="center">${esc(dt)}</td>
+  </tr>`;
+                })
+                .join('\n  ')
+  }
+
+  <tr><td colspan="5" height="14"></td></tr>
+  <tr>
+    <td colspan="5" class="footer-bar">
+      GUNDJATECH &bull; ENGENHARIA DIGITAL, SISTEMAS WEB, CIBERSEGURANÇA E OPERAÇÃO CONTÍNUA &bull; gundjatech.com
+    </td>
+  </tr>
+</table>
+</body>
+</html>`;
+
+    c.header('Content-Type', 'application/vnd.ms-excel; charset=utf-8');
+    c.header('Content-Disposition', `attachment; filename="relatorio-executivo-gundjatech-${period}d.xls"`);
+    return c.body(excelHtml);
 });
 
 // ==========================================
