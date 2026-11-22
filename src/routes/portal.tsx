@@ -3,6 +3,7 @@ import { Env, AppVariables } from '../types/env';
 import { requireAuth } from '../middleware/auth';
 import { getRequestBody } from '../lib/request';
 import { ensureClientProfile, getPortalDashboard } from '../lib/client-portal';
+import { getFile, streamR2Response } from '../lib/storage';
 import { AutonomousCrmAgent } from '../services/ai-crm-agent';
 import { PortalDashboardView } from '../views/portal/dashboard';
 import { PortalProjectsView } from '../views/portal/projects';
@@ -103,6 +104,44 @@ portalRoutes.get('/projetos/:id', async (c) => {
             errorMessage={c.req.query('error')}
         />
     );
+});
+
+portalRoutes.get('/projetos/:id/anexos/:attId', async (c) => {
+    const { db, client } = await getClientContext(c);
+    const projectId = Number(c.req.param('id'));
+    const attId = Number(c.req.param('attId'));
+
+    const project = await db.prepare(
+        'SELECT id FROM projects WHERE id = ? AND client_id = ?'
+    ).bind(projectId, client.id).first();
+
+    if (!project) {
+        return c.text('Projeto não encontrado ou acesso não autorizado.', 404);
+    }
+
+    const attachment = (await db.prepare(
+        'SELECT * FROM project_attachments WHERE id = ? AND project_id = ? AND is_client_visible = 1'
+    ).bind(attId, projectId).first()) as any;
+
+    if (!attachment) {
+        return c.text('Anexo não encontrado.', 404);
+    }
+
+    const rawPath = String(attachment.file_path || attachment.file_url || attachment.file_name || '').trim();
+    const storageKey = rawPath.replace(/^\/?uploads\//, '').replace(/^\/+/, '');
+    if (!storageKey || !c.env.UPLOADS_BUCKET) {
+        return c.text('Arquivo indisponível no armazenamento.', 404);
+    }
+
+    const object = await getFile(c.env.UPLOADS_BUCKET, storageKey);
+    if (!object) {
+        return c.text('Arquivo não encontrado no armazenamento.', 404);
+    }
+
+    const response = streamR2Response(c, object);
+    const safeFileName = String(attachment.file_name || 'anexo').replace(/["\r\n]/g, '');
+    response.headers.set('Content-Disposition', `attachment; filename="${safeFileName}"`);
+    return response;
 });
 
 // 3. Orçamentos
@@ -463,6 +502,15 @@ portalRoutes.post('/atendimento/:id/mensagem', async (c) => {
         return c.redirect('/portal/atendimento');
     }
 
+    // Isolamento multi-tenant: garante que a conversa pertence ao cliente autenticado
+    const ownedConv = (await db.prepare(
+        'SELECT id, ai_enabled FROM conversations WHERE id = ? AND client_id = ?'
+    ).bind(convId, client.id).first()) as { id: number; ai_enabled?: number } | null;
+
+    if (!ownedConv) {
+        return c.json({ error: 'Acesso não autorizado a esta conversa.' }, 403);
+    }
+
     await db.prepare(
         `INSERT INTO conversation_messages (conversation_id, sender_type, sender_id, message, is_ai, created_at, updated_at)
          VALUES (?, 'client', ?, ?, 0, datetime('now'), datetime('now'))`
@@ -474,14 +522,13 @@ portalRoutes.post('/atendimento/:id/mensagem', async (c) => {
 
     // Se a conversa estiver com Piloto IA ativo (e IA global ativa), responde automaticamente
     try {
-        const conv = (await db.prepare('SELECT ai_enabled FROM conversations WHERE id = ?').bind(convId).first()) as { ai_enabled?: number } | null;
         let globalAiEnabled = true;
         try {
             const cfg = (await db.prepare(`SELECT value FROM system_settings WHERE key = 'crm_ai_enabled'`).first()) as { value: string } | null;
             if (cfg && cfg.value === '0') globalAiEnabled = false;
         } catch {}
 
-        if (globalAiEnabled && (conv ? Boolean(conv.ai_enabled ?? 1) : true)) {
+        if (globalAiEnabled && Boolean(ownedConv.ai_enabled ?? 1)) {
             const agent = new AutonomousCrmAgent(c.env);
             await agent.handleIncomingMessage(convId, message, client.name);
         }

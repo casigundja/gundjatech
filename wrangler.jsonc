@@ -8,8 +8,7 @@
   ],
   "vars": {
     "APP_ENV": "production",
-    "SESSION_SECRET": "gundjatech_prod_hmac_key_PU1bNMoz8jVmKIWiC650bGnL2FljkKJ3w3W2JcD1Myk",
-    "WHATSAPP_VERIFY_TOKEN": "gundjatech_wa_verify_2026",
+    "APP_URL": "https://gundjatech.casimirogundja.workers.dev",
     "WHATSAPP_API_VERSION": "v21.0"
   },
   "assets": {

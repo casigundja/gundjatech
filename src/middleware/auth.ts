@@ -52,6 +52,8 @@ export const requireGuest: MiddlewareHandler<{ Bindings: Env; Variables: AppVari
     await next();
 };
 
+const STAFF_ROLES: UserRole[] = ['superadmin', 'admin', 'manager', 'attendant', 'developer', 'financial'];
+
 /**
  * Exige membro da equipe interna (Staff)
  */
@@ -61,7 +63,11 @@ export const requireStaff: MiddlewareHandler<{ Bindings: Env; Variables: AppVari
         return c.redirect('/login');
     }
 
-    if (user.role === 'client') {
+    if (user.is_active === false) {
+        return c.json({ error: 'Forbidden', message: 'Sua conta de usuário está desativada.' }, 403);
+    }
+
+    if (user.role === 'client' || !STAFF_ROLES.includes(user.role)) {
         return c.redirect('/portal/dashboard');
     }
 

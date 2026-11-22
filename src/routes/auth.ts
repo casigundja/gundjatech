@@ -55,14 +55,8 @@ authRoutes.post('/login', async (c) => {
     }
 
     const { valid, needsRehash } = await verifyPassword(password, user.password);
-    let isAuthenticated = valid;
 
-    // Fallback de desenvolvimento caso ainda não tenha hash PBKDF2 migrado
-    if (!isAuthenticated && password === 'password') {
-        isAuthenticated = true;
-    }
-
-    if (!isAuthenticated) {
+    if (!valid) {
         if (c.req.header('accept')?.includes('application/json')) {
             return c.json({ error: 'Unauthorized', message: 'As credenciais informadas não correspondem aos nossos registros.' }, 401);
         }

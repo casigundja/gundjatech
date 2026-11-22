@@ -109,6 +109,10 @@ function createMockEnv() {
                                 const d = data.domains.find(x => x.id === params[0] && x.client_id === params[1]);
                                 return (d || null) as unknown as T;
                             }
+                            if (q.includes('from conversations where id = ? and client_id = ?')) {
+                                const conv = data.conversations.find(x => x.id === params[0] && x.client_id === params[1]);
+                                return (conv || null) as unknown as T;
+                            }
                             if (q.includes('from conversations where client_id = ?')) {
                                 const conv = data.conversations.find(x => x.client_id === params[0]);
                                 return (conv || null) as unknown as T;

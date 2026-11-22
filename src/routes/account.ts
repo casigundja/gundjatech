@@ -10,6 +10,15 @@ export const accountRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }
 
 accountRoutes.use('*', requireAuth);
 
+function escapeHtml(value: unknown): string {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 accountRoutes.get('/', async (c) => {
     const sessionUser = c.get('user');
     if (!sessionUser) {
@@ -23,6 +32,8 @@ accountRoutes.get('/', async (c) => {
 
     const successMsg = c.req.query('success');
     const errorMsg = c.req.query('error');
+    const backHref = user.role === 'client' ? '/portal/dashboard' : '/admin/dashboard';
+    const initials = escapeHtml((user.name || 'GT').slice(0, 2).toUpperCase());
 
     return c.html(`
         <!DOCTYPE html>
@@ -31,48 +42,111 @@ accountRoutes.get('/', async (c) => {
             <meta charset="UTF-8">
             <title>Minha Conta • GundjaTech</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link rel="icon" type="image/svg+xml" href="/img/favicon.svg?v=gt-icon4">
+            <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
             <style>
+                :root {
+                    --gt-gold: #F2C230;
+                    --gt-gold-hover: #E0B020;
+                    --gt-dark: #063B5C;
+                    --gt-blue: #16749A;
+                    --gt-ice: #E7F0F5;
+                    --gt-border: #CFE0EB;
+                }
                 * { box-sizing: border-box; margin: 0; padding: 0; }
                 body {
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                    background: #063B5C; color: #FFFFFF; padding: 40px 20px;
+                    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+                    background: var(--gt-ice);
+                    color: var(--gt-dark);
+                    min-height: 100vh;
+                    padding: 32px 20px;
                 }
-                .container { max-width: 720px; margin: 0 auto; }
+                .container { max-width: 780px; margin: 0 auto; }
+                .top-bar {
+                    display: flex; align-items: center; justify-content: space-between;
+                    gap: 12px; flex-wrap: wrap; margin-bottom: 22px;
+                }
+                .back-link {
+                    display: inline-flex; align-items: center; gap: 6px;
+                    color: var(--gt-blue); text-decoration: none; font-weight: 700; font-size: 13px;
+                    padding: 8px 14px; border-radius: 10px; background: #FFFFFF;
+                    border: 1px solid var(--gt-border); transition: all 0.15s ease;
+                }
+                .back-link:hover { border-color: var(--gt-blue); color: var(--gt-dark); }
+                .header-card {
+                    background: linear-gradient(135deg, #042840 0%, #063B5C 60%, #16749A 100%);
+                    color: #FFFFFF; border-radius: 18px; padding: 24px 28px; margin-bottom: 22px;
+                    display: flex; align-items: center; gap: 16px;
+                    box-shadow: 0 14px 32px -12px rgba(6, 59, 92, 0.35);
+                }
+                .avatar {
+                    width: 52px; height: 52px; border-radius: 14px; flex-shrink: 0;
+                    background: rgba(242, 194, 48, 0.16); border: 1.5px solid rgba(242, 194, 48, 0.6);
+                    color: var(--gt-gold); font-size: 18px; font-weight: 800;
+                    display: flex; align-items: center; justify-content: center;
+                }
+                .header-card h1 { font-size: 20px; font-weight: 800; color: #FFFFFF; }
+                .header-card p { font-size: 12.5px; color: #D5E6F0; margin-top: 3px; }
                 .card {
-                    background: #04253a; border: 1px solid #16749A; border-radius: 12px;
-                    padding: 30px; margin-bottom: 24px;
+                    background: #FFFFFF; border: 1px solid var(--gt-border); border-radius: 16px;
+                    padding: 26px; margin-bottom: 20px;
+                    box-shadow: 0 6px 20px -10px rgba(6, 59, 92, 0.12);
                 }
-                h1 { color: #FFFFFF; font-size: 24px; font-weight: 800; margin-bottom: 18px; }
-                h2 { color: #F2C230; margin-bottom: 20px; font-size: 19px; font-weight: 800; }
+                .card h2 {
+                    color: var(--gt-dark); font-size: 15px; font-weight: 800;
+                    padding-bottom: 12px; margin-bottom: 18px; border-bottom: 1px solid var(--gt-ice);
+                }
                 .form-group { margin-bottom: 16px; }
                 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-                @media (max-width: 640px) {
-                    body { padding: 20px 14px; }
-                    .card { padding: 20px; }
-                    .grid-2 { grid-template-columns: 1fr; }
+                label {
+                    display: block; font-size: 11px; font-weight: 800; text-transform: uppercase;
+                    letter-spacing: 0.04em; color: #527287; margin-bottom: 6px;
                 }
-                label { display: block; font-size: 13px; color: #E7F0F5; margin-bottom: 6px; font-weight: 600; }
                 input {
-                    width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #16749A;
-                    background: #063B5C; color: #fff; font-size: 14px; outline: none;
+                    width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid #BDD2DF;
+                    background: #FFFFFF; color: var(--gt-dark); font-size: 13px; font-family: inherit;
+                    outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease;
                 }
-                input[readonly] { opacity: 0.6; cursor: not-allowed; }
+                input:focus { border-color: var(--gt-blue); box-shadow: 0 0 0 3px rgba(22, 116, 154, 0.14); }
+                input[readonly] { background: #F4F8FB; color: #67879C; cursor: not-allowed; }
                 .btn {
-                    padding: 12px 24px; background: #F2C230; color: #063B5C; font-weight: 800;
-                    border: none; border-radius: 8px; cursor: pointer; font-size: 14px; margin-top: 10px;
+                    padding: 11px 22px; background: var(--gt-gold); color: var(--gt-dark);
+                    font-weight: 800; border: none; border-radius: 10px; cursor: pointer;
+                    font-size: 13px; font-family: inherit; transition: background 0.15s ease;
                 }
-                .btn:hover { background: #E0B020; }
-                .back-link { display: inline-block; margin-bottom: 16px; color: #F2C230; text-decoration: none; font-weight: 700; font-size: 14px; }
-                .alert-success { background: rgba(16, 185, 129, 0.2); border: 1px solid #34D399; color: #6EE7B7; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; }
-                .alert-error { background: rgba(239, 68, 68, 0.2); border: 1px solid #F87171; color: #FCA5A5; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; }
+                .btn:hover { background: var(--gt-gold-hover); }
+                .alert-success {
+                    background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46;
+                    padding: 12px 16px; border-radius: 10px; margin-bottom: 18px; font-size: 13px; font-weight: 600;
+                }
+                .alert-error {
+                    background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B;
+                    padding: 12px 16px; border-radius: 10px; margin-bottom: 18px; font-size: 13px; font-weight: 600;
+                }
+                @media (max-width: 640px) {
+                    body { padding: 18px 12px; }
+                    .card, .header-card { padding: 18px; }
+                    .grid-2 { grid-template-columns: 1fr; }
+                    .btn { width: 100%; }
+                }
             </style>
         </head>
         <body>
             <div class="container">
-                <a href="${user.role === 'client' ? '/portal/dashboard' : '/admin/dashboard'}" class="back-link">← Voltar ao Painel</a>
-                <h1>Minha Conta</h1>
-                ${successMsg ? `<div class="alert-success">✓ ${successMsg}</div>` : ''}
-                ${errorMsg ? `<div class="alert-error">✕ ${errorMsg}</div>` : ''}
+                <div class="top-bar">
+                    <a href="${backHref}" class="back-link">&larr; Voltar ao Painel</a>
+                </div>
+
+                <div class="header-card">
+                    <div class="avatar">${initials}</div>
+                    <div>
+                        <h1>${escapeHtml(user.name)}</h1>
+                        <p>${escapeHtml(user.email)}</p>
+                    </div>
+                </div>
+
+                ${successMsg ? `<div class="alert-success">${escapeHtml(successMsg)}</div>` : ''}
+                ${errorMsg ? `<div class="alert-error">${escapeHtml(errorMsg)}</div>` : ''}
 
                 <div class="card">
                     <h2>Dados do Perfil</h2>
@@ -80,21 +154,21 @@ accountRoutes.get('/', async (c) => {
                         <div class="grid-2">
                             <div class="form-group">
                                 <label>Nome Completo</label>
-                                <input type="text" name="name" value="${user.name}" required>
+                                <input type="text" name="name" value="${escapeHtml(user.name)}" required>
                             </div>
                             <div class="form-group">
                                 <label>E-mail (não alterável)</label>
-                                <input type="email" value="${user.email}" readonly>
+                                <input type="email" value="${escapeHtml(user.email)}" readonly>
                             </div>
                         </div>
                         <div class="grid-2">
                             <div class="form-group">
                                 <label>Telefone / WhatsApp</label>
-                                <input type="tel" name="phone" value="${user.phone || ''}">
+                                <input type="tel" name="phone" value="${escapeHtml(user.phone || '')}">
                             </div>
                             <div class="form-group">
                                 <label>Empresa</label>
-                                <input type="text" name="company" value="${user.company || ''}">
+                                <input type="text" name="company" value="${escapeHtml(user.company || '')}">
                             </div>
                         </div>
                         <button type="submit" class="btn">Atualizar Dados</button>
@@ -102,7 +176,7 @@ accountRoutes.get('/', async (c) => {
                 </div>
 
                 <div class="card">
-                    <h2>Alteração de Senha</h2>
+                    <h2>Segurança &amp; Alteração de Senha</h2>
                     <form action="/minha-conta/senha" method="POST">
                         <div class="grid-2">
                             <div class="form-group">
@@ -208,14 +282,14 @@ accountRoutes.post('/senha', async (c) => {
     }
 
     const { valid } = await verifyPassword(currentPassword, user.password);
-    if (!valid && currentPassword !== 'password') {
+    if (!valid) {
         return c.json({ error: 'A senha atual informada está incorreta.' }, 422);
     }
 
     const newHash = await hashPassword(newPassword);
     await updateUserPassword(c.env.DB, user.id, newHash);
 
-    // Desconecta outras sessões ativas por segurança
+    // Desconecta outras sessões ativas (D1 + KV) por segurança
     await destroyAllUserSessionsExcept(c.env, user.id, sessionId);
 
     // Registra log de auditoria

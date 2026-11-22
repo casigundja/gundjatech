@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { Env, AppVariables } from '../types/env';
-import { requireAuth, requireStaff } from '../middleware/auth';
+import { requireAuth, requirePermission, requireStaff } from '../middleware/auth';
+import { destroyAllUserSessions } from '../lib/session';
 import { getRequestBody } from '../lib/request';
 import { hashPassword } from '../lib/password';
 import { getAdminDashboardStats } from '../lib/admin';
@@ -27,6 +28,20 @@ export const adminRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>(
 
 // Protege todas as rotas do admin exigindo login e perfil staff
 adminRoutes.use('*', requireAuth, requireStaff);
+
+// RBAC Granular por módulo administrativo
+adminRoutes.use('/usuarios*', requirePermission('users.manage'));
+adminRoutes.use('/configuracoes*', requirePermission('settings.manage'));
+adminRoutes.use('/financeiro*', requirePermission('finance.view'));
+adminRoutes.use('/clientes*', requirePermission('clients.view'));
+adminRoutes.use('/solicitacoes*', requirePermission('requests.view'));
+adminRoutes.use('/servicos*', requirePermission('services.view'));
+adminRoutes.use('/projetos*', requirePermission('projects.view'));
+adminRoutes.use('/dominios*', requirePermission('domains.view'));
+adminRoutes.use('/campanhas*', requirePermission('campaigns.view'));
+adminRoutes.use('/orcamentos*', requirePermission('quotations.view'));
+adminRoutes.use('/atendimento*', requirePermission('chat.view'));
+adminRoutes.use('/crm-autonomo*', requirePermission('chat.manage'));
 
 // Helper para obter mensagens de feedback
 function getFlashMessages(c: any) {
@@ -916,6 +931,10 @@ adminRoutes.post('/usuarios/:id/status', async (c) => {
         `UPDATE users SET is_active = ?, updated_at = datetime('now') WHERE id = ?`
     ).bind(isActive, id).run();
 
+    if (isActive === 0) {
+        await destroyAllUserSessions(c.env, Number(id));
+    }
+
     return c.redirect('/admin/usuarios?success=Status do usuário atualizado com sucesso');
 });
 
@@ -929,6 +948,7 @@ adminRoutes.post('/usuarios/:id/excluir', async (c) => {
     }
 
     try {
+        await destroyAllUserSessions(c.env, id);
         await db.prepare(`DELETE FROM users WHERE id = ?`).bind(id).run();
     } catch {
         return c.redirect('/admin/usuarios?error=Não foi possível excluir este usuário.');

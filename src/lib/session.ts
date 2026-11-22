@@ -110,6 +110,19 @@ export async function destroyAllUserSessionsExcept(
     userId: number,
     keepSessionId: string
 ): Promise<void> {
+    try {
+        const rows = await env.DB.prepare(
+            `SELECT id FROM sessions WHERE user_id = ? AND id != ?`
+        )
+            .bind(userId, keepSessionId)
+            .all<{ id: string }>();
+        for (const r of rows.results || []) {
+            try {
+                await env.KV_SESSIONS.delete(`session:${r.id}`);
+            } catch {}
+        }
+    } catch {}
+
     await env.DB.prepare(
         `DELETE FROM sessions WHERE user_id = ? AND id != ?`
     )
@@ -118,6 +131,19 @@ export async function destroyAllUserSessionsExcept(
 }
 
 export async function destroyAllUserSessions(env: Env, userId: number): Promise<void> {
+    try {
+        const rows = await env.DB.prepare(
+            `SELECT id FROM sessions WHERE user_id = ?`
+        )
+            .bind(userId)
+            .all<{ id: string }>();
+        for (const r of rows.results || []) {
+            try {
+                await env.KV_SESSIONS.delete(`session:${r.id}`);
+            } catch {}
+        }
+    } catch {}
+
     await env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(userId).run();
 }
 
