@@ -12,15 +12,84 @@ interface AdminRequestsProps {
     errorMessage?: string | null;
 }
 
-const STATUS_META: Record<string, { label: string; badgeClass: string }> = {
-    new: { label: 'Novo', badgeClass: 'gt-badge-warning' },
-    analyzing: { label: 'Em Análise', badgeClass: 'gt-badge-info' },
-    quotation_sent: { label: 'Orçamento Enviado', badgeClass: 'gt-badge-info' },
-    approved: { label: 'Aprovado', badgeClass: 'gt-badge-success' },
-    in_progress: { label: 'Em Execução', badgeClass: 'gt-badge-info' },
-    completed: { label: 'Concluído', badgeClass: 'gt-badge-success' },
-    cancelled: { label: 'Cancelado', badgeClass: 'gt-badge-danger' }
+const STATUS_META: Record<string, { label: string; badgeClass: string; dotClass: string }> = {
+    new: { label: 'Novo', badgeClass: 'gt-badge-warning', dotClass: '' },
+    analyzing: { label: 'Em Análise', badgeClass: 'gt-badge-info', dotClass: 'gt-timeline-dot--info' },
+    quotation_sent: { label: 'Orçamento Enviado', badgeClass: 'gt-badge-info', dotClass: '' },
+    approved: { label: 'Aprovado', badgeClass: 'gt-badge-success', dotClass: 'gt-timeline-dot--success' },
+    in_progress: { label: 'Em Execução', badgeClass: 'gt-badge-info', dotClass: 'gt-timeline-dot--info' },
+    completed: { label: 'Concluído', badgeClass: 'gt-badge-success', dotClass: 'gt-timeline-dot--success' },
+    cancelled: { label: 'Cancelado', badgeClass: 'gt-badge-danger', dotClass: 'gt-timeline-dot--danger' }
 };
+
+const PIPELINE_STEPS = [
+    { key: 'new', label: 'Recebido' },
+    { key: 'analyzing', label: 'Análise' },
+    { key: 'quotation_sent', label: 'Orçamento' },
+    { key: 'approved', label: 'Aprovado' },
+    { key: 'in_progress', label: 'Execução' },
+    { key: 'completed', label: 'Concluído' },
+];
+
+const ACTION_LABELS: Record<string, string> = {
+    created: 'Solicitação Criada',
+    edited: 'Dados Atualizados',
+    status_changed: 'Mudança de Fase',
+    converted_to_project: 'Convertido em Projeto',
+    client_approved: 'Aprovação do Cliente',
+    client_rejected: 'Revisão Solicitada',
+    project_in_progress: 'Projeto Iniciado',
+    project_completed: 'Projeto Concluído',
+    quotation_sent: 'Orçamento Enviado',
+    quotation_approved: 'Orçamento Aprovado',
+    quotation_rejected: 'Orçamento Recusado',
+    cancelled: 'Cancelamento',
+};
+
+function formatDateBrt(raw?: string | null): string {
+    if (!raw) return '—';
+    const normalized = raw.includes('T') ? raw : `${raw.replace(' ', 'T')}Z`;
+    const dt = new Date(normalized);
+    if (Number.isNaN(dt.getTime())) return raw;
+    try {
+        const parts = new Intl.DateTimeFormat('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+        }).formatToParts(dt);
+        const get = (t: string) => parts.find((p) => p.type === t)?.value || '';
+        return `${get('day')}/${get('month')}/${get('year')} às ${get('hour')}:${get('minute')}`;
+    } catch {
+        return raw;
+    }
+}
+
+function formatCurrencyBrl(val: any): string | null {
+    if (val === null || val === undefined || val === '') return null;
+    const num = Number(val);
+    if (Number.isNaN(num) || num <= 0) return null;
+    return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function parseStructuredDescription(raw?: string | null): Array<{ key: string; value: string; isUrl: boolean }> | null {
+    if (!raw || !raw.includes('|') || !raw.includes(':')) return null;
+    const segments = raw.split('|').map((s) => s.trim()).filter(Boolean);
+    if (segments.length < 2) return null;
+    const parsed: Array<{ key: string; value: string; isUrl: boolean }> = [];
+    for (const seg of segments) {
+        const idx = seg.indexOf(':');
+        if (idx <= 0 || idx > 28) return null;
+        const key = seg.slice(0, idx).trim();
+        const value = seg.slice(idx + 1).trim();
+        if (!key || !value) continue;
+        parsed.push({ key, value, isUrl: /^https?:\/\//i.test(value) });
+    }
+    return parsed.length >= 2 ? parsed : null;
+}
 
 export const AdminRequestsView: FC<AdminRequestsProps> = ({
     currentUser,
@@ -36,9 +105,15 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
     // DETALHE DA SOLICITAÇÃO
     // ----------------------------------------------------
     if (requestDetail) {
-        const meta = STATUS_META[requestDetail.status] || { label: requestDetail.status || 'Novo', badgeClass: 'gt-badge-warning' };
+        const meta = STATUS_META[requestDetail.status] || { label: requestDetail.status || 'Novo', badgeClass: 'gt-badge-warning', dotClass: '' };
         const isConvertedToProject = history.some((h: any) => h.action === 'converted_to_project');
         const canConvert = !isConvertedToProject && requestDetail.status !== 'cancelled' && requestDetail.status !== 'completed';
+        const currentStepIndex = PIPELINE_STEPS.findIndex((s) => s.key === requestDetail.status);
+        const formattedBudget = formatCurrencyBrl(requestDetail.estimated_budget);
+        const structuredDesc = parseStructuredDescription(requestDetail.description || requestDetail.briefing);
+        const phoneDigits = String(requestDetail.phone || '').replace(/\D/g, '');
+        const whatsappUrl = phoneDigits ? `https://wa.me/${phoneDigits}` : null;
+        const trackingPath = `/acompanhar-solicitacao?protocolo=${encodeURIComponent(requestDetail.protocol || '')}`;
 
         return (
             <AdminLayout
@@ -120,47 +195,178 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                 <div class="gt-grid-detail items-start">
                     {/* Coluna Principal */}
                     <section class="gtb-card gtb-kpi-gold space-y-6 min-w-0">
-                        <div class="pb-5 border-b border-white/10">
-                            <div class="flex items-center gap-2.5 flex-wrap mb-2">
-                                <span class="font-mono text-xs font-extrabold text-[#F2C230]">{requestDetail.protocol}</span>
-                                <span class={`gt-badge ${meta.badgeClass}`}>{meta.label}</span>
+                        {/* Cabeçalho Hero */}
+                        <div class="space-y-4 pb-5 border-b border-white/10">
+                            <div class="flex items-center justify-between gap-3 flex-wrap">
+                                <div class="flex items-center gap-2.5 flex-wrap">
+                                    <span class="gtb-badge-pill font-mono">{requestDetail.protocol}</span>
+                                    <span class={`gt-badge ${meta.badgeClass}`}>{meta.label}</span>
+                                    {isConvertedToProject && (
+                                        <span class="gt-badge gt-badge-info">Projeto Vinculado</span>
+                                    )}
+                                </div>
+                                <span class="text-[11px] font-semibold text-[#8C95AA]">
+                                    Aberta em {formatDateBrt(requestDetail.created_at)}
+                                </span>
                             </div>
+
                             <h1 class="gt-font-display text-xl sm:text-2xl font-extrabold text-white leading-tight">
                                 {requestDetail.service_title || requestDetail.title}
                             </h1>
-                            <p class="text-xs text-[#8C95AA] mt-1.5">
-                                Cliente: <strong class="text-white">{requestDetail.company || requestDetail.name}</strong>
-                                {requestDetail.email ? ` • ${requestDetail.email}` : ''}
-                                {requestDetail.phone ? ` • ${requestDetail.phone}` : ''}
-                            </p>
-                        </div>
 
-                        <div>
-                            <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-2.5">Descrição da Demanda</h2>
-                            <div class="gtb-surface-box rounded-xl p-4 text-[13.5px] text-white leading-relaxed whitespace-pre-wrap">
-                                {requestDetail.description || 'Sem descrição detalhada.'}
+                            {/* Chips de Contato e Valor */}
+                            <div class="gt-req-meta-grid">
+                                <div class="gt-req-meta-chip">
+                                    <span class="gt-req-meta-icon" aria-hidden="true">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    </span>
+                                    <div class="min-w-0">
+                                        <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Cliente</div>
+                                        <div class="text-xs font-bold text-white truncate">{requestDetail.company || requestDetail.name || 'Não informado'}</div>
+                                    </div>
+                                </div>
+
+                                {requestDetail.email && (
+                                    <a href={`mailto:${requestDetail.email}`} class="gt-req-meta-chip" title="Enviar e-mail">
+                                        <span class="gt-req-meta-icon" aria-hidden="true">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                                        </span>
+                                        <div class="min-w-0">
+                                            <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">E-mail</div>
+                                            <div class="text-xs font-bold text-white truncate">{requestDetail.email}</div>
+                                        </div>
+                                    </a>
+                                )}
+
+                                {requestDetail.phone && (
+                                    <a href={whatsappUrl || '#'} target="_blank" rel="noopener noreferrer" class="gt-req-meta-chip" title="Abrir no WhatsApp">
+                                        <span class="gt-req-meta-icon" aria-hidden="true">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                        </span>
+                                        <div class="min-w-0">
+                                            <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">WhatsApp / Tel</div>
+                                            <div class="text-xs font-bold text-white truncate">{requestDetail.phone}</div>
+                                        </div>
+                                    </a>
+                                )}
+
+                                {formattedBudget && (
+                                    <div class="gt-req-meta-chip">
+                                        <span class="gt-req-meta-icon gt-req-meta-icon--gold" aria-hidden="true">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                        </span>
+                                        <div class="min-w-0">
+                                            <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Valor Estimado</div>
+                                            <div class="text-xs font-extrabold text-[#F2C230] truncate">{formattedBudget}</div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
+                        {/* Esteira Visual do Pipeline */}
+                        {requestDetail.status === 'cancelled' ? (
+                            <div class="rounded-xl p-3.5 border border-red-500/30 bg-red-500/10 flex items-center gap-3 text-xs font-bold text-red-400">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                <span>Esta solicitação foi cancelada e encerrada no pipeline comercial.</span>
+                            </div>
+                        ) : (
+                            <div>
+                                <div class="flex items-center justify-between gap-2 mb-2.5">
+                                    <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Progresso no Pipeline</h2>
+                                    <span class="text-[11px] font-bold text-[#8C95AA]">
+                                        Etapa {Math.max(1, currentStepIndex + 1)} de {PIPELINE_STEPS.length}
+                                    </span>
+                                </div>
+                                <div class="gt-req-stepper" role="list" aria-label="Etapas da solicitação">
+                                    {PIPELINE_STEPS.map((step, idx) => {
+                                        const isCompletedAll = requestDetail.status === 'completed';
+                                        const isDone = isCompletedAll || (currentStepIndex >= 0 && idx < currentStepIndex);
+                                        const isActive = !isCompletedAll && idx === currentStepIndex;
+                                        return (
+                                            <div
+                                                class={`gt-req-step ${isDone ? 'is-done' : ''} ${isActive ? 'is-active' : ''}`}
+                                                role="listitem"
+                                            >
+                                                <span class="gt-req-step-dot" aria-hidden="true">
+                                                    {isDone ? (
+                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                    ) : (
+                                                        idx + 1
+                                                    )}
+                                                </span>
+                                                <span class="gt-req-step-label">{step.label}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Descrição da Demanda */}
                         <div>
-                            <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-3">Linha do Tempo / Histórico</h2>
+                            <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-2.5">Descrição da Demanda</h2>
+                            <div class="gt-req-briefing">
+                                {structuredDesc ? (
+                                    <div class="gt-req-kv-list">
+                                        {structuredDesc.map((item) => (
+                                            <div class="gt-req-kv-item">
+                                                <div class="gt-req-kv-key">{item.key}</div>
+                                                <div class="gt-req-kv-val">
+                                                    {item.isUrl ? (
+                                                        <a href={item.value} target="_blank" rel="noopener noreferrer" class="text-[#16749A] hover:underline">
+                                                            {item.value} ↗
+                                                        </a>
+                                                    ) : (
+                                                        item.value
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div class="text-[13.5px] text-white leading-relaxed whitespace-pre-wrap">
+                                        {requestDetail.description || requestDetail.briefing || 'Sem descrição detalhada.'}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Linha do Tempo Vertical */}
+                        <div>
+                            <div class="flex items-center justify-between gap-2 mb-3">
+                                <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Linha do Tempo / Histórico</h2>
+                                <span class="text-[11px] font-bold text-[#8C95AA]">{history.length} {history.length === 1 ? 'registro' : 'registros'}</span>
+                            </div>
+
                             {history.length === 0 ? (
                                 <div class="gtb-surface-box rounded-xl p-4 text-xs text-[#8C95AA]">
                                     Nenhum histórico de movimentação registrado.
                                 </div>
                             ) : (
-                                <div class="space-y-2.5">
+                                <div class="gt-timeline">
                                     {history.map((h: any) => {
                                         const st = h.new_status || h.to_status || h.status_to || h.action;
-                                        const stLabel = STATUS_META[st]?.label || st;
+                                        const stMeta = STATUS_META[st];
+                                        const stLabel = stMeta?.label || st;
+                                        const actionTag = h.action && ACTION_LABELS[h.action] ? ACTION_LABELS[h.action] : null;
+                                        const noteText = h.comment || h.notes;
                                         return (
-                                            <div class="gtb-surface-box rounded-xl px-4 py-3">
-                                                <div class="flex items-center justify-between gap-2 text-xs">
-                                                    <strong class="text-[#F2C230]">{stLabel}</strong>
-                                                    <span class="text-[11px] text-[#8C95AA]">{h.created_at}</span>
+                                            <div class="gt-timeline-item">
+                                                <span class={`gt-timeline-dot ${stMeta?.dotClass || ''}`} aria-hidden="true"></span>
+                                                <div class="flex items-center justify-between gap-2 flex-wrap">
+                                                    <div class="flex items-center gap-2 flex-wrap">
+                                                        <span class={`gt-badge ${stMeta?.badgeClass || 'gt-badge-warning'}`}>{stLabel}</span>
+                                                        {actionTag && (
+                                                            <span class="text-[11px] font-bold text-[#8C95AA]">{actionTag}</span>
+                                                        )}
+                                                    </div>
+                                                    <span class="text-[11px] font-semibold text-[#8C95AA]">
+                                                        {formatDateBrt(h.created_at)}
+                                                    </span>
                                                 </div>
-                                                {(h.comment || h.notes) && (
-                                                    <p class="text-xs text-[#D5DCEB] mt-1 leading-relaxed">{h.comment || h.notes}</p>
+                                                {noteText && (
+                                                    <p class="text-xs text-[#D5DCEB] mt-2 leading-relaxed">{noteText}</p>
                                                 )}
                                             </div>
                                         );
@@ -170,42 +376,85 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                         </div>
                     </section>
 
-                    {/* Coluna Lateral: Atualizar Status */}
-                    <aside class="gtb-card space-y-4 min-w-0">
-                        <div>
-                            <h2 class="gt-font-display text-sm font-extrabold text-white">Atualizar Status Operacional</h2>
-                            <p class="text-xs text-[#8C95AA] mt-0.5">Registre o avanço no pipeline comercial.</p>
-                        </div>
-
-                        <form action={`/admin/solicitacoes/${requestDetail.id}/status`} method="post" class="space-y-4">
-                            <div>
-                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Novo Status</label>
-                                <select name="status" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]">
-                                    <option value="new" selected={requestDetail.status === 'new'}>Novo / Recebido</option>
-                                    <option value="analyzing" selected={requestDetail.status === 'analyzing'}>Em Análise Técnica</option>
-                                    <option value="quotation_sent" selected={requestDetail.status === 'quotation_sent'}>Orçamento Enviado</option>
-                                    <option value="approved" selected={requestDetail.status === 'approved'}>Aprovado pelo Cliente</option>
-                                    <option value="in_progress" selected={requestDetail.status === 'in_progress'}>Em Execução</option>
-                                    <option value="completed" selected={requestDetail.status === 'completed'}>Concluído / Entregue</option>
-                                    <option value="cancelled" selected={requestDetail.status === 'cancelled'}>Cancelado</option>
-                                </select>
+                    {/* Coluna Lateral: Atualizar Status + Ações Rápidas */}
+                    <div class="space-y-5 min-w-0">
+                        <aside class="gtb-card gtb-kpi-petrol space-y-4 min-w-0">
+                            <div class="pb-3 border-b border-white/10">
+                                <h2 class="gt-font-display text-sm font-extrabold text-white">Atualizar Status Operacional</h2>
+                                <p class="text-xs text-[#8C95AA] mt-0.5">Registre o avanço no pipeline comercial.</p>
                             </div>
 
+                            <form action={`/admin/solicitacoes/${requestDetail.id}/status`} method="post" class="space-y-4">
+                                <div>
+                                    <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Novo Status</label>
+                                    <select name="status" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]">
+                                        <option value="new" selected={requestDetail.status === 'new'}>Novo / Recebido</option>
+                                        <option value="analyzing" selected={requestDetail.status === 'analyzing'}>Em Análise Técnica</option>
+                                        <option value="quotation_sent" selected={requestDetail.status === 'quotation_sent'}>Orçamento Enviado</option>
+                                        <option value="approved" selected={requestDetail.status === 'approved'}>Aprovado pelo Cliente</option>
+                                        <option value="in_progress" selected={requestDetail.status === 'in_progress'}>Em Execução</option>
+                                        <option value="completed" selected={requestDetail.status === 'completed'}>Concluído / Entregue</option>
+                                        <option value="cancelled" selected={requestDetail.status === 'cancelled'}>Cancelado</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Comentário de Atualização</label>
+                                    <textarea
+                                        name="comment"
+                                        rows={3}
+                                        placeholder="Descreva o motivo ou avanço desta etapa..."
+                                        class="w-full rounded-xl px-3.5 py-2.5 text-[13px]"
+                                    ></textarea>
+                                </div>
+
+                                <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm w-full justify-center">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>Salvar Alteração</span>
+                                </button>
+                            </form>
+                        </aside>
+
+                        {/* Card de Ações Rápidas & Compartilhamento */}
+                        <aside class="gtb-card space-y-3 min-w-0">
                             <div>
-                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Comentário de Atualização</label>
-                                <textarea
-                                    name="comment"
-                                    rows={3}
-                                    placeholder="Descreva o motivo ou avanço desta etapa..."
-                                    class="w-full rounded-xl px-3.5 py-2.5 text-[13px]"
-                                ></textarea>
+                                <h2 class="gt-font-display text-sm font-extrabold text-white">Ações Rápidas</h2>
+                                <p class="text-xs text-[#8C95AA] mt-0.5">Comunicação direta e rastreio do cliente.</p>
                             </div>
 
-                            <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm w-full justify-center">
-                                Salvar Alteração
-                            </button>
-                        </form>
-                    </aside>
+                            <div class="space-y-2">
+                                <button
+                                    type="button"
+                                    onclick={`var url=window.location.origin+'${trackingPath}';navigator.clipboard.writeText(url).then(function(){var el=document.getElementById('gt-copy-track-lbl');if(el){el.textContent='Link copiado!';setTimeout(function(){el.textContent='Copiar Link de Rastreio';},2000);}});`}
+                                    class="gt-quick-action-btn"
+                                >
+                                    <span class="flex items-center gap-2.5">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                                        <span id="gt-copy-track-lbl">Copiar Link de Rastreio</span>
+                                    </span>
+                                    <span class="text-[10.5px] font-extrabold text-[#F2C230]">COPIAR</span>
+                                </button>
+
+                                <a href={trackingPath} target="_blank" rel="noopener noreferrer" class="gt-quick-action-btn">
+                                    <span class="flex items-center gap-2.5">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        <span>Ver Página Pública</span>
+                                    </span>
+                                    <span class="text-[11px] text-[#8C95AA]">↗</span>
+                                </a>
+
+                                {whatsappUrl && (
+                                    <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" class="gt-quick-action-btn">
+                                        <span class="flex items-center gap-2.5">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                                            <span>Chamar no WhatsApp</span>
+                                        </span>
+                                        <span class="text-[11px] text-[#10B981] font-extrabold">ABRIR</span>
+                                    </a>
+                                )}
+                            </div>
+                        </aside>
+                    </div>
                 </div>
 
                 {/* Modal Editar Solicitação */}
