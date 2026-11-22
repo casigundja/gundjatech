@@ -43,7 +43,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
-                <link rel="stylesheet" href="/css/gt-admin.css?v=39" />
+                <link rel="stylesheet" href="/css/gt-admin.css?v=40" />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
@@ -909,13 +909,83 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                         if (ev.defaultPrevented) return;
                         var form = ev.target;
                         if (!form || form.tagName !== 'FORM') return;
+                        if (form.getAttribute('data-dirty-guard') === '1' && form.dataset.gtDirty !== '1') {
+                            ev.preventDefault();
+                            return;
+                        }
                         var btn = ev.submitter || form.querySelector('button[type="submit"], button:not([type])');
-                        if (!btn || btn.classList.contains('gt-btn-loading')) return;
+                        if (!btn || btn.disabled || btn.classList.contains('gt-btn-loading')) return;
                         var label = btn.getAttribute('data-loading-text') || 'Processando...';
                         btn.classList.add('gt-btn-loading');
                         btn.setAttribute('aria-busy', 'true');
                         btn.innerHTML = '<span class="gt-btn-spinner" aria-hidden="true"></span><span>' + label + '</span>';
                     }, false);
+
+                    // Dirty-Form Guard: só libera botões "Salvar Alteração" quando houver modificação real
+                    (function initDirtyFormGuard() {
+                        function serializeFormState(form) {
+                            var parts = [];
+                            var fields = form.querySelectorAll('input, select, textarea');
+                            for (var i = 0; i < fields.length; i++) {
+                                var el = fields[i];
+                                if (!el.name || el.type === 'hidden' || el.type === 'submit' || el.type === 'button') continue;
+                                if (el.type === 'checkbox' || el.type === 'radio') {
+                                    parts.push(el.name + '=' + (el.checked ? '1' : '0'));
+                                } else {
+                                    parts.push(el.name + '=' + String(el.value || '').trim());
+                                }
+                            }
+                            return parts.join('&');
+                        }
+
+                        function syncFormButtons(form) {
+                            var initial = form.dataset.gtInitialState || '';
+                            var current = serializeFormState(form);
+                            var isDirty = current !== initial;
+                            form.dataset.gtDirty = isDirty ? '1' : '0';
+                            var submits = form.querySelectorAll('button[type="submit"]');
+                            for (var i = 0; i < submits.length; i++) {
+                                var b = submits[i];
+                                b.disabled = !isDirty;
+                                if (!isDirty) {
+                                    b.setAttribute('data-dirty-locked', '1');
+                                    if (!b.dataset.gtOrigTitle) b.dataset.gtOrigTitle = b.getAttribute('title') || '';
+                                    b.setAttribute('title', 'Faça alguma alteração para habilitar o salvamento');
+                                } else {
+                                    b.removeAttribute('data-dirty-locked');
+                                    if (b.dataset.gtOrigTitle) b.setAttribute('title', b.dataset.gtOrigTitle);
+                                    else b.removeAttribute('title');
+                                }
+                            }
+                        }
+
+                        function bindDirtyForm(form) {
+                            if (!form || form.dataset.gtDirtyBound === '1') return;
+                            form.dataset.gtDirtyBound = '1';
+                            form.dataset.gtInitialState = serializeFormState(form);
+                            syncFormButtons(form);
+                            var onChange = function () { syncFormButtons(form); };
+                            form.addEventListener('input', onChange);
+                            form.addEventListener('change', onChange);
+                        }
+
+                        window.GT_ResetDirtyForm = function (formOrId) {
+                            var form = typeof formOrId === 'string' ? document.getElementById(formOrId) : formOrId;
+                            if (!form) return;
+                            form.dataset.gtInitialState = serializeFormState(form);
+                            syncFormButtons(form);
+                        };
+
+                        function scan() {
+                            document.querySelectorAll('form[data-dirty-guard="1"]').forEach(bindDirtyForm);
+                        }
+
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', scan);
+                        } else {
+                            scan();
+                        }
+                    })();
 
                     checkGlobalUpdates();
                 })();

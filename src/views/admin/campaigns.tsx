@@ -381,7 +381,7 @@ export const AdminCampaignsView: FC<AdminCampaignsProps> = ({
                         </button>
                     </div>
 
-                    <form id="form-editar-campanha" action="/admin/campanhas/0/editar" method="post" class="space-y-4">
+                    <form id="form-editar-campanha" action="/admin/campanhas/0/editar" method="post" data-dirty-guard="1" class="space-y-4">
                         <div>
                             <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Nome da Campanha *</label>
                             <input type="text" id="edit-camp-name" name="name" required class="w-full rounded-xl px-3.5 py-2.5 text-[13px]" />
@@ -444,6 +444,7 @@ export const AdminCampaignsView: FC<AdminCampaignsProps> = ({
                             document.getElementById('edit-camp-status').value = btn.getAttribute('data-camp-status') || 'active';
                             document.getElementById('edit-camp-budget').value = btn.getAttribute('data-camp-budget') || '0';
                             document.getElementById('edit-camp-spent').value = btn.getAttribute('data-camp-spent') || '0';
+                            if (window.GT_ResetDirtyForm) window.GT_ResetDirtyForm('form-editar-campanha');
                             document.getElementById('modal-editar-campanha').style.display = 'flex';
                         };
                     `

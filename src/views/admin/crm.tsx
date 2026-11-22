@@ -258,7 +258,7 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                         </div>
                     </div>
 
-                    <form id="gt-crm-config-form" action="/admin/crm-autonomo/configuracoes" method="post" class="space-y-3 text-xs">
+                    <form id="gt-crm-config-form" action="/admin/crm-autonomo/configuracoes" method="post" data-dirty-guard="1" class="space-y-3 text-xs">
                         {/* Bloco Compacto de Switches */}
                         <div class="gtb-surface-box rounded-xl divide-y divide-white/10 overflow-hidden">
                             <label class="flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer hover:bg-white/[0.03] transition">

@@ -2678,6 +2678,19 @@ html[data-admin-theme="light"] .gt-quick-action-btn {
     transform: translateY(-1px);
 }
 
+/* Estado desabilitado limpo para botões "Salvar Alterações" sem modificação pendente */
+.gt-btn-primary:disabled,
+.gt-btn-outline:disabled,
+.gt-btn-petrol:disabled,
+button[data-dirty-locked="1"] {
+    opacity: 0.45 !important;
+    cursor: not-allowed !important;
+    pointer-events: auto;
+    filter: grayscale(0.25);
+    transform: none !important;
+    box-shadow: none !important;
+}
+
 .gt-chat-layout {
     display: flex;
     gap: 24px;

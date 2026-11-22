@@ -335,7 +335,7 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                         </button>
                     </div>
 
-                    <form id="form-editar-servico" action="/admin/servicos/0/editar" method="post" class="space-y-4">
+                    <form id="form-editar-servico" action="/admin/servicos/0/editar" method="post" data-dirty-guard="1" class="space-y-4">
                         <div>
                             <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Nome do Pacote *</label>
                             <input type="text" id="edit-svc-title" name="title" required class="w-full rounded-xl px-3.5 py-2.5 text-[13px]" />
@@ -396,6 +396,7 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                             document.getElementById('edit-svc-summary').value = btn.getAttribute('data-svc-summary') || '';
                             document.getElementById('edit-svc-price').value = btn.getAttribute('data-svc-price') || '0';
                             document.getElementById('edit-svc-active').value = btn.getAttribute('data-svc-active') || '1';
+                            if (window.GT_ResetDirtyForm) window.GT_ResetDirtyForm('form-editar-servico');
                             document.getElementById('modal-editar-servico').style.display = 'flex';
                         };
                     `

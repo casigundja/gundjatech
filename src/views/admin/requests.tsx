@@ -384,7 +384,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                 <p class="text-xs text-[#8C95AA] mt-0.5">Registre o avanço no pipeline comercial.</p>
                             </div>
 
-                            <form action={`/admin/solicitacoes/${requestDetail.id}/status`} method="post" class="space-y-4">
+                            <form action={`/admin/solicitacoes/${requestDetail.id}/status`} method="post" data-dirty-guard="1" class="space-y-4">
                                 <div>
                                     <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Novo Status</label>
                                     <select name="status" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]">
@@ -501,7 +501,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                             </button>
                         </div>
 
-                        <form action={`/admin/solicitacoes/${requestDetail.id}/editar`} method="post" class="p-6 space-y-4">
+                        <form action={`/admin/solicitacoes/${requestDetail.id}/editar`} method="post" data-dirty-guard="1" class="p-6 space-y-4">
                             {/* Seção 1: Identificação & Orçamento */}
                             <div class="gt-modal-section space-y-3.5">
                                 <div class="gt-modal-section-title">

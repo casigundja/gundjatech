@@ -713,6 +713,11 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
         return c.redirect('/admin/solicitacoes?error=Solicitação não encontrada');
     }
 
+    // Impede registro duplicado na linha do tempo quando não houve alteração real de status nem comentário
+    if (current.status === newStatus && !notes) {
+        return c.redirect(`/admin/solicitacoes/${id}?error=${encodeURIComponent('Nenhuma alteração detectada para salvar.')}`);
+    }
+
     await db.prepare(
         `UPDATE service_requests SET status = ?, updated_at = datetime('now') WHERE id = ?`
     ).bind(newStatus, id).run();

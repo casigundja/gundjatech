@@ -112,7 +112,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                     </div>
 
                     {/* Formulário de Atualização de Status & Cronograma */}
-                    <form action={`/admin/projetos/${projectDetail.id}`} method="post" class="pt-5 border-t border-white/10 space-y-4">
+                    <form action={`/admin/projetos/${projectDetail.id}`} method="post" data-dirty-guard="1" class="pt-5 border-t border-white/10 space-y-4">
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px;">
                             <div>
                                 <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Status</label>

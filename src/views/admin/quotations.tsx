@@ -129,7 +129,7 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                             </div>
                         </div>
 
-                        <form action={`/admin/orcamentos/${quotationDetail.id}`} method="post" class="space-y-4">
+                        <form action={`/admin/orcamentos/${quotationDetail.id}`} method="post" data-dirty-guard="1" class="space-y-4">
                             <div>
                                 <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Título da Proposta *</label>
                                 <input

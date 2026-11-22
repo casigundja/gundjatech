@@ -47,7 +47,7 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                 </div>
             </div>
 
-            <form action="/admin/configuracoes" method="post" class="gt-grid-detail items-start">
+            <form action="/admin/configuracoes" method="post" data-dirty-guard="1" class="gt-grid-detail items-start">
                 {/* Coluna Principal: Dados da Empresa */}
                 <section class="gtb-card space-y-5 min-w-0">
                     <div>
