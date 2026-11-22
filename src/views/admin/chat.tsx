@@ -215,11 +215,8 @@ export const AdminChatView: FC<AdminChatProps> = ({
                                     <form action={`/admin/atendimento/${activeConversation.id}/toggle-ai`} method="post" class="m-0">
                                         <button
                                             type="submit"
-                                            class={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition ${
-                                                activeConversation.ai_enabled
-                                                    ? 'bg-[#F2C230]/15 border border-[#F2C230]/40 text-[#F2C230]'
-                                                    : 'gt-btn-outline !py-1.5 !px-3 !text-xs'
-                                            }`}
+                                            data-loading-text="..."
+                                            class={activeConversation.ai_enabled ? 'gt-btn-petrol gt-btn-xs' : 'gt-btn-outline gt-btn-xs'}
                                         >
                                             {activeConversation.ai_enabled ? 'Assumir (Pausar IA)' : 'Reativar IA'}
                                         </button>
@@ -230,8 +227,28 @@ export const AdminChatView: FC<AdminChatProps> = ({
                                         method="post"
                                         class="m-0"
                                     >
-                                        <button type="submit" class="gt-btn-outline !py-1.5 !px-3 !text-xs">
-                                            {activeConversation.status === 'open' ? 'Encerrar Atendimento' : 'Reabrir'}
+                                        <button type="submit" data-loading-text="..." class="gt-btn-outline gt-btn-xs">
+                                            {activeConversation.status === 'open' ? 'Encerrar' : 'Reabrir'}
+                                        </button>
+                                    </form>
+
+                                    <form
+                                        action={`/admin/atendimento/${activeConversation.id}/excluir`}
+                                        method="post"
+                                        class="m-0"
+                                        onsubmit="return confirm('Deseja realmente excluir esta conversa e todo o histórico de mensagens?')"
+                                    >
+                                        <button
+                                            type="submit"
+                                            class="gt-btn-danger-ghost gt-btn-icon-only"
+                                            title="Excluir conversa"
+                                            aria-label="Excluir conversa"
+                                        >
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M3 6h18" />
+                                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                            </svg>
                                         </button>
                                     </form>
                                 </div>
@@ -274,7 +291,8 @@ export const AdminChatView: FC<AdminChatProps> = ({
                                         return (
                                             <div class={`flex flex-col ${isClient ? 'items-start' : 'items-end'}`}>
                                                 <div
-                                                    class={`max-w-[78%] sm:max-w-[70%] px-4 py-3 rounded-2xl text-[13px] leading-relaxed ${
+                                                    style="max-width: min(76%, 620px);"
+                                                    class={`px-4 py-3 rounded-2xl text-[13px] leading-relaxed ${
                                                         isClient
                                                             ? 'gtb-chat-bubble-client rounded-tl-xs'
                                                             : 'gtb-chat-bubble-staff rounded-tr-xs'
@@ -306,8 +324,12 @@ export const AdminChatView: FC<AdminChatProps> = ({
                                         placeholder="Digite sua resposta em tempo real..."
                                         class="flex-1 min-w-0 rounded-xl px-4 py-2.5 text-[13px]"
                                     />
-                                    <button type="submit" class="btn-primary px-5 py-2.5 text-xs shrink-0">
-                                        Enviar
+                                    <button type="submit" data-loading-text="..." class="gt-btn-primary gt-btn-sm shrink-0">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="m22 2-7 20-4-9-9-4Z" />
+                                            <path d="M22 2 11 13" />
+                                        </svg>
+                                        <span>Enviar</span>
                                     </button>
                                 </form>
                             </div>
@@ -348,7 +370,8 @@ export const AdminChatView: FC<AdminChatProps> = ({
                                         var wrap = document.createElement('div');
                                         wrap.className = 'flex flex-col ' + (isClient ? 'items-start' : 'items-end');
                                         var bubble = document.createElement('div');
-                                        bubble.className = 'max-w-[78%] sm:max-w-[70%] px-4 py-3 rounded-2xl text-[13px] leading-relaxed ' + (isClient ? 'gtb-chat-bubble-client rounded-tl-xs' : 'gtb-chat-bubble-staff rounded-tr-xs');
+                                        bubble.style.maxWidth = 'min(76%, 620px)';
+                                        bubble.className = 'px-4 py-3 rounded-2xl text-[13px] leading-relaxed ' + (isClient ? 'gtb-chat-bubble-client rounded-tl-xs' : 'gtb-chat-bubble-staff rounded-tr-xs');
                                         bubble.textContent = m.message;
                                         wrap.appendChild(bubble);
                                         box.appendChild(wrap);

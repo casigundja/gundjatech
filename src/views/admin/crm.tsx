@@ -149,54 +149,81 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                                         const stageLabel = STAGE_LABELS[conv.crm_stage] || conv.crm_stage || 'Qualificação';
                                         return (
                                             <tr class="hover:bg-white/[0.02]">
-                                                <td class="py-3 px-3 align-top">
+                                                <td class="py-3.5 px-3 align-middle">
                                                     <div class="font-bold text-white">{conv.visitor_name || 'Visitante'}</div>
-                                                    <div class="text-[10.5px] text-[#8C95AA]">{conv.visitor_email || '—'}</div>
-                                                    {conv.visitor_phone && <div class="text-[10px] text-[#F2C230] font-semibold mt-0.5">{conv.visitor_phone}</div>}
+                                                    {conv.visitor_email && !String(conv.visitor_email).endsWith('.local') && (
+                                                        <div class="text-[11px] text-[#8C95AA]">{conv.visitor_email}</div>
+                                                    )}
+                                                    {conv.visitor_phone && (
+                                                        <div class="text-[11px] text-[#F2C230] font-mono font-semibold mt-0.5">{conv.visitor_phone}</div>
+                                                    )}
                                                 </td>
-                                                <td class="py-3 px-3 align-top whitespace-nowrap">
+                                                <td class="py-3.5 px-3 align-middle whitespace-nowrap">
                                                     <div class="font-extrabold text-white">{score}/100</div>
-                                                    <div class="w-16 h-1.5 rounded-full bg-[#222738] overflow-hidden mt-1">
+                                                    <div class="w-16 h-1.5 rounded-full overflow-hidden mt-1" style="background: rgba(140, 149, 170, 0.22);">
                                                         <div class="h-full rounded-full" style={`width: ${Math.min(100, score)}%; background: linear-gradient(90deg, #F2C230 0%, #34D399 100%);`}></div>
                                                     </div>
                                                 </td>
-                                                <td class="py-3.5 px-3 align-top max-w-xs">
+                                                <td class="py-3.5 px-3 align-middle max-w-xs">
                                                     <div class="flex items-center gap-1.5 flex-wrap mb-1">
                                                         <span class="inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#16749A]/25 text-[#38BDF8]">
                                                             {stageLabel}
                                                         </span>
-                                                        {conv.channel === 'whatsapp' && (
+                                                        {conv.channel === 'whatsapp' ? (
                                                             <span class="inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-[#6EE7B7]">
                                                                 WhatsApp
                                                             </span>
+                                                        ) : (
+                                                            <span class="inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold bg-sky-500/15 text-sky-300">
+                                                                Site
+                                                            </span>
                                                         )}
                                                     </div>
-                                                    <p class="text-[11px] text-[#D5DCEB] leading-snug">{conv.subject || 'Atendimento Web'}</p>
+                                                    <p class="text-[11.5px] text-[#D5DCEB] leading-snug truncate max-w-[240px]">{conv.subject || 'Atendimento Web'}</p>
                                                 </td>
-                                                <td class="py-3 px-3 align-top whitespace-nowrap">
+                                                <td class="py-3.5 px-3 align-middle whitespace-nowrap">
                                                     {conv.ai_enabled && conv.status !== 'closed' ? (
-                                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F2C230]/15 border border-[#F2C230]/35 text-[#F2C230] text-[10px] font-bold">
+                                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#F2C230]/15 border border-[#F2C230]/35 text-[#F2C230] text-[10px] font-bold">
                                                             Piloto IA
                                                         </span>
                                                     ) : (
-                                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[#D5DCEB] text-[10px] font-bold">
+                                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-[#D5DCEB] text-[10px] font-bold">
                                                             Humano
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td class="py-3 px-3 align-top text-right whitespace-nowrap space-y-1.5">
-                                                    <div>
-                                                        <a href={`/admin/atendimento?id=${conv.id}`} class="gt-btn-primary !py-1.5 !px-3 !text-[11px]">
+                                                <td class="py-3.5 px-3 align-middle text-right whitespace-nowrap">
+                                                    <div class="inline-flex items-center gap-1.5">
+                                                        <a href={`/admin/atendimento?id=${conv.id}`} class="gt-btn-primary gt-btn-xs">
                                                             Abrir Chat
                                                         </a>
-                                                    </div>
-                                                    {conv.status !== 'closed' && (
-                                                        <form action={`/admin/atendimento/${conv.id}/toggle-ai`} method="post">
-                                                            <button type="submit" class="gt-btn-outline !py-1 !px-2.5 !text-[10px]">
-                                                                {conv.ai_enabled ? 'Assumir (Pausar IA)' : 'Reativar IA'}
+                                                        {conv.status !== 'closed' && (
+                                                            <form action={`/admin/atendimento/${conv.id}/toggle-ai`} method="post" class="inline-block m-0">
+                                                                <button type="submit" data-loading-text="..." class="gt-btn-outline gt-btn-xs">
+                                                                    {conv.ai_enabled ? 'Pausar IA' : 'Reativar IA'}
+                                                                </button>
+                                                            </form>
+                                                        )}
+                                                        <form
+                                                            action={`/admin/atendimento/${conv.id}/excluir`}
+                                                            method="post"
+                                                            class="inline-block m-0"
+                                                            onsubmit="return confirm('Deseja realmente excluir esta conversa e todo o histórico de mensagens?')"
+                                                        >
+                                                            <button
+                                                                type="submit"
+                                                                class="gt-btn-danger-ghost gt-btn-icon-only"
+                                                                title="Excluir conversa"
+                                                                aria-label="Excluir conversa"
+                                                            >
+                                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                    <path d="M3 6h18" />
+                                                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                                                </svg>
                                                             </button>
                                                         </form>
-                                                    )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );

@@ -697,6 +697,22 @@ adminRoutes.post('/atendimento/:id/reabrir', async (c) => {
     return c.redirect(`/admin/atendimento?id=${id}&success=Conversa reaberta com sucesso`);
 });
 
+adminRoutes.post('/atendimento/:id/excluir', async (c) => {
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+
+    if (id > 0) {
+        try {
+            await db.prepare(`DELETE FROM conversation_messages WHERE conversation_id = ?`).bind(id).run();
+            await db.prepare(`DELETE FROM conversations WHERE id = ?`).bind(id).run();
+        } catch {}
+    }
+
+    const referer = c.req.header('referer') || '';
+    const backUrl = referer.includes('/admin/crm-autonomo') ? '/admin/crm-autonomo' : '/admin/atendimento';
+    return c.redirect(`${backUrl}?success=Conversa excluída com sucesso.`);
+});
+
 // ==========================================
 // 7. GESTÃO AVANÇADA DE PROJETOS & ENTREGAS
 // ==========================================
