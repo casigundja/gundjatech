@@ -142,43 +142,46 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                     <div class="space-y-4">
                         <div class="gtb-card !p-5">
                             <div class="gtb-card-accent-top gtb-card-accent-blue"></div>
-                            <h2 class="text-xs font-extrabold uppercase tracking-wider text-[#F2C230] mb-3.5">Como Funciona</h2>
-                            <div class="space-y-3.5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h2 class="text-xs font-extrabold uppercase tracking-wider text-[#16749A]">Fluxo de Atendimento</h2>
+                                <span class="text-[10.5px] font-bold text-[#8C95AA]">3 etapas</span>
+                            </div>
+                            <div class="space-y-4">
                                 <div class="flex items-start gap-3">
-                                    <span class="w-6 h-6 rounded-full bg-[#063B5C] border border-[#16749A]/50 text-[#F2C230] text-[11px] font-extrabold flex items-center justify-center shrink-0">1</span>
+                                    <span class="w-7 h-7 rounded-lg bg-[#063B5C] border border-[#16749A]/50 text-[#F2C230] text-xs font-extrabold flex items-center justify-center shrink-0">1</span>
                                     <div>
-                                        <div class="text-xs font-bold text-white">Protocolo &amp; Triagem</div>
-                                        <div class="text-[11px] text-[#8C95AA] mt-0.5">Seu pedido recebe um código único GNDJ e entra na fila de engenharia.</div>
+                                        <div class="text-xs font-extrabold text-white">Protocolo &amp; Triagem</div>
+                                        <div class="text-[11px] text-[#8C95AA] mt-0.5 leading-relaxed">Seu pedido recebe um código único GNDJ e entra na fila prioritária de engenharia.</div>
                                     </div>
                                 </div>
                                 <div class="flex items-start gap-3">
-                                    <span class="w-6 h-6 rounded-full bg-[#063B5C] border border-[#16749A]/50 text-[#F2C230] text-[11px] font-extrabold flex items-center justify-center shrink-0">2</span>
+                                    <span class="w-7 h-7 rounded-lg bg-[#063B5C] border border-[#16749A]/50 text-[#F2C230] text-xs font-extrabold flex items-center justify-center shrink-0">2</span>
                                     <div>
-                                        <div class="text-xs font-bold text-white">Orçamento Transparente</div>
-                                        <div class="text-[11px] text-[#8C95AA] mt-0.5">Enviamos a proposta detalhada com prazo e investimento para aprovação em 1 clique.</div>
+                                        <div class="text-xs font-extrabold text-white">Orçamento Transparente</div>
+                                        <div class="text-[11px] text-[#8C95AA] mt-0.5 leading-relaxed">Enviamos a proposta detalhada com escopo, prazo e valor para aprovação em 1 clique.</div>
                                     </div>
                                 </div>
                                 <div class="flex items-start gap-3">
-                                    <span class="w-6 h-6 rounded-full bg-[#063B5C] border border-[#16749A]/50 text-[#F2C230] text-[11px] font-extrabold flex items-center justify-center shrink-0">3</span>
+                                    <span class="w-7 h-7 rounded-lg bg-[#063B5C] border border-[#16749A]/50 text-[#F2C230] text-xs font-extrabold flex items-center justify-center shrink-0">3</span>
                                     <div>
-                                        <div class="text-xs font-bold text-white">Execução &amp; Entregas</div>
-                                        <div class="text-[11px] text-[#8C95AA] mt-0.5">Acompanhe cada etapa, percentual concluído e arquivos direto pelo Portal.</div>
+                                        <div class="text-xs font-extrabold text-white">Execução &amp; Entregas</div>
+                                        <div class="text-[11px] text-[#8C95AA] mt-0.5 leading-relaxed">Acompanhe cada etapa, percentual concluído e arquivos direto pelo Portal.</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="gtb-card !p-5">
+                        <div class="gt-petrol-cta-card rounded-2xl p-5">
                             <div class="flex items-center gap-2.5 mb-2">
-                                <span class="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                                <span class="w-8 h-8 rounded-lg bg-[#F2C230]/20 border border-[#F2C230]/40 flex items-center justify-center text-[#F2C230] shrink-0">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
                                 </span>
-                                <div class="text-xs font-extrabold text-white">Precisa de ajuda no escopo?</div>
+                                <div class="gt-petrol-cta-title">Precisa de ajuda no escopo?</div>
                             </div>
-                            <p class="text-[11px] text-[#8C95AA] leading-relaxed mb-3.5">
-                                Fale diretamente com nossa equipe técnica no chat em tempo real antes de enviar.
+                            <p class="gt-petrol-cta-desc">
+                                Fale diretamente com nossa equipe técnica no chat em tempo real antes de enviar sua solicitação.
                             </p>
-                            <a href="/portal/atendimento" class="gt-btn-outline gt-btn-xs w-full justify-center">
+                            <a href="/portal/atendimento" class="gt-btn-primary gt-btn-sm w-full justify-center">
                                 <span>Abrir Chat com Engenharia</span>
                                 <span>&rarr;</span>
                             </a>

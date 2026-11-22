@@ -2986,6 +2986,27 @@ html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-danger {
     border-color: #FCA5A5 !important;
 }
 
+/* Signature Petrol Accent CTA Card (High Contrast in Light & Dark Mode) */
+.gt-petrol-cta-card {
+    background: linear-gradient(135deg, #042840 0%, #063B5C 60%, #16749A 100%) !important;
+    border: 1px solid rgba(22, 116, 154, 0.45) !important;
+    box-shadow: 0 14px 30px -12px rgba(6, 59, 92, 0.38);
+}
+
+.gt-petrol-cta-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #FFFFFF !important;
+}
+
+.gt-petrol-cta-desc {
+    font-size: 12px;
+    line-height: 1.55;
+    color: #D5E6F0 !important;
+    margin-bottom: 14px;
+}
+
+
 
 
 

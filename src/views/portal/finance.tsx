@@ -49,7 +49,9 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                                 R$ {totalPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </div>
                         </div>
-                        <span class="gt-badge gt-badge-success">Pago</span>
+                        <span class="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        </span>
                     </div>
 
                     <div class="gtb-card !p-4 flex items-center justify-between gap-2">
@@ -60,7 +62,9 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                                 R$ {totalPending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </div>
                         </div>
-                        <span class="gt-badge gt-badge-warning">Aberto</span>
+                        <span class="w-9 h-9 rounded-xl bg-[#F2C230]/15 border border-[#F2C230]/30 flex items-center justify-center text-[#F2C230] shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </span>
                     </div>
 
                     <div class="gtb-card !p-4 flex items-center justify-between gap-2">
@@ -69,7 +73,9 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                             <div class="text-[10.5px] font-bold uppercase tracking-wider text-[#8C95AA]">Total de Lançamentos</div>
                             <div class="text-lg font-extrabold text-white mt-0.5">{transactions.length}</div>
                         </div>
-                        <span class="gtb-pill-neutral">Faturas</span>
+                        <span class="w-9 h-9 rounded-xl bg-[#16749A]/15 border border-[#16749A]/30 flex items-center justify-center text-[#16749A] shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                        </span>
                     </div>
                 </div>
             )}

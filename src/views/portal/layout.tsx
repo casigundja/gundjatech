@@ -42,7 +42,7 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
-                <link rel="stylesheet" href="/css/gt-admin.css?v=32" />
+                <link rel="stylesheet" href="/css/gt-admin.css?v=33" />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
@@ -99,19 +99,14 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                                     Gundja<span class="gtb-brand-tech text-[#F2C230] font-normal">Tech</span>
                                 </span>
                             </a>
-                            <div class="flex items-center gap-2">
-                                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-[#F2C230]/15 text-[#F2C230] border border-[#F2C230]/35">
-                                    Cliente
-                                </span>
-                                <button
-                                    type="button"
-                                    onclick="document.getElementById('gt-portal-sidebar').classList.add('-translate-x-full');document.getElementById('gt-portal-backdrop').classList.add('hidden')"
-                                    class="text-gray-400 hover:text-white lg:hidden p-1"
-                                    aria-label="Fechar menu"
-                                >
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                </button>
-                            </div>
+                            <button
+                                type="button"
+                                onclick="document.getElementById('gt-portal-sidebar').classList.add('-translate-x-full');document.getElementById('gt-portal-backdrop').classList.add('hidden')"
+                                class="text-gray-400 hover:text-white lg:hidden p-1"
+                                aria-label="Fechar menu"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
                         </div>
 
                         {/* Active Client Workspace Card */}

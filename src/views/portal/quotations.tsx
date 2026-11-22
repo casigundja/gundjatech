@@ -152,7 +152,9 @@ export const PortalQuotationsView: FC<PortalQuotationsProps> = ({
                         <div class="text-[10.5px] font-bold uppercase tracking-wider text-[#8C95AA]">Total de Propostas</div>
                         <div class="text-xl font-extrabold text-white mt-0.5">{quotations.length}</div>
                     </div>
-                    <span class="gtb-pill-neutral">Recebidas</span>
+                    <span class="w-9 h-9 rounded-xl bg-[#16749A]/15 border border-[#16749A]/30 flex items-center justify-center text-[#16749A] shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg>
+                    </span>
                 </div>
 
                 <div class="gtb-card !p-4 flex items-center justify-between gap-2">
@@ -161,7 +163,9 @@ export const PortalQuotationsView: FC<PortalQuotationsProps> = ({
                         <div class="text-[10.5px] font-bold uppercase tracking-wider text-[#8C95AA]">Aguardando Aprovação</div>
                         <div class="text-xl font-extrabold text-[#F2C230] mt-0.5">{pendingCount}</div>
                     </div>
-                    <span class="gt-badge gt-badge-warning">Pendentes</span>
+                    <span class="w-9 h-9 rounded-xl bg-[#F2C230]/15 border border-[#F2C230]/30 flex items-center justify-center text-[#F2C230] shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </span>
                 </div>
 
                 <div class="gtb-card !p-4 flex items-center justify-between gap-2">
@@ -170,7 +174,9 @@ export const PortalQuotationsView: FC<PortalQuotationsProps> = ({
                         <div class="text-[10.5px] font-bold uppercase tracking-wider text-[#8C95AA]">Propostas Aprovadas</div>
                         <div class="text-xl font-extrabold text-emerald-400 mt-0.5">{approvedCount}</div>
                     </div>
-                    <span class="gt-badge gt-badge-success">Aprovadas</span>
+                    <span class="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    </span>
                 </div>
             </div>
 
