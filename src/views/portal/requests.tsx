@@ -48,7 +48,7 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
             >
                 <div class="gt-detail-toolbar">
                     <a href="/portal/solicitacoes" class="gt-back-link">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
                         <span>Voltar para Solicitações</span>
                     </a>
                 </div>
@@ -58,7 +58,7 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                         <div class="gtb-card-accent-top gtb-card-accent-gold"></div>
                         <div class="flex items-center gap-3 pb-4 mb-5 border-b border-white/10">
                             <span class="w-10 h-10 rounded-xl bg-[#F2C230]/15 border border-[#F2C230]/35 flex items-center justify-center text-[#F2C230] shrink-0">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                             </span>
                             <div>
                                 <h1 class="gt-font-display text-lg font-extrabold text-white">Abrir Nova Solicitação</h1>
@@ -176,7 +176,7 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                         <div class="gt-petrol-cta-card rounded-2xl p-5">
                             <div class="flex items-center gap-2.5 mb-2">
                                 <span class="w-8 h-8 rounded-lg bg-[#F2C230]/20 border border-[#F2C230]/40 flex items-center justify-center text-[#F2C230] shrink-0">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
                                 </span>
                                 <div class="gt-petrol-cta-title">Precisa de ajuda no escopo?</div>
                             </div>
@@ -206,7 +206,7 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
             >
                 <div class="gt-detail-toolbar">
                     <a href="/portal/solicitacoes" class="gt-back-link">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
                         <span>Voltar para Solicitações</span>
                     </a>
                 </div>
@@ -233,7 +233,7 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                                 </form>
                                 <form action={`/portal/solicitacoes/${requestDetail.id}/aprovar`} method="post" class="m-0">
                                     <button type="submit" class="gt-btn-primary gt-btn-sm">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
                                         <span>Aprovar Orçamento</span>
                                     </button>
                                 </form>
@@ -253,7 +253,7 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                             {history.map((h: any) => (
                                 <div class="flex items-start gap-3.5 p-3.5 rounded-xl bg-[#032033]/40 border border-white/10">
                                     <span class="w-7 h-7 rounded-lg bg-[#16749A]/15 border border-[#16749A]/30 flex items-center justify-center text-[#16749A] shrink-0">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                     </span>
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center justify-between gap-2 flex-wrap">
@@ -286,7 +286,7 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                     <p class="text-xs text-[#8C95AA] mt-1">Consulte e acompanhe suas demandas, orçamentos solicitados e prazos.</p>
                 </div>
                 <a href="/portal/solicitacoes/nova" class="gt-btn-primary gt-btn-sm">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
                     <span>+ Nova Solicitação</span>
                 </a>
             </div>
@@ -294,7 +294,7 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
             {requests.length === 0 ? (
                 <div class="gtb-card !p-10 text-center">
                     <div class="w-12 h-12 rounded-2xl bg-[#F2C230]/15 border border-[#F2C230]/30 flex items-center justify-center text-[#F2C230] mx-auto mb-3">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     </div>
                     <h3 class="text-sm font-extrabold text-white">Nenhuma solicitação aberta.</h3>
                     <p class="text-xs text-[#8C95AA] mt-1 mb-5">Precisa de um novo site, funcionalidade ou ajuste técnico? Abra sua solicitação agora mesmo.</p>
