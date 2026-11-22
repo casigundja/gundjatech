@@ -12,6 +12,16 @@ interface AdminRequestsProps {
     errorMessage?: string | null;
 }
 
+const STATUS_META: Record<string, { label: string; badgeClass: string }> = {
+    new: { label: 'Novo', badgeClass: 'gt-badge-warning' },
+    analyzing: { label: 'Em Análise', badgeClass: 'gt-badge-info' },
+    quotation_sent: { label: 'Orçamento Enviado', badgeClass: 'gt-badge-info' },
+    approved: { label: 'Aprovado', badgeClass: 'gt-badge-success' },
+    in_progress: { label: 'Em Execução', badgeClass: 'gt-badge-info' },
+    completed: { label: 'Concluído', badgeClass: 'gt-badge-success' },
+    cancelled: { label: 'Cancelado', badgeClass: 'gt-badge-danger' }
+};
+
 export const AdminRequestsView: FC<AdminRequestsProps> = ({
     currentUser,
     requests = [],
@@ -22,7 +32,12 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
     successMessage,
     errorMessage
 }) => {
+    // ----------------------------------------------------
+    // DETALHE DA SOLICITAÇÃO
+    // ----------------------------------------------------
     if (requestDetail) {
+        const meta = STATUS_META[requestDetail.status] || { label: requestDetail.status || 'Novo', badgeClass: 'gt-badge-warning' };
+
         return (
             <AdminLayout
                 title={`Solicitação ${requestDetail.protocol} • Painel Administrativo`}
@@ -31,88 +46,153 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                 successMessage={successMessage}
                 errorMessage={errorMessage}
             >
-                <div style="margin-bottom: 20px;">
-                    <a href="/admin/solicitacoes" style="font-size: 13px; font-weight: 700; color: #F2C230; text-decoration: none;">&larr; Voltar para Solicitações</a>
-                </div>
+                <div class="gt-detail-toolbar">
+                    <a href="/admin/solicitacoes" class="gt-back-link">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5" />
+                            <path d="m12 19-7-7 7-7" />
+                        </svg>
+                        <span>Voltar para Solicitações</span>
+                    </a>
 
-                <div class="gt-card" style="padding: 24px; margin-bottom: 24px;">
-                    <div class="gt-page-header" style="align-items: flex-start; border-bottom: 1px solid var(--gt-border); padding-bottom: 20px; margin-bottom: 20px;">
-                        <div>
-                            <span class="gt-badge gt-badge-warning" style="margin-bottom: 8px;">{requestDetail.status}</span>
-                            <h1 style="font-size: 22px; font-weight: 800; color: #FFFFFF;">{requestDetail.service_title}</h1>
-                            <div style="font-size: 12px; color: #8CAAB9; margin-top: 4px; word-break: break-word;">Protocolo: <strong>{requestDetail.protocol}</strong> | Cliente: <strong>{requestDetail.company || requestDetail.name}</strong> ({requestDetail.email})</div>
-                        </div>
+                    <div class="gt-detail-toolbar-actions">
+                        <form action={`/admin/solicitacoes/${requestDetail.id}/converter`} method="post" class="m-0">
+                            <button type="submit" data-loading-text="Convertendo..." class="gt-btn-primary gt-btn-sm">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
+                                    <path d="M12 10v6" />
+                                    <path d="M9 13h6" />
+                                </svg>
+                                <span>Converter em Projeto</span>
+                            </button>
+                        </form>
 
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <form action={`/admin/solicitacoes/${requestDetail.id}/converter`} method="post">
-                                <button type="submit" class="gt-btn-primary" style="font-size: 12px;">
-                                    🚀 Converter em Projeto
-                                </button>
-                            </form>
-                            <form action={`/admin/solicitacoes/${requestDetail.id}/cancelar`} method="post">
-                                <button type="submit" class="gt-btn-outline" style="color: #F87171; border-color: rgba(239, 68, 68, 0.4); font-size: 12px;">
+                        {requestDetail.status !== 'cancelled' && (
+                            <form action={`/admin/solicitacoes/${requestDetail.id}/cancelar`} method="post" class="m-0">
+                                <button type="submit" data-loading-text="Cancelando..." class="gt-btn-outline gt-btn-sm">
                                     Cancelar
                                 </button>
                             </form>
-                        </div>
+                        )}
+
+                        <form
+                            action={`/admin/solicitacoes/${requestDetail.id}/excluir`}
+                            method="post"
+                            class="m-0"
+                            onsubmit="return confirm('Deseja realmente excluir esta solicitação permanentemente?')"
+                        >
+                            <button type="submit" data-loading-text="Excluindo..." class="gt-btn-danger-ghost gt-btn-sm">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 6h18" />
+                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                </svg>
+                                <span>Excluir</span>
+                            </button>
+                        </form>
                     </div>
+                </div>
 
-                    <div class="gt-grid-detail">
-                        <div>
-                            <h2 style="font-size: 14px; font-weight: 800; text-transform: uppercase; color: #8CAAB9; margin-bottom: 10px;">Descrição da Demanda</h2>
-                            <p style="font-size: 14px; color: #E7F0F5; line-height: 1.6; white-space: pre-wrap; padding: 18px; background: rgba(3, 32, 51, 0.6); border-radius: 12px; border: 1px solid var(--gt-border); margin-bottom: 24px;">
-                                {requestDetail.description}
+                <div class="gt-grid-detail items-start">
+                    {/* Coluna Principal */}
+                    <section class="gtb-card gtb-kpi-gold space-y-6 min-w-0">
+                        <div class="pb-5 border-b border-white/10">
+                            <div class="flex items-center gap-2.5 flex-wrap mb-2">
+                                <span class="font-mono text-xs font-extrabold text-[#F2C230]">{requestDetail.protocol}</span>
+                                <span class={`gt-badge ${meta.badgeClass}`}>{meta.label}</span>
+                            </div>
+                            <h1 class="gt-font-display text-xl sm:text-2xl font-extrabold text-white leading-tight">
+                                {requestDetail.service_title || requestDetail.title}
+                            </h1>
+                            <p class="text-xs text-[#8C95AA] mt-1.5">
+                                Cliente: <strong class="text-white">{requestDetail.company || requestDetail.name}</strong>
+                                {requestDetail.email ? ` • ${requestDetail.email}` : ''}
+                                {requestDetail.phone ? ` • ${requestDetail.phone}` : ''}
                             </p>
+                        </div>
 
-                            <h2 style="font-size: 14px; font-weight: 800; text-transform: uppercase; color: #8CAAB9; margin-bottom: 14px;">Linha do Tempo / Histórico</h2>
+                        <div>
+                            <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-2.5">Descrição da Demanda</h2>
+                            <div class="gtb-surface-box rounded-xl p-4 text-[13.5px] text-white leading-relaxed whitespace-pre-wrap">
+                                {requestDetail.description || 'Sem descrição detalhada.'}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-3">Linha do Tempo / Histórico</h2>
                             {history.length === 0 ? (
-                                <p style="font-size: 13px; color: #8CAAB9;">Nenhum histórico registrado.</p>
+                                <div class="gtb-surface-box rounded-xl p-4 text-xs text-[#8C95AA]">
+                                    Nenhum histórico de movimentação registrado.
+                                </div>
                             ) : (
-                                <div style="display: flex; flex-direction: column; gap: 10px;">
-                                    {history.map((h: any) => (
-                                        <div style="padding: 12px 16px; background: rgba(3, 32, 51, 0.6); border-radius: 10px; border: 1px solid var(--gt-border);">
-                                            <div style="display: flex; justify-content: space-between; font-size: 12px;">
-                                                <strong style="color: #F2C230;">Status: {h.new_status || h.to_status || h.status_to || h.action}</strong>
-                                                <span style="color: #8CAAB9;">{h.created_at}</span>
+                                <div class="space-y-2.5">
+                                    {history.map((h: any) => {
+                                        const st = h.new_status || h.to_status || h.status_to || h.action;
+                                        const stLabel = STATUS_META[st]?.label || st;
+                                        return (
+                                            <div class="gtb-surface-box rounded-xl px-4 py-3">
+                                                <div class="flex items-center justify-between gap-2 text-xs">
+                                                    <strong class="text-[#F2C230]">{stLabel}</strong>
+                                                    <span class="text-[11px] text-[#8C95AA]">{h.created_at}</span>
+                                                </div>
+                                                {(h.comment || h.notes) && (
+                                                    <p class="text-xs text-[#D5DCEB] mt-1 leading-relaxed">{h.comment || h.notes}</p>
+                                                )}
                                             </div>
-                                            {(h.comment || h.notes) && <p style="font-size: 12px; color: #B5D1E2; margin-top: 4px;">{h.comment || h.notes}</p>}
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
+                    </section>
 
-                        <div class="gt-card" style="padding: 20px; height: fit-content;">
-                            <h3 style="font-size: 14px; font-weight: 800; color: #FFFFFF; margin-bottom: 14px;">Atualizar Status Operacional</h3>
-                            <form action={`/admin/solicitacoes/${requestDetail.id}/status`} method="post" style="display: flex; flex-direction: column; gap: 14px;">
-                                <div>
-                                    <label style="display: block; font-size: 11px; font-weight: 700; color: #8CAAB9; margin-bottom: 6px;">Novo Status</label>
-                                    <select name="status" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--gt-border); background: #032033; color: #FFFFFF; font-size: 13px;">
-                                        <option value="new" selected={requestDetail.status === 'new'}>Novo / Recebido</option>
-                                        <option value="analyzing" selected={requestDetail.status === 'analyzing'}>Em Análise Técnica</option>
-                                        <option value="quotation_sent" selected={requestDetail.status === 'quotation_sent'}>Orçamento Enviado</option>
-                                        <option value="approved" selected={requestDetail.status === 'approved'}>Aprovado pelo Cliente</option>
-                                        <option value="in_progress" selected={requestDetail.status === 'in_progress'}>Em Execução</option>
-                                        <option value="completed" selected={requestDetail.status === 'completed'}>Concluído / Entregue</option>
-                                        <option value="cancelled" selected={requestDetail.status === 'cancelled'}>Cancelado</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label style="display: block; font-size: 11px; font-weight: 700; color: #8CAAB9; margin-bottom: 6px;">Comentário de Atualização</label>
-                                    <textarea name="comment" rows={3} placeholder="Descreva o motivo ou avanço desta etapa..." style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--gt-border); background: #032033; color: #FFFFFF; font-size: 12px; font-family: inherit;"></textarea>
-                                </div>
-
-                                <button type="submit" class="gt-btn-primary" style="justify-content: center; font-size: 12px; padding: 10px;">
-                                    Salvar Alteração
-                                </button>
-                            </form>
+                    {/* Coluna Lateral: Atualizar Status */}
+                    <aside class="gtb-card space-y-4 min-w-0">
+                        <div>
+                            <h2 class="gt-font-display text-sm font-extrabold text-white">Atualizar Status Operacional</h2>
+                            <p class="text-xs text-[#8C95AA] mt-0.5">Registre o avanço no pipeline comercial.</p>
                         </div>
-                    </div>
+
+                        <form action={`/admin/solicitacoes/${requestDetail.id}/status`} method="post" class="space-y-4">
+                            <div>
+                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Novo Status</label>
+                                <select name="status" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]">
+                                    <option value="new" selected={requestDetail.status === 'new'}>Novo / Recebido</option>
+                                    <option value="analyzing" selected={requestDetail.status === 'analyzing'}>Em Análise Técnica</option>
+                                    <option value="quotation_sent" selected={requestDetail.status === 'quotation_sent'}>Orçamento Enviado</option>
+                                    <option value="approved" selected={requestDetail.status === 'approved'}>Aprovado pelo Cliente</option>
+                                    <option value="in_progress" selected={requestDetail.status === 'in_progress'}>Em Execução</option>
+                                    <option value="completed" selected={requestDetail.status === 'completed'}>Concluído / Entregue</option>
+                                    <option value="cancelled" selected={requestDetail.status === 'cancelled'}>Cancelado</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Comentário de Atualização</label>
+                                <textarea
+                                    name="comment"
+                                    rows={3}
+                                    placeholder="Descreva o motivo ou avanço desta etapa..."
+                                    class="w-full rounded-xl px-3.5 py-2.5 text-[13px]"
+                                ></textarea>
+                            </div>
+
+                            <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm w-full justify-center">
+                                Salvar Alteração
+                            </button>
+                        </form>
+                    </aside>
                 </div>
             </AdminLayout>
         );
     }
+
+    // ----------------------------------------------------
+    // LISTAGEM DE SOLICITAÇÕES
+    // ----------------------------------------------------
+    const newCount = requests.filter((r) => r.status === 'new').length;
+    const analyzingCount = requests.filter((r) => r.status === 'analyzing' || r.status === 'quotation_sent').length;
+    const approvedCount = requests.filter((r) => r.status === 'approved' || r.status === 'completed').length;
 
     return (
         <AdminLayout
@@ -122,69 +202,145 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
             successMessage={successMessage}
             errorMessage={errorMessage}
         >
-            <div style="margin-bottom: 24px;">
-                <h1 style="font-size: 20px; font-weight: 800; color: #FFFFFF;">Gestão de Solicitações & Pipeline de Entrada</h1>
-                <p style="font-size: 13px; color: #8CAAB9; margin-top: 4px;">Analise briefings de clientes, qualifique leads e gere orçamentos formais.</p>
+            <div class="gt-page-header !mb-0">
+                <div>
+                    <h1 class="gt-font-display text-xl sm:text-2xl font-extrabold text-white">
+                        Gestão de Solicitações &amp; Pipeline de Entrada
+                    </h1>
+                    <p class="text-xs sm:text-sm text-[#8C95AA] mt-1">
+                        Analise briefings de clientes, qualifique leads, converta em projetos e gere orçamentos formais.
+                    </p>
+                </div>
+                <a href="/admin/orcamentos" class="gt-btn-outline gt-btn-sm">
+                    <span>Ver Orçamentos</span>
+                </a>
             </div>
 
-            <div class="gt-card" style="padding: 16px 20px; margin-bottom: 20px;">
+            {/* 4 KPIs Executivos */}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div class="gtb-card gtb-kpi-gold !p-5 flex flex-col justify-between gap-1.5">
+                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total no Pipeline</span>
+                    <div class="gt-font-display text-2xl font-extrabold text-white">{requests.length}</div>
+                    <div class="text-[11px] text-[#8C95AA]">solicitações registradas</div>
+                </div>
+                <div class="gtb-card gtb-kpi-blue !p-5 flex flex-col justify-between gap-1.5">
+                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Novas / Pendentes</span>
+                    <div class="gt-font-display text-2xl font-extrabold text-[#F2C230]">{newCount}</div>
+                    <div class="text-[11px] text-[#8C95AA]">aguardando triagem</div>
+                </div>
+                <div class="gtb-card !p-5 flex flex-col justify-between gap-1.5">
+                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Em Análise / Proposta</span>
+                    <div class="gt-font-display text-2xl font-extrabold text-white">{analyzingCount}</div>
+                    <div class="text-[11px] text-[#8C95AA]">em negociação ativa</div>
+                </div>
+                <div class="gtb-card gtb-kpi-petrol !p-5 flex flex-col justify-between gap-1.5">
+                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Aprovadas / Concluídas</span>
+                    <div class="gt-font-display text-2xl font-extrabold text-[#34D399]">{approvedCount}</div>
+                    <div class="text-[11px] text-[#8C95AA]">convertidas em entrega</div>
+                </div>
+            </div>
+
+            {/* Filtros */}
+            <div class="gtb-card !p-4">
                 <form action="/admin/solicitacoes" method="get" class="gt-filter-bar">
-                    <input
-                        type="text"
-                        name="search"
-                        value={search}
-                        placeholder="Buscar por protocolo, título ou cliente..."
-                        class="gt-filter-input"
-                        style="padding: 10px 14px; border-radius: 10px; border: 1px solid var(--gt-border); background: #032033; color: #FFFFFF; font-size: 13px;"
-                    />
-                    <select name="status" class="gt-filter-select" style="padding: 10px 14px; border-radius: 10px; border: 1px solid var(--gt-border); background: #032033; color: #FFFFFF; font-size: 13px;">
-                        <option value="">Todos os status</option>
-                        <option value="new" selected={statusFilter === 'new'}>Novas</option>
-                        <option value="analyzing" selected={statusFilter === 'analyzing'}>Em Análise</option>
-                        <option value="quotation_sent" selected={statusFilter === 'quotation_sent'}>Orçamento Enviado</option>
-                        <option value="approved" selected={statusFilter === 'approved'}>Aprovadas</option>
-                        <option value="completed" selected={statusFilter === 'completed'}>Concluídas</option>
-                    </select>
-                    <button type="submit" class="gt-btn-outline">Filtrar</button>
+                    <div class="gt-filter-input">
+                        <input
+                            type="text"
+                            name="search"
+                            value={search}
+                            placeholder="Buscar por protocolo, título ou cliente..."
+                            class="w-full rounded-xl px-3.5 py-2.5 text-[13px]"
+                        />
+                    </div>
+                    <div class="gt-filter-select">
+                        <select name="status" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]">
+                            <option value="">Todos os status</option>
+                            <option value="new" selected={statusFilter === 'new'}>Novas</option>
+                            <option value="analyzing" selected={statusFilter === 'analyzing'}>Em Análise</option>
+                            <option value="quotation_sent" selected={statusFilter === 'quotation_sent'}>Orçamento Enviado</option>
+                            <option value="approved" selected={statusFilter === 'approved'}>Aprovadas</option>
+                            <option value="completed" selected={statusFilter === 'completed'}>Concluídas</option>
+                            <option value="cancelled" selected={statusFilter === 'cancelled'}>Canceladas</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="gt-btn-outline gt-btn-sm">Filtrar</button>
+                    {(search || statusFilter) && (
+                        <a href="/admin/solicitacoes" class="text-xs font-bold text-[#F2C230] underline">Limpar</a>
+                    )}
                 </form>
             </div>
 
-            <div class="gt-card" style="overflow: hidden;">
+            {/* Tabela de Solicitações */}
+            <div class="gtb-card !p-0 overflow-hidden">
                 {requests.length === 0 ? (
                     <div class="gt-empty-state">Nenhuma solicitação encontrada.</div>
                 ) : (
                     <div class="gt-table-wrap">
-                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <table class="w-full text-left text-xs">
                             <thead>
-                                <tr style="background: rgba(3, 32, 51, 0.8); border-bottom: 1px solid var(--gt-border); text-align: left; color: #8CAAB9; font-size: 11px; text-transform: uppercase;">
-                                    <th style="padding: 14px 20px;">Protocolo</th>
-                                    <th style="padding: 14px 20px;">Demanda / Título</th>
-                                    <th style="padding: 14px 20px;">Cliente / Contato</th>
-                                    <th style="padding: 14px 20px;">Status</th>
-                                    <th style="padding: 14px 20px; text-align: right;">Ação</th>
+                                <tr class="border-b border-white/10 text-[10.5px] uppercase tracking-wider text-[#8C95AA]">
+                                    <th class="py-3.5 px-5">Protocolo</th>
+                                    <th class="py-3.5 px-5">Demanda / Título</th>
+                                    <th class="py-3.5 px-5">Cliente / Contato</th>
+                                    <th class="py-3.5 px-5">Status</th>
+                                    <th class="py-3.5 px-5 text-right">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                {requests.map((r: any) => (
-                                    <tr style="border-bottom: 1px solid var(--gt-border);">
-                                        <td style="padding: 14px 20px; font-weight: 700; color: #F2C230; white-space: nowrap;">{r.protocol}</td>
-                                        <td style="padding: 14px 20px; font-weight: 600; color: #FFFFFF;">{r.service_title}</td>
-                                        <td style="padding: 14px 20px;">
-                                            <div style="color: #FFFFFF;">{r.company || r.name}</div>
-                                            <div style="font-size: 11px; color: #8CAAB9;">{r.email}</div>
-                                        </td>
-                                        <td style="padding: 14px 20px; white-space: nowrap;">
-                                            <span class={`gt-badge ${r.status === 'approved' ? 'gt-badge-success' : r.status === 'cancelled' ? 'gt-badge-danger' : 'gt-badge-warning'}`}>
-                                                {r.status}
-                                            </span>
-                                        </td>
-                                        <td style="padding: 14px 20px; text-align: right; white-space: nowrap;">
-                                            <a href={`/admin/solicitacoes/${r.id}`} class="gt-btn-outline" style="font-size: 12px; padding: 6px 12px;">
-                                                Gerenciar &rarr;
-                                            </a>
-                                        </td>
-                                    </tr>
-                                ))}
+                            <tbody class="divide-y divide-white/5">
+                                {requests.map((r: any) => {
+                                    const meta = STATUS_META[r.status] || { label: r.status || 'Novo', badgeClass: 'gt-badge-warning' };
+                                    return (
+                                        <tr class="hover:bg-white/[0.02] transition">
+                                            <td class="py-3.5 px-5 font-mono font-bold text-[#F2C230] whitespace-nowrap">
+                                                <a href={`/admin/solicitacoes/${r.id}`} class="text-inherit no-underline hover:underline">
+                                                    {r.protocol}
+                                                </a>
+                                            </td>
+                                            <td class="py-3.5 px-5 font-bold text-white">
+                                                <a href={`/admin/solicitacoes/${r.id}`} class="text-inherit no-underline hover:text-[#F2C230]">
+                                                    {r.service_title || r.title}
+                                                </a>
+                                            </td>
+                                            <td class="py-3.5 px-5">
+                                                <div class="font-semibold text-white">{r.company || r.name}</div>
+                                                <div class="text-[11px] text-[#8C95AA]">{r.email}</div>
+                                            </td>
+                                            <td class="py-3.5 px-5 whitespace-nowrap">
+                                                <span class={`gt-badge ${meta.badgeClass}`}>{meta.label}</span>
+                                            </td>
+                                            <td class="py-3.5 px-5 text-right whitespace-nowrap">
+                                                <div class="inline-flex items-center gap-1.5">
+                                                    <a href={`/admin/solicitacoes/${r.id}`} class="gt-btn-outline gt-btn-xs">
+                                                        <span>Gerenciar</span>
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path d="M5 12h14" />
+                                                            <path d="m12 5 7 7-7 7" />
+                                                        </svg>
+                                                    </a>
+                                                    <form
+                                                        action={`/admin/solicitacoes/${r.id}/excluir`}
+                                                        method="post"
+                                                        class="inline-block m-0"
+                                                        onsubmit="return confirm('Deseja realmente excluir esta solicitação?')"
+                                                    >
+                                                        <button
+                                                            type="submit"
+                                                            class="gt-btn-danger-ghost gt-btn-icon-only"
+                                                            title="Excluir solicitação"
+                                                            aria-label="Excluir solicitação"
+                                                        >
+                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                <path d="M3 6h18" />
+                                                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                                            </svg>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>

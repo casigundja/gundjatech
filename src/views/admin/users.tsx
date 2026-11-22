@@ -178,19 +178,37 @@ export const AdminUsersView: FC<AdminUsersProps> = ({
                                             </td>
                                             <td class="py-3.5 px-5 text-right whitespace-nowrap">
                                                 {!isSelf && (
-                                                    <form action={`/admin/usuarios/${u.id}/status`} method="post" class="inline-block m-0">
-                                                        <input type="hidden" name="is_active" value={u.is_active ? '0' : '1'} />
-                                                        <button
-                                                            type="submit"
-                                                            class={`px-3 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition ${
-                                                                u.is_active
-                                                                    ? 'bg-red-500/15 text-red-300 hover:bg-red-500/25'
-                                                                    : 'bg-emerald-500/15 text-[#6EE7B7] hover:bg-emerald-500/25'
-                                                            }`}
+                                                    <div class="inline-flex items-center gap-1.5">
+                                                        <form action={`/admin/usuarios/${u.id}/status`} method="post" class="inline-block m-0">
+                                                            <input type="hidden" name="is_active" value={u.is_active ? '0' : '1'} />
+                                                            <button
+                                                                type="submit"
+                                                                data-loading-text="..."
+                                                                class="gt-btn-outline gt-btn-xs"
+                                                            >
+                                                                {u.is_active ? 'Desativar' : 'Ativar'}
+                                                            </button>
+                                                        </form>
+                                                        <form
+                                                            action={`/admin/usuarios/${u.id}/excluir`}
+                                                            method="post"
+                                                            class="inline-block m-0"
+                                                            onsubmit="return confirm('Deseja realmente excluir este usuário permanentemente?')"
                                                         >
-                                                            {u.is_active ? 'Desativar' : 'Ativar'}
-                                                        </button>
-                                                    </form>
+                                                            <button
+                                                                type="submit"
+                                                                class="gt-btn-danger-ghost gt-btn-icon-only"
+                                                                title="Excluir usuário"
+                                                                aria-label="Excluir usuário"
+                                                            >
+                                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                    <path d="M3 6h18" />
+                                                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                                                </svg>
+                                                            </button>
+                                                        </form>
+                                                    </div>
                                                 )}
                                             </td>
                                         </tr>

@@ -361,6 +361,20 @@ adminRoutes.post('/solicitacoes/:id/converter', async (c) => {
     return c.redirect(`/admin/solicitacoes/${id}?success=Solicitação convertida em Projeto com sucesso!`);
 });
 
+adminRoutes.post('/solicitacoes/:id/excluir', async (c) => {
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+
+    if (id > 0) {
+        try {
+            await db.prepare(`DELETE FROM service_request_history WHERE service_request_id = ?`).bind(id).run();
+            await db.prepare(`DELETE FROM service_requests WHERE id = ?`).bind(id).run();
+        } catch {}
+    }
+
+    return c.redirect('/admin/solicitacoes?success=Solicitação excluída com sucesso.');
+});
+
 // ==========================================
 // 4. PACOTES DE SERVIÇOS & CATÁLOGO
 // ==========================================
@@ -561,6 +575,24 @@ adminRoutes.post('/usuarios/:id/status', async (c) => {
     ).bind(isActive, id).run();
 
     return c.redirect('/admin/usuarios?success=Status do usuário atualizado com sucesso');
+});
+
+adminRoutes.post('/usuarios/:id/excluir', async (c) => {
+    const currentUser = c.get('user')!;
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+
+    if (!id || id === Number(currentUser.id)) {
+        return c.redirect('/admin/usuarios?error=Não é possível excluir a própria conta.');
+    }
+
+    try {
+        await db.prepare(`DELETE FROM users WHERE id = ?`).bind(id).run();
+    } catch {
+        return c.redirect('/admin/usuarios?error=Não foi possível excluir este usuário.');
+    }
+
+    return c.redirect('/admin/usuarios?success=Usuário excluído com sucesso.');
 });
 
 // ==========================================
