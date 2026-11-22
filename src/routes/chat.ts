@@ -146,12 +146,14 @@ chatRoutes.post('/start', async (c) => {
             created_at: new Date().toISOString()
         };
 
+        const serviceTopic = assunto || (tema && tema !== 'geral' ? tema : null);
         try {
             await sendDirectorWhatsAppAlert(c.env, {
                 conversationId,
                 visitorName: nome,
                 visitorEmail: email,
                 visitorPhone: telefone || null,
+                serviceTopic,
                 message: mensagem,
                 originUrl
             });
@@ -161,12 +163,14 @@ chatRoutes.post('/start', async (c) => {
         aiReply = await agent.handleIncomingMessage(conversationId, mensagem, nome);
         if (aiReply?.handoff) {
             handedOff = true;
+            const serviceTopic = assunto || (tema && tema !== 'geral' ? tema : null);
             try {
                 await sendDirectorWhatsAppAlert(c.env, {
                     conversationId,
                     visitorName: nome,
                     visitorEmail: email,
                     visitorPhone: telefone || null,
+                    serviceTopic,
                     message: mensagem,
                     originUrl
                 });
@@ -211,6 +215,7 @@ chatRoutes.post('/message', async (c) => {
     let conversation: {
         id: number;
         status: string;
+        subject?: string | null;
         visitor_name: string | null;
         visitor_email?: string | null;
         visitor_phone?: string | null;
@@ -222,10 +227,11 @@ chatRoutes.post('/message', async (c) => {
     try {
         if (c.env?.DB) {
             conversation = await c.env.DB.prepare(
-                `SELECT id, status, visitor_name, visitor_email, visitor_phone, ai_enabled, crm_stage FROM conversations WHERE session_id = ?`
+                `SELECT id, status, subject, visitor_name, visitor_email, visitor_phone, ai_enabled, crm_stage FROM conversations WHERE session_id = ?`
             ).bind(visitorToken).first<{
                 id: number;
                 status: string;
+                subject?: string | null;
                 visitor_name: string | null;
                 visitor_email?: string | null;
                 visitor_phone?: string | null;
@@ -307,12 +313,25 @@ chatRoutes.post('/message', async (c) => {
             created_at: new Date().toISOString()
         };
 
+        let prevSummary: string | null = null;
+        try {
+            if (c.env?.DB) {
+                const prevMsgs = await c.env.DB.prepare(
+                    `SELECT message FROM conversation_messages WHERE conversation_id = ? AND sender_type = 'client' AND id != ? ORDER BY id ASC LIMIT 3`
+                ).bind(convId, clientMsgId).all<{ message: string }>();
+                const list = (prevMsgs.results || []).map((r) => String(r.message || '').trim()).filter(Boolean);
+                if (list.length > 0) prevSummary = list.join(' | ');
+            }
+        } catch {}
+
         try {
             await sendDirectorWhatsAppAlert(c.env, {
                 conversationId: convId,
                 visitorName,
                 visitorEmail: conversation?.visitor_email || null,
                 visitorPhone: conversation?.visitor_phone || null,
+                serviceTopic: conversation?.subject || null,
+                summary: prevSummary,
                 message,
                 originUrl
             });
@@ -325,6 +344,7 @@ chatRoutes.post('/message', async (c) => {
                 visitorName,
                 visitorEmail: conversation?.visitor_email || null,
                 visitorPhone: conversation?.visitor_phone || null,
+                serviceTopic: conversation?.subject || null,
                 message,
                 originUrl,
                 isFollowUp: true
@@ -335,12 +355,25 @@ chatRoutes.post('/message', async (c) => {
         aiReply = await agent.handleIncomingMessage(convId, message, visitorName);
         if (aiReply?.handoff) {
             currentStatus = 'waiting_staff';
+            let prevSummary: string | null = null;
+            try {
+                if (c.env?.DB) {
+                    const prevMsgs = await c.env.DB.prepare(
+                        `SELECT message FROM conversation_messages WHERE conversation_id = ? AND sender_type = 'client' AND id != ? ORDER BY id ASC LIMIT 3`
+                    ).bind(convId, clientMsgId).all<{ message: string }>();
+                    const list = (prevMsgs.results || []).map((r) => String(r.message || '').trim()).filter(Boolean);
+                    if (list.length > 0) prevSummary = list.join(' | ');
+                }
+            } catch {}
+
             try {
                 await sendDirectorWhatsAppAlert(c.env, {
                     conversationId: convId,
                     visitorName,
                     visitorEmail: conversation?.visitor_email || null,
                     visitorPhone: conversation?.visitor_phone || null,
+                    serviceTopic: conversation?.subject || null,
+                    summary: prevSummary,
                     message,
                     originUrl
                 });

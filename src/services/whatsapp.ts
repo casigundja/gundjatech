@@ -345,6 +345,8 @@ export async function sendDirectorWhatsAppAlert(
         visitorName: string;
         visitorEmail?: string | null;
         visitorPhone?: string | null;
+        serviceTopic?: string | null;
+        summary?: string | null;
         message: string;
         originUrl?: string;
         isFollowUp?: boolean;
@@ -363,8 +365,10 @@ export async function sendDirectorWhatsAppAlert(
         header,
         '',
         `*Cliente:* ${params.visitorName || 'Visitante'}`,
+        params.serviceTopic ? `*Serviço / Assunto:* ${params.serviceTopic}` : '',
         params.visitorEmail ? `*E-mail:* ${params.visitorEmail}` : '',
         params.visitorPhone ? `*Telefone:* ${params.visitorPhone}` : '',
+        params.summary ? `*Contexto do pedido:* ${params.summary.slice(0, 400)}` : '',
         `*Mensagem:* "${params.message.slice(0, 600)}"`,
         '',
         '↩️ *Responda aqui mesmo no WhatsApp* para enviar direto ao cliente no site.',
