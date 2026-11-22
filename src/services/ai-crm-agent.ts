@@ -68,6 +68,9 @@ Seu objetivo é acolher o visitante, diagnosticar o desafio técnico dele e orie
             }
         } catch {}
 
+        // Garante que o modelo nunca vaze diretivas técnicas/variáveis na resposta ao cliente
+        systemPrompt = `${systemPrompt}\n\nREGRA CRÍTICA DE SAÍDA: Responda EXCLUSIVAMENTE em texto natural amigável para o cliente em português do Brasil. NUNCA escreva variáveis, códigos, JSON ou flags internas como "handoff_to_human=true", "lead_score", "crm_stage" ou similares na mensagem.`;
+
         const geminiKey =
             (dbApiKey && !dbApiKey.startsWith('sk-') ? dbApiKey : '') ||
             (this.env?.GEMINI_API_KEY || '').trim();
@@ -234,6 +237,19 @@ Seu objetivo é acolher o visitante, diagnosticar o desafio técnico dele e orie
             providerUsed = 'local';
         }
 
+        // 5B. Sanitização contra vazamento de flags internas do prompt (ex: handoff_to_human=true)
+        const shouldHandoff = /handoff_to_human\s*[:=]\s*true/i.test(reply);
+        reply = reply
+            .replace(/\b(?:handoff_to_human|ai_autopilot|create_quotation|lead_score|crm_stage)\s*[:=]\s*[^\s,;.)]+/gi, '')
+            .replace(/\[(?:HANDOFF|TRANSFERIR_HUMANO)[^\]]*\]/gi, '')
+            .replace(/[ \t]{2,}/g, ' ')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+
+        if (!reply) {
+            reply = this.runDeterministicFallback(visitorMessage, visitorName);
+        }
+
         // 6. Persistência da resposta e atualização de inteligência de CRM no D1 (ignora conversationId <= 0 de teste)
         let msgId: number | undefined;
         try {
@@ -245,19 +261,31 @@ Seu objetivo é acolher o visitante, diagnosticar o desafio técnico dele e orie
 
                 msgId = Number(res.meta.last_row_id);
 
-                // Evolução automática do funil de lead
-                await this.env.DB.prepare(
-                    `UPDATE conversations
-                     SET lead_score = lead_score + 10,
-                         crm_stage = CASE 
-                            WHEN crm_stage = 'greeting' THEN 'discovery'
-                            WHEN crm_stage = 'discovery' THEN 'qualification'
-                            ELSE crm_stage 
-                         END,
-                         last_message_at = datetime('now'),
-                         updated_at = datetime('now')
-                     WHERE id = ?`
-                ).bind(conversationId).run();
+                // Evolução automática do funil de lead (e handoff silencioso se a IA solicitou transferência)
+                if (shouldHandoff) {
+                    await this.env.DB.prepare(
+                        `UPDATE conversations
+                         SET lead_score = lead_score + 10,
+                             crm_stage = 'handoff',
+                             ai_autopilot = 0,
+                             last_message_at = datetime('now'),
+                             updated_at = datetime('now')
+                         WHERE id = ?`
+                    ).bind(conversationId).run();
+                } else {
+                    await this.env.DB.prepare(
+                        `UPDATE conversations
+                         SET lead_score = lead_score + 10,
+                             crm_stage = CASE 
+                                WHEN crm_stage = 'greeting' THEN 'discovery'
+                                WHEN crm_stage = 'discovery' THEN 'qualification'
+                                ELSE crm_stage 
+                             END,
+                             last_message_at = datetime('now'),
+                             updated_at = datetime('now')
+                         WHERE id = ?`
+                    ).bind(conversationId).run();
+                }
             }
         } catch (err) {
             console.error('Erro ao salvar resposta no banco:', err);
