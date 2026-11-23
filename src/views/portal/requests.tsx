@@ -364,7 +364,7 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                         {history.length === 0 ? (
                             <div class="gt-empty-state">Aguardando primeira movimentação da equipe técnica.</div>
                         ) : (
-                            <div class="gt-activity-feed" id="gt-portal-activity-feed">
+                            <div class="gt-activity-feed" id="gt-portal-activity-feed" style="max-height: 220px; overflow-y: auto; padding-right: 4px;">
                                 {history.map((h: any, idx: number) => {
                                     const fromSt = h.old_status || h.from_status || h.status_from || '';
                                     const toSt = h.new_status || h.to_status || h.status_to || '';

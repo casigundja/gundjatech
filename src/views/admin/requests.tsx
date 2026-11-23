@@ -344,7 +344,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                     Nenhuma movimentação registrada ainda.
                                 </div>
                             ) : (
-                                <div class="gt-activity-feed" id="gt-request-activity-feed">
+                                <div class="gt-activity-feed" id="gt-request-activity-feed" style="max-height: 220px; overflow-y: auto; padding-right: 4px;">
                                     {history.map((h: any, idx: number) => {
                                         const fromSt = h.from_status || h.old_status || h.status_from || '';
                                         const toSt = h.to_status || h.new_status || h.status_to || '';
