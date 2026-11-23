@@ -209,8 +209,14 @@ export const AccountView: FC<AccountViewProps> = ({ user, successMessage, errorM
                 <div class="space-y-5 min-w-0">
                     <aside class="gtb-card space-y-4 min-w-0">
                         <div class="flex items-center gap-3.5 pb-4 border-b border-white/10">
-                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#F2C230] to-[#16749A] p-0.5 shrink-0">
-                                <div class="gtb-avatar-inner w-full h-full rounded-[14px] flex items-center justify-center text-sm font-extrabold">
+                            <div
+                                class="shrink-0 flex items-center justify-center"
+                                style="width: 48px; height: 48px; border-radius: 999px; padding: 2px; background: linear-gradient(135deg, #F2C230 0%, #16749A 100%); box-shadow: 0 6px 16px -6px rgba(6, 59, 92, 0.4);"
+                            >
+                                <div
+                                    class="gtb-avatar-inner w-full h-full flex items-center justify-center text-sm font-extrabold tracking-tight"
+                                    style="border-radius: 999px;"
+                                >
                                     {initials}
                                 </div>
                             </div>
