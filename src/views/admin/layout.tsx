@@ -44,7 +44,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
-                <link rel="stylesheet" href="/css/gt-admin.css?v=60" />
+                <link rel="stylesheet" href="/css/gt-admin.css?v=61" />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
@@ -1183,6 +1183,14 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                 e.stopPropagation();
                                 var willOpen = !wrap.classList.contains('is-open');
                                 closeAll(wrap);
+                                if (willOpen) {
+                                    var trigRect = trigger.getBoundingClientRect();
+                                    var card = wrap.closest('.gt-modal-card');
+                                    var bounds = card ? card.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
+                                    var spaceBelow = bounds.bottom - trigRect.bottom;
+                                    var spaceAbove = trigRect.top - bounds.top;
+                                    wrap.classList.toggle('is-dropup', spaceBelow < 220 && spaceAbove > spaceBelow);
+                                }
                                 wrap.classList.toggle('is-open', willOpen);
                                 trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
                                 if (willOpen && searchInput) {
