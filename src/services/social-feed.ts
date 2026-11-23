@@ -258,18 +258,26 @@ export function renderSocialFeedCardsHtml(items: SocialFeedItem[]): string | nul
             const handleLabel = item.platform === 'facebook' ? 'GundjaTech · Facebook' : '@gundjatech';
             const safeCaption = escapeHtml(truncateText(item.caption, 88));
             const safeUrl = escapeHtml(item.permalink);
+            const hasVideo = Boolean(isVideo && item.videoUrl && item.videoUrl.startsWith('http'));
             const hasCover = Boolean(item.imageUrl && item.imageUrl.startsWith('http'));
-            const cardVariant = hasCover ? 'gt-reel-card--media' : `gt-reel-card--${(idx % 4) + 1}`;
+            const hasMedia = hasVideo || hasCover;
+            const cardVariant = hasMedia ? 'gt-reel-card--media' : `gt-reel-card--${(idx % 4) + 1}`;
+
+            const mediaTag = hasVideo
+                ? `<video class="gt-reel-cover" src="${escapeHtml(item.videoUrl)}"${hasCover ? ` poster="${escapeHtml(item.imageUrl)}"` : ''} autoplay muted loop playsinline webkit-playsinline preload="metadata" aria-hidden="true"></video><div class="gt-reel-scrim" aria-hidden="true"></div>`
+                : hasCover
+                ? `<img class="gt-reel-cover" src="${escapeHtml(item.imageUrl)}" alt="${safeCaption}" loading="lazy"><div class="gt-reel-scrim" aria-hidden="true"></div>`
+                : '';
 
             return `<a class="gt-reel-card ${cardVariant}" href="${safeUrl}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(badgeLabel)} da GundjaTech: ${safeCaption}">
-        ${hasCover ? `<img class="gt-reel-cover" src="${escapeHtml(item.imageUrl)}" alt="${safeCaption}" loading="lazy"><div class="gt-reel-scrim" aria-hidden="true"></div>` : ''}
+        ${mediaTag}
         <div class="gt-reel-top">
           <span class="gt-reel-brand"><img src="/img/favicon.svg?v=gt-icon4" alt="GundjaTech"></span>
           <span class="gt-reel-badge">${escapeHtml(badgeLabel)}</span>
         </div>
         <div class="gt-reel-body">
-          ${hasCover ? '' : `<span class="gt-reel-kicker">${escapeHtml(handleLabel)}</span>`}
-          <p class="${hasCover ? 'gt-reel-caption' : 'gt-reel-title'}">${safeCaption}</p>
+          ${hasMedia ? '' : `<span class="gt-reel-kicker">${escapeHtml(handleLabel)}</span>`}
+          <p class="${hasMedia ? 'gt-reel-caption' : 'gt-reel-title'}">${safeCaption}</p>
         </div>
         <div class="gt-reel-foot">
           <span>${isVideo ? 'Assistir Reel' : 'Ver publicação'}</span>
