@@ -1112,6 +1112,53 @@ async function autoStartProjectFromApprovedRequest(
     return { projectId: newProjectId, alreadyExisted: Boolean(existingProjId) };
 }
 
+/**
+ * Reconcilia e garante que todo orçamento com status = 'approved' (inclusive os criados manualmente
+ * diretamente como Aprovados) possua o respectivo Projeto em Execução (com as 4 etapas padrão)
+ * e o lançamento financeiro A RECEBER em Receita & Caixa.
+ */
+async function reconcileApprovedQuotationsWithoutProject(
+    db: any,
+    env: any,
+    userId: number | null,
+    filterQuotationId?: number | null
+): Promise<void> {
+    if (!db) return;
+    try {
+        const sql = filterQuotationId
+            ? `SELECT * FROM quotations WHERE id = ? AND status = 'approved'`
+            : `SELECT * FROM quotations WHERE status = 'approved' ORDER BY id ASC`;
+        const stmt = filterQuotationId ? db.prepare(sql).bind(filterQuotationId) : db.prepare(sql);
+        const rows = ((await stmt.all())?.results || []) as any[];
+
+        for (const q of rows) {
+            if (!q || q.status !== 'approved' || !q.client_id) continue;
+            const qTitle = String(q.title || '').trim();
+            if (!qTitle) continue;
+
+            const existingProj = (await db.prepare(
+                `SELECT id FROM projects
+                 WHERE client_id = ? AND (lower(title) = lower(?) OR lower(name) = lower(?))
+                 LIMIT 1`
+            ).bind(q.client_id, qTitle, qTitle).first()) as { id: number } | null;
+
+            if (!existingProj?.id) {
+                let reqRow: any = null;
+                if (q.service_request_id) {
+                    try {
+                        reqRow = await db.prepare(`SELECT * FROM service_requests WHERE id = ?`).bind(q.service_request_id).first();
+                    } catch { }
+                }
+                await autoStartProjectFromApprovedRequest(db, env, userId, {
+                    request: reqRow,
+                    quotation: q,
+                    approvalNote: `Orçamento ${q.reference_code || `#${q.id}`} aprovado — projeto iniciado automaticamente`
+                });
+            }
+        }
+    } catch { }
+}
+
 async function autoRegisterRevenueOnProjectCompletion(
     db: any,
     options: {
@@ -2402,6 +2449,9 @@ adminRoutes.get('/projetos', async (c) => {
     const db = c.env.DB;
     const { successMessage, errorMessage } = getFlashMessages(c);
 
+    // Garante que qualquer orçamento aprovado (mesmo criado manualmente) já tenha seu projeto em execução
+    await reconcileApprovedQuotationsWithoutProject(db, c.env, user?.id || null);
+
     const search = (c.req.query('search') || '').trim();
     const statusFilter = (c.req.query('status') || '').trim();
 
@@ -3421,6 +3471,9 @@ adminRoutes.get('/orcamentos/:id', async (c) => {
 
     let linkedProject: any = null;
     try {
+        if (quotationDetail.status === 'approved') {
+            await reconcileApprovedQuotationsWithoutProject(db, c.env, user?.id || null, quotationDetail.id);
+        }
         const qTitle = String(quotationDetail.title || linkedRequest?.service_title || linkedRequest?.title || '').trim();
         if (quotationDetail.client_id && qTitle) {
             linkedProject = await db.prepare(
@@ -3574,7 +3627,7 @@ adminRoutes.post('/orcamentos/:id', async (c) => {
                 }
             }
         } catch { }
-    } else if (status === 'approved' && prevQuote?.status !== 'approved') {
+    } else if (status === 'approved') {
         await autoStartProjectFromApprovedRequest(db, c.env, user.id, {
             quotation: updatedQuote,
             approvalNote: `Orçamento ${updatedQuote.reference_code || `#${id}`} aprovado`
