@@ -1102,9 +1102,9 @@ adminRoutes.post('/servicos/:id/editar', async (c) => {
 
     await db.prepare(
         `UPDATE services
-         SET title = ?, category = ?, price = ?, summary = ?, is_active = ?, updated_at = datetime('now')
+         SET name = ?, title = ?, category = ?, base_price = ?, price = ?, price_starting_at = ?, short_description = ?, summary = ?, is_active = ?, updated_at = datetime('now')
          WHERE id = ?`
-    ).bind(title, category, price, summary, isActive, id).run();
+    ).bind(title, title, category, price, price, price, summary, summary, isActive, id).run();
 
     return c.redirect('/admin/servicos?success=Pacote de serviço atualizado com sucesso!');
 });

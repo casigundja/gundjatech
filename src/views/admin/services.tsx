@@ -170,7 +170,7 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
             <div class="gt-page-header !mb-0">
                 <div>
                     <h1 class="gt-font-display text-xl sm:text-2xl font-extrabold text-white">
-                        Catálogo de Pacotes e Soluções Digitais
+                        Catálogo de Pacotes
                     </h1>
                     <p class="text-xs sm:text-sm text-[#8C95AA] mt-1">
                         Gerencie os serviços ofertados no site institucional e disponíveis no formulário de orçamento.
