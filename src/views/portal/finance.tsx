@@ -222,35 +222,68 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                         </div>
                     </div>
 
-                    {/* Estado de Sucesso em Tempo Real (substitui o QR Code automaticamente quando pago) */}
-                    <div id="gt-pay-confirmed-view" class="hidden p-8 text-center space-y-4">
-                        <div class="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto">
-                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7" /></svg>
-                        </div>
-                        <div>
-                            <div class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-600">Pagamento Validado</div>
-                            <h3 class="gt-font-display text-lg font-extrabold text-[#063B5C] mt-1">Pagamento confirmado com sucesso!</h3>
-                            <p class="text-xs text-[#64748B] mt-1.5 max-w-md mx-auto leading-relaxed">
-                                Recebemos a confirmação do seu pagamento. Uma notificação foi enviada automaticamente para você e para o financeiro da GundjaTech.
-                            </p>
-                        </div>
-                        <div class="flex flex-wrap items-center justify-center gap-2.5 pt-2">
-                            <a
-                                id="gt-pay-receipt-link"
-                                href="#"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="gt-btn-primary gt-btn-sm no-underline"
+                    {/* Estado de Sucesso em Tempo Real (Padrão Executivo / Banking) */}
+                    <div id="gt-pay-confirmed-view" class="hidden p-6 space-y-5">
+                        <div class="flex items-start gap-3.5">
+                            <div
+                                style="width: 44px; height: 44px; border-radius: 12px; background: #ECFDF5; border: 1px solid #A7F3D0; color: #059669; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"
                             >
-                                Baixar Recibo Oficial (PDF)
-                            </a>
-                            <button
-                                type="button"
-                                onclick="window.location.reload()"
-                                class="gt-btn-petrol gt-btn-sm"
-                            >
-                                Concluir e Atualizar
-                            </button>
+                                <svg style="width: 22px; height: 22px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7" /></svg>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-[10.5px] font-bold uppercase tracking-wider text-[#059669]">Liquidação Confirmada</div>
+                                <h3 class="gt-font-display text-base font-extrabold text-[#063B5C] mt-0.5">Pagamento confirmado</h3>
+                                <p class="text-xs text-[#64748B] mt-1 leading-relaxed">
+                                    O recebimento foi validado automaticamente. O recibo oficial já está disponível e as notificações foram disparadas.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] p-4 space-y-2.5 text-xs">
+                            <div class="flex items-center justify-between gap-2 pb-2 border-b border-[#E2E8F0]">
+                                <span class="text-[#64748B]">Situação</span>
+                                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; background: #ECFDF5; border: 1px solid #A7F3D0; color: #047857; font-size: 11px; font-weight: 700;">
+                                    Quitado
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between gap-2 pb-2 border-b border-[#E2E8F0]">
+                                <span class="text-[#64748B]">Valor liquidado</span>
+                                <strong id="gt-pay-ok-amount" class="font-mono text-[#063B5C] font-extrabold">—</strong>
+                            </div>
+                            <div class="flex items-center justify-between gap-2 pb-2 border-b border-[#E2E8F0]">
+                                <span class="text-[#64748B]">Método</span>
+                                <strong class="text-[#063B5C] font-semibold">PIX Instantâneo</strong>
+                            </div>
+                            <div class="flex items-center justify-between gap-2 pb-2 border-b border-[#E2E8F0]">
+                                <span class="text-[#64748B]">Referência</span>
+                                <strong id="gt-pay-ok-txid" class="font-mono text-[#16749A] font-semibold">—</strong>
+                            </div>
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-[#64748B]">Confirmado em</span>
+                                <strong id="gt-pay-ok-date" class="font-mono text-[#063B5C] font-semibold">—</strong>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between gap-3 pt-3 border-t border-[#E2E8F0]">
+                            <span class="text-[10.5px] text-[#64748B] hidden sm:inline">Art. 319 e 320 • Código Civil</span>
+                            <div class="flex items-center gap-2.5 ml-auto">
+                                <button
+                                    type="button"
+                                    onclick="window.location.reload()"
+                                    class="gt-btn-outline gt-btn-sm"
+                                >
+                                    Concluir
+                                </button>
+                                <a
+                                    id="gt-pay-receipt-link"
+                                    href="#"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="gt-btn-primary gt-btn-sm no-underline"
+                                >
+                                    Baixar Recibo (PDF)
+                                </a>
+                            </div>
                         </div>
                     </div>
 
@@ -440,6 +473,17 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                     var bodyEl = document.getElementById('gt-pay-checkout-body');
                     var okEl = document.getElementById('gt-pay-confirmed-view');
                     var recLink = document.getElementById('gt-pay-receipt-link');
+                    var amountSrc = document.getElementById('gt-pay-amount');
+                    var txidSrc = document.getElementById('gt-pay-txid');
+                    var okAmount = document.getElementById('gt-pay-ok-amount');
+                    var okTxid = document.getElementById('gt-pay-ok-txid');
+                    var okDate = document.getElementById('gt-pay-ok-date');
+                    if (okAmount && amountSrc) okAmount.textContent = amountSrc.textContent || '—';
+                    if (okTxid && txidSrc) okTxid.textContent = txidSrc.textContent || '—';
+                    if (okDate) {
+                        var now = new Date();
+                        okDate.textContent = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                    }
                     if (bodyEl) bodyEl.classList.add('hidden');
                     if (okEl) okEl.classList.remove('hidden');
                     if (recLink && receiptUrl) recLink.setAttribute('href', receiptUrl);
