@@ -273,7 +273,6 @@ export function renderSocialFeedCardsHtml(items: SocialFeedItem[]): string | nul
         ${mediaTag}
         <div class="gt-reel-top">
           <span class="gt-reel-brand"><img src="/img/favicon.svg?v=gt-icon4" alt="GundjaTech"></span>
-          <span class="gt-reel-badge">${escapeHtml(badgeLabel)}</span>
         </div>
         <div class="gt-reel-body">
           ${hasMedia ? '' : `<span class="gt-reel-kicker">${escapeHtml(handleLabel)}</span>`}
