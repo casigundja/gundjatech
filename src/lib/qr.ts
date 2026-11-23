@@ -278,16 +278,20 @@ export function generateQrMatrix(text: string): boolean[][] {
         }
     }
 
-    // Write format info
+    // Write format info (ISO/IEC 18004: MSB bit 14 at (8,0) and (size-1,8), LSB bit 0 at (0,8) and (8,size-1))
     const fmt = getFormatBitsL(mask);
-    for (let i = 0; i <= 5; i++) modules[8][i] = Boolean((fmt >>> i) & 1);
-    modules[8][7] = Boolean((fmt >>> 6) & 1);
-    modules[8][8] = Boolean((fmt >>> 7) & 1);
-    modules[7][8] = Boolean((fmt >>> 8) & 1);
-    for (let i = 9; i < 15; i++) modules[14 - i][8] = Boolean((fmt >>> i) & 1);
+    const fmtBit = (pos: number): boolean => Boolean((fmt >>> pos) & 1);
 
-    for (let i = 0; i < 8; i++) modules[size - 1 - i][8] = Boolean((fmt >>> i) & 1);
-    for (let i = 8; i < 15; i++) modules[8][size - 15 + i] = Boolean((fmt >>> i) & 1);
+    // Copy 1 (top-left finder perimeter)
+    for (let i = 0; i <= 5; i++) modules[8][i] = fmtBit(14 - i);
+    modules[8][7] = fmtBit(8);
+    modules[8][8] = fmtBit(7);
+    modules[7][8] = fmtBit(6);
+    for (let i = 0; i <= 5; i++) modules[i][8] = fmtBit(i);
+
+    // Copy 2 (bottom-left vertical 7 bits + top-right horizontal 8 bits; preserves dark module at (size-8, 8))
+    for (let i = 0; i < 7; i++) modules[size - 1 - i][8] = fmtBit(14 - i);
+    for (let i = 0; i < 8; i++) modules[8][size - 8 + i] = fmtBit(7 - i);
 
     return modules;
 }
@@ -296,7 +300,7 @@ export function renderQrCodeDataUri(text: string): string {
     if (!text) return '';
     const matrix = generateQrMatrix(text);
     const n = matrix.length;
-    const quiet = 3;
+    const quiet = 4;
     const total = n + quiet * 2;
     let paths = '';
     for (let r = 0; r < n; r++) {

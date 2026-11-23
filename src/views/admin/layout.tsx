@@ -46,7 +46,8 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
                 <link rel="stylesheet" href="/css/gt-admin.css?v=67" />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
-                <script dangerouslySetInnerHTML={{ __html: `
+                <script dangerouslySetInnerHTML={{
+                    __html: `
                     (function () {
                         function applyAdminTheme(val) {
                             var theme = val === 'light' ? 'light' : 'dark';
@@ -97,7 +98,8 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                         });
                     })();
                 ` }} />
-                <style dangerouslySetInnerHTML={{ __html: `
+                <style dangerouslySetInnerHTML={{
+                    __html: `
                     :root {
                         --gt-gold: #F2C230;
                         --gt-dark: #063B5C;
@@ -192,7 +194,8 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 ` }} />
             </head>
             <body class="gt-admin-boost font-sans antialiased h-full flex overflow-hidden is-dark-mode">
-                <script dangerouslySetInnerHTML={{ __html: `
+                <script dangerouslySetInnerHTML={{
+                    __html: `
                     (function () {
                         var t = document.documentElement.getAttribute('data-admin-theme') || 'dark';
                         document.body.classList.toggle('is-light-mode', t === 'light');
@@ -228,7 +231,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                 onclick="document.getElementById('gt-admin-sidebar').classList.add('-translate-x-full');document.getElementById('gt-admin-backdrop').classList.add('hidden')"
                                 class="text-gray-400 hover:text-white lg:hidden p-1"
                             >
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
 
@@ -239,7 +242,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                         <nav class="px-3 space-y-0.5 overflow-y-auto flex-1">
                             <a href="/admin/dashboard" class={`gtb-nav-item ${activeNav === 'dashboard' ? 'is-active' : ''}`} title="Dashboard">
                                 <div class="flex items-center gap-3">
-                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
                                     <span>Dashboard</span>
                                 </div>
                             </a>
@@ -247,7 +250,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             {can('campaigns.view') && (
                                 <a href="/admin/campanhas" class={`gtb-nav-item ${activeNav === 'campaigns' ? 'is-active' : ''}`} title="Tráfego & Analytics">
                                     <div class="flex items-center gap-3">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                                         <span>Tráfego &amp; Analytics</span>
                                     </div>
                                 </a>
@@ -256,7 +259,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             {can('finance.view') && (
                                 <a href="/admin/financeiro" class={`gtb-nav-item ${activeNav === 'finance' ? 'is-active' : ''}`} title="Financeiro & Caixa">
                                     <div class="flex items-center gap-3">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                                         <span>Financeiro &amp; Caixa</span>
                                     </div>
                                 </a>
@@ -265,7 +268,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             {can('projects.view') && (
                                 <a href="/admin/projetos" class={`gtb-nav-item ${activeNav === 'projects' ? 'is-active' : ''}`} title="Projetos">
                                     <div class="flex items-center gap-3">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
                                         <span>Projetos</span>
                                     </div>
                                 </a>
@@ -274,7 +277,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             {can('services.view') && (
                                 <a href="/admin/servicos" class={`gtb-nav-item ${activeNav === 'services' ? 'is-active' : ''}`} title="Serviços & Soluções">
                                     <div class="flex items-center gap-3">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"/></svg>
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" /></svg>
                                         <span>Serviços &amp; Soluções</span>
                                     </div>
                                 </a>
@@ -283,7 +286,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             {can('clients.view') && (
                                 <a href="/admin/clientes" class={`gtb-nav-item ${activeNav === 'clients' ? 'is-active' : ''}`} title="Clientes">
                                     <div class="flex items-center gap-3">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                                         <span>Clientes</span>
                                     </div>
                                 </a>
@@ -292,7 +295,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             {can('requests.view') && (
                                 <a href="/admin/solicitacoes" class={`gtb-nav-item ${activeNav === 'requests' ? 'is-active' : ''}`} title="Solicitações">
                                     <div class="flex items-center gap-3">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                         <span>Solicitações</span>
                                     </div>
                                     <span id="gt-sidebar-requests-badge" class="gtb-count-circle hidden">0</span>
@@ -308,7 +311,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             {can('quotations.view') && (
                                 <a href="/admin/orcamentos" class={`gtb-nav-item ${activeNav === 'quotations' ? 'is-active' : ''}`} title="Orçamentos">
                                     <div class="flex items-center gap-3">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                                         <span>Orçamentos</span>
                                     </div>
                                 </a>
@@ -317,7 +320,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             {can('domains.view') && (
                                 <a href="/admin/dominios" class={`gtb-nav-item ${activeNav === 'domains' ? 'is-active' : ''}`} title="Domínios & DNS">
                                     <div class="flex items-center gap-3">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
                                         <span>Domínios &amp; DNS</span>
                                     </div>
                                 </a>
@@ -326,7 +329,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             {can('users.manage') && (
                                 <a href="/admin/usuarios" class={`gtb-nav-item ${activeNav === 'users' ? 'is-active' : ''}`} title="Equipe & Usuários">
                                     <div class="flex items-center gap-3">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                                         <span>Equipe &amp; Usuários</span>
                                     </div>
                                 </a>
@@ -337,7 +340,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                     {can('chat.manage') && (
                                         <a href="/admin/crm-autonomo" class={`gtb-nav-item ${activeNav === 'crm' ? 'is-active' : ''}`} title="CRM Autônomo IA">
                                             <div class="flex items-center gap-3">
-                                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                                                 <span>CRM Autônomo IA</span>
                                             </div>
                                         </a>
@@ -346,7 +349,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                     {can('chat.view') && (
                                         <a href="/admin/atendimento" class={`gtb-nav-item ${activeNav === 'chat' ? 'is-active' : ''}`} title="Suporte & Chat">
                                             <div class="flex items-center gap-3">
-                                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                                 <span>Suporte &amp; Chat</span>
                                             </div>
                                             <span id="gt-sidebar-chats-badge" class="gtb-count-circle hidden">0</span>
@@ -356,7 +359,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                     {can('settings.manage') && (
                                         <a href="/admin/configuracoes" class={`gtb-nav-item ${activeNav === 'settings' ? 'is-active' : ''}`} title="Configurações">
                                             <div class="flex items-center gap-3">
-                                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
                                                 <span>Configurações</span>
                                             </div>
                                         </a>
@@ -406,7 +409,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                 class="gtb-mobile-toggle gt-mobile-toggle gtb-icon-btn rounded-xl shrink-0"
                                 aria-label="Abrir menu"
                             >
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
                             </button>
                             <h1 class="gt-font-display gtb-topbar-title hidden md:block text-lg sm:text-xl font-bold tracking-tight truncate">
                                 {headerTitle}
@@ -416,7 +419,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                         <div class="gtb-topbar-right flex items-center justify-end gap-1.5 sm:gap-3 flex-1 md:flex-initial min-w-0">
                             {/* Search Box with ⌘ F Pill */}
                             <form action="/admin/solicitacoes" method="get" class="gtb-search-box flex-1 md:flex-initial min-w-0">
-                                <svg class="w-4 h-4 text-[#8C95AA] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                <svg class="w-4 h-4 text-[#8C95AA] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                                 <input type="text" name="search" placeholder="Pesquisar demandas, clientes..." aria-label="Pesquisar" />
                                 <span class="gtb-kbd-pill hidden lg:inline-flex">⌘ F</span>
                             </form>
@@ -431,7 +434,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                     title="Modo Claro"
                                     aria-label="Ativar modo claro"
                                 >
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
                                 </button>
                                 <button
                                     type="button"
@@ -441,7 +444,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                     title="Modo Escuro"
                                     aria-label="Ativar modo escuro"
                                 >
-                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" /></svg>
                                 </button>
                             </div>
 
@@ -453,7 +456,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                 title="Alertas sonoros: Ativo (clique para testar/alternar)"
                                 aria-label="Alternar alertas sonoros"
                             >
-                                <svg id="gt-topbar-sound-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+                                <svg id="gt-topbar-sound-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
                             </button>
 
                             {/* Notification Bell with Interactive Dropdown Panel */}
@@ -466,7 +469,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                     title="Central de Notificações"
                                     aria-label="Abrir notificações"
                                 >
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
                                     <span id="gt-topbar-bell-dot" class="hidden absolute top-2 right-2.5 w-2 h-2 rounded-full bg-[#34D399] shadow-[0_0_8px_#34D399]"></span>
                                 </button>
 
@@ -487,7 +490,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                     <div id="gt-notif-list" class="max-h-80 overflow-y-auto divide-y divide-white/5">
                                         <div class="gtb-notif-empty px-6 py-8 flex flex-col items-center text-center">
                                             <span class="gtb-notif-empty-icon">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7"/></svg>
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7" /></svg>
                                             </span>
                                             <div class="mt-3 text-[13px] font-extrabold text-white">Carregando notificações...</div>
                                         </div>
@@ -540,14 +543,14 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                 {successMessage && okMeta && (
                                     <div class="gt-flash-toast gt-flash-toast--success" data-auto-dismiss="5000">
                                         <span class="gt-flash-toast__icon" aria-hidden="true">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d={okMeta.iconPath}/></svg>
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d={okMeta.iconPath} /></svg>
                                         </span>
                                         <div class="gt-flash-toast__content">
                                             <div class="gt-flash-toast__title">{okMeta.title}</div>
                                             <div class="gt-flash-toast__msg">{successMessage}</div>
                                         </div>
                                         <button type="button" class="gt-flash-toast__close" aria-label="Fechar notificação" onclick="var t=this.closest('.gt-flash-toast');if(t){t.classList.add('is-leaving');setTimeout(function(){t.remove();},250);}">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12" /></svg>
                                         </button>
                                         <span class="gt-flash-toast__bar"></span>
                                     </div>
@@ -555,14 +558,14 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                 {errorMessage && errMeta && (
                                     <div class="gt-flash-toast gt-flash-toast--error" data-auto-dismiss="6500">
                                         <span class="gt-flash-toast__icon" aria-hidden="true">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d={errMeta.iconPath}/></svg>
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d={errMeta.iconPath} /></svg>
                                         </span>
                                         <div class="gt-flash-toast__content">
                                             <div class="gt-flash-toast__title">{errMeta.title}</div>
                                             <div class="gt-flash-toast__msg">{errorMessage}</div>
                                         </div>
                                         <button type="button" class="gt-flash-toast__close" aria-label="Fechar notificação" onclick="var t=this.closest('.gt-flash-toast');if(t){t.classList.add('is-leaving');setTimeout(function(){t.remove();},250);}">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12" /></svg>
                                         </button>
                                         <span class="gt-flash-toast__bar" style="animation-duration: 6.5s;"></span>
                                     </div>
@@ -580,7 +583,8 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 </div>
 
                 {/* Sound Alert Engine (Web Audio API Chime) & Real-Time Notification Center */}
-                <script dangerouslySetInnerHTML={{ __html: `
+                <script dangerouslySetInnerHTML={{
+                    __html: `
                 (function () {
                     var audioCtx = null;
                     var audioUnlocked = false;
