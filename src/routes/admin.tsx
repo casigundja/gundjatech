@@ -1861,6 +1861,114 @@ adminRoutes.post('/projetos/:id/etapas/:stageId/toggle', async (c) => {
     return c.redirect(`/admin/projetos/${id}?success=Status da etapa atualizado`);
 });
 
+adminRoutes.post('/projetos/:id/anexos', async (c) => {
+    const user = c.get('user')!;
+    const db = c.env.DB;
+    const projectId = Number(c.req.param('id'));
+
+    const project = await db.prepare(`SELECT id FROM projects WHERE id = ?`).bind(projectId).first();
+    if (!project) {
+        return c.redirect('/admin/projetos?error=Projeto não encontrado');
+    }
+
+    try {
+        const formData = await c.req.formData();
+        const fileEntry = formData.get('file');
+        const isClientVisible = formData.get('is_client_visible') ? 1 : 0;
+
+        if (!fileEntry || typeof fileEntry === 'string' || !('arrayBuffer' in fileEntry)) {
+            return c.redirect(`/admin/projetos/${projectId}?error=Selecione um arquivo válido para enviar.`);
+        }
+
+        const file = fileEntry as File;
+        const maxSize = 15 * 1024 * 1024;
+        if (file.size <= 0 || file.size > maxSize) {
+            return c.redirect(`/admin/projetos/${projectId}?error=Arquivo inválido ou maior que 15 MB.`);
+        }
+
+        const originalName = String(file.name || 'documento').trim();
+        const ext = originalName.includes('.') ? originalName.split('.').pop()!.toLowerCase() : '';
+        const allowedExts = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'svg', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'txt', 'csv'];
+        if (ext && !allowedExts.includes(ext)) {
+            return c.redirect(`/admin/projetos/${projectId}?error=Formato de arquivo não permitido (.${ext}).`);
+        }
+
+        const safeBase = originalName.replace(/[^a-zA-Z0-9._-]+/g, '_').slice(0, 100);
+        const storageKey = `private/projects/${projectId}/${Date.now()}_${safeBase}`;
+        const mimeType = file.type || 'application/octet-stream';
+
+        if (c.env?.UPLOADS_BUCKET) {
+            const buf = await file.arrayBuffer();
+            await c.env.UPLOADS_BUCKET.put(storageKey, buf, {
+                httpMetadata: { contentType: mimeType }
+            });
+        }
+
+        await db.prepare(
+            `INSERT INTO project_attachments (project_id, user_id, file_name, file_path, file_size, mime_type, is_client_visible, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+        ).bind(projectId, user.id, originalName, storageKey, file.size, mimeType, isClientVisible).run();
+
+        return c.redirect(`/admin/projetos/${projectId}?success=Anexo enviado com sucesso!`);
+    } catch (err: any) {
+        return c.redirect(`/admin/projetos/${projectId}?error=${encodeURIComponent(err?.message || 'Erro ao enviar anexo')}`);
+    }
+});
+
+adminRoutes.get('/projetos/:id/anexos/:attId', async (c) => {
+    const db = c.env.DB;
+    const projectId = Number(c.req.param('id'));
+    const attId = Number(c.req.param('attId'));
+
+    const att = (await db.prepare(
+        `SELECT * FROM project_attachments WHERE id = ? AND project_id = ?`
+    ).bind(attId, projectId).first()) as any;
+
+    if (!att) {
+        return c.text('Anexo não encontrado.', 404);
+    }
+
+    const rawPath = String(att.file_path || '').trim();
+    const storageKey = rawPath.replace(/^\/?uploads\//, '').replace(/^\/+/, '');
+    if (!c.env?.UPLOADS_BUCKET || !storageKey) {
+        return c.text('Armazenamento indisponível.', 404);
+    }
+
+    const obj = await c.env.UPLOADS_BUCKET.get(storageKey);
+    if (!obj) {
+        return c.text('Arquivo não encontrado no armazenamento.', 404);
+    }
+
+    const safeFileName = String(att.file_name || 'anexo').replace(/["\r\n]/g, '');
+    return new Response(obj.body, {
+        status: 200,
+        headers: {
+            'Content-Type': att.mime_type || obj.httpMetadata?.contentType || 'application/octet-stream',
+            'Content-Disposition': `attachment; filename="${safeFileName}"`
+        }
+    });
+});
+
+adminRoutes.post('/projetos/:id/anexos/:attId/excluir', async (c) => {
+    const db = c.env.DB;
+    const projectId = Number(c.req.param('id'));
+    const attId = Number(c.req.param('attId'));
+
+    try {
+        const att = (await db.prepare(
+            `SELECT file_path FROM project_attachments WHERE id = ? AND project_id = ?`
+        ).bind(attId, projectId).first()) as { file_path?: string } | null;
+
+        if (att?.file_path && c.env?.UPLOADS_BUCKET) {
+            const storageKey = String(att.file_path).replace(/^\/?uploads\//, '').replace(/^\/+/, '');
+            try { await c.env.UPLOADS_BUCKET.delete(storageKey); } catch { }
+        }
+        await db.prepare(`DELETE FROM project_attachments WHERE id = ? AND project_id = ?`).bind(attId, projectId).run();
+    } catch { }
+
+    return c.redirect(`/admin/projetos/${projectId}?success=Anexo excluído com sucesso.`);
+});
+
 // ==========================================
 // 8. FATURAS & GESTÃO FINANCEIRA
 // ==========================================
