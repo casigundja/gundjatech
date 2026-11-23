@@ -33,6 +33,17 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
     const isEvolution = activeProvider === 'evolution';
     const isMeta = activeProvider === 'meta';
 
+    const wa1Active = whatsappSyncEnabled;
+    const wa1AiEffective = whatsappSyncEnabled && whatsappAiEnabled;
+    const wa2Active = whatsappDirectorEnabled;
+    const statusMeta = !whatsappConfigured
+        ? { label: '● Pendente', cls: 'gt-badge-warning' }
+        : wa1Active && wa1AiEffective && wa2Active
+        ? { label: '● Ativo', cls: 'gt-badge-success' }
+        : !wa1Active && !wa2Active
+        ? { label: '● Pausado', cls: 'gt-badge-danger' }
+        : { label: '● Parcial', cls: 'gt-badge-warning' };
+
     return (
         <AdminLayout
             title="Configurações do Sistema • Painel Administrativo GundjaTech"
@@ -189,14 +200,8 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                                 <h2 class="gt-font-display text-sm sm:text-base font-extrabold text-white">Integração WhatsApp IA</h2>
                                 <p class="text-xs text-[#8C95AA] mt-0.5">Conexão via QR Code (Z-API / Evolution) ou Meta Oficial.</p>
                             </div>
-                            <span class={`gt-badge shrink-0 ${
-                                !whatsappSyncEnabled
-                                    ? 'gt-badge-danger'
-                                    : whatsappConfigured
-                                    ? 'gt-badge-success'
-                                    : 'gt-badge-warning'
-                            }`}>
-                                {!whatsappSyncEnabled ? '● Pausado' : whatsappConfigured ? '● Conectado' : '● Pendente'}
+                            <span id="gt-wa-status-badge" data-configured={whatsappConfigured ? '1' : '0'} class={`gt-badge shrink-0 ${statusMeta.cls}`}>
+                                {statusMeta.label}
                             </span>
                         </div>
 
@@ -205,31 +210,35 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                             <label class="flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                                 <div class="min-w-0">
                                     <div class="text-xs font-bold text-white leading-tight">WhatsApp 1 · Atendimento Oficial (Recebimento)</div>
-                                    <div class="text-[11px] text-[#8C95AA] mt-0.5">
+                                    <div id="gt-wa-sync-desc" class="text-[11px] text-[#8C95AA] mt-0.5">
                                         {whatsappSyncEnabled ? 'Ativo — recebendo mensagens de clientes no número oficial' : 'Pausado — recebimento no WhatsApp oficial desativado'}
                                     </div>
                                 </div>
-                                <input type="checkbox" name="whatsapp_sync_enabled" value="1" checked={whatsappSyncEnabled} class="gt-switch shrink-0" />
+                                <input id="gt-wa-sync-chk" type="checkbox" name="whatsapp_sync_enabled" value="1" checked={whatsappSyncEnabled} onchange="window.GT_SyncWaStatus && window.GT_SyncWaStatus()" class="gt-switch shrink-0" />
                             </label>
 
-                            <label class="flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                            <label id="gt-wa-ai-row" class="flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer" style={`border-bottom: 1px solid rgba(22, 116, 154, 0.14); opacity: ${whatsappSyncEnabled ? '1' : '0.68'};`}>
                                 <div class="min-w-0">
                                     <div class="text-xs font-bold text-white leading-tight">WhatsApp 1 · Atendimento Automático (IA)</div>
-                                    <div class="text-[11px] text-[#8C95AA] mt-0.5">
-                                        {whatsappAiEnabled ? 'Ativo — IA responde e interage com clientes no WhatsApp 1' : 'Pausado — conversas entram no Inbox para resposta humana'}
+                                    <div id="gt-wa-ai-desc" class="text-[11px] text-[#8C95AA] mt-0.5">
+                                        {!whatsappSyncEnabled
+                                            ? 'Em espera — ative o Recebimento do WhatsApp 1 para a IA responder'
+                                            : whatsappAiEnabled
+                                            ? 'Ativo — IA responde e interage com clientes no WhatsApp 1'
+                                            : 'Pausado — conversas entram no Inbox para resposta humana'}
                                     </div>
                                 </div>
-                                <input type="checkbox" name="whatsapp_ai_enabled" value="1" checked={whatsappAiEnabled} class="gt-switch shrink-0" />
+                                <input id="gt-wa-ai-chk" type="checkbox" name="whatsapp_ai_enabled" value="1" checked={whatsappAiEnabled} onchange="window.GT_SyncWaStatus && window.GT_SyncWaStatus()" class="gt-switch shrink-0" />
                             </label>
 
                             <label class="flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer">
                                 <div class="min-w-0">
                                     <div class="text-xs font-bold text-white leading-tight">WhatsApp 2 · Atendimento Direto do Diretor</div>
-                                    <div class="text-[11px] text-[#8C95AA] mt-0.5">
+                                    <div id="gt-wa-dir-desc" class="text-[11px] text-[#8C95AA] mt-0.5">
                                         {whatsappDirectorEnabled ? 'Ativo — recebe solicitações de atendimento humano (Site e WhatsApp 1)' : 'Pausado — solicitações de atendimento humano ficam apenas no Inbox'}
                                     </div>
                                 </div>
-                                <input type="checkbox" name="whatsapp_director_enabled" value="1" checked={whatsappDirectorEnabled} class="gt-switch shrink-0" />
+                                <input id="gt-wa-dir-chk" type="checkbox" name="whatsapp_director_enabled" value="1" checked={whatsappDirectorEnabled} onchange="window.GT_SyncWaStatus && window.GT_SyncWaStatus()" class="gt-switch shrink-0" />
                             </label>
                         </div>
 
@@ -402,6 +411,59 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
 
             {/* Form auxiliar isolado para testar envio WhatsApp sem disparar dirty-guard */}
             <form id="gt-test-wa-form" action="/admin/configuracoes/testar-whatsapp" method="post" class="hidden"></form>
+
+            <script dangerouslySetInnerHTML={{ __html: `
+                window.GT_SyncWaStatus = function () {
+                    var syncChk = document.getElementById('gt-wa-sync-chk');
+                    var aiChk = document.getElementById('gt-wa-ai-chk');
+                    var dirChk = document.getElementById('gt-wa-dir-chk');
+                    var badge = document.getElementById('gt-wa-status-badge');
+                    var syncDesc = document.getElementById('gt-wa-sync-desc');
+                    var aiDesc = document.getElementById('gt-wa-ai-desc');
+                    var aiRow = document.getElementById('gt-wa-ai-row');
+                    var dirDesc = document.getElementById('gt-wa-dir-desc');
+                    if (!syncChk || !aiChk || !dirChk || !badge) return;
+
+                    var syncOn = !!syncChk.checked;
+                    var aiOn = !!aiChk.checked;
+                    var dirOn = !!dirChk.checked;
+                    var configured = badge.getAttribute('data-configured') === '1';
+
+                    if (syncDesc) {
+                        syncDesc.textContent = syncOn
+                            ? 'Ativo — recebendo mensagens de clientes no número oficial'
+                            : 'Pausado — recebimento no WhatsApp oficial desativado';
+                    }
+                    if (aiRow) aiRow.style.opacity = syncOn ? '1' : '0.68';
+                    if (aiDesc) {
+                        aiDesc.textContent = !syncOn
+                            ? 'Em espera — ative o Recebimento do WhatsApp 1 para a IA responder'
+                            : aiOn
+                            ? 'Ativo — IA responde e interage com clientes no WhatsApp 1'
+                            : 'Pausado — conversas entram no Inbox para resposta humana';
+                    }
+                    if (dirDesc) {
+                        dirDesc.textContent = dirOn
+                            ? 'Ativo — recebe solicitações de atendimento humano (Site e WhatsApp 1)'
+                            : 'Pausado — solicitações de atendimento humano ficam apenas no Inbox';
+                    }
+
+                    badge.classList.remove('gt-badge-success', 'gt-badge-warning', 'gt-badge-danger');
+                    if (!configured) {
+                        badge.textContent = '● Pendente';
+                        badge.classList.add('gt-badge-warning');
+                    } else if (syncOn && aiOn && dirOn) {
+                        badge.textContent = '● Ativo';
+                        badge.classList.add('gt-badge-success');
+                    } else if (!syncOn && !dirOn) {
+                        badge.textContent = '● Pausado';
+                        badge.classList.add('gt-badge-danger');
+                    } else {
+                        badge.textContent = '● Parcial';
+                        badge.classList.add('gt-badge-warning');
+                    }
+                };
+            ` }} />
         </AdminLayout>
     );
 };
