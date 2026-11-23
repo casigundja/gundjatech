@@ -224,6 +224,10 @@ body.gt-sidebar-is-collapsed .gtb-sidebar-collapse-btn svg {
     justify-content: center;
 }
 
+.gtb-count-circle.hidden {
+    display: none !important;
+}
+
 /* Bottom Promo Card (Always rich Deep Petrol + Gold brand signature) */
 .gtb-promo-card {
     margin: 12px;
@@ -496,57 +500,35 @@ html[data-admin-theme="light"] .gtb-theme-orb[data-theme-orb="light"] {
     box-shadow: 0 6px 16px -8px rgba(242, 194, 48, 0.45);
 }
 
+/* Barras superiores coloridas removidas para visual executivo limpo */
 .gtb-kpi-gold::before,
 .gtb-kpi-blue::before,
-.gtb-kpi-petrol::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 18px;
-    right: 18px;
-    height: 2px;
-    border-radius: 999px;
-    opacity: 0.9;
+.gtb-kpi-petrol::before,
+.gtb-card-accent-top {
+    display: none !important;
 }
 
-.gtb-kpi-gold::before {
-    background: linear-gradient(90deg, #F2C230 0%, rgba(242, 194, 48, 0) 100%);
-    box-shadow: 0 2px 16px rgba(242, 194, 48, 0.45);
-}
-
-.gtb-kpi-blue::before {
-    background: linear-gradient(90deg, #38BDF8 0%, rgba(22, 116, 154, 0) 100%);
-    box-shadow: 0 2px 16px rgba(56, 189, 248, 0.45);
-}
-
-.gtb-kpi-petrol::before {
-    background: linear-gradient(90deg, #34D399 0%, rgba(22, 116, 154, 0) 100%);
-    box-shadow: 0 2px 16px rgba(52, 211, 153, 0.4);
-}
-
-.gtb-icon-box {
+.gtb-icon-box,
+.gtb-icon-box.is-blue,
+.gtb-icon-box.is-petrol {
     width: 34px;
     height: 34px;
     border-radius: 10px;
-    background: rgba(242, 194, 48, 0.14);
-    border: 1px solid rgba(242, 194, 48, 0.28);
-    color: var(--gtb-gold);
+    background: rgba(22, 116, 154, 0.14);
+    border: 1px solid rgba(231, 240, 245, 0.14);
+    color: #A9C2D4;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
 }
 
-.gtb-icon-box.is-blue {
-    background: rgba(22, 116, 154, 0.22);
-    border-color: rgba(56, 189, 248, 0.35);
-    color: #7DD3FC;
-}
-
-.gtb-icon-box.is-petrol {
-    background: rgba(22, 116, 154, 0.22);
-    border-color: rgba(94, 234, 212, 0.35);
-    color: #5EEAD4;
+html[data-admin-theme="light"] .gtb-icon-box,
+html[data-admin-theme="light"] .gtb-icon-box.is-blue,
+html[data-admin-theme="light"] .gtb-icon-box.is-petrol {
+    background: #EDF4F8 !important;
+    border-color: #D4E3ED !important;
+    color: #063B5C !important;
 }
 
 .gtb-growth-pill {
@@ -555,11 +537,31 @@ html[data-admin-theme="light"] .gtb-theme-orb[data-theme-orb="light"] {
     gap: 4px;
     padding: 4px 10px;
     border-radius: 999px;
-    background: #6EE7B7;
-    color: #062E22;
+    background: rgba(22, 116, 154, 0.18);
+    border: 1px solid rgba(231, 240, 245, 0.16);
+    color: #E7F0F5;
     font-size: 11px;
-    font-weight: 800;
+    font-weight: 700;
     letter-spacing: -0.01em;
+}
+
+html[data-admin-theme="light"] .gtb-growth-pill {
+    background: #EDF4F8 !important;
+    border-color: #D4E3ED !important;
+    color: #063B5C !important;
+}
+
+/* Uniformiza números de KPIs no modo claro (remove verde-neon e marrom-amarelado nos totais) */
+html[data-admin-theme="light"] body.gt-admin-boost .gt-kpi-grid .gtb-card .gt-font-display,
+html[data-admin-theme="light"] body.gt-admin-boost .gtb-card .text-2xl.font-extrabold,
+html[data-admin-theme="light"] body.gt-admin-boost .gtb-card .text-xl.font-extrabold {
+    color: #063B5C !important;
+}
+
+/* Protocolos nas tabelas em azul petróleo limpo no modo claro */
+html[data-admin-theme="light"] body.gt-admin-boost table td.font-mono,
+html[data-admin-theme="light"] body.gt-admin-boost table td .font-mono {
+    color: #063B5C !important;
 }
 
 .gtb-ctrl-btn {

@@ -190,31 +190,31 @@ export const AdminDashboardView: FC<AdminDashboardProps> = ({
                 </section>
 
                 <section class="lg:col-span-4 gtb-card !p-5 flex flex-col justify-between gap-3.5">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between gap-2">
                         <div class="flex items-center gap-2">
-                            <span class="gtb-icon-box is-blue !w-8 !h-8">
+                            <span class="gtb-icon-box !w-8 !h-8">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
                             </span>
                             <h2 class="text-sm font-bold text-white">Orçamentos &amp; Propostas</h2>
                         </div>
-                        <span class="text-xs font-extrabold text-[#34D399]">{stats.approvedQuotations} aprovados</span>
+                        <span class="gt-req-pill-neutral">{stats.approvedQuotations} aprovados</span>
                     </div>
 
                     <div class="relative flex items-center justify-center py-1">
-                        <div class="absolute left-0 top-1 z-10 rounded-xl bg-[#6EE7B7] text-[#052E22] px-2.5 py-1 shadow-md">
-                            <div class="text-xs font-extrabold leading-tight">
+                        <div class="absolute left-0 top-1 z-10 gtb-surface-box rounded-xl px-2.5 py-1.5">
+                            <div class="text-xs font-extrabold text-white leading-tight">
                                 R$ {formatBRL(stats.openQuotationsValue || 0)}
                             </div>
-                            <div class="text-[9.5px] font-bold opacity-80">{stats.totalQuotations} proposta(s)</div>
+                            <div class="text-[9.5px] font-semibold text-[#8C95AA]">{stats.totalQuotations} proposta(s)</div>
                         </div>
 
                         <svg viewBox="0 0 200 200" style="width: 148px; height: 148px;" class="-rotate-90">
-                            <circle cx="100" cy="100" r="80" fill="none" stroke="#222738" stroke-width="8"/>
-                            <circle cx="100" cy="100" r="80" fill="none" stroke="#F2C230" stroke-width="8" stroke-linecap="round" stroke-dasharray="360 502"/>
-                            <circle cx="100" cy="100" r="64" fill="none" stroke="#222738" stroke-width="8"/>
-                            <circle cx="100" cy="100" r="64" fill="none" stroke="#38BDF8" stroke-width="8" stroke-linecap="round" stroke-dasharray="220 402"/>
-                            <circle cx="100" cy="100" r="48" fill="none" stroke="#222738" stroke-width="8"/>
-                            <circle cx="100" cy="100" r="48" fill="none" stroke="#34D399" stroke-width="8" stroke-linecap="round" stroke-dasharray="150 301"/>
+                            <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(140,149,170,0.18)" stroke-width="8"/>
+                            <circle cx="100" cy="100" r="80" fill="none" stroke="#063B5C" stroke-width="8" stroke-linecap="round" stroke-dasharray="360 502"/>
+                            <circle cx="100" cy="100" r="64" fill="none" stroke="rgba(140,149,170,0.18)" stroke-width="8"/>
+                            <circle cx="100" cy="100" r="64" fill="none" stroke="#16749A" stroke-width="8" stroke-linecap="round" stroke-dasharray="220 402"/>
+                            <circle cx="100" cy="100" r="48" fill="none" stroke="rgba(140,149,170,0.18)" stroke-width="8"/>
+                            <circle cx="100" cy="100" r="48" fill="none" stroke="#F2C230" stroke-width="8" stroke-linecap="round" stroke-dasharray="150 301"/>
                         </svg>
 
                         <span class="absolute text-base font-extrabold text-white">{stats.totalRequests}</span>
@@ -223,19 +223,19 @@ export const AdminDashboardView: FC<AdminDashboardProps> = ({
                     <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;" class="pt-1 text-center border-t border-white/10">
                         <div>
                             <div class="text-[11px] font-extrabold text-white flex items-center justify-center gap-1">
-                                <i class="w-2 h-2 rounded-full inline-block bg-[#F2C230]"></i> Sites
+                                <i class="w-2 h-2 rounded-full inline-block bg-[#063B5C]"></i> Sites
                             </div>
                             <div class="text-[10px] text-[#8C95AA] mt-0.5">{stats.totalRequests} dem.</div>
                         </div>
                         <div>
                             <div class="text-[11px] font-extrabold text-white flex items-center justify-center gap-1">
-                                <i class="w-2 h-2 rounded-full inline-block bg-[#38BDF8]"></i> Ciber
+                                <i class="w-2 h-2 rounded-full inline-block bg-[#16749A]"></i> Ciber
                             </div>
                             <div class="text-[10px] text-[#8C95AA] mt-0.5">{stats.activeProjects} proj.</div>
                         </div>
                         <div>
                             <div class="text-[11px] font-extrabold text-white flex items-center justify-center gap-1">
-                                <i class="w-2 h-2 rounded-full inline-block bg-[#34D399]"></i> Operação
+                                <i class="w-2 h-2 rounded-full inline-block bg-[#F2C230]"></i> Operação
                             </div>
                             <div class="text-[10px] text-[#8C95AA] mt-0.5">{stats.approvedQuotations} aprov.</div>
                         </div>
@@ -247,32 +247,43 @@ export const AdminDashboardView: FC<AdminDashboardProps> = ({
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <section class="gtb-card !p-5 space-y-3">
                     <div class="flex items-center justify-between">
-                        <h2 class="text-xs font-extrabold uppercase tracking-wider text-[#F2C230]">Últimas Solicitações de Clientes ({stats.totalRequests})</h2>
-                        <a href="/admin/solicitacoes" class="text-xs font-bold text-[#8C95AA] hover:text-white no-underline">Ver todas &rarr;</a>
+                        <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Últimas Solicitações de Clientes ({stats.totalRequests})</h2>
+                        <a href="/admin/solicitacoes" class="text-xs font-bold text-[#16749A] hover:underline no-underline">Ver todas &rarr;</a>
                     </div>
                     <div class="divide-y divide-white/5 text-xs">
                         {stats.recentRequests.length === 0 ? (
                             <p class="text-xs text-[#8C95AA] py-4 text-center">Nenhuma solicitação recente.</p>
                         ) : (
-                            stats.recentRequests.map((r: any) => (
-                                <a href={`/admin/solicitacoes/${r.id}`} class="py-2 flex items-center justify-between gap-2 no-underline">
-                                    <div class="min-w-0">
-                                        <span class="font-bold text-white hover:text-[#F2C230] truncate block">{r.service_title || r.title}</span>
-                                        <span class="text-[10.5px] text-[#8C95AA] truncate block">{r.company || r.name} • Prot: {r.protocol}</span>
-                                    </div>
-                                    <span class="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-[#D5DCEB] shrink-0">
-                                        {r.status}
-                                    </span>
-                                </a>
-                            ))
+                            stats.recentRequests.map((r: any) => {
+                                const reqLabels: Record<string, string> = {
+                                    new: 'Nova',
+                                    analyzing: 'Em Análise',
+                                    quotation_sent: 'Orçamento Enviado',
+                                    approved: 'Aprovado',
+                                    in_progress: 'Em Execução',
+                                    completed: 'Concluído',
+                                    cancelled: 'Cancelado',
+                                };
+                                return (
+                                    <a href={`/admin/solicitacoes/${r.id}`} class="py-2.5 flex items-center justify-between gap-2 no-underline">
+                                        <div class="min-w-0">
+                                            <span class="font-bold text-white truncate block">{r.service_title || r.title}</span>
+                                            <span class="text-[10.5px] text-[#8C95AA] truncate block">{r.company || r.name} • Prot: {r.protocol}</span>
+                                        </div>
+                                        <span class="gt-req-pill-neutral shrink-0">
+                                            {reqLabels[r.status] || r.status}
+                                        </span>
+                                    </a>
+                                );
+                            })
                         )}
                     </div>
                 </section>
 
                 <section class="gtb-card !p-5 space-y-3">
                     <div class="flex items-center justify-between">
-                        <h2 class="text-xs font-extrabold uppercase tracking-wider text-[#F2C230]">Clientes &amp; Leads Recentes ({stats.totalClients})</h2>
-                        <a href="/admin/clientes" class="text-xs font-bold text-[#8C95AA] hover:text-white no-underline">Ver todos &rarr;</a>
+                        <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Clientes &amp; Leads Recentes ({stats.totalClients})</h2>
+                        <a href="/admin/clientes" class="text-xs font-bold text-[#16749A] hover:underline no-underline">Ver todos &rarr;</a>
                     </div>
                     <div class="divide-y divide-white/5 text-xs">
                         {stats.recentClients.length === 0 ? (
@@ -283,13 +294,14 @@ export const AdminDashboardView: FC<AdminDashboardProps> = ({
                                 const subtitle = isWaSynthetic
                                     ? `WhatsApp • ${c.phone || 'Contato'}`
                                     : `${c.email || ''}${c.phone ? ` • ${c.phone}` : ''}`;
+                                const statusLabel = c.status === 'active' ? 'Ativo' : isWaSynthetic ? 'WhatsApp' : 'Lead';
                                 return (
-                                    <div class="py-2 flex items-center justify-between gap-2">
+                                    <div class="py-2.5 flex items-center justify-between gap-2">
                                         <div class="min-w-0">
                                             <span class="font-bold text-white truncate block">{c.name} {c.company ? `(${c.company})` : ''}</span>
                                             <span class="text-[10.5px] text-[#8C95AA] truncate block">{subtitle}</span>
                                         </div>
-                                        <span class={`gt-badge ${c.status === 'active' ? 'gt-badge-success' : 'gt-badge-info'}`}>{c.status}</span>
+                                        <span class={`gt-badge ${c.status === 'active' ? 'gt-badge-success' : 'gt-badge-info'}`}>{statusLabel}</span>
                                     </div>
                                 );
                             })
