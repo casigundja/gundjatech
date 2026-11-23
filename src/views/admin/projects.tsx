@@ -96,34 +96,34 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                     </div>
                 </div>
 
-                {/* Cabeçalho Executivo do Projeto */}
-                <section class="gtb-card !p-5 space-y-5">
-                    <div class="flex items-start justify-between gap-4 flex-wrap">
+                {/* Cabeçalho Executivo Compacto do Projeto */}
+                <section class="gtb-card !p-4 space-y-3">
+                    <div class="flex items-center justify-between gap-4 flex-wrap">
                         <div class="min-w-0 flex-1">
-                            <div class="flex items-center gap-2.5 flex-wrap mb-1.5">
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-[#8C95AA]">
-                                    Cliente: <strong class="text-white">{projectDetail.company || projectDetail.client_name || 'Geral'}</strong>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <h1 class="gt-font-display text-base sm:text-lg font-extrabold text-white leading-tight truncate">
+                                    {projectDetail.title}
+                                </h1>
+                                <span class="text-[11px] font-bold text-[#8C95AA]">
+                                    · {projectDetail.company || projectDetail.client_name || 'Geral'}
                                 </span>
                             </div>
-                            <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white leading-tight">
-                                {projectDetail.title}
-                            </h1>
                             {projectDetail.description && (
-                                <p class="text-xs text-[#8C95AA] mt-2 max-w-3xl leading-relaxed whitespace-pre-line">
+                                <p class="text-xs text-[#8C95AA] mt-0.5 truncate max-w-3xl">
                                     {projectDetail.description}
                                 </p>
                             )}
                         </div>
 
-                        <div class="gtb-surface-box rounded-2xl px-5 py-3 text-right shrink-0">
-                            <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Progresso Geral</div>
-                            <div id="gt-proj-progress-kpi" class="gt-font-display text-2xl font-extrabold text-[#F2C230] mt-0.5" style="font-variant-numeric: tabular-nums;">{progress}%</div>
+                        <div class="gtb-surface-box rounded-xl px-3.5 py-1.5 flex items-center gap-2.5 shrink-0">
+                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Progresso</span>
+                            <span id="gt-proj-progress-kpi" class="gt-font-display text-lg font-extrabold text-[#F2C230]" style="font-variant-numeric: tabular-nums;">{progress}%</span>
                         </div>
                     </div>
 
-                    {/* Esteira Visual de Etapas do Projeto */}
+                    {/* Esteira Visual Compacta de Etapas do Projeto */}
                     {projectDetail.status !== 'canceled' && (
-                        <div class="gt-req-stepper gt-req-stepper--4" role="list" aria-label="Fases do projeto">
+                        <div class="gt-req-stepper gt-req-stepper--4" style="padding: 10px 14px;" role="list" aria-label="Fases do projeto">
                             {projectSteps.map((step, idx) => {
                                 const isDoneAll = projectDetail.status === 'completed';
                                 const isDone = isDoneAll || (currentProjStep >= 0 && idx < currentProjStep);
@@ -144,21 +144,16 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                         </div>
                     )}
 
-                    {/* Barra de Progresso Visual */}
-                    <div class="w-full h-2 rounded-full overflow-hidden" style="background: rgba(140, 149, 170, 0.22);">
-                        <div id="gt-proj-progress-bar" style={`height: 100%; width: ${progress}%; background: linear-gradient(90deg, #063B5C 0%, #16749A 65%, #F2C230 100%); border-radius: 999px; transition: width 0.3s ease;`} />
-                    </div>
-
-                    {/* Formulário de Atualização de Status & Cronograma */}
-                    <form action={`/admin/projetos/${projectDetail.id}`} method="post" data-dirty-guard="1" class="pt-4 space-y-4" style="border-top: 1px solid rgba(22, 116, 154, 0.14);">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px;">
+                    {/* Formulário Inline (Status + Progresso + Datas + Salvar na mesma linha) */}
+                    <form action={`/admin/projetos/${projectDetail.id}`} method="post" data-dirty-guard="1" class="pt-3" style="border-top: 1px solid rgba(22, 116, 154, 0.14);">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; align-items: end;">
                             <div>
-                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Status</label>
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Status</label>
                                 <select
                                     id="gt-proj-status-select"
                                     name="status"
-                                    onchange="var map={planning:15,in_progress:50,reviewing:85,completed:100,canceled:0};var pct=map[this.value];if(pct!==undefined){var inp=document.getElementById('gt-proj-progress-input');if(inp){inp.value=String(pct);inp.dispatchEvent(new Event('input',{bubbles:true}));}var kpi=document.getElementById('gt-proj-progress-kpi');if(kpi)kpi.textContent=pct+'%';var bar=document.getElementById('gt-proj-progress-bar');if(bar)bar.style.width=pct+'%';}"
-                                    class="w-full rounded-xl px-3.5 py-2 text-xs"
+                                    onchange="var map={planning:15,in_progress:50,reviewing:85,completed:100,canceled:0};var pct=map[this.value];if(pct!==undefined){var inp=document.getElementById('gt-proj-progress-input');if(inp){inp.value=String(pct);inp.dispatchEvent(new Event('input',{bubbles:true}));}var kpi=document.getElementById('gt-proj-progress-kpi');if(kpi)kpi.textContent=pct+'%';}"
+                                    class="w-full rounded-xl px-3 py-1.5 text-xs"
                                 >
                                     <option value="planning" selected={projectDetail.status === 'planning'}>Planejamento</option>
                                     <option value="in_progress" selected={projectDetail.status === 'in_progress'}>Em Desenvolvimento</option>
@@ -169,7 +164,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                             </div>
 
                             <div>
-                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Progresso (%) · Automático</label>
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Progresso (%) · Auto</label>
                                 <input
                                     id="gt-proj-progress-input"
                                     type="number"
@@ -177,39 +172,39 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                                     min="0"
                                     max="100"
                                     value={progress}
-                                    oninput="var v=Math.max(0,Math.min(100,parseInt(this.value||'0',10)||0));var kpi=document.getElementById('gt-proj-progress-kpi');if(kpi)kpi.textContent=v+'%';var bar=document.getElementById('gt-proj-progress-bar');if(bar)bar.style.width=v+'%';"
-                                    class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                    oninput="var v=Math.max(0,Math.min(100,parseInt(this.value||'0',10)||0));var kpi=document.getElementById('gt-proj-progress-kpi');if(kpi)kpi.textContent=v+'%';"
+                                    class="w-full rounded-xl px-3 py-1.5 text-xs font-mono"
                                 />
                             </div>
 
                             <div>
-                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Data de Início</label>
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Data de Início</label>
                                 <input
                                     type="date"
                                     name="start_date"
                                     value={String(projectDetail.start_date || '').slice(0, 10)}
-                                    class="w-full rounded-xl px-3.5 py-2 text-xs"
+                                    class="w-full rounded-xl px-3 py-1.5 text-xs"
                                 />
                             </div>
 
                             <div>
-                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Previsão de Entrega</label>
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Previsão de Entrega</label>
                                 <input
                                     type="date"
                                     name="expected_end_date"
                                     value={String(projectDetail.expected_end_date || '').slice(0, 10)}
-                                    class="w-full rounded-xl px-3.5 py-2 text-xs"
+                                    class="w-full rounded-xl px-3 py-1.5 text-xs"
                                 />
                             </div>
-                        </div>
 
-                        <div class="flex items-center justify-end">
-                            <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span>Salvar Alterações</span>
-                            </button>
+                            <div class="flex justify-end">
+                                <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm w-full justify-center">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span>Salvar</span>
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </section>
@@ -217,36 +212,36 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                 {/* Duas colunas equalizadas (7fr / 5fr): Etapas & Anexos */}
                 <div class="gt-crm-grid">
                     {/* Etapas do Cronograma */}
-                    <section class="gtb-card !p-5 flex flex-col justify-between gap-4 min-w-0">
-                        <div class="space-y-4">
-                            <div class="flex items-center justify-between gap-2 pb-3" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                    <section class="gtb-card !p-4 flex flex-col justify-between gap-3 min-w-0">
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between gap-2 pb-2.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                                 <div>
-                                    <h2 class="gt-font-display text-sm sm:text-base font-extrabold text-white">Etapas do Cronograma ({stages.length})</h2>
-                                    <p class="text-xs text-[#8C95AA] mt-0.5">Controle de entregas e marcos técnicos do projeto.</p>
+                                    <h2 class="gt-font-display text-sm font-extrabold text-white">Etapas do Cronograma ({stages.length})</h2>
+                                    <p class="text-[11px] text-[#8C95AA] mt-0.5">Controle de entregas e marcos técnicos do projeto.</p>
                                 </div>
                                 <span class="gt-badge gt-badge-info">{completedStages}/{stages.length} concluídas</span>
                             </div>
 
-                            <div class="space-y-2.5" style="max-height: 270px; overflow-y: auto; padding-right: 4px;">
+                            <div class="space-y-2" style="max-height: 205px; overflow-y: auto; padding-right: 4px;">
                                 {stages.length === 0 ? (
-                                    <div class="gtb-surface-box rounded-xl p-6 text-center text-xs text-[#8C95AA]">
+                                    <div class="gtb-surface-box rounded-xl p-5 text-center text-xs text-[#8C95AA]">
                                         Nenhuma etapa cadastrada ainda. Adicione o primeiro marco abaixo.
                                     </div>
                                 ) : (
                                     stages.map((s, idx) => {
                                         const isDone = s.status === 'completed';
                                         return (
-                                            <div class="gtb-surface-box rounded-xl px-4 py-3 flex items-center justify-between gap-3">
-                                                <div class="flex items-center gap-3 min-w-0">
+                                            <div class="gtb-surface-box rounded-xl px-3.5 py-2 flex items-center justify-between gap-3">
+                                                <div class="flex items-center gap-2.5 min-w-0">
                                                     <span
-                                                        style={`width: 28px; height: 28px; min-width: 28px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0; ${
+                                                        style={`width: 26px; height: 26px; min-width: 26px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0; ${
                                                             isDone
                                                                 ? 'background: #10B981; color: #FFFFFF;'
                                                                 : 'background: #063B5C; color: #F2C230;'
                                                         }`}
                                                     >
                                                         {isDone ? (
-                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                                                                 <polyline points="20 6 9 17 4 12" />
                                                             </svg>
                                                         ) : (
@@ -254,7 +249,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                                                         )}
                                                     </span>
                                                     <div class="min-w-0">
-                                                        <div class={`text-[13px] font-bold truncate ${isDone ? 'line-through text-[#8C95AA]' : 'text-white'}`}>
+                                                        <div class={`text-xs font-bold truncate ${isDone ? 'line-through text-[#8C95AA]' : 'text-white'}`}>
                                                             {s.title}
                                                         </div>
                                                         {s.description && <div class="text-[11px] text-[#8C95AA] mt-0.5">{s.description}</div>}
@@ -278,20 +273,20 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                         </div>
 
                         {/* Adicionar Nova Etapa */}
-                        <form action={`/admin/projetos/${projectDetail.id}/etapas`} method="post" class="gtb-surface-box rounded-xl p-4 space-y-2.5">
+                        <form action={`/admin/projetos/${projectDetail.id}/etapas`} method="post" class="gtb-surface-box rounded-xl p-3 space-y-2">
                             <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#16749A]">
                                 Adicionar Nova Etapa
                             </label>
-                            <div class="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+                            <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                                 <input
                                     type="text"
                                     name="title"
                                     required
                                     placeholder="Ex: Configuração DNS, SSL Cloudflare e Deploy"
-                                    class="flex-1 min-w-0 rounded-xl px-3.5 py-2 text-xs"
+                                    class="flex-1 min-w-0 rounded-xl px-3 py-1.5 text-xs"
                                 />
-                                <button type="submit" data-loading-text="..." class="gt-btn-primary gt-btn-sm shrink-0">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <button type="submit" data-loading-text="..." class="gt-btn-primary gt-btn-xs shrink-0">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M5 12h14" />
                                         <path d="M12 5v14" />
                                     </svg>
@@ -302,18 +297,18 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                     </section>
 
                     {/* Arquivos & Anexos (com Upload R2 + Visibilidade Portal + Download/Exclusão) */}
-                    <aside class="gtb-card !p-5 flex flex-col justify-between gap-4 min-w-0">
-                        <div class="space-y-4">
-                            <div class="flex items-center justify-between gap-2 pb-3" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                    <aside class="gtb-card !p-4 flex flex-col justify-between gap-3 min-w-0">
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between gap-2 pb-2.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                                 <div>
-                                    <h2 class="gt-font-display text-sm sm:text-base font-extrabold text-white">Arquivos &amp; Anexos ({attachments.length})</h2>
-                                    <p class="text-xs text-[#8C95AA] mt-0.5">Documentos técnicos, contratos e entregáveis.</p>
+                                    <h2 class="gt-font-display text-sm font-extrabold text-white">Arquivos &amp; Anexos ({attachments.length})</h2>
+                                    <p class="text-[11px] text-[#8C95AA] mt-0.5">Documentos técnicos, contratos e entregáveis.</p>
                                 </div>
                             </div>
 
-                            <div class="space-y-2.5" style="max-height: 270px; overflow-y: auto; padding-right: 4px;">
+                            <div class="space-y-2" style="max-height: 205px; overflow-y: auto; padding-right: 4px;">
                                 {attachments.length === 0 ? (
-                                    <div class="gtb-surface-box rounded-xl p-6 text-center text-xs text-[#8C95AA]">
+                                    <div class="gtb-surface-box rounded-xl p-5 text-center text-xs text-[#8C95AA]">
                                         Nenhum documento ou anexo vinculado ainda. Use o formulário abaixo para enviar.
                                     </div>
                                 ) : (
@@ -322,10 +317,10 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                                         const isPortalVisible = att.is_client_visible !== 0;
                                         const isFromClient = att.uploader_role === 'client';
                                         return (
-                                            <div class="gtb-surface-box rounded-xl p-3 flex items-center justify-between gap-2.5">
+                                            <div class="gtb-surface-box rounded-xl px-3 py-2 flex items-center justify-between gap-2">
                                                 <div class="flex items-center gap-2.5 min-w-0">
-                                                    <span class="gtb-icon-box !w-8 !h-8 shrink-0" aria-hidden="true">
-                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <span class="gtb-icon-box !w-7 !h-7 shrink-0" aria-hidden="true">
+                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                             <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
                                                             <polyline points="14 2 14 8 20 8" />
                                                         </svg>
@@ -371,7 +366,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                             action={`/admin/projetos/${projectDetail.id}/anexos`}
                             method="post"
                             enctype="multipart/form-data"
-                            class="gtb-surface-box rounded-xl p-4 space-y-3"
+                            class="gtb-surface-box rounded-xl p-3 space-y-2.5"
                         >
                             <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#16749A]">
                                 Enviar Novo Anexo (até 15 MB)
@@ -381,7 +376,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                                 name="file"
                                 required
                                 accept=".pdf,.png,.jpg,.jpeg,.webp,.svg,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.txt,.csv"
-                                class="w-full rounded-xl px-3 py-2 text-xs"
+                                class="w-full rounded-xl px-2.5 py-1.5 text-xs"
                                 style="border: 1px dashed rgba(22, 116, 154, 0.35); cursor: pointer;"
                             />
                             <div class="flex items-center justify-between gap-2 flex-wrap">
