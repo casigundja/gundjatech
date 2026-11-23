@@ -868,3 +868,6 @@ video::-webkit-media-controls,video::-webkit-media-controls-panel,video::-webkit
     flex: 0 0 calc((100% - 12px) / 2);
   }
 }
+
+/* Autoplay case videos visible on desktop and mobile */
+.hm-car:not(.aberto) .hm-c .hm-c-video{opacity:1!important;transform:none!important}

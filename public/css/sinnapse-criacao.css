@@ -11134,3 +11134,6 @@ video::-webkit-media-controls,video::-webkit-media-controls-panel,video::-webkit
   .topo-acesso svg{width:18px;height:18px;color:#FFFFFF}
   .pg-home .topo-fixo:not(.rolou) .topo-acesso svg,.pg-claro .topo-fixo:not(.rolou) .topo-acesso svg{color:#0B0E1A}
 }
+
+/* Autoplay case videos visible on desktop and mobile */
+.hm-car:not(.aberto) .hm-c .hm-c-video{opacity:1!important;transform:none!important}
