@@ -186,32 +186,32 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
             </div>
 
             {/* 4 KPIs Executivos Compactos */}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="gtb-card !p-3.5 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total de Pacotes</span>
-                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{services.length}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-white mt-0.5 block">{services.length}</span>
                     </div>
                     <span class="text-[11px] font-bold text-[#8C95AA]">Catálogo</span>
                 </div>
-                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+                <div class="gtb-card !p-3.5 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Serviços Ativos</span>
-                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{activeCount}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-white mt-0.5 block">{activeCount}</span>
                     </div>
                     <span class="gt-badge gt-badge-success">Ativo</span>
                 </div>
-                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+                <div class="gtb-card !p-3.5 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Pausados / Inativos</span>
-                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{inactiveCount}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-white mt-0.5 block">{inactiveCount}</span>
                     </div>
                     <span class="gt-badge gt-badge-warning">Inativo</span>
                 </div>
-                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+                <div class="gtb-card !p-3.5 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Ticket Médio Base</span>
-                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-white mt-0.5 block">{formatBRL(avgPrice)}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-white mt-0.5 block">{formatBRL(avgPrice)}</span>
                     </div>
                     <span class="gt-badge gt-badge-info">Média</span>
                 </div>
@@ -219,7 +219,7 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
 
             {/* Tabela de Serviços com Filtros Integrados */}
             <div class="gtb-card !p-0 overflow-hidden">
-                <div class="px-5 py-3.5 border-b border-white/10 flex items-center justify-between gap-3 flex-wrap">
+                <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between gap-3 flex-wrap">
                     <div id="gt-svc-tabs" class="flex items-center gap-1.5 flex-wrap">
                         <button type="button" data-tab="all" onclick="window.gtFilterServiceTab('all')" class="gt-btn-xs gt-btn-primary">
                             Todos ({services.length})
@@ -232,12 +232,12 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                         </button>
                     </div>
 
-                    <div class="flex-1 sm:flex-initial">
+                    <div style="width: 240px; max-width: 100%;">
                         <input
                             type="text"
                             placeholder="Filtrar serviço ou categoria..."
                             oninput="window.gtFilterServiceSearch(this.value)"
-                            class="rounded-xl px-3.5 py-1.5 text-xs w-full sm:w-64"
+                            class="rounded-xl px-3 py-1.5 text-xs w-full"
                         />
                     </div>
                 </div>
@@ -249,11 +249,11 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                         <table class="w-full text-left text-xs">
                             <thead>
                                 <tr class="border-b border-white/10 text-[10px] uppercase tracking-wider text-[#8C95AA]">
-                                    <th class="py-3 px-5">Serviço / Pacote</th>
-                                    <th class="py-3 px-5">Categoria</th>
-                                    <th class="py-3 px-5">Preço Base</th>
-                                    <th class="py-3 px-5">Status</th>
-                                    <th class="py-3 px-5 text-right">Ações</th>
+                                    <th class="py-2.5 px-4">Serviço / Pacote</th>
+                                    <th class="py-2.5 px-4">Categoria</th>
+                                    <th class="py-2.5 px-4">Preço Base</th>
+                                    <th class="py-2.5 px-4">Status</th>
+                                    <th class="py-2.5 px-4 text-right">Ações</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-white/5">
@@ -272,7 +272,12 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                                             ? 'Cibersegurança'
                                             : 'Websites & Portais';
                                     const catKey = s.category || 'sites';
-                                    const catLabel = s.category_name || (s.category ? CATEGORY_LABELS[s.category] : null) || inferredLabel;
+                                    const catLabel =
+                                        s.category_name && s.category_name !== 'Websites & Portais'
+                                            ? s.category_name
+                                            : s.category && s.category !== 'sites' && CATEGORY_LABELS[s.category]
+                                            ? CATEGORY_LABELS[s.category]
+                                            : inferredLabel;
                                     const price = Number(s.base_price ?? s.price ?? 0);
                                     const isActive = Boolean(s.is_active);
                                     const searchBlob = `${title} ${desc} ${catLabel}`.toLowerCase();
@@ -284,35 +289,35 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                                             data-svc-search={searchBlob}
                                             class="hover:bg-white/[0.02] transition"
                                         >
-                                            <td class="py-3.5 px-5 min-w-[260px]">
-                                                <div class="flex items-start gap-3">
-                                                    <span class="gtb-icon-box !w-8 !h-8 mt-0.5" aria-hidden="true">
-                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <td class="py-2.5 px-4">
+                                                <div class="flex items-center gap-2.5 min-w-0">
+                                                    <span class="gtb-icon-box !w-7 !h-7" aria-hidden="true">
+                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
                                                             <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
                                                             <line x1="12" y1="22.08" x2="12" y2="12" />
                                                         </svg>
                                                     </span>
                                                     <div class="min-w-0">
-                                                        <div class="font-bold text-white text-[13px] leading-snug">{title}</div>
-                                                        {desc && <div class="text-[11px] text-[#8C95AA] mt-0.5 leading-relaxed max-w-xl">{desc}</div>}
+                                                        <div class="font-bold text-white text-[12.5px] leading-tight truncate max-w-[340px]">{title}</div>
+                                                        {desc && <div class="text-[11px] text-[#8C95AA] mt-0.5 truncate max-w-[380px]" title={desc}>{desc}</div>}
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td class="py-3.5 px-5 whitespace-nowrap">
+                                            <td class="py-2.5 px-4 whitespace-nowrap">
                                                 <span class="text-xs font-semibold text-[#8C95AA]">{catLabel}</span>
                                             </td>
-                                            <td class="py-3.5 px-5 whitespace-nowrap">
-                                                <span class="font-extrabold text-[13px] text-white" style="font-variant-numeric: tabular-nums;">
+                                            <td class="py-2.5 px-4 whitespace-nowrap">
+                                                <span class="font-extrabold text-[12.5px] text-white" style="font-variant-numeric: tabular-nums;">
                                                     {formatBRL(price)}
                                                 </span>
                                             </td>
-                                            <td class="py-3.5 px-5 whitespace-nowrap">
+                                            <td class="py-2.5 px-4 whitespace-nowrap">
                                                 <span class={`gt-badge ${isActive ? 'gt-badge-success' : 'gt-badge-warning'}`}>
                                                     {isActive ? 'Ativo' : 'Inativo'}
                                                 </span>
                                             </td>
-                                            <td class="py-3.5 px-5 text-right whitespace-nowrap">
+                                            <td class="py-2.5 px-4 text-right whitespace-nowrap">
                                                 <div class="inline-flex items-center gap-1.5">
                                                     <button
                                                         type="button"
