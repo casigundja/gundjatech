@@ -23,7 +23,8 @@ import { AdminProjectsView } from '../views/admin/projects';
 import { AdminFinanceView } from '../views/admin/finance';
 import { AdminDomainsView } from '../views/admin/domains';
 import { AdminCampaignsView } from '../views/admin/campaigns';
-import { sendInvoiceNoticeEmail, sendProjectStartedEmail, sendProjectCompletedEmail, sendPortalInviteEmail } from '../lib/email';
+import { sendInvoiceNoticeEmail, sendProjectStartedEmail, sendProjectCompletedEmail, sendPortalInviteEmail, sendEmail } from '../lib/email';
+import { loadBankPaymentSettings, renderOfficialPaymentReceiptHtml } from '../lib/pix';
 import { recordRequestTimeline } from '../lib/timeline';
 
 export const adminRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
@@ -1244,8 +1245,8 @@ async function ensureRequestForManualQuotation(
         qStatus === 'approved'
             ? 'in_progress'
             : qStatus === 'sent'
-            ? 'quotation_sent'
-            : 'analyzing';
+                ? 'quotation_sent'
+                : 'analyzing';
     const amount = Number(quotation.final_amount ?? quotation.total_amount ?? 0);
     const description = String(quotation.notes || `Demanda originada a partir do orçamento ${quotation.reference_code || `#${quotation.id}`}.`).trim();
     const clientName = String(client?.name || client?.company || 'Cliente').trim();
@@ -1376,8 +1377,8 @@ async function autoRegisterRevenueOnProjectCompletion(
     const clientId = options.clientId
         ? Number(options.clientId)
         : options.linkedReq?.client_id
-        ? Number(options.linkedReq.client_id)
-        : null;
+            ? Number(options.linkedReq.client_id)
+            : null;
     if (!clientId) {
         return { amount: 0, created: false };
     }
@@ -2812,10 +2813,10 @@ adminRoutes.post('/projetos/:id', async (c) => {
         status === 'completed'
             ? 100
             : status === 'canceled'
-            ? 0
-            : Number.isNaN(parsedProgress) || (statusChanged && parsedProgress === prevProgress)
-            ? (STATUS_DEFAULT_PROGRESS[status] ?? prevProgress)
-            : Math.min(100, Math.max(0, parsedProgress));
+                ? 0
+                : Number.isNaN(parsedProgress) || (statusChanged && parsedProgress === prevProgress)
+                    ? (STATUS_DEFAULT_PROGRESS[status] ?? prevProgress)
+                    : Math.min(100, Math.max(0, parsedProgress));
 
     // Trava de Qualidade: impede marcar projeto como Concluído se houver etapas pendentes no cronograma
     if (status === 'completed' && prevStatus !== 'completed') {
@@ -3245,7 +3246,51 @@ adminRoutes.get('/financeiro/:id/comprovante', async (c) => {
     const headers = new Headers();
     headers.set('Content-Type', obj.httpMetadata?.contentType || 'application/octet-stream');
     headers.set('Content-Disposition', `inline; filename="comprovante-fatura-${txId}"`);
+    headers.set('X-Content-Type-Options', 'nosniff');
+    headers.set('Content-Security-Policy', 'sandbox');
+    headers.set('Cache-Control', 'private, no-store');
     return new Response(obj.body, { headers });
+});
+
+adminRoutes.get('/financeiro/:id/recibo', async (c) => {
+    const db = c.env.DB;
+    const txId = Number(c.req.param('id'));
+
+    const tx = await db.prepare(
+        `SELECT * FROM financial_transactions WHERE id = ? AND status = 'paid'`
+    ).bind(txId).first<any>();
+
+    if (!tx) {
+        return c.text('Recibo disponível apenas para lançamentos quitados.', 404);
+    }
+
+    const client = tx.client_id
+        ? await db.prepare(`SELECT * FROM clients WHERE id = ?`).bind(tx.client_id).first<any>()
+        : null;
+    const bankSettings = await loadBankPaymentSettings(db);
+    return c.html(renderOfficialPaymentReceiptHtml({ tx, client, bankSettings }));
+});
+
+adminRoutes.post('/financeiro/:id/recusar-comprovante', async (c) => {
+    const db = c.env.DB;
+    const txId = Number(c.req.param('id'));
+    const body = await getRequestBody(c);
+    const reason = String(body.reason || 'Comprovante ilegível ou divergente. Por favor, envie novamente.').trim().slice(0, 200);
+
+    await db.prepare(
+        `UPDATE financial_transactions
+         SET status = 'pending', notes = ?, updated_at = datetime('now')
+         WHERE id = ? AND status = 'reviewing'`
+    ).bind(`[COMPROVANTE RECUSADO] ${reason}`, txId).run();
+
+    try {
+        await db.prepare(
+            `UPDATE payments SET status = 'rejected', updated_at = datetime('now')
+             WHERE financial_transaction_id = ? AND status = 'reviewing'`
+        ).bind(txId).run();
+    } catch { }
+
+    return c.redirect('/admin/financeiro?success=Comprovante recusado e fatura devolvida ao cliente como Pendente.');
 });
 
 adminRoutes.post('/financeiro/:id/pagar', async (c) => {
@@ -3254,15 +3299,45 @@ adminRoutes.post('/financeiro/:id/pagar', async (c) => {
 
     let txType = 'income';
     let txClientId: number | null = null;
+    let txDesc = '';
+    let txAmount = 0;
     try {
-        const row = await db.prepare(`SELECT type, client_id FROM financial_transactions WHERE id = ?`).bind(id).first<{ type?: string; client_id?: number }>();
+        const row = await db.prepare(`SELECT type, client_id, description, amount FROM financial_transactions WHERE id = ?`).bind(id).first<any>();
         if (row?.type) txType = row.type;
         if (row?.client_id) txClientId = Number(row.client_id);
+        if (row?.description) txDesc = String(row.description);
+        if (row?.amount) txAmount = Number(row.amount);
     } catch { }
 
     await db.prepare(
-        `UPDATE financial_transactions SET status = 'paid', paid_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`
+        `UPDATE financial_transactions SET status = 'paid', paid_at = datetime('now'), notes = NULL, updated_at = datetime('now') WHERE id = ?`
     ).bind(id).run();
+
+    try {
+        await db.prepare(
+            `UPDATE payments SET status = 'completed', updated_at = datetime('now')
+             WHERE financial_transaction_id = ? AND status = 'reviewing'`
+        ).bind(id).run();
+    } catch { }
+
+    // Envia confirmação de quitação com link do Recibo Oficial ao cliente
+    if (txType === 'income' && txClientId) {
+        try {
+            const client = await db.prepare(`SELECT name, company, email FROM clients WHERE id = ?`).bind(txClientId).first<any>();
+            if (client?.email && !String(client.email).endsWith('.local')) {
+                const appUrl = (c.env.APP_URL || 'https://gundjatech.casimirogundja.workers.dev').replace(/\/$/, '');
+                const valFmt = txAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                await sendEmail(c.env, {
+                    to: client.email,
+                    subject: `Pagamento Confirmado • Recibo Oficial GundjaTech #${id}`,
+                    html: `<p>Olá, <strong>${client.company || client.name}</strong>!</p>
+                           <p>Confirmamos o recebimento de <strong>R$ ${valFmt}</strong> referente a <strong>${txDesc}</strong>.</p>
+                           <p>Seu <strong>Recibo Oficial de Quitação</strong> já está disponível no Portal do Cliente:<br/>
+                           <a href="${appUrl}/portal/financeiro/${id}/recibo">Acessar Recibo de Quitação (PDF)</a></p>`
+                });
+            }
+        } catch { }
+    }
 
     // Encerramento de Ciclo: após quitar a fatura (RECEBIDO), caso o projeto уже esteja concluído
     // e o cliente não possua nenhum outro projeto em andamento, domínio ativo ou campanha ativa,
@@ -3947,8 +4022,8 @@ adminRoutes.post('/orcamentos/:id/status', async (c) => {
     const backUrl = referer.includes(`/admin/solicitacoes/`) && quotation?.service_request_id
         ? `/admin/solicitacoes/${quotation.service_request_id}`
         : referer.includes(`/admin/orcamentos/${id}`)
-        ? `/admin/orcamentos/${id}`
-        : '/admin/orcamentos';
+            ? `/admin/orcamentos/${id}`
+            : '/admin/orcamentos';
 
     if (status === 'sent' || status === 'approved') {
         const quoteFinalAmt = Number(quotation?.final_amount ?? quotation?.total_amount ?? 0);

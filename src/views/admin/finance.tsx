@@ -198,12 +198,12 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                                     const statusMeta = overdue
                                         ? STATUS_LABELS.overdue
                                         : t.status === 'paid'
-                                        ? { label: isIncome ? 'Recebido' : 'Pago', badgeClass: 'gt-badge-success' }
-                                        : t.status === 'reviewing'
-                                        ? { label: 'Em Conferência', badgeClass: 'gt-badge-info' }
-                                        : t.status === 'pending'
-                                        ? { label: isIncome ? 'A Receber' : 'A Pagar', badgeClass: 'gt-badge-warning' }
-                                        : (STATUS_LABELS[t.status] || { label: t.status || 'Pendente', badgeClass: 'gt-badge-info' });
+                                            ? { label: isIncome ? 'Recebido' : 'Pago', badgeClass: 'gt-badge-success' }
+                                            : t.status === 'reviewing'
+                                                ? { label: 'Em Conferência', badgeClass: 'gt-badge-info' }
+                                                : t.status === 'pending'
+                                                    ? { label: isIncome ? 'A Receber' : 'A Pagar', badgeClass: 'gt-badge-warning' }
+                                                    : (STATUS_LABELS[t.status] || { label: t.status || 'Pendente', badgeClass: 'gt-badge-info' });
                                     const isPending = t.status === 'pending' || t.status === 'reviewing';
 
                                     return (
@@ -212,9 +212,9 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                                                 <div class="flex items-center gap-3">
                                                     <span class="gtb-icon-box !w-8 !h-8" title={isIncome ? 'Receita' : 'Despesa'} aria-hidden="true">
                                                         {isIncome ? (
-                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><polyline points="19 12 12 19 5 12" /></svg>
                                                         ) : (
-                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" /></svg>
                                                         )}
                                                     </span>
                                                     <div class="min-w-0">
@@ -250,6 +250,17 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                                             </td>
                                             <td class="py-3.5 px-5 text-right whitespace-nowrap">
                                                 <div class="inline-flex items-center gap-1.5">
+                                                    {t.status === 'paid' && isIncome && (
+                                                        <a
+                                                            href={`/admin/financeiro/${t.id}/recibo`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            class="gt-btn-outline gt-btn-xs"
+                                                            title="Emitir Recibo Oficial de Quitação (PDF)"
+                                                        >
+                                                            Recibo PDF
+                                                        </a>
+                                                    )}
                                                     {t.proof_file && (
                                                         <a
                                                             href={`/admin/financeiro/${t.id}/comprovante`}
@@ -260,6 +271,19 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                                                         >
                                                             Comprovante
                                                         </a>
+                                                    )}
+                                                    {t.status === 'reviewing' && (
+                                                        <form
+                                                            action={`/admin/financeiro/${t.id}/recusar-comprovante`}
+                                                            method="post"
+                                                            class="inline-block m-0"
+                                                            onsubmit="var r=prompt('Motivo da recusa do comprovante:','Comprovante ilegível ou valor divergente.');if(r===null)return false;this.querySelector('input[name=reason]').value=r;return true;"
+                                                        >
+                                                            <input type="hidden" name="reason" value="" />
+                                                            <button type="submit" class="gt-btn-outline gt-btn-xs" title="Recusar comprovante e devolver para Pendente">
+                                                                Recusar
+                                                            </button>
+                                                        </form>
                                                     )}
                                                     {isPending && (
                                                         <form action={`/admin/financeiro/${t.id}/pagar`} method="post" class="inline-block m-0">
@@ -328,7 +352,7 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                             class="gtb-icon-btn !w-8 !h-8 rounded-lg"
                             aria-label="Fechar"
                         >
-                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                     </div>
 

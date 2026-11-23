@@ -4,7 +4,9 @@ import { requireAuth } from '../middleware/auth';
 import { getRequestBody } from '../lib/request';
 import { ensureClientProfile, getPortalDashboard } from '../lib/client-portal';
 import { getFile, streamR2Response } from '../lib/storage';
-import { generatePixPayload, loadBankPaymentSettings } from '../lib/pix';
+import { generatePixPayload, loadBankPaymentSettings, validateReceiptMagicBytes, renderOfficialPaymentReceiptHtml } from '../lib/pix';
+import { renderQrCodeDataUri } from '../lib/qr';
+import { sendEmail } from '../lib/email';
 import { recordRequestTimeline } from '../lib/timeline';
 import { AutonomousCrmAgent } from '../services/ai-crm-agent';
 import { PortalDashboardView } from '../views/portal/dashboard';
@@ -741,6 +743,7 @@ portalRoutes.get('/financeiro', async (c) => {
             ...t,
             proof_file: proofMap.get(Number(t.id)) || t.proof_file || null,
             pix_payload: pixPayload,
+            pix_qr_data_uri: pixPayload ? renderQrCodeDataUri(pixPayload) : '',
             pix_txid: txid
         };
     });
@@ -769,10 +772,15 @@ portalRoutes.post('/financeiro/:id/comprovante', async (c) => {
         return c.redirect('/portal/financeiro?error=Fatura+n%C3%A3o+encontrada.');
     }
 
+    if (tx.status === 'paid' || tx.status === 'canceled') {
+        return c.redirect('/portal/financeiro?error=Esta+fatura+n%C3%A3o+aceita+mais+envio+de+comprovante.');
+    }
+
     try {
         const formData = await c.req.formData();
         const file = formData.get('receipt') as File | null;
-        const chosenMethod = String(formData.get('payment_method') || tx.payment_method || 'PIX').trim().slice(0, 40);
+        const rawMethod = String(formData.get('payment_method') || 'PIX').trim();
+        const chosenMethod = rawMethod === 'Transferência / TED' ? 'Transferência / TED' : 'PIX';
 
         if (!file || typeof file === 'string' || file.size === 0) {
             return c.redirect('/portal/financeiro?error=Selecione+um+arquivo+de+comprovante+(PDF,+JPG+ou+PNG).');
@@ -786,11 +794,15 @@ portalRoutes.post('/financeiro/:id/comprovante', async (c) => {
             return c.redirect('/portal/financeiro?error=Formato+inv%C3%A1lido.+Envie+PDF,+PNG,+JPG+ou+WEBP.');
         }
 
+        const buf = await file.arrayBuffer();
+        if (!validateReceiptMagicBytes(buf, ext)) {
+            return c.redirect('/portal/financeiro?error=Arquivo+inv%C3%A1lido+ou+corrompido.+Envie+um+PDF,+PNG,+JPG+ou+WEBP+leg%C3%ADtimo.');
+        }
+
         const r2Key = `private/receipts/client-${client.id}/fat-${tx.id}-${Date.now()}.${ext}`;
         if (c.env.UPLOADS_BUCKET) {
-            const buf = await file.arrayBuffer();
             await c.env.UPLOADS_BUCKET.put(r2Key, buf, {
-                httpMetadata: { contentType: file.type || (ext === 'pdf' ? 'application/pdf' : `image/${ext}`) }
+                httpMetadata: { contentType: ext === 'pdf' ? 'application/pdf' : `image/${ext === 'jpg' ? 'jpeg' : ext}` }
             });
         }
 
@@ -801,11 +813,26 @@ portalRoutes.post('/financeiro/:id/comprovante', async (c) => {
 
         await db.prepare(
             `UPDATE financial_transactions
-             SET status = CASE WHEN status = 'paid' THEN 'paid' ELSE 'reviewing' END,
+             SET status = 'reviewing',
                  payment_method = ?,
+                 notes = NULL,
                  updated_at = datetime('now')
-             WHERE id = ? AND client_id = ?`
+             WHERE id = ? AND client_id = ? AND status NOT IN ('paid', 'canceled')`
         ).bind(chosenMethod, tx.id, client.id).run();
+
+        // Notifica o financeiro por e-mail
+        try {
+            const staffTo = c.env.STAFF_NOTIFY_EMAIL || 'gundjatech@gmail.com';
+            const appUrl = (c.env.APP_URL || 'https://gundjatech.casimirogundja.workers.dev').replace(/\/$/, '');
+            const valFmt = Number(tx.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            await sendEmail(c.env, {
+                to: staffTo,
+                subject: `Comprovante recebido • Fatura #${tx.id} (R$ ${valFmt})`,
+                html: `<p>O cliente <strong>${client.company || client.name}</strong> enviou um comprovante de pagamento via <strong>${chosenMethod}</strong>.</p>
+                       <p><strong>Fatura:</strong> ${tx.description}<br/><strong>Valor:</strong> R$ ${valFmt}</p>
+                       <p><a href="${appUrl}/admin/financeiro">Abrir Financeiro para Conferência &amp; Baixa</a></p>`
+            });
+        } catch { }
 
         return c.redirect('/portal/financeiro?success=Comprovante+enviado+com+sucesso!+Nossa+equipe+confirmar%C3%A1+o+recebimento+em+instantes.');
     } catch {
@@ -835,7 +862,26 @@ portalRoutes.get('/financeiro/:id/comprovante', async (c) => {
     const headers = new Headers();
     headers.set('Content-Type', obj.httpMetadata?.contentType || 'application/octet-stream');
     headers.set('Content-Disposition', `inline; filename="comprovante-fatura-${txId}"`);
+    headers.set('X-Content-Type-Options', 'nosniff');
+    headers.set('Content-Security-Policy', 'sandbox');
+    headers.set('Cache-Control', 'private, no-store');
     return new Response(obj.body, { headers });
+});
+
+portalRoutes.get('/financeiro/:id/recibo', async (c) => {
+    const { db, client } = await getClientContext(c);
+    const txId = Number(c.req.param('id'));
+
+    const tx = (await db.prepare(
+        `SELECT * FROM financial_transactions WHERE id = ? AND client_id = ? AND status = 'paid'`
+    ).bind(txId, client.id).first()) as any;
+
+    if (!tx) {
+        return c.text('Recibo disponível apenas para faturas quitadas.', 404);
+    }
+
+    const bankSettings = await loadBankPaymentSettings(db);
+    return c.html(renderOfficialPaymentReceiptHtml({ tx, client, bankSettings }));
 });
 
 // 7. Campanhas

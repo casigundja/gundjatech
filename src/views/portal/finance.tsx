@@ -53,7 +53,7 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                             </div>
                         </div>
                         <span class="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                         </span>
                     </div>
 
@@ -66,7 +66,7 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                             </div>
                         </div>
                         <span class="w-9 h-9 rounded-xl bg-[#F2C230]/15 border border-[#F2C230]/30 flex items-center justify-center text-[#F2C230] shrink-0">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         </span>
                     </div>
 
@@ -77,7 +77,7 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                             <div class="text-lg font-extrabold text-white mt-0.5">{transactions.length}</div>
                         </div>
                         <span class="w-9 h-9 rounded-xl bg-[#16749A]/15 border border-[#16749A]/30 flex items-center justify-center text-[#16749A] shrink-0">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                         </span>
                     </div>
                 </div>
@@ -86,7 +86,7 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
             {transactions.length === 0 ? (
                 <div class="gtb-card !p-10 text-center">
                     <div class="w-12 h-12 rounded-2xl bg-[#16749A]/15 border border-[#16749A]/30 flex items-center justify-center text-[#16749A] mx-auto mb-3">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                     </div>
                     <h3 class="text-sm font-extrabold text-white">Nenhuma fatura emitida.</h3>
                     <p class="text-xs text-[#8C95AA] mt-1">Todas as suas obrigações financeiras e parcelas acordadas estarão visíveis aqui.</p>
@@ -119,6 +119,11 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                                                 <div class="text-[11px] text-[#8C95AA] mt-0.5">
                                                     {t.invoice_number ? `Doc #${t.invoice_number}` : `Fatura #${t.id}`} · {t.payment_method || 'PIX / TED'}
                                                 </div>
+                                                {t.status === 'pending' && typeof t.notes === 'string' && t.notes.startsWith('[COMPROVANTE RECUSADO]') && (
+                                                    <div class="text-[11px] font-bold text-red-400 mt-1">
+                                                        {t.notes.replace('[COMPROVANTE RECUSADO]', 'Comprovante recusado:').trim()}
+                                                    </div>
+                                                )}
                                             </td>
                                             <td class="py-3.5 px-5 text-xs text-[#8C95AA]">{t.due_date}</td>
                                             <td class="py-3.5 px-5 text-xs font-extrabold text-white">
@@ -131,6 +136,16 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                                             </td>
                                             <td class="py-3.5 px-5 text-right whitespace-nowrap">
                                                 <div class="inline-flex items-center justify-end gap-2">
+                                                    {isPaid && (
+                                                        <a
+                                                            href={`/portal/financeiro/${t.id}/recibo`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            class="gt-btn-petrol gt-btn-xs"
+                                                        >
+                                                            Recibo PDF
+                                                        </a>
+                                                    )}
                                                     {t.proof_file && (
                                                         <a
                                                             href={`/portal/financeiro/${t.id}/comprovante`}
@@ -150,6 +165,7 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                                                             data-due={String(t.due_date || '')}
                                                             data-txid={String(t.pix_txid || '')}
                                                             data-pix={String(t.pix_payload || '')}
+                                                            data-qr={String(t.pix_qr_data_uri || '')}
                                                             onclick="window.GT_OpenPayModal && window.GT_OpenPayModal(this)"
                                                             class={isReviewing ? 'gt-btn-outline gt-btn-xs' : 'gt-btn-primary gt-btn-xs'}
                                                         >
@@ -306,7 +322,8 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                 </div>
             </div>
 
-            <script dangerouslySetInnerHTML={{ __html: `
+            <script dangerouslySetInnerHTML={{
+                __html: `
                 window.GT_SwitchPayTab = function (tab) {
                     var pixPane = document.getElementById('gt-pay-pane-pix');
                     var tedPane = document.getElementById('gt-pay-pane-ted');
@@ -343,6 +360,7 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                     var due = btn.getAttribute('data-due') || '—';
                     var txid = btn.getAttribute('data-txid') || '—';
                     var pix = btn.getAttribute('data-pix') || '';
+                    var qrUri = btn.getAttribute('data-qr') || '';
 
                     form.setAttribute('action', '/portal/financeiro/' + encodeURIComponent(id) + '/comprovante');
                     var titleEl = document.getElementById('gt-pay-title');
@@ -357,8 +375,8 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                     if (dueEl) dueEl.textContent = due;
                     if (txidEl) txidEl.textContent = txid;
                     if (pixEl) pixEl.value = pix;
-                    if (qrEl && pix) {
-                        qrEl.src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=6&data=' + encodeURIComponent(pix);
+                    if (qrEl && qrUri) {
+                        qrEl.src = qrUri;
                     }
                     window.GT_SwitchPayTab('pix');
                     modal.style.display = 'flex';
