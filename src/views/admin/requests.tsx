@@ -192,11 +192,11 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                     </div>
                 </div>
 
-                <div class="gt-grid-detail items-start">
+                <div class="gt-grid-detail" style="min-height: calc(100vh - 172px); align-items: stretch;">
                     {/* Coluna Principal */}
-                    <section class="gtb-card !p-4 space-y-4 min-w-0">
+                    <section class="gtb-card !p-5 min-w-0" style="display: flex; flex-direction: column; gap: 18px; min-height: calc(100vh - 172px);">
                         {/* Cabeçalho Hero */}
-                        <div class="space-y-3 pb-3.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                        <div class="space-y-3.5 pb-4" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                             <div class="flex items-center justify-between gap-3 flex-wrap">
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <span class="gt-req-pill-neutral font-mono">{requestDetail.protocol}</span>
@@ -210,7 +210,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                 </span>
                             </div>
 
-                            <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white leading-tight">
+                            <h1 class="gt-font-display text-xl sm:text-2xl font-extrabold text-white leading-tight">
                                 {requestDetail.service_title || requestDetail.title}
                             </h1>
 
@@ -278,7 +278,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                         Etapa {Math.max(1, currentStepIndex + 1)} de {PIPELINE_STEPS.length}
                                     </span>
                                 </div>
-                                <div class="gt-req-stepper" style="padding: 10px 14px;" role="list" aria-label="Etapas da solicitação">
+                                <div class="gt-req-stepper" style="padding: 13px 16px;" role="list" aria-label="Etapas da solicitação">
                                     {PIPELINE_STEPS.map((step, idx) => {
                                         const isCompletedAll = requestDetail.status === 'completed';
                                         const isDone = isCompletedAll || (currentStepIndex >= 0 && idx < currentStepIndex);
@@ -305,8 +305,8 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
 
                         {/* Descrição da Demanda */}
                         <div>
-                            <h2 class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-2">Descrição da Demanda</h2>
-                            <div class="gt-req-briefing" style="padding: 10px 14px;">
+                            <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-2">Descrição da Demanda</h2>
+                            <div class="gt-req-briefing" style="padding: 13px 16px;">
                                 {structuredDesc ? (
                                     <div class="gt-req-kv-list">
                                         {structuredDesc.map((item) => (
@@ -333,18 +333,18 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                         </div>
 
                         {/* Linha do Tempo / Feed de Atividades */}
-                        <div>
+                        <div style="flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0;">
                             <div class="flex items-center justify-between gap-2 mb-2.5">
                                 <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Histórico de Atividades</h2>
                                 <span class="text-[11px] font-semibold text-[#8C95AA]">{history.length} {history.length === 1 ? 'evento' : 'eventos'}</span>
                             </div>
 
                             {history.length === 0 ? (
-                                <div class="gtb-surface-box rounded-xl p-4 text-xs text-[#8C95AA]">
+                                <div class="gtb-surface-box rounded-xl p-4 text-xs text-[#8C95AA]" style="flex: 1 1 auto;">
                                     Nenhuma movimentação registrada ainda.
                                 </div>
                             ) : (
-                                <div class="gt-activity-feed" id="gt-request-activity-feed" style="max-height: 176px; overflow-y: auto; padding-right: 4px;">
+                                <div class="gt-activity-feed" id="gt-request-activity-feed" style="flex: 1 1 0%; min-height: 225px; max-height: calc(100vh - 515px); overflow-y: auto; padding-right: 4px;">
                                     {history.map((h: any, idx: number) => {
                                         const fromSt = h.from_status || h.old_status || h.status_from || '';
                                         const toSt = h.to_status || h.new_status || h.status_to || '';
@@ -355,7 +355,6 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                         const noteText = String(h.comment || h.notes || '').trim();
                                         const authorName = h.user_name ? String(h.user_name).trim() : null;
                                         const isDanger = toSt === 'cancelled' || actionKey === 'cancelled';
-                                        const isHiddenExtra = idx >= 5;
 
                                         // Evita repetir nota quando o próprio título já comunica a ação
                                         const isRedundantNote =
@@ -366,8 +365,6 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                         return (
                                             <div
                                                 class={`gt-activity-item ${idx === 0 ? 'is-latest' : ''}`}
-                                                data-extra-history={isHiddenExtra ? '1' : undefined}
-                                                style={isHiddenExtra ? 'display: none;' : undefined}
                                             >
                                                 <div class="gt-activity-rail" aria-hidden="true">
                                                     <span class={`gt-activity-node ${isDanger ? 'gt-activity-node--danger' : ''}`}>
@@ -416,34 +413,23 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                             </div>
                                         );
                                     })}
-
-                                    {history.length > 5 && (
-                                        <button
-                                            type="button"
-                                            id="gt-toggle-history-btn"
-                                            onclick={`(function(btn){var feed=document.getElementById('gt-request-activity-feed');if(!feed)return;var expanded=btn.dataset.expanded==='1';feed.querySelectorAll('[data-extra-history="1"]').forEach(function(el){el.style.display=expanded?'none':'flex';});btn.dataset.expanded=expanded?'0':'1';btn.textContent=expanded?'Mostrar mais ${history.length - 5} ${history.length - 5 === 1 ? 'evento' : 'eventos'}':'Mostrar menos';})(this)`}
-                                            class="gt-activity-more-btn"
-                                        >
-                                            Mostrar mais {history.length - 5} {history.length - 5 === 1 ? 'evento' : 'eventos'}
-                                        </button>
-                                    )}
                                 </div>
                             )}
                         </div>
                     </section>
 
                     {/* Coluna Lateral: Atualizar Status + Ações Rápidas */}
-                    <div class="space-y-4 min-w-0">
-                        <aside class="gtb-card !p-4 space-y-3 min-w-0">
-                            <div class="pb-2.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                    <div class="min-w-0" style="display: flex; flex-direction: column; gap: 18px; min-height: calc(100vh - 172px);">
+                        <aside class="gtb-card !p-5 min-w-0" style="flex: 1 1 auto; display: flex; flex-direction: column;">
+                            <div class="pb-3" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                                 <h2 class="gt-font-display text-sm font-extrabold text-white">Atualizar Status Operacional</h2>
-                                <p class="text-[11px] text-[#8C95AA] mt-0.5">Registre o avanço no pipeline comercial.</p>
+                                <p class="text-xs text-[#8C95AA] mt-0.5">Registre o avanço no pipeline comercial.</p>
                             </div>
 
-                            <form action={`/admin/solicitacoes/${requestDetail.id}/status`} method="post" data-dirty-guard="1" class="space-y-3">
+                            <form action={`/admin/solicitacoes/${requestDetail.id}/status`} method="post" data-dirty-guard="1" style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 14px; margin-top: 14px;">
                                 <div>
-                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Novo Status</label>
-                                    <select name="status" class="w-full rounded-xl px-3 py-2 text-xs">
+                                    <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Novo Status</label>
+                                    <select name="status" class="w-full rounded-xl px-3.5 py-2.5 text-xs">
                                         <option value="new" selected={requestDetail.status === 'new'}>Novo / Recebido</option>
                                         <option value="analyzing" selected={requestDetail.status === 'analyzing'}>Em Análise Técnica</option>
                                         <option value="quotation_sent" selected={requestDetail.status === 'quotation_sent'}>Orçamento Enviado</option>
@@ -454,17 +440,18 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                     </select>
                                 </div>
 
-                                <div>
-                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Comentário de Atualização</label>
+                                <div style="flex: 1 1 auto; display: flex; flex-direction: column;">
+                                    <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Comentário de Atualização</label>
                                     <textarea
                                         name="comment"
-                                        rows={2}
+                                        rows={4}
                                         placeholder="Descreva o motivo ou avanço desta etapa..."
-                                        class="w-full rounded-xl px-3 py-2 text-xs"
+                                        class="w-full rounded-xl px-3.5 py-2.5 text-xs"
+                                        style="flex: 1 1 auto; min-height: 112px; resize: vertical;"
                                     ></textarea>
                                 </div>
 
-                                <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm w-full justify-center">
+                                <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm w-full justify-center" style="margin-top: auto;">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                     <span>Salvar Alteração</span>
                                 </button>
@@ -472,13 +459,13 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                         </aside>
 
                         {/* Card de Ações Rápidas & Compartilhamento */}
-                        <aside class="gtb-card !p-4 space-y-2.5 min-w-0">
+                        <aside class="gtb-card !p-5 space-y-3 min-w-0">
                             <div>
                                 <h2 class="gt-font-display text-sm font-extrabold text-white">Ações Rápidas</h2>
                                 <p class="text-xs text-[#8C95AA] mt-0.5">Comunicação direta e rastreio do cliente.</p>
                             </div>
 
-                            <div class="space-y-2">
+                            <div class="space-y-2.5">
                                 <button
                                     type="button"
                                     onclick={`var url=window.location.origin+'${trackingPath}';navigator.clipboard.writeText(url).then(function(){var el=document.getElementById('gt-copy-track-lbl');if(el){el.textContent='Link copiado!';setTimeout(function(){el.textContent='Copiar Link de Rastreio';},2000);}});`}

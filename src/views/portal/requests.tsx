@@ -262,7 +262,7 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                     </a>
                 </div>
 
-                <div class="gtb-card !p-6 space-y-6">
+                <div class="gtb-card !p-6" style="display: flex; flex-direction: column; gap: 20px; min-height: calc(100vh - 172px);">
                     <div class="gtb-card-accent-top gtb-card-accent-gold"></div>
                     <div class="flex items-start justify-between gap-4 flex-wrap pb-5 border-b border-white/10">
                         <div class="min-w-0 flex-1">
@@ -356,15 +356,15 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                     </div>
 
                     {/* Histórico em Feed de Atividades */}
-                    <div>
+                    <div style="flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0;">
                         <div class="flex items-center justify-between gap-2 mb-2.5">
                             <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Histórico de Atividades</h2>
                             <span class="text-[11px] font-semibold text-[#8C95AA]">{history.length} {history.length === 1 ? 'evento' : 'eventos'}</span>
                         </div>
                         {history.length === 0 ? (
-                            <div class="gt-empty-state">Aguardando primeira movimentação da equipe técnica.</div>
+                            <div class="gt-empty-state" style="flex: 1 1 auto;">Aguardando primeira movimentação da equipe técnica.</div>
                         ) : (
-                            <div class="gt-activity-feed" id="gt-portal-activity-feed" style="max-height: 220px; overflow-y: auto; padding-right: 4px;">
+                            <div class="gt-activity-feed" id="gt-portal-activity-feed" style="flex: 1 1 0%; min-height: 225px; max-height: calc(100vh - 515px); overflow-y: auto; padding-right: 4px;">
                                 {history.map((h: any, idx: number) => {
                                     const fromSt = h.old_status || h.from_status || h.status_from || '';
                                     const toSt = h.new_status || h.to_status || h.status_to || '';
@@ -373,13 +373,10 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                                     const hasTransition = Boolean(fromLabel && toLabel && fromSt !== toSt);
                                     const noteText = String(h.comment || h.notes || '').trim();
                                     const isDanger = toSt === 'cancelled';
-                                    const isHiddenExtra = idx >= 5;
 
                                     return (
                                         <div
                                             class={`gt-activity-item ${idx === 0 ? 'is-latest' : ''}`}
-                                            data-extra-history={isHiddenExtra ? '1' : undefined}
-                                            style={isHiddenExtra ? 'display: none;' : undefined}
                                         >
                                             <div class="gt-activity-rail" aria-hidden="true">
                                                 <span class={`gt-activity-node ${isDanger ? 'gt-activity-node--danger' : ''}`}>
@@ -412,16 +409,6 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                                         </div>
                                     );
                                 })}
-
-                                {history.length > 5 && (
-                                    <button
-                                        type="button"
-                                        onclick={`(function(btn){var feed=document.getElementById('gt-portal-activity-feed');if(!feed)return;var expanded=btn.dataset.expanded==='1';feed.querySelectorAll('[data-extra-history="1"]').forEach(function(el){el.style.display=expanded?'none':'flex';});btn.dataset.expanded=expanded?'0':'1';btn.textContent=expanded?'Mostrar mais ${history.length - 5} ${history.length - 5 === 1 ? 'evento' : 'eventos'}':'Mostrar menos';})(this)`}
-                                        class="gt-activity-more-btn"
-                                    >
-                                        Mostrar mais {history.length - 5} {history.length - 5 === 1 ? 'evento' : 'eventos'}
-                                    </button>
-                                )}
                             </div>
                         )}
                     </div>
