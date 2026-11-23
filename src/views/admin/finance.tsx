@@ -39,6 +39,27 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
     const formatCurrency = (val: number) =>
         new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(val || 0));
 
+    const formatDueDate = (raw?: string | null) => {
+        if (!raw) return '—';
+        const match = String(raw).match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) return `${match[3]}/${match[2]}/${match[1]}`;
+        const dt = new Date(raw);
+        if (Number.isNaN(dt.getTime())) return String(raw);
+        return dt.toLocaleDateString('pt-BR');
+    };
+
+    const isOverdueDate = (raw?: string | null, status?: string) => {
+        if (status !== 'pending' || !raw) return false;
+        const match = String(raw).match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (!match) return false;
+        const due = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 23, 59, 59);
+        return due.getTime() < Date.now();
+    };
+
+    const pendingCount = transactions.filter((t) => t.status === 'pending').length;
+    const paidCount = transactions.filter((t) => t.status === 'paid').length;
+    const canceledCount = transactions.filter((t) => t.status === 'canceled').length;
+
     return (
         <AdminLayout
             title="Receita & Caixa • Painel Administrativo"
@@ -58,7 +79,7 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                 </div>
                 <button
                     type="button"
-                    onclick="document.getElementById('modal-nova-fatura').style.display='flex'"
+                    onclick="document.getElementById('modal-nova-fatura').classList.remove('hidden')"
                     class="gt-btn-primary"
                 >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -71,26 +92,26 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
 
             {/* 4 KPIs Executivos Compactos */}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div class="gtb-card gtb-kpi-gold !p-4 flex items-center justify-between gap-2">
+                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total Faturado</span>
                         <span class="gt-font-display text-lg sm:text-xl font-extrabold text-white mt-0.5 block">{formatCurrency(metrics.totalInvoiced)}</span>
                     </div>
-                    <span class="px-2 py-0.5 rounded-md bg-white/10 text-[10px] font-bold text-[#D5DCEB]">{transactions.length} lanç.</span>
+                    <span class="text-[11px] font-bold text-[#8C95AA]">{transactions.length} lanç.</span>
                 </div>
 
-                <div class="gtb-card gtb-kpi-petrol !p-4 flex items-center justify-between gap-2">
+                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Recebido / Liquidado</span>
-                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-[#34D399] mt-0.5 block">{formatCurrency(metrics.totalReceived)}</span>
+                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-white mt-0.5 block">{formatCurrency(metrics.totalReceived)}</span>
                     </div>
                     <span class="gt-badge gt-badge-success">Pago</span>
                 </div>
 
-                <div class="gtb-card gtb-kpi-blue !p-4 flex items-center justify-between gap-2">
+                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">A Receber (Pendente)</span>
-                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-[#F2C230] mt-0.5 block">{formatCurrency(metrics.totalPending)}</span>
+                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-white mt-0.5 block">{formatCurrency(metrics.totalPending)}</span>
                     </div>
                     <span class="gt-badge gt-badge-warning">Pendente</span>
                 </div>
@@ -98,76 +119,105 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                 <div class="gtb-card !p-4 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Em Atraso (Vencido)</span>
-                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-[#F87171] mt-0.5 block">{formatCurrency(metrics.totalOverdue)}</span>
+                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-white mt-0.5 block">{formatCurrency(metrics.totalOverdue)}</span>
                     </div>
                     <span class="gt-badge gt-badge-danger">Vencido</span>
                 </div>
             </div>
 
-            {/* Filtros */}
-            <div class="gtb-card !p-4">
-                <form method="get" action="/admin/financeiro" class="gt-filter-bar">
-                    <div class="gt-filter-input">
+            {/* Tabela Unificada com Barra de Filtros Integrada */}
+            <div class="gtb-card !p-0 overflow-hidden">
+                <div class="px-5 py-3.5 border-b border-white/10 flex items-center justify-between gap-3 flex-wrap">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <a
+                            href="/admin/financeiro"
+                            class={`gt-btn-xs ${!statusFilter ? 'gt-btn-primary' : 'gt-btn-outline'}`}
+                        >
+                            Todos ({transactions.length})
+                        </a>
+                        <a
+                            href="/admin/financeiro?status=pending"
+                            class={`gt-btn-xs ${statusFilter === 'pending' ? 'gt-btn-primary' : 'gt-btn-outline'}`}
+                        >
+                            Pendentes ({pendingCount})
+                        </a>
+                        <a
+                            href="/admin/financeiro?status=paid"
+                            class={`gt-btn-xs ${statusFilter === 'paid' ? 'gt-btn-primary' : 'gt-btn-outline'}`}
+                        >
+                            Pagos ({paidCount})
+                        </a>
+                        <a
+                            href="/admin/financeiro?status=canceled"
+                            class={`gt-btn-xs ${statusFilter === 'canceled' ? 'gt-btn-primary' : 'gt-btn-outline'}`}
+                        >
+                            Cancelados ({canceledCount})
+                        </a>
+                    </div>
+
+                    <form method="get" action="/admin/financeiro" class="flex items-center gap-2 flex-wrap flex-1 sm:flex-initial justify-end">
+                        {statusFilter && <input type="hidden" name="status" value={statusFilter} />}
                         <input
                             type="text"
                             name="search"
                             value={search}
-                            placeholder="Buscar por descrição, cliente ou nº fatura..."
-                            class="w-full rounded-xl px-3.5 py-2.5 text-[13px]"
+                            placeholder="Buscar descrição, cliente ou NF..."
+                            class="rounded-xl px-3 py-1.5 text-xs w-full sm:w-56"
                         />
-                    </div>
-                    <div class="gt-filter-select">
-                        <select name="status" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]">
-                            <option value="">Todos os Status</option>
-                            <option value="pending" selected={statusFilter === 'pending'}>Pendente</option>
-                            <option value="paid" selected={statusFilter === 'paid'}>Pago</option>
-                            <option value="canceled" selected={statusFilter === 'canceled'}>Cancelado</option>
-                        </select>
-                    </div>
-                    <div class="gt-filter-select">
-                        <select name="type" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]">
-                            <option value="">Tipo (Todos)</option>
+                        <select name="type" onchange="this.form.submit()" class="rounded-xl px-3 py-1.5 text-xs">
+                            <option value="">Todos os tipos</option>
                             <option value="income" selected={typeFilter === 'income'}>Receita (+)</option>
                             <option value="expense" selected={typeFilter === 'expense'}>Despesa (-)</option>
                         </select>
-                    </div>
-                    <button type="submit" class="gt-btn-outline gt-btn-sm">Filtrar</button>
-                    {(search || statusFilter || typeFilter) && (
-                        <a href="/admin/financeiro" class="text-xs font-bold text-[#F2C230] underline">Limpar</a>
-                    )}
-                </form>
-            </div>
+                        <button type="submit" class="gt-btn-outline gt-btn-xs">Filtrar</button>
+                        {(search || statusFilter || typeFilter) && (
+                            <a href="/admin/financeiro" class="text-[11px] font-bold text-[#16749A] hover:underline">Limpar</a>
+                        )}
+                    </form>
+                </div>
 
-            {/* Tabela de Transações */}
-            <div class="gtb-card !p-0 overflow-hidden">
                 {transactions.length === 0 ? (
                     <div class="gt-empty-state">Nenhum lançamento financeiro localizado.</div>
                 ) : (
                     <div class="gt-table-wrap">
                         <table class="w-full text-left text-xs">
                             <thead>
-                                <tr class="border-b border-white/10 text-[10.5px] uppercase tracking-wider text-[#8C95AA]">
-                                    <th class="py-3.5 px-5">Fatura / Descrição</th>
-                                    <th class="py-3.5 px-5">Cliente</th>
-                                    <th class="py-3.5 px-5">Valor</th>
-                                    <th class="py-3.5 px-5">Vencimento</th>
-                                    <th class="py-3.5 px-5">Status</th>
-                                    <th class="py-3.5 px-5 text-right">Ações</th>
+                                <tr class="border-b border-white/10 text-[10px] uppercase tracking-wider text-[#8C95AA]">
+                                    <th class="py-3 px-5">Fatura / Descrição</th>
+                                    <th class="py-3 px-5">Cliente</th>
+                                    <th class="py-3 px-5">Valor</th>
+                                    <th class="py-3 px-5">Vencimento</th>
+                                    <th class="py-3 px-5">Status</th>
+                                    <th class="py-3 px-5 text-right">Ações</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-white/5">
                                 {transactions.map((t) => {
                                     const isIncome = t.type !== 'expense';
-                                    const statusMeta = STATUS_LABELS[t.status] || { label: t.status || 'Pendente', badgeClass: 'gt-badge-info' };
+                                    const overdue = isOverdueDate(t.due_date, t.status);
+                                    const statusMeta = overdue
+                                        ? STATUS_LABELS.overdue
+                                        : (STATUS_LABELS[t.status] || { label: t.status || 'Pendente', badgeClass: 'gt-badge-info' });
                                     const isPending = t.status === 'pending';
 
                                     return (
                                         <tr class="hover:bg-white/[0.02] transition">
                                             <td class="py-3.5 px-5">
-                                                <div class="font-bold text-white text-[13px]">{t.description}</div>
-                                                <div class="text-[11px] text-[#8C95AA] mt-0.5">
-                                                    {t.invoice_number ? `NF #${t.invoice_number} • ` : ''}
-                                                    {t.payment_method || 'Boleto / PIX'}
+                                                <div class="flex items-center gap-3">
+                                                    <span class="gtb-icon-box !w-8 !h-8" title={isIncome ? 'Receita' : 'Despesa'} aria-hidden="true">
+                                                        {isIncome ? (
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                                                        ) : (
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                                                        )}
+                                                    </span>
+                                                    <div class="min-w-0">
+                                                        <div class="font-bold text-white text-[13px] truncate max-w-[260px]">{t.description}</div>
+                                                        <div class="text-[11px] text-[#8C95AA] mt-0.5">
+                                                            {t.invoice_number ? `NF #${t.invoice_number} · ` : ''}
+                                                            {t.payment_method || 'Boleto / PIX'} · {isIncome ? 'Receita' : 'Despesa'}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td class="py-3.5 px-5">
@@ -177,13 +227,17 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                                                 )}
                                             </td>
                                             <td class="py-3.5 px-5 whitespace-nowrap">
-                                                <span class={`font-mono font-extrabold text-[13px] ${isIncome ? 'text-[#34D399]' : 'text-[#F87171]'}`}>
-                                                    {isIncome ? '+ ' : '- '}
-                                                    {formatCurrency(t.amount)}
+                                                <span class={`font-extrabold text-[13px] ${isIncome ? 'text-[#34D399]' : 'text-[#F87171]'}`} style="font-variant-numeric: tabular-nums;">
+                                                    {isIncome ? '+' : '-'} {formatCurrency(t.amount)}
                                                 </span>
                                             </td>
-                                            <td class="py-3.5 px-5 text-[#8C95AA] whitespace-nowrap">
-                                                {t.due_date ? new Date(t.due_date).toLocaleDateString('pt-BR') : '—'}
+                                            <td class="py-3.5 px-5 whitespace-nowrap">
+                                                <div class="text-xs font-semibold text-[#8C95AA]" style="font-variant-numeric: tabular-nums;">
+                                                    {formatDueDate(t.due_date)}
+                                                </div>
+                                                {overdue && (
+                                                    <div class="text-[10px] font-bold text-red-400 mt-0.5">Em atraso</div>
+                                                )}
                                             </td>
                                             <td class="py-3.5 px-5 whitespace-nowrap">
                                                 <span class={`gt-badge ${statusMeta.badgeClass}`}>{statusMeta.label}</span>
@@ -192,7 +246,7 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                                                 <div class="inline-flex items-center gap-1.5">
                                                     {isPending && (
                                                         <form action={`/admin/financeiro/${t.id}/pagar`} method="post" class="inline-block m-0">
-                                                            <button type="submit" data-loading-text="..." class="gt-btn-primary gt-btn-xs" title="Marcar como Liquidado">
+                                                            <button type="submit" data-loading-text="..." class="gt-btn-petrol gt-btn-xs" title="Marcar como Liquidado">
                                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                                                     <polyline points="20 6 9 17 4 12" />
                                                                 </svg>
@@ -240,18 +294,19 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
             {/* Modal Nova Fatura */}
             <div
                 id="modal-nova-fatura"
-                style="display: none; position: fixed; inset: 0; z-index: 100; align-items: center; justify-content: center; padding: 16px;"
-                class="bg-black/80 backdrop-blur-xs"
+                class="gt-modal-overlay hidden"
+                onclick="if(event.target===this)this.classList.add('hidden')"
             >
                 <div class="gtb-card gt-modal-card max-w-xl p-6 sm:p-8">
                     <div class="flex items-center justify-between gap-3 mb-5">
                         <h2 class="gt-font-display text-lg font-extrabold text-white">Lançar Nova Fatura / Cobrança</h2>
                         <button
                             type="button"
-                            onclick="document.getElementById('modal-nova-fatura').style.display='none'"
-                            class="text-[#8C95AA] hover:text-white text-xl leading-none cursor-pointer bg-transparent border-0"
+                            onclick="document.getElementById('modal-nova-fatura').classList.add('hidden')"
+                            class="gtb-icon-btn !w-8 !h-8 rounded-lg"
+                            aria-label="Fechar"
                         >
-                            &times;
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
 
@@ -301,7 +356,7 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                             </div>
                             <div>
                                 <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Data de Vencimento *</label>
-                                <input type="date" name="due_date" required class="w-full rounded-xl px-3.5 py-2.5 text-[13px]" />
+                                <input type="date" name="due_date" min="2020-01-01" max="2099-12-31" required class="w-full rounded-xl px-3.5 py-2.5 text-[13px]" />
                             </div>
                         </div>
 
@@ -324,7 +379,7 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                         <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-white/10">
                             <button
                                 type="button"
-                                onclick="document.getElementById('modal-nova-fatura').style.display='none'"
+                                onclick="document.getElementById('modal-nova-fatura').classList.add('hidden')"
                                 class="gt-btn-outline gt-btn-sm"
                             >
                                 Cancelar
