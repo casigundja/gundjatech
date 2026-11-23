@@ -4649,6 +4649,28 @@ body.is-light-mode .gt-csel-opt-check {
     display: inline;
 }
 
+/* Cards de altura padrão com rolagem interna ao expandir acordeões */
+.gt-card-scroll-body {
+    flex: 1 1 0%;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+@media (min-width: 1024px) {
+    .gt-card-fixed-h {
+        height: 540px;
+        max-height: 540px;
+        overflow: hidden;
+    }
+
+    .gt-card-fixed-h-crm {
+        height: 440px;
+        max-height: 440px;
+        overflow: hidden;
+    }
+}
+
 
 
 

@@ -80,8 +80,8 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
             {/* Main 2-column balanced grid (independent heights) */}
             <form id="gt-settings-form" action="/admin/configuracoes" method="post" data-dirty-guard="1" class="gt-crm-grid items-start" style="align-items: start;">
                 {/* Coluna Esquerda: Identidade & Canais Corporativos */}
-                <section class="gtb-card !p-5 flex flex-col justify-between gap-5 min-w-0">
-                    <div class="space-y-5">
+                <section class="gtb-card gt-card-fixed-h !p-5 flex flex-col justify-between gap-4 min-w-0">
+                    <div class="gt-card-scroll-body space-y-4">
                         <div class="pb-3.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                             <h2 class="gt-font-display text-sm sm:text-base font-extrabold text-white">Identidade &amp; Dados da Empresa</h2>
                             <p class="text-xs text-[#8C95AA] mt-0.5">
@@ -291,8 +291,8 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                 </section>
 
                 {/* Coluna Direita: Integração WhatsApp (Z-API / Evolution / Meta) */}
-                <aside class="gtb-card !p-5 flex flex-col justify-between gap-4 min-w-0">
-                    <div class="space-y-4">
+                <aside class="gtb-card gt-card-fixed-h !p-5 flex flex-col justify-between gap-4 min-w-0">
+                    <div class="gt-card-scroll-body space-y-4">
                         <div class="flex items-start justify-between gap-2 pb-3.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                             <div>
                                 <h2 class="gt-font-display text-sm sm:text-base font-extrabold text-white">Integração WhatsApp IA</h2>
