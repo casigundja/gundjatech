@@ -548,6 +548,9 @@ adminRoutes.get('/solicitacoes', async (c) => {
     const db = c.env.DB;
     const { successMessage, errorMessage } = getFlashMessages(c);
 
+    // Garante que qualquer orçamento manual sem solicitação receba sua solicitação vinculada automaticamente
+    await reconcileApprovedQuotationsWithoutProject(db, c.env, user?.id || null);
+
     const search = (c.req.query('search') || '').trim();
     const statusFilter = (c.req.query('status') || '').trim();
 
@@ -1113,8 +1116,128 @@ async function autoStartProjectFromApprovedRequest(
 }
 
 /**
+ * Garante que todo orçamento (inclusive os criados manualmente em "+ Novo Orçamento")
+ * esteja vinculado a uma Solicitação (service_requests), mantendo o pipeline comercial unificado.
+ */
+async function ensureRequestForManualQuotation(
+    db: any,
+    userId: number | null,
+    quotation: {
+        id: number;
+        client_id: number;
+        service_request_id?: number | null;
+        reference_code?: string | null;
+        title?: string | null;
+        final_amount?: number | null;
+        total_amount?: number | null;
+        status?: string | null;
+        notes?: string | null;
+    }
+): Promise<any | null> {
+    if (!db || !quotation?.client_id) return null;
+
+    if (quotation.service_request_id) {
+        try {
+            const existing = await db.prepare(`SELECT * FROM service_requests WHERE id = ?`).bind(quotation.service_request_id).first();
+            if (existing) return existing;
+        } catch { }
+    }
+
+    const qTitle = String(quotation.title || `Proposta • ${quotation.reference_code || quotation.id}`).trim();
+
+    // Verifica se já existe solicitação do mesmo cliente com mesmo título sem outro orçamento
+    try {
+        const matchByTitle = (await db.prepare(
+            `SELECT * FROM service_requests
+             WHERE client_id = ? AND (lower(service_title) = lower(?) OR lower(title) = lower(?))
+             ORDER BY id DESC LIMIT 1`
+        ).bind(quotation.client_id, qTitle, qTitle).first()) as any;
+        if (matchByTitle?.id) {
+            await db.prepare(`UPDATE quotations SET service_request_id = ? WHERE id = ?`).bind(matchByTitle.id, quotation.id).run();
+            quotation.service_request_id = Number(matchByTitle.id);
+            return matchByTitle;
+        }
+    } catch { }
+
+    let client: any = null;
+    try {
+        client = await db.prepare(`SELECT * FROM clients WHERE id = ?`).bind(quotation.client_id).first();
+    } catch { }
+
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const protocol = `GNDJ-${dateStr}-${rand}`;
+    const qStatus = String(quotation.status || 'draft');
+    const reqStatus =
+        qStatus === 'approved'
+            ? 'in_progress'
+            : qStatus === 'sent'
+            ? 'quotation_sent'
+            : 'analyzing';
+    const amount = Number(quotation.final_amount ?? quotation.total_amount ?? 0);
+    const description = String(quotation.notes || `Demanda originada a partir do orçamento ${quotation.reference_code || `#${quotation.id}`}.`).trim();
+    const clientName = String(client?.name || client?.company || 'Cliente').trim();
+    const clientCompany = client?.company || null;
+    const clientEmail = String(client?.email || `lead-${quotation.client_id}@gundjatech.local`).trim();
+    const clientPhone = client?.phone || null;
+
+    try {
+        const insReq = await db.prepare(
+            `INSERT INTO service_requests (protocol, tracking_code, client_id, name, company, email, phone, title, service_title, description, briefing, estimated_budget, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+        ).bind(
+            protocol,
+            protocol,
+            quotation.client_id,
+            clientName,
+            clientCompany,
+            clientEmail,
+            clientPhone,
+            qTitle,
+            qTitle,
+            description,
+            description,
+            amount,
+            reqStatus
+        ).run();
+
+        const newReqId = Number(insReq?.meta?.last_row_id || 0);
+        if (newReqId > 0) {
+            await db.prepare(`UPDATE quotations SET service_request_id = ? WHERE id = ?`).bind(newReqId, quotation.id).run();
+            quotation.service_request_id = newReqId;
+
+            await recordRequestTimeline(db, {
+                serviceRequestId: newReqId,
+                userId,
+                action: 'created',
+                fromStatus: null,
+                toStatus: reqStatus,
+                notes: `Solicitação ${protocol} gerada e vinculada automaticamente ao orçamento ${quotation.reference_code || `#${quotation.id}`}`
+            });
+
+            return {
+                id: newReqId,
+                protocol,
+                client_id: quotation.client_id,
+                name: clientName,
+                company: clientCompany,
+                email: clientEmail,
+                phone: clientPhone,
+                title: qTitle,
+                service_title: qTitle,
+                description,
+                estimated_budget: amount,
+                status: reqStatus
+            };
+        }
+    } catch { }
+
+    return null;
+}
+
+/**
  * Reconcilia e garante que todo orçamento com status = 'approved' (inclusive os criados manualmente
- * diretamente como Aprovados) possua o respectivo Projeto em Execução (com as 4 etapas padrão)
+ * diretamente como Aprovados) possua a Solicitação vinculada, o respectivo Projeto em Execução (com as 4 etapas padrão)
  * e o lançamento financeiro A RECEBER em Receita & Caixa.
  */
 async function reconcileApprovedQuotationsWithoutProject(
@@ -1125,6 +1248,19 @@ async function reconcileApprovedQuotationsWithoutProject(
 ): Promise<void> {
     if (!db) return;
     try {
+        // 1. Garante que qualquer orçamento sem service_request_id receba sua Solicitação correspondente
+        const orphanQuotesSql = filterQuotationId
+            ? `SELECT * FROM quotations WHERE id = ? AND service_request_id IS NULL`
+            : `SELECT * FROM quotations WHERE service_request_id IS NULL ORDER BY id ASC`;
+        const orphanStmt = filterQuotationId ? db.prepare(orphanQuotesSql).bind(filterQuotationId) : db.prepare(orphanQuotesSql);
+        const orphanQuotes = ((await orphanStmt.all())?.results || []) as any[];
+        for (const oq of orphanQuotes) {
+            if (oq?.id && oq?.client_id) {
+                await ensureRequestForManualQuotation(db, userId, oq);
+            }
+        }
+
+        // 2. Garante que todo orçamento aprovado possua Projeto em Execução
         const sql = filterQuotationId
             ? `SELECT * FROM quotations WHERE id = ? AND status = 'approved'`
             : `SELECT * FROM quotations WHERE status = 'approved' ORDER BY id ASC`;
@@ -1136,6 +1272,8 @@ async function reconcileApprovedQuotationsWithoutProject(
             const qTitle = String(q.title || '').trim();
             if (!qTitle) continue;
 
+            const reqRow = await ensureRequestForManualQuotation(db, userId, q);
+
             const existingProj = (await db.prepare(
                 `SELECT id FROM projects
                  WHERE client_id = ? AND (lower(title) = lower(?) OR lower(name) = lower(?))
@@ -1143,12 +1281,6 @@ async function reconcileApprovedQuotationsWithoutProject(
             ).bind(q.client_id, qTitle, qTitle).first()) as { id: number } | null;
 
             if (!existingProj?.id) {
-                let reqRow: any = null;
-                if (q.service_request_id) {
-                    try {
-                        reqRow = await db.prepare(`SELECT * FROM service_requests WHERE id = ?`).bind(q.service_request_id).first();
-                    } catch { }
-                }
                 await autoStartProjectFromApprovedRequest(db, env, userId, {
                     request: reqRow,
                     quotation: q,
@@ -3382,6 +3514,27 @@ adminRoutes.post('/orcamentos', async (c) => {
     ).bind(clientId, title, referenceCode, totalAmount, discountAmount, finalAmount, status, expiresAt, notes).run();
 
     const newId = Number(result.meta?.last_row_id || 0);
+    const createdQuoteObj = {
+        id: newId,
+        client_id: clientId,
+        service_request_id: null as number | null,
+        title,
+        reference_code: referenceCode,
+        total_amount: totalAmount,
+        discount_amount: discountAmount,
+        final_amount: finalAmount,
+        status,
+        notes
+    };
+
+    // Todo orçamento manual gera e vincula automaticamente sua Solicitação (service_requests) no pipeline
+    let linkedReqRow: any = null;
+    if (newId > 0) {
+        try {
+            linkedReqRow = await ensureRequestForManualQuotation(db, (c.get('user') as any)?.id || null, createdQuoteObj);
+        } catch { }
+    }
+
     if (status === 'sent') {
         try {
             await autoProvisionPortalUserForClient(db, c.env, {
@@ -3394,17 +3547,8 @@ adminRoutes.post('/orcamentos', async (c) => {
     } else if (status === 'approved') {
         try {
             await autoStartProjectFromApprovedRequest(db, c.env, (c.get('user') as any)?.id || null, {
-                quotation: {
-                    id: newId,
-                    client_id: clientId,
-                    title,
-                    reference_code: referenceCode,
-                    total_amount: totalAmount,
-                    discount_amount: discountAmount,
-                    final_amount: finalAmount,
-                    status: 'approved',
-                    notes
-                },
+                request: linkedReqRow,
+                quotation: createdQuoteObj,
                 approvalNote: `Orçamento ${referenceCode} criado já aprovado`
             });
         } catch { }
@@ -3461,7 +3605,11 @@ adminRoutes.get('/orcamentos/:id', async (c) => {
     }
 
     let linkedRequest: any = null;
-    if (quotationDetail.service_request_id) {
+    if (!quotationDetail.service_request_id && quotationDetail.client_id) {
+        try {
+            linkedRequest = await ensureRequestForManualQuotation(db, user?.id || null, quotationDetail);
+        } catch { }
+    } else if (quotationDetail.service_request_id) {
         try {
             linkedRequest = await db.prepare(
                 `SELECT id, protocol, service_title, title, status FROM service_requests WHERE id = ?`
@@ -3590,6 +3738,13 @@ adminRoutes.post('/orcamentos/:id', async (c) => {
         notes
     };
 
+    // Garante que qualquer orçamento manual sem service_request_id tenha sua Solicitação vinculada
+    if (!updatedQuote.service_request_id && updatedQuote.client_id) {
+        try {
+            await ensureRequestForManualQuotation(db, user.id, updatedQuote);
+        } catch { }
+    }
+
     // Sincroniza solicitação vinculada quando o status do orçamento muda pelo formulário de edição
     if (updatedQuote.service_request_id) {
         try {
@@ -3651,6 +3806,11 @@ adminRoutes.post('/orcamentos/:id/status', async (c) => {
     }
 
     const quotation = await db.prepare('SELECT * FROM quotations WHERE id = ?').bind(id).first<any>();
+    if (quotation && !quotation.service_request_id && quotation.client_id) {
+        try {
+            await ensureRequestForManualQuotation(db, user.id, quotation);
+        } catch { }
+    }
 
     const referer = c.req.header('referer') || '';
     const backUrl = referer.includes(`/admin/solicitacoes/`) && quotation?.service_request_id
@@ -3762,6 +3922,11 @@ adminRoutes.post('/orcamentos/:id/converter-projeto', async (c) => {
     const id = Number(c.req.param('id'));
 
     const quotation = await db.prepare('SELECT * FROM quotations WHERE id = ?').bind(id).first<any>();
+    if (quotation && !quotation.service_request_id && quotation.client_id) {
+        try {
+            await ensureRequestForManualQuotation(db, user.id, quotation);
+        } catch { }
+    }
     if (!quotation) {
         return c.redirect('/admin/orcamentos?error=Orçamento não encontrado.');
     }
