@@ -144,9 +144,9 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                         </div>
                     )}
 
-                    {/* Formulário Inline (Status + Progresso + Datas + Salvar na mesma linha) */}
+                    {/* Formulário Inline (Status + Progresso + Datas + Salvar proporcional) */}
                     <form action={`/admin/projetos/${projectDetail.id}`} method="post" data-dirty-guard="1" class="pt-3" style="border-top: 1px solid rgba(22, 116, 154, 0.14);">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; align-items: end;">
+                        <div style="display: grid; grid-template-columns: minmax(160px, 1.3fr) minmax(110px, 0.75fr) minmax(140px, 1fr) minmax(140px, 1fr) auto; gap: 12px; align-items: end;">
                             <div>
                                 <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Status</label>
                                 <select
@@ -198,7 +198,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                             </div>
 
                             <div class="flex justify-end">
-                                <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm w-full justify-center">
+                                <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm shrink-0" style="min-width: 118px; justify-content: center;">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M5 13l4 4L19 7" />
                                     </svg>
@@ -222,7 +222,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                                 <span class="gt-badge gt-badge-info">{completedStages}/{stages.length} concluídas</span>
                             </div>
 
-                            <div class="space-y-2" style="max-height: 205px; overflow-y: auto; padding-right: 4px;">
+                            <div class="space-y-2" style="max-height: 236px; overflow-y: auto; padding-right: 4px;">
                                 {stages.length === 0 ? (
                                     <div class="gtb-surface-box rounded-xl p-5 text-center text-xs text-[#8C95AA]">
                                         Nenhuma etapa cadastrada ainda. Adicione o primeiro marco abaixo.
@@ -306,7 +306,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                                 </div>
                             </div>
 
-                            <div class="space-y-2" style="max-height: 205px; overflow-y: auto; padding-right: 4px;">
+                            <div class="space-y-2" style="max-height: 236px; overflow-y: auto; padding-right: 4px;">
                                 {attachments.length === 0 ? (
                                     <div class="gtb-surface-box rounded-xl p-5 text-center text-xs text-[#8C95AA]">
                                         Nenhum documento ou anexo vinculado ainda. Use o formulário abaixo para enviar.
