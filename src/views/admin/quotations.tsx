@@ -316,7 +316,7 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
 
                     {/* Coluna Lateral: 2 Cards proporcionais sem buracos vazios */}
                     <div class="min-w-0" style="display: flex; flex-direction: column; gap: 14px; height: 100%; max-height: 100%; overflow: hidden;">
-                        {/* Card 1: Resumo Comercial & Vínculos (tamanho natural, sem esticar buraco vazio) */}
+                        {/* Card 1: Resumo Financeiro & Vínculos */}
                         <aside class="gtb-card !p-4 space-y-3 min-w-0" style="flex-shrink: 0;">
                             <div class="pb-2" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                                 <h2 class="gt-font-display text-sm font-extrabold text-white">Resumo Financeiro</h2>
@@ -361,7 +361,7 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                             </div>
                         </aside>
 
-                        {/* Card 2: Portal do Cliente & Ações Rápidas (ocupa o restante com lista padronizada gt-quick-action-btn) */}
+                        {/* Card 2: Portal do Cliente & Ações Rápidas */}
                         <aside class="gtb-card !p-4 min-w-0 gt-no-print" style="flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;">
                             <div class="space-y-2.5">
                                 <div class="flex items-center justify-between gap-2 pb-2" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">

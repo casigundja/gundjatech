@@ -44,7 +44,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
-                <link rel="stylesheet" href="/css/gt-admin.css?v=55" />
+                <link rel="stylesheet" href="/css/gt-admin.css?v=56" />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
@@ -214,7 +214,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 >
                     <div class="flex flex-col min-h-0 flex-1 overflow-x-hidden">
                         {/* Brand Header */}
-                        <div class="gtb-sidebar-brand-row h-[72px] flex items-center justify-between px-4 shrink-0">
+                        <div class="gtb-sidebar-brand-row h-[62px] flex items-center justify-between px-4 shrink-0">
                             <a href="/admin/dashboard" class="flex items-center gap-2.5 no-underline">
                                 <span class="gtb-brand-badge">
                                     <img src="/img/favicon.svg?v=gt-icon4" alt="GundjaTech" class="w-5 h-5 object-contain" />
@@ -236,7 +236,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             <span>Menu Principal</span>
                         </div>
 
-                        <nav class="px-3 space-y-1 overflow-y-auto flex-1">
+                        <nav class="px-3 space-y-0.5 overflow-y-auto flex-1">
                             <a href="/admin/dashboard" class={`gtb-nav-item ${activeNav === 'dashboard' ? 'is-active' : ''}`} title="Dashboard">
                                 <div class="flex items-center gap-3">
                                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
@@ -300,7 +300,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             )}
 
                             {(can('quotations.view') || can('domains.view') || can('users.manage')) && (
-                                <div class="gtb-section-head pt-4 border-t border-white/5 mt-2">
+                                <div class="gtb-section-head pt-2.5 border-t border-white/5 mt-1.5">
                                     <span>Workspaces</span>
                                 </div>
                             )}
@@ -333,7 +333,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             )}
 
                             {(can('chat.manage') || can('chat.view') || can('settings.manage')) && (
-                                <div class="pt-3 mt-2 border-t border-white/5 space-y-1">
+                                <div class="pt-2 mt-1.5 border-t border-white/5 space-y-0.5">
                                     {can('chat.manage') && (
                                         <a href="/admin/crm-autonomo" class={`gtb-nav-item ${activeNav === 'crm' ? 'is-active' : ''}`} title="CRM Autônomo IA">
                                             <div class="flex items-center gap-3">

@@ -255,22 +255,53 @@ html[data-sidebar-collapsed="1"] .gtb-sidebar-collapse-btn svg {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 14px 6px;
-    font-size: 10px;
+    padding: 8px 14px 4px;
+    font-size: 9.5px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.09em;
     color: var(--gtb-subtle);
 }
 
+/* Barra de rolagem invisível / minimalista na sidebar e listas internas */
+.gtb-sidebar nav {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.gtb-sidebar nav::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+}
+
+/* Scrollbar corporativa fina (5px) para o restante do painel no Windows/macOS */
+body.gt-admin-boost *::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+body.gt-admin-boost *::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+body.gt-admin-boost *::-webkit-scrollbar-thumb {
+    background: rgba(22, 116, 154, 0.28);
+    border-radius: 999px;
+}
+
+body.gt-admin-boost *::-webkit-scrollbar-thumb:hover {
+    background: rgba(242, 194, 48, 0.55);
+}
+
 .gtb-nav-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 11px;
-    padding: 10px 13px;
-    border-radius: 11px;
-    font-size: 13px;
+    gap: 10px;
+    padding: 7.5px 12px;
+    border-radius: 10px;
+    font-size: 12.5px;
     font-weight: 600;
     color: var(--gtb-muted);
     text-decoration: none;
@@ -328,16 +359,17 @@ html[data-sidebar-collapsed="1"] .gtb-sidebar-collapse-btn svg {
 
 /* Bottom Promo Card (Always rich Deep Petrol + Gold brand signature) */
 .gtb-promo-card {
-    margin: 12px;
-    padding: 18px 14px 14px;
-    border-radius: 16px;
+    margin: 6px 12px 10px;
+    padding: 11px 12px 10px;
+    border-radius: 13px;
     background:
         radial-gradient(95% 95% at 50% 105%, rgba(242, 194, 48, 0.34) 0%, rgba(22, 116, 154, 0.34) 48%, #063B5C 100%);
     border: 1px solid rgba(242, 194, 48, 0.35);
     text-align: center;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 12px 24px -10px rgba(6, 59, 92, 0.45);
+    box-shadow: 0 10px 20px -10px rgba(6, 59, 92, 0.45);
+    flex-shrink: 0;
 }
 
 .gtb-promo-btn {
@@ -346,12 +378,12 @@ html[data-sidebar-collapsed="1"] .gtb-sidebar-collapse-btn svg {
     justify-content: center;
     gap: 6px;
     width: 100%;
-    height: 36px;
-    margin-top: 12px;
-    border-radius: 10px;
+    height: 31px;
+    margin-top: 8px;
+    border-radius: 9px;
     background: #FFFFFF;
     color: #063B5C !important;
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 800;
     text-decoration: none;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
