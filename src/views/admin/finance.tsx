@@ -199,10 +199,12 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                                         ? STATUS_LABELS.overdue
                                         : t.status === 'paid'
                                         ? { label: isIncome ? 'Recebido' : 'Pago', badgeClass: 'gt-badge-success' }
+                                        : t.status === 'reviewing'
+                                        ? { label: 'Em Conferência', badgeClass: 'gt-badge-info' }
                                         : t.status === 'pending'
                                         ? { label: isIncome ? 'A Receber' : 'A Pagar', badgeClass: 'gt-badge-warning' }
                                         : (STATUS_LABELS[t.status] || { label: t.status || 'Pendente', badgeClass: 'gt-badge-info' });
-                                    const isPending = t.status === 'pending';
+                                    const isPending = t.status === 'pending' || t.status === 'reviewing';
 
                                     return (
                                         <tr class="hover:bg-white/[0.02] transition">
@@ -248,6 +250,17 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                                             </td>
                                             <td class="py-3.5 px-5 text-right whitespace-nowrap">
                                                 <div class="inline-flex items-center gap-1.5">
+                                                    {t.proof_file && (
+                                                        <a
+                                                            href={`/admin/financeiro/${t.id}/comprovante`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            class="gt-btn-outline gt-btn-xs"
+                                                            title="Abrir comprovante enviado pelo cliente"
+                                                        >
+                                                            Comprovante
+                                                        </a>
+                                                    )}
                                                     {isPending && (
                                                         <form action={`/admin/financeiro/${t.id}/pagar`} method="post" class="inline-block m-0">
                                                             <button

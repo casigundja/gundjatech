@@ -3126,7 +3126,7 @@ adminRoutes.get('/financeiro', async (c) => {
     ).first<{ val: number }>();
 
     const totalPendingRow = await db.prepare(
-        `SELECT SUM(amount) as val FROM financial_transactions WHERE type = 'income' AND status = 'pending'`
+        `SELECT SUM(amount) as val FROM financial_transactions WHERE type = 'income' AND status IN ('pending', 'reviewing')`
     ).first<{ val: number }>();
 
     const totalOverdueRow = await db.prepare(
@@ -3134,7 +3134,8 @@ adminRoutes.get('/financeiro', async (c) => {
     ).first<{ val: number }>();
 
     let query = `
-        SELECT t.*, c.name as client_name, c.company, c.email as client_email
+        SELECT t.*, c.name as client_name, c.company, c.email as client_email,
+               (SELECT p.proof_file FROM payments p WHERE p.financial_transaction_id = t.id ORDER BY p.id DESC LIMIT 1) AS proof_file
         FROM financial_transactions t
         LEFT JOIN clients c ON t.client_id = c.id
         WHERE 1=1
@@ -3222,6 +3223,29 @@ adminRoutes.post('/financeiro', async (c) => {
     }
 
     return c.redirect('/admin/financeiro?success=Fatura cadastrada com sucesso');
+});
+
+adminRoutes.get('/financeiro/:id/comprovante', async (c) => {
+    const db = c.env.DB;
+    const txId = Number(c.req.param('id'));
+
+    const row = await db.prepare(
+        `SELECT proof_file FROM payments
+         WHERE financial_transaction_id = ? AND proof_file IS NOT NULL
+         ORDER BY id DESC LIMIT 1`
+    ).bind(txId).first<{ proof_file: string }>();
+
+    if (!row?.proof_file || !c.env.UPLOADS_BUCKET) {
+        return c.text('Comprovante não encontrado', 404);
+    }
+
+    const obj = await c.env.UPLOADS_BUCKET.get(row.proof_file);
+    if (!obj) return c.text('Arquivo não encontrado', 404);
+
+    const headers = new Headers();
+    headers.set('Content-Type', obj.httpMetadata?.contentType || 'application/octet-stream');
+    headers.set('Content-Disposition', `inline; filename="comprovante-fatura-${txId}"`);
+    return new Response(obj.body, { headers });
 });
 
 adminRoutes.post('/financeiro/:id/pagar', async (c) => {
@@ -4358,7 +4382,14 @@ adminRoutes.post('/configuracoes', async (c) => {
     // Redes Sociais: Instagram & Facebook Sync + Curadoria Manual
     pairs.push(
         ['meta_ig_account_id', String(body.meta_ig_account_id || '').trim(), 'social'],
-        ['meta_fb_page_id', String(body.meta_fb_page_id || '').trim(), 'social']
+        ['meta_fb_page_id', String(body.meta_fb_page_id || '').trim(), 'social'],
+        ['payment_pix_key', String(body.payment_pix_key || '').trim(), 'payments'],
+        ['payment_pix_holder', String(body.payment_pix_holder || '').trim(), 'payments'],
+        ['payment_pix_city', String(body.payment_pix_city || '').trim(), 'payments'],
+        ['payment_bank_name', String(body.payment_bank_name || '').trim(), 'payments'],
+        ['payment_bank_agency', String(body.payment_bank_agency || '').trim(), 'payments'],
+        ['payment_bank_account', String(body.payment_bank_account || '').trim(), 'payments'],
+        ['payment_bank_cnpj', String(body.payment_bank_cnpj || '').trim(), 'payments']
     );
 
     const manualReels: Array<{ permalink: string; imageUrl: string; caption: string; platform: string }> = [];

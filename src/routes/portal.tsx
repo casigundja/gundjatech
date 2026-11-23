@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/auth';
 import { getRequestBody } from '../lib/request';
 import { ensureClientProfile, getPortalDashboard } from '../lib/client-portal';
 import { getFile, streamR2Response } from '../lib/storage';
+import { generatePixPayload, loadBankPaymentSettings } from '../lib/pix';
 import { recordRequestTimeline } from '../lib/timeline';
 import { AutonomousCrmAgent } from '../services/ai-crm-agent';
 import { PortalDashboardView } from '../views/portal/dashboard';
@@ -703,19 +704,138 @@ portalRoutes.post('/dominios/:id/renovacao', async (c) => {
 portalRoutes.get('/financeiro', async (c) => {
     const { user, db, client } = await getClientContext(c);
 
-    const txs = await db.prepare(
-        'SELECT * FROM financial_transactions WHERE client_id = ? ORDER BY due_date DESC'
-    ).bind(client.id).all();
+    const [txsRes, bankSettings] = await Promise.all([
+        db.prepare(
+            'SELECT * FROM financial_transactions WHERE client_id = ? ORDER BY due_date DESC'
+        ).bind(client.id).all(),
+        loadBankPaymentSettings(db)
+    ]);
+
+    const proofMap = new Map<number, string>();
+    try {
+        const payRes = await db.prepare(
+            `SELECT financial_transaction_id, proof_file FROM payments
+             WHERE proof_file IS NOT NULL ORDER BY id ASC`
+        ).all();
+        for (const p of (payRes?.results || []) as any[]) {
+            if (p.financial_transaction_id && p.proof_file) {
+                proofMap.set(Number(p.financial_transaction_id), String(p.proof_file));
+            }
+        }
+    } catch { }
+
+    const transactions = (txsRes.results || []).map((t: any) => {
+        const isUnpaid = t.status !== 'paid' && t.status !== 'canceled';
+        const txid = `GTFAT${String(t.id).padStart(5, '0')}`;
+        const pixPayload = isUnpaid
+            ? generatePixPayload({
+                pixKey: bankSettings.pixKey,
+                merchantName: bankSettings.pixHolder,
+                merchantCity: bankSettings.pixCity,
+                amount: Number(t.amount || 0),
+                txid,
+                description: `Fatura ${t.invoice_number || t.id}`
+            })
+            : '';
+        return {
+            ...t,
+            proof_file: proofMap.get(Number(t.id)) || t.proof_file || null,
+            pix_payload: pixPayload,
+            pix_txid: txid
+        };
+    });
 
     return c.html(
         <PortalFinanceView
             currentUser={user}
             clientName={client.company || client.name}
-            transactions={txs.results || []}
+            transactions={transactions}
+            bankSettings={bankSettings}
             successMessage={c.req.query('success')}
             errorMessage={c.req.query('error')}
         />
     );
+});
+
+portalRoutes.post('/financeiro/:id/comprovante', async (c) => {
+    const { db, client } = await getClientContext(c);
+    const txId = Number(c.req.param('id'));
+
+    const tx = (await db.prepare(
+        `SELECT * FROM financial_transactions WHERE id = ? AND client_id = ?`
+    ).bind(txId, client.id).first()) as any;
+
+    if (!tx) {
+        return c.redirect('/portal/financeiro?error=Fatura+n%C3%A3o+encontrada.');
+    }
+
+    try {
+        const formData = await c.req.formData();
+        const file = formData.get('receipt') as File | null;
+        const chosenMethod = String(formData.get('payment_method') || tx.payment_method || 'PIX').trim().slice(0, 40);
+
+        if (!file || typeof file === 'string' || file.size === 0) {
+            return c.redirect('/portal/financeiro?error=Selecione+um+arquivo+de+comprovante+(PDF,+JPG+ou+PNG).');
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            return c.redirect('/portal/financeiro?error=O+comprovante+deve+ter+no+m%C3%A1ximo+10MB.');
+        }
+
+        const ext = (file.name.split('.').pop() || 'pdf').toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (!['pdf', 'png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
+            return c.redirect('/portal/financeiro?error=Formato+inv%C3%A1lido.+Envie+PDF,+PNG,+JPG+ou+WEBP.');
+        }
+
+        const r2Key = `private/receipts/client-${client.id}/fat-${tx.id}-${Date.now()}.${ext}`;
+        if (c.env.UPLOADS_BUCKET) {
+            const buf = await file.arrayBuffer();
+            await c.env.UPLOADS_BUCKET.put(r2Key, buf, {
+                httpMetadata: { contentType: file.type || (ext === 'pdf' ? 'application/pdf' : `image/${ext}`) }
+            });
+        }
+
+        await db.prepare(
+            `INSERT INTO payments (financial_transaction_id, amount, payment_method, transaction_reference, proof_file, status, paid_at, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, 'reviewing', datetime('now'), datetime('now'), datetime('now'))`
+        ).bind(tx.id, tx.amount, chosenMethod, `GTFAT${String(tx.id).padStart(5, '0')}`, r2Key).run();
+
+        await db.prepare(
+            `UPDATE financial_transactions
+             SET status = CASE WHEN status = 'paid' THEN 'paid' ELSE 'reviewing' END,
+                 payment_method = ?,
+                 updated_at = datetime('now')
+             WHERE id = ? AND client_id = ?`
+        ).bind(chosenMethod, tx.id, client.id).run();
+
+        return c.redirect('/portal/financeiro?success=Comprovante+enviado+com+sucesso!+Nossa+equipe+confirmar%C3%A1+o+recebimento+em+instantes.');
+    } catch {
+        return c.redirect('/portal/financeiro?error=N%C3%A3o+foi+poss%C3%ADvel+enviar+o+comprovante.');
+    }
+});
+
+portalRoutes.get('/financeiro/:id/comprovante', async (c) => {
+    const { db, client } = await getClientContext(c);
+    const txId = Number(c.req.param('id'));
+
+    const row = (await db.prepare(
+        `SELECT p.proof_file
+         FROM payments p
+         INNER JOIN financial_transactions t ON t.id = p.financial_transaction_id
+         WHERE t.id = ? AND t.client_id = ? AND p.proof_file IS NOT NULL
+         ORDER BY p.id DESC LIMIT 1`
+    ).bind(txId, client.id).first()) as { proof_file?: string } | null;
+
+    if (!row?.proof_file || !c.env.UPLOADS_BUCKET) {
+        return c.text('Comprovante não encontrado', 404);
+    }
+
+    const obj = await c.env.UPLOADS_BUCKET.get(row.proof_file);
+    if (!obj) return c.text('Arquivo não encontrado', 404);
+
+    const headers = new Headers();
+    headers.set('Content-Type', obj.httpMetadata?.contentType || 'application/octet-stream');
+    headers.set('Content-Disposition', `inline; filename="comprovante-fatura-${txId}"`);
+    return new Response(obj.body, { headers });
 });
 
 // 7. Campanhas

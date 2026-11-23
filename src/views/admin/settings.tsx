@@ -155,6 +155,86 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                             />
                         </div>
 
+                        {/* Subseção: Dados Bancários & PIX (Nu Empresas) */}
+                        <div class="pt-4 space-y-3.5" style="border-top: 1px solid rgba(22, 116, 154, 0.14);">
+                            <div>
+                                <h3 class="gt-font-display text-xs font-extrabold uppercase tracking-wider text-[#F2C230]">Dados Bancários &amp; PIX (Recebimentos no Portal)</h3>
+                                <p class="text-[11px] text-[#8C95AA] mt-0.5">Usados para gerar o QR Code PIX (BR Code oficial) e dados de TED em todas as faturas do Portal do Cliente.</p>
+                            </div>
+
+                            <div class="gt-grid-2 !gap-3.5">
+                                <div>
+                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Chave PIX Oficial (CNPJ)</label>
+                                    <input
+                                        type="text"
+                                        name="payment_pix_key"
+                                        value={settings.payment_pix_key || '43.209.289/0001-66'}
+                                        class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Titular / Favorecido</label>
+                                    <input
+                                        type="text"
+                                        name="payment_pix_holder"
+                                        value={settings.payment_pix_holder || 'GUNDJATECH'}
+                                        class="w-full rounded-xl px-3.5 py-2 text-xs"
+                                    />
+                                </div>
+                            </div>
+
+                            <div class="gt-grid-2 !gap-3.5">
+                                <div>
+                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Banco (TED)</label>
+                                    <input
+                                        type="text"
+                                        name="payment_bank_name"
+                                        value={settings.payment_bank_name || '260 - Nu Pagamentos S.A. (Nu Empresas)'}
+                                        class="w-full rounded-xl px-3.5 py-2 text-xs"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Cidade do Beneficiário (PIX)</label>
+                                    <input
+                                        type="text"
+                                        name="payment_pix_city"
+                                        value={settings.payment_pix_city || 'SAO PAULO'}
+                                        class="w-full rounded-xl px-3.5 py-2 text-xs"
+                                    />
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Agência</label>
+                                    <input
+                                        type="text"
+                                        name="payment_bank_agency"
+                                        value={settings.payment_bank_agency || '0001'}
+                                        class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Conta Corrente</label>
+                                    <input
+                                        type="text"
+                                        name="payment_bank_account"
+                                        value={settings.payment_bank_account || '16395420-4'}
+                                        class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">CNPJ da Conta</label>
+                                    <input
+                                        type="text"
+                                        name="payment_bank_cnpj"
+                                        value={settings.payment_bank_cnpj || '43.209.289/0001-66'}
+                                        class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Subseção: Números de WhatsApp */}
                         <div class="pt-4 space-y-3.5" style="border-top: 1px solid rgba(22, 116, 154, 0.14);">
                             <div>
