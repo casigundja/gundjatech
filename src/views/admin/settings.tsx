@@ -155,94 +155,106 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                             />
                         </div>
 
-                        {/* Subseção: Dados Bancários & PIX (Nu Empresas) */}
-                        <div class="pt-4 space-y-3.5" style="border-top: 1px solid rgba(22, 116, 154, 0.14);">
-                            <div>
-                                <h3 class="gt-font-display text-xs font-extrabold uppercase tracking-wider text-[#F2C230]">Dados Bancários &amp; PIX (Recebimentos no Portal)</h3>
-                                <p class="text-[11px] text-[#8C95AA] mt-0.5">Usados para gerar o QR Code PIX (BR Code oficial) e dados de TED em todas as faturas do Portal do Cliente.</p>
-                            </div>
+                        {/* Subseção recolhível: Dados Bancários & PIX (Nu Empresas) */}
+                        <details class="gtb-surface-box rounded-xl p-3.5">
+                            <summary class="cursor-pointer flex items-center justify-between gap-3">
+                                <div class="min-w-0">
+                                    <div class="text-xs font-extrabold text-white">Dados Bancários &amp; PIX (Recebimentos no Portal)</div>
+                                    <div class="text-[11px] text-[#8C95AA] mt-0.5 truncate">
+                                        PIX <span class="font-mono">{settings.payment_pix_key || '43.209.289/0001-66'}</span> • Ag {settings.payment_bank_agency || '0001'} / Cc {settings.payment_bank_account || '16395420-4'}
+                                    </div>
+                                </div>
+                                <span class="text-[10.5px] font-extrabold text-[#F2C230] shrink-0">EXPANDIR ▾</span>
+                            </summary>
 
-                            <div class="gt-grid-2 !gap-3.5">
-                                <div>
-                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Chave PIX Oficial (CNPJ)</label>
-                                    <input
-                                        type="text"
-                                        name="payment_pix_key"
-                                        value={settings.payment_pix_key || '43.209.289/0001-66'}
-                                        class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
-                                    />
+                            <div class="mt-3.5 pt-3.5 space-y-3.5 border-t border-white/10">
+                                <div class="gt-grid-2 !gap-3.5">
+                                    <div>
+                                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Chave PIX Oficial (CNPJ)</label>
+                                        <input
+                                            type="text"
+                                            name="payment_pix_key"
+                                            value={settings.payment_pix_key || '43.209.289/0001-66'}
+                                            class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Titular / Favorecido</label>
+                                        <input
+                                            type="text"
+                                            name="payment_pix_holder"
+                                            value={settings.payment_pix_holder || 'GUNDJATECH'}
+                                            class="w-full rounded-xl px-3.5 py-2 text-xs"
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Titular / Favorecido</label>
-                                    <input
-                                        type="text"
-                                        name="payment_pix_holder"
-                                        value={settings.payment_pix_holder || 'GUNDJATECH'}
-                                        class="w-full rounded-xl px-3.5 py-2 text-xs"
-                                    />
+
+                                <div class="gt-grid-2 !gap-3.5">
+                                    <div>
+                                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Banco (TED)</label>
+                                        <input
+                                            type="text"
+                                            name="payment_bank_name"
+                                            value={settings.payment_bank_name || '260 - Nu Pagamentos S.A. (Nu Empresas)'}
+                                            class="w-full rounded-xl px-3.5 py-2 text-xs"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Cidade do Beneficiário (PIX)</label>
+                                        <input
+                                            type="text"
+                                            name="payment_pix_city"
+                                            value={settings.payment_pix_city || 'SAO PAULO'}
+                                            class="w-full rounded-xl px-3.5 py-2 text-xs"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div>
+                                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Agência</label>
+                                        <input
+                                            type="text"
+                                            name="payment_bank_agency"
+                                            value={settings.payment_bank_agency || '0001'}
+                                            class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Conta Corrente</label>
+                                        <input
+                                            type="text"
+                                            name="payment_bank_account"
+                                            value={settings.payment_bank_account || '16395420-4'}
+                                            class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">CNPJ da Conta</label>
+                                        <input
+                                            type="text"
+                                            name="payment_bank_cnpj"
+                                            value={settings.payment_bank_cnpj || '43.209.289/0001-66'}
+                                            class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                        />
+                                    </div>
                                 </div>
                             </div>
+                        </details>
 
-                            <div class="gt-grid-2 !gap-3.5">
-                                <div>
-                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Banco (TED)</label>
-                                    <input
-                                        type="text"
-                                        name="payment_bank_name"
-                                        value={settings.payment_bank_name || '260 - Nu Pagamentos S.A. (Nu Empresas)'}
-                                        class="w-full rounded-xl px-3.5 py-2 text-xs"
-                                    />
+                        {/* Subseção recolhível: Números de WhatsApp */}
+                        <details class="gtb-surface-box rounded-xl p-3.5">
+                            <summary class="cursor-pointer flex items-center justify-between gap-3">
+                                <div class="min-w-0">
+                                    <div class="text-xs font-extrabold text-white">Números de Atendimento WhatsApp</div>
+                                    <div class="text-[11px] text-[#8C95AA] mt-0.5 truncate">
+                                        Oficial: <span class="font-mono">{settings.company_whatsapp || 'Não definido'}</span> • Diretor: <span class="font-mono">{settings.whatsapp_director_phone || 'Não definido'}</span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Cidade do Beneficiário (PIX)</label>
-                                    <input
-                                        type="text"
-                                        name="payment_pix_city"
-                                        value={settings.payment_pix_city || 'SAO PAULO'}
-                                        class="w-full rounded-xl px-3.5 py-2 text-xs"
-                                    />
-                                </div>
-                            </div>
+                                <span class="text-[10.5px] font-extrabold text-[#F2C230] shrink-0">EXPANDIR ▾</span>
+                            </summary>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <div>
-                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Agência</label>
-                                    <input
-                                        type="text"
-                                        name="payment_bank_agency"
-                                        value={settings.payment_bank_agency || '0001'}
-                                        class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
-                                    />
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Conta Corrente</label>
-                                    <input
-                                        type="text"
-                                        name="payment_bank_account"
-                                        value={settings.payment_bank_account || '16395420-4'}
-                                        class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
-                                    />
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">CNPJ da Conta</label>
-                                    <input
-                                        type="text"
-                                        name="payment_bank_cnpj"
-                                        value={settings.payment_bank_cnpj || '43.209.289/0001-66'}
-                                        class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Subseção: Números de WhatsApp */}
-                        <div class="pt-4 space-y-3.5" style="border-top: 1px solid rgba(22, 116, 154, 0.14);">
-                            <div>
-                                <h3 class="gt-font-display text-xs font-extrabold uppercase tracking-wider text-[#16749A]">Números de Atendimento WhatsApp</h3>
-                                <p class="text-[11px] text-[#8C95AA] mt-0.5">Configure os números usados no atendimento IA e nos alertas de handoff humano.</p>
-                            </div>
-
-                            <div class="gt-grid-2 !gap-3.5">
+                            <div class="mt-3.5 pt-3.5 border-t border-white/10 gt-grid-2 !gap-3.5">
                                 <div>
                                     <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">WhatsApp 1 · Oficial / IA</label>
                                     <input
@@ -266,7 +278,7 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                                     <p class="text-[10.5px] text-[#8C95AA] mt-1">Recebe alertas quando cliente solicita falar com humano.</p>
                                 </div>
                             </div>
-                        </div>
+                        </details>
                     </div>
 
                     <div class="pt-4 flex items-center justify-between gap-3 flex-wrap" style="border-top: 1px solid rgba(22, 116, 154, 0.14);">
@@ -335,150 +347,165 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                             </div>
                         )}
 
-                        {/* Webhook URL com botão Copiar */}
-                        <div class="gtb-surface-box rounded-xl p-3.5 space-y-2.5 text-xs">
-                            <div class="flex items-start justify-between gap-2">
+                        {/* Credenciais Técnicas & Webhook recolhíveis */}
+                        <details class="gtb-surface-box rounded-xl p-3.5">
+                            <summary class="cursor-pointer flex items-center justify-between gap-3">
                                 <div class="min-w-0">
-                                    <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">URL do Webhook (cole no seu provedor)</div>
-                                    <div id="gt-wa-webhook-url" class="font-mono text-[11px] text-white break-all mt-0.5">{webhookUrl}</div>
+                                    <div class="text-xs font-extrabold text-white">Credenciais Técnicas &amp; Webhook</div>
+                                    <div class="text-[11px] text-[#8C95AA] mt-0.5 truncate">
+                                        {isMeta ? 'Meta Cloud API' : isEvolution ? 'Evolution API v2' : 'Z-API Omni'} • {whatsappConfigured ? 'Credenciais salvas ✓' : 'Aguardando configuração'}
+                                    </div>
                                 </div>
-                                <button
-                                    type="button"
-                                    onclick="var el=document.getElementById('gt-wa-webhook-url');if(el&&navigator.clipboard){navigator.clipboard.writeText(el.textContent.trim());this.textContent='Copiado!';var b=this;setTimeout(function(){b.textContent='Copiar';},1800);}"
-                                    class="gt-btn-outline gt-btn-xs shrink-0"
-                                >
-                                    Copiar
-                                </button>
-                            </div>
-                            <div data-wa-meta-token style={`display: ${isMeta ? 'block' : 'none'}; border-top: 1px solid rgba(22, 116, 154, 0.14); padding-top: 8px;`}>
-                                <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Token de Verificação (Meta)</div>
-                                <div class="font-mono text-[11px] text-[#F2C230] font-bold mt-0.5">{verifyToken}</div>
-                            </div>
-                        </div>
+                                <span class="text-[10.5px] font-extrabold text-[#F2C230] shrink-0">EXPANDIR ▾</span>
+                            </summary>
 
-                        <div>
-                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Provedor WhatsApp Ativo</label>
-                            <select
-                                id="gt-wa-provider-select"
-                                name="whatsapp_provider"
-                                onchange="var v=this.value==='zapi_omni'?'zapi':this.value;document.querySelectorAll('[data-wa-pane]').forEach(function(el){el.style.display=el.getAttribute('data-wa-pane')===v?'block':'none';});var mt=document.querySelector('[data-wa-meta-token]');if(mt){mt.style.display=this.value==='meta'?'block':'none';}"
-                                class="w-full rounded-xl px-3.5 py-2 text-xs"
-                            >
-                                <option value="zapi_omni" selected={activeProvider === 'zapi_omni'}>Z-API Omni (QR Code — api.omni.z-api.io)</option>
-                                <option value="zapi" selected={activeProvider === 'zapi'}>Z-API Clássico (QR Code — api.z-api.io)</option>
-                                <option value="evolution" selected={activeProvider === 'evolution'}>Evolution API v2 (QR Code / Self-Hosted)</option>
-                                <option value="meta" selected={activeProvider === 'meta'}>Meta WhatsApp Cloud API (Oficial)</option>
-                            </select>
-                        </div>
-
-                        {/* Campos Z-API / Z-API Omni (protegidos contra autofill de senha do navegador) */}
-                        <div data-wa-pane="zapi" style={`display: ${isZapi ? 'block' : 'none'};`} class="space-y-3">
-                            <div>
-                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">ID do Canal / Instance ID</label>
-                                <input
-                                    type="text"
-                                    name="whatsapp_zapi_instance_id"
-                                    value={settings.whatsapp_zapi_instance_id || ''}
-                                    placeholder="Ex: 01A20068C3327BE580..."
-                                    class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
-                                />
-                            </div>
-                            <div>
-                                <div class="flex items-center justify-between gap-2 mb-1">
-                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Token do Canal / Instância</label>
-                                    {settings.has_zapi_token && <span class="gt-badge gt-badge-success text-[10px]">✓ Salvo</span>}
+                            <div class="mt-3.5 pt-3.5 space-y-3.5 border-t border-white/10">
+                                {/* Webhook URL com botão Copiar */}
+                                <div class="rounded-xl p-3 space-y-2.5 text-xs border border-white/10">
+                                    <div class="flex items-start justify-between gap-2">
+                                        <div class="min-w-0">
+                                            <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">URL do Webhook (cole no seu provedor)</div>
+                                            <div id="gt-wa-webhook-url" class="font-mono text-[11px] text-white break-all mt-0.5">{webhookUrl}</div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onclick="var el=document.getElementById('gt-wa-webhook-url');if(el&&navigator.clipboard){navigator.clipboard.writeText(el.textContent.trim());this.textContent='Copiado!';var b=this;setTimeout(function(){b.textContent='Copiar';},1800);}"
+                                            class="gt-btn-outline gt-btn-xs shrink-0"
+                                        >
+                                            Copiar
+                                        </button>
+                                    </div>
+                                    <div data-wa-meta-token style={`display: ${isMeta ? 'block' : 'none'}; border-top: 1px solid rgba(22, 116, 154, 0.14); padding-top: 8px;`}>
+                                        <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Token de Verificação (Meta)</div>
+                                        <div class="font-mono text-[11px] text-[#F2C230] font-bold mt-0.5">{verifyToken}</div>
+                                    </div>
                                 </div>
-                                <input
-                                    type="password"
-                                    name="whatsapp_zapi_token"
-                                    autocomplete="new-password"
-                                    readonly
-                                    onfocus="this.removeAttribute('readonly');"
-                                    placeholder={settings.has_zapi_token ? '•••••••• (deixe vazio para manter)' : 'Ex: C8CC3D...'}
-                                    class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
-                                />
-                            </div>
-                            <div>
-                                <div class="flex items-center justify-between gap-2 mb-1">
-                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Secret Key / Client-Token</label>
-                                    {settings.has_zapi_client_token && <span class="gt-badge gt-badge-success text-[10px]">✓ Salva</span>}
-                                </div>
-                                <input
-                                    type="password"
-                                    name="whatsapp_zapi_client_token"
-                                    autocomplete="new-password"
-                                    readonly
-                                    onfocus="this.removeAttribute('readonly');"
-                                    placeholder={settings.has_zapi_client_token ? '•••••••• (deixe vazio para manter)' : 'Secret Key do Workspace (Segurança)'}
-                                    class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
-                                />
-                            </div>
-                        </div>
 
-                        {/* Campos Evolution API */}
-                        <div data-wa-pane="evolution" style={`display: ${isEvolution ? 'block' : 'none'};`} class="space-y-3">
-                            <div>
-                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">URL da Evolution API</label>
-                                <input
-                                    type="url"
-                                    name="whatsapp_evolution_url"
-                                    value={settings.whatsapp_evolution_url || ''}
-                                    placeholder="https://evo.seudominio.com"
-                                    class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
-                                />
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Nome da Instância</label>
-                                <input
-                                    type="text"
-                                    name="whatsapp_evolution_instance"
-                                    value={settings.whatsapp_evolution_instance || ''}
-                                    placeholder="Ex: gundjatech"
-                                    class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
-                                />
-                            </div>
-                            <div>
-                                <div class="flex items-center justify-between gap-2 mb-1">
-                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Evolution API Key</label>
-                                    {settings.has_evolution_key && <span class="gt-badge gt-badge-success text-[10px]">✓ Salva</span>}
+                                <div>
+                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Provedor WhatsApp Ativo</label>
+                                    <select
+                                        id="gt-wa-provider-select"
+                                        name="whatsapp_provider"
+                                        onchange="var v=this.value==='zapi_omni'?'zapi':this.value;document.querySelectorAll('[data-wa-pane]').forEach(function(el){el.style.display=el.getAttribute('data-wa-pane')===v?'block':'none';});var mt=document.querySelector('[data-wa-meta-token]');if(mt){mt.style.display=this.value==='meta'?'block':'none';}"
+                                        class="w-full rounded-xl px-3.5 py-2 text-xs"
+                                    >
+                                        <option value="zapi_omni" selected={activeProvider === 'zapi_omni'}>Z-API Omni (QR Code — api.omni.z-api.io)</option>
+                                        <option value="zapi" selected={activeProvider === 'zapi'}>Z-API Clássico (QR Code — api.z-api.io)</option>
+                                        <option value="evolution" selected={activeProvider === 'evolution'}>Evolution API v2 (QR Code / Self-Hosted)</option>
+                                        <option value="meta" selected={activeProvider === 'meta'}>Meta WhatsApp Cloud API (Oficial)</option>
+                                    </select>
                                 </div>
-                                <input
-                                    type="password"
-                                    name="whatsapp_evolution_api_key"
-                                    autocomplete="new-password"
-                                    readonly
-                                    onfocus="this.removeAttribute('readonly');"
-                                    placeholder={settings.has_evolution_key ? '•••••••• (deixe vazio para manter)' : 'Cole a API Key'}
-                                    class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
-                                />
-                            </div>
-                        </div>
 
-                        {/* Campos Meta Cloud API */}
-                        <div data-wa-pane="meta" style={`display: ${isMeta ? 'block' : 'none'};`} class="space-y-3">
-                            <div>
-                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Meta Phone Number ID</label>
-                                <input
-                                    type="text"
-                                    name="whatsapp_phone_number_id"
-                                    value={settings.whatsapp_phone_number_id || ''}
-                                    placeholder="Ex: 1452542717940715"
-                                    class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
-                                />
+                                {/* Campos Z-API / Z-API Omni */}
+                                <div data-wa-pane="zapi" style={`display: ${isZapi ? 'block' : 'none'};`} class="space-y-3">
+                                    <div>
+                                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">ID do Canal / Instance ID</label>
+                                        <input
+                                            type="text"
+                                            name="whatsapp_zapi_instance_id"
+                                            value={settings.whatsapp_zapi_instance_id || ''}
+                                            placeholder="Ex: 01A20068C3327BE580..."
+                                            class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                        />
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center justify-between gap-2 mb-1">
+                                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Token do Canal / Instância</label>
+                                            {settings.has_zapi_token && <span class="gt-badge gt-badge-success text-[10px]">✓ Salvo</span>}
+                                        </div>
+                                        <input
+                                            type="password"
+                                            name="whatsapp_zapi_token"
+                                            autocomplete="new-password"
+                                            readonly
+                                            onfocus="this.removeAttribute('readonly');"
+                                            placeholder={settings.has_zapi_token ? '•••••••• (deixe vazio para manter)' : 'Ex: C8CC3D...'}
+                                            class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                        />
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center justify-between gap-2 mb-1">
+                                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Secret Key / Client-Token</label>
+                                            {settings.has_zapi_client_token && <span class="gt-badge gt-badge-success text-[10px]">✓ Salva</span>}
+                                        </div>
+                                        <input
+                                            type="password"
+                                            name="whatsapp_zapi_client_token"
+                                            autocomplete="new-password"
+                                            readonly
+                                            onfocus="this.removeAttribute('readonly');"
+                                            placeholder={settings.has_zapi_client_token ? '•••••••• (deixe vazio para manter)' : 'Secret Key do Workspace (Segurança)'}
+                                            class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Campos Evolution API */}
+                                <div data-wa-pane="evolution" style={`display: ${isEvolution ? 'block' : 'none'};`} class="space-y-3">
+                                    <div>
+                                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">URL da Evolution API</label>
+                                        <input
+                                            type="url"
+                                            name="whatsapp_evolution_url"
+                                            value={settings.whatsapp_evolution_url || ''}
+                                            placeholder="https://evo.seudominio.com"
+                                            class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Nome da Instância</label>
+                                        <input
+                                            type="text"
+                                            name="whatsapp_evolution_instance"
+                                            value={settings.whatsapp_evolution_instance || ''}
+                                            placeholder="Ex: gundjatech"
+                                            class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                        />
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center justify-between gap-2 mb-1">
+                                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Evolution API Key</label>
+                                            {settings.has_evolution_key && <span class="gt-badge gt-badge-success text-[10px]">✓ Salva</span>}
+                                        </div>
+                                        <input
+                                            type="password"
+                                            name="whatsapp_evolution_api_key"
+                                            autocomplete="new-password"
+                                            readonly
+                                            onfocus="this.removeAttribute('readonly');"
+                                            placeholder={settings.has_evolution_key ? '•••••••• (deixe vazio para manter)' : 'Cole a API Key'}
+                                            class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Campos Meta Cloud API */}
+                                <div data-wa-pane="meta" style={`display: ${isMeta ? 'block' : 'none'};`} class="space-y-3">
+                                    <div>
+                                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Meta Phone Number ID</label>
+                                        <input
+                                            type="text"
+                                            name="whatsapp_phone_number_id"
+                                            value={settings.whatsapp_phone_number_id || ''}
+                                            placeholder="Ex: 1452542717940715"
+                                            class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Meta Access Token</label>
+                                        <input
+                                            type="password"
+                                            name="whatsapp_access_token"
+                                            autocomplete="new-password"
+                                            readonly
+                                            onfocus="this.removeAttribute('readonly');"
+                                            placeholder="EAA... (deixe vazio para manter)"
+                                            class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Meta Access Token</label>
-                                <input
-                                    type="password"
-                                    name="whatsapp_access_token"
-                                    autocomplete="new-password"
-                                    readonly
-                                    onfocus="this.removeAttribute('readonly');"
-                                    placeholder="EAA... (deixe vazio para manter)"
-                                    class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
-                                />
-                            </div>
-                        </div>
+                        </details>
                     </div>
 
                     {/* Rodapé de teste rápido WhatsApp */}
@@ -526,43 +553,54 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                         </button>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                        <div>
-                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Instagram Business Account ID</label>
-                            <input
-                                type="text"
-                                name="meta_ig_account_id"
-                                value={settings.meta_ig_account_id || ''}
-                                placeholder="Ex: 17841400000000000"
-                                class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
-                            />
-                            <p class="text-[10.5px] text-[#8C95AA] mt-1">ID da conta @gundjatech no Meta Business Suite.</p>
+                    <details class="gtb-surface-box rounded-xl p-3.5">
+                        <summary class="cursor-pointer flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <div class="text-xs font-extrabold text-white">Credenciais da Meta Graph API (Instagram &amp; Facebook)</div>
+                                <div class="text-[11px] text-[#8C95AA] mt-0.5 truncate">
+                                    {settings.meta_ig_account_id ? `IG ${settings.meta_ig_account_id}` : 'IG não configurado'} • {settings.meta_social_access_token ? 'Token permanente salvo ✓' : 'Token pendente'}
+                                </div>
+                            </div>
+                            <span class="text-[10.5px] font-extrabold text-[#F2C230] shrink-0">EXPANDIR ▾</span>
+                        </summary>
+                        <div class="mt-3.5 pt-3.5 border-t border-white/10 grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                            <div>
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Instagram Business Account ID</label>
+                                <input
+                                    type="text"
+                                    name="meta_ig_account_id"
+                                    value={settings.meta_ig_account_id || ''}
+                                    placeholder="Ex: 17841400000000000"
+                                    class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                />
+                                <p class="text-[10.5px] text-[#8C95AA] mt-1">ID da conta @gundjatech no Meta Business Suite.</p>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Facebook Page ID (Opcional)</label>
+                                <input
+                                    type="text"
+                                    name="meta_fb_page_id"
+                                    value={settings.meta_fb_page_id || ''}
+                                    placeholder="Ex: 100089000000000"
+                                    class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                />
+                                <p class="text-[10.5px] text-[#8C95AA] mt-1">Complementa os cards com posts da Página do Facebook.</p>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Meta Graph Access Token</label>
+                                <input
+                                    type="password"
+                                    name="meta_social_access_token"
+                                    autocomplete="new-password"
+                                    readonly
+                                    onfocus="this.removeAttribute('readonly');"
+                                    placeholder={settings.meta_social_access_token ? 'Token configurado (deixe vazio para manter)' : 'EAA... (System User Token)'}
+                                    class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                />
+                                <p class="text-[10.5px] text-[#8C95AA] mt-1">Permissões: <span class="font-mono">instagram_basic</span>, <span class="font-mono">pages_show_list</span>.</p>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Facebook Page ID (Opcional)</label>
-                            <input
-                                type="text"
-                                name="meta_fb_page_id"
-                                value={settings.meta_fb_page_id || ''}
-                                placeholder="Ex: 100089000000000"
-                                class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
-                            />
-                            <p class="text-[10.5px] text-[#8C95AA] mt-1">Complementa os cards com posts da Página do Facebook.</p>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Meta Graph Access Token</label>
-                            <input
-                                type="password"
-                                name="meta_social_access_token"
-                                autocomplete="new-password"
-                                readonly
-                                onfocus="this.removeAttribute('readonly');"
-                                placeholder={settings.meta_social_access_token ? 'Token configurado (deixe vazio para manter)' : 'EAA... (System User Token)'}
-                                class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
-                            />
-                            <p class="text-[10.5px] text-[#8C95AA] mt-1">Permissões: <span class="font-mono">instagram_basic</span>, <span class="font-mono">pages_show_list</span>.</p>
-                        </div>
-                    </div>
+                    </details>
 
                     {/* Curadoria Manual Opcional (Fallback imediato para fixar até 4 Reels) */}
                     <details class="gtb-surface-box rounded-xl p-3.5">
