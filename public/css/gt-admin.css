@@ -4655,6 +4655,35 @@ body.is-light-mode .gt-csel-opt-check {
     min-height: 0;
     overflow-y: auto;
     padding-right: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(22, 116, 154, 0.35) transparent;
+}
+
+.gt-card-scroll-body::-webkit-scrollbar,
+.gt-dash-scroll-body::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+.gt-card-scroll-body::-webkit-scrollbar-thumb,
+.gt-dash-scroll-body::-webkit-scrollbar-thumb {
+    background: rgba(22, 116, 154, 0.35);
+    border-radius: 999px;
+}
+
+.gt-dash-scroll-body {
+    overflow-y: auto;
+    padding-right: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(22, 116, 154, 0.35) transparent;
+}
+
+.gt-dash-scroll-chart {
+    max-height: 222px;
+}
+
+.gt-dash-scroll-list {
+    max-height: 162px;
 }
 
 @media (min-width: 1024px) {
@@ -4667,6 +4696,18 @@ body.is-light-mode .gt-csel-opt-check {
     .gt-card-fixed-h-crm {
         height: 440px;
         max-height: 440px;
+        overflow: hidden;
+    }
+
+    .gt-dash-card-chart:has(> details[open]) {
+        height: 288px;
+        max-height: 288px;
+        overflow: hidden;
+    }
+
+    .gt-dash-card-list:has(> details[open]) {
+        height: 230px;
+        max-height: 230px;
         overflow: hidden;
     }
 }

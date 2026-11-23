@@ -143,170 +143,204 @@ export const AdminDashboardView: FC<AdminDashboardProps> = ({
             </div>
 
             {/* ROW 2: REAL 12-MONTH REVENUE BAR CHART (8 cols) + CATEGORY RINGS (4 cols) */}
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                <section class="lg:col-span-8 gtb-card !p-5 flex flex-col justify-between gap-3.5">
-                    <div class="flex flex-wrap items-center justify-between gap-3">
-                        <div class="flex flex-wrap items-center gap-2.5">
-                            <span class="gtb-icon-box">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                            </span>
-                            <h2 class="text-sm sm:text-base font-bold text-white">Visão Geral de Receita (12 meses)</h2>
-                            <span class="text-xs text-[#8C95AA]">Dados reais em <strong class="text-white">tempo real</strong></span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <a href="/admin/financeiro" class="gtb-ctrl-btn">
-                                <span>Financeiro</span>
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                            </a>
-                        </div>
-                    </div>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                <section class="lg:col-span-8 gtb-card !p-5 gt-dash-card-chart">
+                    <details class="gt-acc" open>
+                        <summary class="flex flex-wrap items-center justify-between gap-3 cursor-pointer select-none">
+                            <div class="flex flex-wrap items-center gap-2.5 min-w-0">
+                                <span class="gtb-icon-box">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                                </span>
+                                <h2 class="text-sm sm:text-base font-bold text-white">Visão Geral de Receita (12 meses)</h2>
+                                <span class="text-xs text-[#8C95AA]">Dados reais em <strong class="text-white">tempo real</strong></span>
+                            </div>
+                            <div class="flex items-center gap-2.5 shrink-0">
+                                <a href="/admin/financeiro" class="gtb-ctrl-btn">
+                                    <span>Financeiro</span>
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                </a>
+                                <span class="text-[10.5px] font-bold uppercase tracking-wider text-[#F2C230] shrink-0">
+                                    <span class="gt-acc-open">Expandir ▾</span>
+                                    <span class="gt-acc-close">Recolher ▴</span>
+                                </span>
+                            </div>
+                        </summary>
 
-                    <div class="flex items-center justify-end gap-4 text-[11px] font-semibold text-[#8C95AA]">
-                        <span class="flex items-center gap-1.5">
-                            <i class="w-2.5 h-2.5 rounded-xs bg-[#F2C230] inline-block"></i> Recebido (R$)
-                        </span>
-                        <span class="flex items-center gap-1.5">
-                            <i class="w-2.5 h-2.5 rounded-xs bg-[#16749A] inline-block"></i> A Receber (R$)
-                        </span>
-                    </div>
+                        <div class="mt-3 space-y-2.5 gt-dash-scroll-body gt-dash-scroll-chart">
+                            <div class="flex items-center justify-end gap-4 text-[11px] font-semibold text-[#8C95AA]">
+                                <span class="flex items-center gap-1.5">
+                                    <i class="w-2.5 h-2.5 rounded-xs bg-[#F2C230] inline-block"></i> Recebido (R$)
+                                </span>
+                                <span class="flex items-center gap-1.5">
+                                    <i class="w-2.5 h-2.5 rounded-xs bg-[#16749A] inline-block"></i> A Receber (R$)
+                                </span>
+                            </div>
 
-                    <div class="gtb-paired-chart">
-                        <div class="gtb-grid-line"><span>R$ 10k</span></div>
-                        <div class="gtb-grid-line"><span>R$ 7,5k</span></div>
-                        <div class="gtb-grid-line"><span>R$ 5k</span></div>
-                        <div class="gtb-grid-line"><span>R$ 2,5k</span></div>
-                        <div class="gtb-grid-line"><span>R$ 0</span></div>
+                            <div class="gtb-paired-chart">
+                                <div class="gtb-grid-line"><span>R$ 10k</span></div>
+                                <div class="gtb-grid-line"><span>R$ 7,5k</span></div>
+                                <div class="gtb-grid-line"><span>R$ 5k</span></div>
+                                <div class="gtb-grid-line"><span>R$ 2,5k</span></div>
+                                <div class="gtb-grid-line"><span>R$ 0</span></div>
 
-                        <div class="gtb-bars-overlay">
-                            {months.map((m, idx) => (
-                                <div class={`gtb-pair-group ${idx === 11 ? 'is-highlight' : ''}`}>
-                                    <div class="gtb-bar-a" style={`height: ${idx === 11 && stats.monthlyRevenue ? 65 : 4}%`}></div>
-                                    <div class="gtb-bar-b" style={`height: ${idx === 11 && stats.pendingReceivables ? 40 : 4}%`}></div>
-                                    <span class="gtb-month-lbl">{m}</span>
+                                <div class="gtb-bars-overlay">
+                                    {months.map((m, idx) => (
+                                        <div class={`gtb-pair-group ${idx === 11 ? 'is-highlight' : ''}`}>
+                                            <div class="gtb-bar-a" style={`height: ${idx === 11 && stats.monthlyRevenue ? 65 : 4}%`}></div>
+                                            <div class="gtb-bar-b" style={`height: ${idx === 11 && stats.pendingReceivables ? 40 : 4}%`}></div>
+                                            <span class="gtb-month-lbl">{m}</span>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
+                            </div>
                         </div>
-                    </div>
+                    </details>
                 </section>
 
-                <section class="lg:col-span-4 gtb-card !p-5 flex flex-col justify-between gap-3.5">
-                    <div class="flex items-center justify-between gap-2">
-                        <div class="flex items-center gap-2">
-                            <span class="gtb-icon-box !w-8 !h-8">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
-                            </span>
-                            <h2 class="text-sm font-bold text-white">Orçamentos &amp; Propostas</h2>
-                        </div>
-                        <span class="gt-req-pill-neutral">{stats.approvedQuotations} aprovados</span>
-                    </div>
-
-                    <div class="relative flex items-center justify-center py-1">
-                        <div class="absolute left-0 top-1 z-10 gtb-surface-box rounded-xl px-2.5 py-1.5">
-                            <div class="text-xs font-extrabold text-white leading-tight">
-                                R$ {formatBRL(stats.openQuotationsValue || 0)}
+                <section class="lg:col-span-4 gtb-card !p-5 gt-dash-card-chart">
+                    <details class="gt-acc" open>
+                        <summary class="flex items-center justify-between gap-2 cursor-pointer select-none">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="gtb-icon-box !w-8 !h-8 shrink-0">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+                                </span>
+                                <h2 class="text-sm font-bold text-white truncate">Orçamentos &amp; Propostas</h2>
                             </div>
-                            <div class="text-[9.5px] font-semibold text-[#8C95AA]">{stats.totalQuotations} proposta(s)</div>
-                        </div>
-
-                        <svg viewBox="0 0 200 200" style="width: 148px; height: 148px;" class="-rotate-90">
-                            <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(140,149,170,0.18)" stroke-width="8"/>
-                            <circle cx="100" cy="100" r="80" fill="none" stroke="#063B5C" stroke-width="8" stroke-linecap="round" stroke-dasharray="360 502"/>
-                            <circle cx="100" cy="100" r="64" fill="none" stroke="rgba(140,149,170,0.18)" stroke-width="8"/>
-                            <circle cx="100" cy="100" r="64" fill="none" stroke="#16749A" stroke-width="8" stroke-linecap="round" stroke-dasharray="220 402"/>
-                            <circle cx="100" cy="100" r="48" fill="none" stroke="rgba(140,149,170,0.18)" stroke-width="8"/>
-                            <circle cx="100" cy="100" r="48" fill="none" stroke="#F2C230" stroke-width="8" stroke-linecap="round" stroke-dasharray="150 301"/>
-                        </svg>
-
-                        <span class="absolute text-base font-extrabold text-white">{stats.totalRequests}</span>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;" class="pt-1 text-center border-t border-white/10">
-                        <div>
-                            <div class="text-[11px] font-extrabold text-white flex items-center justify-center gap-1">
-                                <i class="w-2 h-2 rounded-full inline-block bg-[#063B5C]"></i> Sites
+                            <div class="flex items-center gap-2 shrink-0">
+                                <span class="gt-req-pill-neutral">{stats.approvedQuotations} aprovados</span>
+                                <span class="text-[10.5px] font-bold uppercase tracking-wider text-[#F2C230] shrink-0">
+                                    <span class="gt-acc-open">Expandir ▾</span>
+                                    <span class="gt-acc-close">Recolher ▴</span>
+                                </span>
                             </div>
-                            <div class="text-[10px] text-[#8C95AA] mt-0.5">{stats.totalRequests} dem.</div>
-                        </div>
-                        <div>
-                            <div class="text-[11px] font-extrabold text-white flex items-center justify-center gap-1">
-                                <i class="w-2 h-2 rounded-full inline-block bg-[#16749A]"></i> Ciber
+                        </summary>
+
+                        <div class="mt-2.5 space-y-2 gt-dash-scroll-body gt-dash-scroll-chart">
+                            <div class="relative flex items-center justify-center py-0.5">
+                                <div class="absolute left-0 top-0.5 z-10 gtb-surface-box rounded-xl px-2.5 py-1.5">
+                                    <div class="text-xs font-extrabold text-white leading-tight">
+                                        R$ {formatBRL(stats.openQuotationsValue || 0)}
+                                    </div>
+                                    <div class="text-[9.5px] font-semibold text-[#8C95AA]">{stats.totalQuotations} proposta(s)</div>
+                                </div>
+
+                                <svg viewBox="0 0 200 200" style="width: 138px; height: 138px;" class="-rotate-90">
+                                    <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(140,149,170,0.18)" stroke-width="8"/>
+                                    <circle cx="100" cy="100" r="80" fill="none" stroke="#063B5C" stroke-width="8" stroke-linecap="round" stroke-dasharray="360 502"/>
+                                    <circle cx="100" cy="100" r="64" fill="none" stroke="rgba(140,149,170,0.18)" stroke-width="8"/>
+                                    <circle cx="100" cy="100" r="64" fill="none" stroke="#16749A" stroke-width="8" stroke-linecap="round" stroke-dasharray="220 402"/>
+                                    <circle cx="100" cy="100" r="48" fill="none" stroke="rgba(140,149,170,0.18)" stroke-width="8"/>
+                                    <circle cx="100" cy="100" r="48" fill="none" stroke="#F2C230" stroke-width="8" stroke-linecap="round" stroke-dasharray="150 301"/>
+                                </svg>
+
+                                <span class="absolute text-base font-extrabold text-white">{stats.totalRequests}</span>
                             </div>
-                            <div class="text-[10px] text-[#8C95AA] mt-0.5">{stats.activeProjects} proj.</div>
-                        </div>
-                        <div>
-                            <div class="text-[11px] font-extrabold text-white flex items-center justify-center gap-1">
-                                <i class="w-2 h-2 rounded-full inline-block bg-[#F2C230]"></i> Operação
+
+                            <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;" class="pt-1.5 text-center border-t border-white/10">
+                                <div>
+                                    <div class="text-[11px] font-extrabold text-white flex items-center justify-center gap-1">
+                                        <i class="w-2 h-2 rounded-full inline-block bg-[#063B5C]"></i> Sites
+                                    </div>
+                                    <div class="text-[10px] text-[#8C95AA] mt-0.5">{stats.totalRequests} dem.</div>
+                                </div>
+                                <div>
+                                    <div class="text-[11px] font-extrabold text-white flex items-center justify-center gap-1">
+                                        <i class="w-2 h-2 rounded-full inline-block bg-[#16749A]"></i> Ciber
+                                    </div>
+                                    <div class="text-[10px] text-[#8C95AA] mt-0.5">{stats.activeProjects} proj.</div>
+                                </div>
+                                <div>
+                                    <div class="text-[11px] font-extrabold text-white flex items-center justify-center gap-1">
+                                        <i class="w-2 h-2 rounded-full inline-block bg-[#F2C230]"></i> Operação
+                                    </div>
+                                    <div class="text-[10px] text-[#8C95AA] mt-0.5">{stats.approvedQuotations} aprov.</div>
+                                </div>
                             </div>
-                            <div class="text-[10px] text-[#8C95AA] mt-0.5">{stats.approvedQuotations} aprov.</div>
                         </div>
-                    </div>
+                    </details>
                 </section>
             </div>
 
             {/* ROW 3: LIVE OPERATIONAL RECORDS (Últimas Solicitações & Clientes Recentes) */}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <section class="gtb-card !p-5 space-y-3">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Últimas Solicitações de Clientes ({stats.totalRequests})</h2>
-                        <a href="/admin/solicitacoes" class="text-xs font-bold text-[#16749A] hover:underline no-underline">Ver todas &rarr;</a>
-                    </div>
-                    <div class="divide-y divide-white/5 text-xs">
-                        {stats.recentRequests.length === 0 ? (
-                            <p class="text-xs text-[#8C95AA] py-4 text-center">Nenhuma solicitação recente.</p>
-                        ) : (
-                            stats.recentRequests.map((r: any) => {
-                                const reqLabels: Record<string, string> = {
-                                    new: 'Nova',
-                                    analyzing: 'Em Análise',
-                                    quotation_sent: 'Orçamento Enviado',
-                                    approved: 'Aprovado',
-                                    in_progress: 'Em Execução',
-                                    completed: 'Concluído',
-                                    cancelled: 'Cancelado',
-                                };
-                                return (
-                                    <a href={`/admin/solicitacoes/${r.id}`} class="py-2.5 flex items-center justify-between gap-2 no-underline">
-                                        <div class="min-w-0">
-                                            <span class="font-bold text-white truncate block">{r.service_title || r.title}</span>
-                                            <span class="text-[10.5px] text-[#8C95AA] truncate block">{r.company || r.name} • Prot: {r.protocol}</span>
-                                        </div>
-                                        <span class="gt-req-pill-neutral shrink-0">
-                                            {reqLabels[r.status] || r.status}
-                                        </span>
-                                    </a>
-                                );
-                            })
-                        )}
-                    </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+                <section class="gtb-card !p-5 gt-dash-card-list">
+                    <details class="gt-acc" open>
+                        <summary class="flex items-center justify-between gap-2 cursor-pointer select-none">
+                            <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] truncate">Últimas Solicitações de Clientes ({stats.totalRequests})</h2>
+                            <div class="flex items-center gap-3 shrink-0">
+                                <a href="/admin/solicitacoes" class="text-xs font-bold text-[#16749A] hover:underline no-underline">Ver todas &rarr;</a>
+                                <span class="text-[10.5px] font-bold uppercase tracking-wider text-[#F2C230]">
+                                    <span class="gt-acc-open">Expandir ▾</span>
+                                    <span class="gt-acc-close">Recolher ▴</span>
+                                </span>
+                            </div>
+                        </summary>
+                        <div class="mt-2.5 divide-y divide-white/5 text-xs gt-dash-scroll-body gt-dash-scroll-list">
+                            {stats.recentRequests.length === 0 ? (
+                                <p class="text-xs text-[#8C95AA] py-4 text-center">Nenhuma solicitação recente.</p>
+                            ) : (
+                                stats.recentRequests.map((r: any) => {
+                                    const reqLabels: Record<string, string> = {
+                                        new: 'Nova',
+                                        analyzing: 'Em Análise',
+                                        quotation_sent: 'Orçamento Enviado',
+                                        approved: 'Aprovado',
+                                        in_progress: 'Em Execução',
+                                        completed: 'Concluído',
+                                        cancelled: 'Cancelado',
+                                    };
+                                    return (
+                                        <a href={`/admin/solicitacoes/${r.id}`} class="py-2 flex items-center justify-between gap-2 no-underline">
+                                            <div class="min-w-0">
+                                                <span class="font-bold text-white truncate block">{r.service_title || r.title}</span>
+                                                <span class="text-[10.5px] text-[#8C95AA] truncate block">{r.company || r.name} • Prot: {r.protocol}</span>
+                                            </div>
+                                            <span class="gt-req-pill-neutral shrink-0">
+                                                {reqLabels[r.status] || r.status}
+                                            </span>
+                                        </a>
+                                    );
+                                })
+                            )}
+                        </div>
+                    </details>
                 </section>
 
-                <section class="gtb-card !p-5 space-y-3">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Clientes &amp; Leads Recentes ({stats.totalClients})</h2>
-                        <a href="/admin/clientes" class="text-xs font-bold text-[#16749A] hover:underline no-underline">Ver todos &rarr;</a>
-                    </div>
-                    <div class="divide-y divide-white/5 text-xs">
-                        {stats.recentClients.length === 0 ? (
-                            <p class="text-xs text-[#8C95AA] py-4 text-center">Nenhum cliente cadastrado.</p>
-                        ) : (
-                            stats.recentClients.map((c: any) => {
-                                const isWaSynthetic = String(c.email || '').endsWith('@whatsapp.gundjatech.local');
-                                const subtitle = isWaSynthetic
-                                    ? `WhatsApp • ${c.phone || 'Contato'}`
-                                    : `${c.email || ''}${c.phone ? ` • ${c.phone}` : ''}`;
-                                const statusLabel = c.status === 'active' ? 'Ativo' : isWaSynthetic ? 'WhatsApp' : 'Lead';
-                                return (
-                                    <div class="py-2.5 flex items-center justify-between gap-2">
-                                        <div class="min-w-0">
-                                            <span class="font-bold text-white truncate block">{c.name} {c.company ? `(${c.company})` : ''}</span>
-                                            <span class="text-[10.5px] text-[#8C95AA] truncate block">{subtitle}</span>
+                <section class="gtb-card !p-5 gt-dash-card-list">
+                    <details class="gt-acc" open>
+                        <summary class="flex items-center justify-between gap-2 cursor-pointer select-none">
+                            <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] truncate">Clientes &amp; Leads Recentes ({stats.totalClients})</h2>
+                            <div class="flex items-center gap-3 shrink-0">
+                                <a href="/admin/clientes" class="text-xs font-bold text-[#16749A] hover:underline no-underline">Ver todos &rarr;</a>
+                                <span class="text-[10.5px] font-bold uppercase tracking-wider text-[#F2C230]">
+                                    <span class="gt-acc-open">Expandir ▾</span>
+                                    <span class="gt-acc-close">Recolher ▴</span>
+                                </span>
+                            </div>
+                        </summary>
+                        <div class="mt-2.5 divide-y divide-white/5 text-xs gt-dash-scroll-body gt-dash-scroll-list">
+                            {stats.recentClients.length === 0 ? (
+                                <p class="text-xs text-[#8C95AA] py-4 text-center">Nenhum cliente cadastrado.</p>
+                            ) : (
+                                stats.recentClients.map((c: any) => {
+                                    const isWaSynthetic = String(c.email || '').endsWith('@whatsapp.gundjatech.local');
+                                    const subtitle = isWaSynthetic
+                                        ? `WhatsApp • ${c.phone || 'Contato'}`
+                                        : `${c.email || ''}${c.phone ? ` • ${c.phone}` : ''}`;
+                                    const statusLabel = c.status === 'active' ? 'Ativo' : isWaSynthetic ? 'WhatsApp' : 'Lead';
+                                    return (
+                                        <div class="py-2 flex items-center justify-between gap-2">
+                                            <div class="min-w-0">
+                                                <span class="font-bold text-white truncate block">{c.name} {c.company ? `(${c.company})` : ''}</span>
+                                                <span class="text-[10.5px] text-[#8C95AA] truncate block">{subtitle}</span>
+                                            </div>
+                                            <span class={`gt-badge ${c.status === 'active' ? 'gt-badge-success' : 'gt-badge-info'}`}>{statusLabel}</span>
                                         </div>
-                                        <span class={`gt-badge ${c.status === 'active' ? 'gt-badge-success' : 'gt-badge-info'}`}>{statusLabel}</span>
-                                    </div>
-                                );
-                            })
-                        )}
-                    </div>
+                                    );
+                                })
+                            )}
+                        </div>
+                    </details>
                 </section>
             </div>
         </AdminLayout>
