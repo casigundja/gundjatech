@@ -144,12 +144,12 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                     <div class="gtb-surface-box rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2">
                         <div class="min-w-0">
                             <div class="flex items-center gap-2">
-                                <span class="text-xs font-extrabold text-white">Chat do Site</span>
+                                <span class="text-xs font-extrabold text-white">Chat do Site · Leads</span>
                                 <span class={`gt-badge ${channelControls.siteChatAiEnabled && aiEnabled ? 'gt-badge-success' : 'gt-badge-danger'}`}>
                                     {channelControls.siteChatAiEnabled && aiEnabled ? 'IA Ativa' : 'Pausado'}
                                 </span>
                             </div>
-                            <div class="text-[10.5px] text-[#8C95AA] truncate">Widget comercial + Inbox</div>
+                            <div class="text-[10.5px] text-[#8C95AA] truncate">Captação e qualificação de leads no site</div>
                         </div>
                         <form action="/admin/canais/toggle" method="post" class="m-0 shrink-0">
                             <input type="hidden" name="channel" value="site_chat_ai_enabled" />
@@ -161,11 +161,11 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                         </form>
                     </div>
 
-                    {/* Canal 2: WhatsApp 1 (Oficial / CRM IA) */}
+                    {/* Canal 2: WhatsApp 1 (Atendimento Oficial) */}
                     <div class="gtb-surface-box rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2">
                         <div class="min-w-0">
                             <div class="flex items-center gap-2">
-                                <span class="text-xs font-extrabold text-white">WhatsApp 1 · IA</span>
+                                <span class="text-xs font-extrabold text-white">WhatsApp 1 · Atendimento</span>
                                 <span class={`gt-badge ${channelControls.whatsappSyncEnabled ? 'gt-badge-success' : 'gt-badge-danger'}`}>
                                     {channelControls.whatsappSyncEnabled ? (channelControls.whatsappAiEnabled ? 'Ativo' : 'Só Inbox') : 'Pausado'}
                                 </span>
@@ -196,7 +196,7 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                         </div>
                     </div>
 
-                    {/* Canal 3: WhatsApp 2 (Diretor / Humano) */}
+                    {/* Canal 3: WhatsApp 2 (Atendimento Direto do Diretor) */}
                     <div class="gtb-surface-box rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2">
                         <div class="min-w-0">
                             <div class="flex items-center gap-2">

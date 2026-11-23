@@ -204,9 +204,9 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                         <div class="gtb-surface-box rounded-xl overflow-hidden">
                             <label class="flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                                 <div class="min-w-0">
-                                    <div class="text-xs font-bold text-white leading-tight">WhatsApp 1 · Recebimento &amp; Envio</div>
+                                    <div class="text-xs font-bold text-white leading-tight">WhatsApp 1 · Atendimento Oficial (Recebimento)</div>
                                     <div class="text-[11px] text-[#8C95AA] mt-0.5">
-                                        {whatsappSyncEnabled ? 'Ativo — recebe mensagens no número oficial' : 'Pausado — webhook ignorado'}
+                                        {whatsappSyncEnabled ? 'Ativo — recebendo mensagens de clientes no número oficial' : 'Pausado — recebimento no WhatsApp oficial desativado'}
                                     </div>
                                 </div>
                                 <input type="checkbox" name="whatsapp_sync_enabled" value="1" checked={whatsappSyncEnabled} class="gt-switch shrink-0" />
@@ -214,9 +214,9 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
 
                             <label class="flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                                 <div class="min-w-0">
-                                    <div class="text-xs font-bold text-white leading-tight">WhatsApp 1 · Resposta Automática IA</div>
+                                    <div class="text-xs font-bold text-white leading-tight">WhatsApp 1 · Atendimento Automático (IA)</div>
                                     <div class="text-[11px] text-[#8C95AA] mt-0.5">
-                                        {whatsappAiEnabled ? 'Ativa — IA qualifica leads no WhatsApp 1' : 'Pausada — entra no Inbox para humano'}
+                                        {whatsappAiEnabled ? 'Ativo — IA responde e interage com clientes no WhatsApp 1' : 'Pausado — conversas entram no Inbox para resposta humana'}
                                     </div>
                                 </div>
                                 <input type="checkbox" name="whatsapp_ai_enabled" value="1" checked={whatsappAiEnabled} class="gt-switch shrink-0" />
@@ -224,9 +224,9 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
 
                             <label class="flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer">
                                 <div class="min-w-0">
-                                    <div class="text-xs font-bold text-white leading-tight">WhatsApp 2 · Alertas &amp; Ponte do Diretor</div>
+                                    <div class="text-xs font-bold text-white leading-tight">WhatsApp 2 · Atendimento Direto do Diretor</div>
                                     <div class="text-[11px] text-[#8C95AA] mt-0.5">
-                                        {whatsappDirectorEnabled ? 'Ativo — recebe handoffs do Site e WhatsApp 1' : 'Pausado — handoffs ficam apenas no Inbox'}
+                                        {whatsappDirectorEnabled ? 'Ativo — recebe solicitações de atendimento humano (Site e WhatsApp 1)' : 'Pausado — solicitações de atendimento humano ficam apenas no Inbox'}
                                     </div>
                                 </div>
                                 <input type="checkbox" name="whatsapp_director_enabled" value="1" checked={whatsappDirectorEnabled} class="gt-switch shrink-0" />
