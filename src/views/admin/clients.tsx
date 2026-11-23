@@ -400,115 +400,136 @@ export const AdminClientsView: FC<AdminClientsProps> = ({
                 aria-labelledby="gt-portal-modal-title"
                 onclick="if(event.target===this)window.gtClosePortalModal()"
             >
-                <div class="gtb-card gt-modal-card max-w-xl !p-0 overflow-hidden">
-                    <div class="gtb-card-accent-top gtb-card-accent-gold"></div>
-
+                <div class="gtb-card gt-modal-card max-w-lg !p-0 overflow-hidden">
+                    {/* Cabeçalho Limpo */}
                     <div class="flex items-start justify-between gap-4 px-6 pt-5 pb-4 border-b border-white/10">
                         <div class="flex items-center gap-3 min-w-0">
-                            <span
-                                class="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center"
-                                style="background: rgba(22, 116, 154, 0.16); border: 1px solid rgba(22, 116, 154, 0.35); color: #16749A;"
-                                aria-hidden="true"
-                            >
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                            <span class="gtb-icon-box !w-10 !h-10 !rounded-xl shrink-0" aria-hidden="true">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
                                 </svg>
                             </span>
                             <div class="min-w-0">
-                                <h2 id="gt-portal-modal-title" class="gt-font-display text-base font-extrabold text-white">Ativar Acesso ao Portal do Cliente</h2>
-                                <p id="gt-portal-modal-subtitle" class="text-xs text-[#8C95AA] mt-0.5">Gere um link único seguro para o cliente criar sua senha pessoal.</p>
+                                <h2 id="gt-portal-modal-title" class="gt-font-display text-[15px] font-extrabold text-white leading-tight">
+                                    Ativar Acesso ao Portal
+                                </h2>
+                                <p id="gt-portal-modal-subtitle" class="text-xs text-[#8C95AA] mt-0.5 truncate">
+                                    Convite seguro com link único de definição de senha
+                                </p>
                             </div>
                         </div>
                         <button
                             type="button"
                             onclick="window.gtClosePortalModal()"
-                            class="gtb-icon-btn !w-9 !h-9 rounded-xl shrink-0"
+                            class="gtb-icon-btn !w-8 !h-8 !rounded-lg shrink-0"
                             aria-label="Fechar modal"
+                            title="Fechar (Esc)"
                         >
-                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
 
                     {/* Etapa 1: Configuração */}
-                    <form id="gt-portal-access-form" class="p-6 space-y-4">
+                    <form id="gt-portal-access-form" class="px-6 py-5 space-y-4">
                         <input type="hidden" id="gt-pa-client-id" />
 
                         <div id="gt-pa-error" class="hidden rounded-xl p-3 border border-red-500/30 bg-red-500/10 text-xs font-bold text-red-400"></div>
 
-                        <div class="gt-modal-section space-y-3.5">
-                            <div class="gt-modal-section-title">
-                                <span>Credenciais de Acesso</span>
-                            </div>
-
-                            <div class="gt-grid-2">
-                                <div>
-                                    <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">E-mail de Acesso *</label>
-                                    <input
-                                        type="email"
-                                        id="gt-pa-email"
-                                        required
-                                        placeholder="cliente@empresa.com"
-                                        class="gt-modal-input"
-                                    />
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">WhatsApp / Telefone</label>
-                                    <input
-                                        type="text"
-                                        id="gt-pa-phone"
-                                        placeholder="+55 11 99999-9999"
-                                        class="gt-modal-input"
-                                    />
-                                </div>
-                            </div>
+                        {/* E-mail full-width para nunca cortar endereços longos */}
+                        <div>
+                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
+                                E-mail de Acesso *
+                            </label>
+                            <input
+                                type="email"
+                                id="gt-pa-email"
+                                required
+                                placeholder="cliente@empresa.com"
+                                class="gt-modal-input"
+                            />
                         </div>
 
-                        <div class="gt-modal-section space-y-2.5">
-                            <label class="flex items-center justify-between gap-3 cursor-pointer">
-                                <div>
+                        <div>
+                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
+                                WhatsApp / Telefone
+                            </label>
+                            <input
+                                type="text"
+                                id="gt-pa-phone"
+                                placeholder="+55 (11) 99999-9999"
+                                class="gt-modal-input"
+                                style="font-variant-numeric: tabular-nums;"
+                            />
+                        </div>
+
+                        {/* Opções em lista limpa sem caixas duplas */}
+                        <div class="pt-3 border-t border-white/10 space-y-3">
+                            <label class="flex items-center justify-between gap-4 cursor-pointer">
+                                <div class="min-w-0">
                                     <div class="text-xs font-bold text-white">Enviar convite automaticamente por E-mail</div>
-                                    <div class="text-[11px] text-[#8C95AA]">Dispara o link de primeiro acesso para o e-mail acima</div>
+                                    <div class="text-[11px] text-[#8C95AA] mt-0.5">Dispara o link de primeiro acesso para o endereço informado</div>
                                 </div>
-                                <input type="checkbox" id="gt-pa-send-email" checked class="gt-switch" />
+                                <input type="checkbox" id="gt-pa-send-email" checked class="gt-switch shrink-0" />
                             </label>
 
-                            <label id="gt-pa-promote-row" class="flex items-center justify-between gap-3 pt-2.5 border-t border-white/10 cursor-pointer">
-                                <div>
+                            <label id="gt-pa-promote-row" class="flex items-center justify-between gap-4 pt-3 border-t border-white/10 cursor-pointer">
+                                <div class="min-w-0">
                                     <div class="text-xs font-bold text-white">Promover Lead para Cliente Ativo</div>
-                                    <div class="text-[11px] text-[#8C95AA]">Atualiza a categoria automaticamente ao ativar o portal</div>
+                                    <div class="text-[11px] text-[#8C95AA] mt-0.5">Atualiza automaticamente a categoria ao liberar o acesso</div>
                                 </div>
-                                <input type="checkbox" id="gt-pa-promote" checked class="gt-switch" />
+                                <input type="checkbox" id="gt-pa-promote" checked class="gt-switch shrink-0" />
                             </label>
                         </div>
 
-                        <div class="pt-3 border-t border-white/10 flex items-center justify-end gap-2.5">
-                            <button type="button" onclick="window.gtClosePortalModal()" class="gt-btn-outline gt-btn-sm">Cancelar</button>
-                            <button type="submit" id="gt-pa-submit-btn" class="gt-btn-primary gt-btn-sm">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                <span>Gerar Acesso Seguro</span>
-                            </button>
+                        {/* Rodapé com selo de segurança e ações */}
+                        <div class="pt-4 border-t border-white/10 flex items-center justify-between gap-3 flex-wrap">
+                            <span class="inline-flex items-center gap-1.5 text-[11px] text-[#8C95AA]">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                <span>Link único seguro</span>
+                            </span>
+                            <div class="flex items-center gap-2 ml-auto">
+                                <button type="button" onclick="window.gtClosePortalModal()" class="gt-btn-outline gt-btn-sm">
+                                    Cancelar
+                                </button>
+                                <button type="submit" id="gt-pa-submit-btn" class="gt-btn-primary gt-btn-sm">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>Gerar Acesso</span>
+                                </button>
+                            </div>
                         </div>
                     </form>
 
                     {/* Etapa 2: Entrega Multicanal */}
-                    <div id="gt-portal-access-result" class="hidden p-6 space-y-4">
-                        <div id="gt-pa-result-status" class="gt-modal-section text-xs font-semibold"></div>
+                    <div id="gt-portal-access-result" class="hidden px-6 py-5 space-y-4">
+                        <div id="gt-pa-result-status" class="gtb-surface-box rounded-xl px-4 py-3 text-xs font-semibold leading-relaxed"></div>
 
-                        <div class="gt-modal-section space-y-2">
-                            <div class="gt-modal-section-title">
-                                <span>Link Único de Primeiro Acesso</span>
+                        <div>
+                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
+                                Link Único de Primeiro Acesso
+                            </label>
+                            <div class="flex items-center gap-2">
+                                <input
+                                    type="text"
+                                    id="gt-pa-link-output"
+                                    readonly
+                                    onclick="this.select()"
+                                    class="gt-modal-input font-mono text-[11.5px] flex-1"
+                                />
+                                <button
+                                    type="button"
+                                    onclick="window.gtCopyPortalLink()"
+                                    class="gt-btn-outline gt-btn-sm shrink-0"
+                                    title="Copiar apenas o link"
+                                >
+                                    <span id="gt-pa-copy-link-lbl">Copiar</span>
+                                </button>
                             </div>
-                            <input
-                                type="text"
-                                id="gt-pa-link-output"
-                                readonly
-                                onclick="this.select()"
-                                class="gt-modal-input font-mono text-[11.5px]"
-                            />
-                            <p class="text-[11px] text-[#8C95AA]">O cliente clica neste link, define sua própria senha pessoal e já entra no Portal com segurança.</p>
+                            <p class="text-[11px] text-[#8C95AA] mt-1.5">
+                                Ao clicar, o cliente define sua própria senha pessoal e acessa o Portal imediatamente.
+                            </p>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                             <a
                                 id="gt-pa-wa-btn"
                                 href="#"
@@ -531,14 +552,7 @@ export const AdminClientsView: FC<AdminClientsProps> = ({
                             </button>
                         </div>
 
-                        <div class="pt-3 border-t border-white/10 flex items-center justify-between gap-2.5">
-                            <button
-                                type="button"
-                                onclick="window.gtCopyPortalLink()"
-                                class="gt-btn-outline gt-btn-xs"
-                            >
-                                <span id="gt-pa-copy-link-lbl">Copiar apenas o link</span>
-                            </button>
+                        <div class="pt-3 border-t border-white/10 flex items-center justify-end">
                             <button
                                 type="button"
                                 onclick="window.location.reload()"
@@ -637,7 +651,7 @@ export const AdminClientsView: FC<AdminClientsProps> = ({
                                 if (!lastPortalPayload || !lastPortalPayload.activate_url) return;
                                 navigator.clipboard.writeText(lastPortalPayload.activate_url).then(function() {
                                     var lbl = document.getElementById('gt-pa-copy-link-lbl');
-                                    if (lbl) { lbl.textContent = 'Link copiado!'; setTimeout(function() { lbl.textContent = 'Copiar apenas o link'; }, 2000); }
+                                    if (lbl) { lbl.textContent = 'Copiado!'; setTimeout(function() { lbl.textContent = 'Copiar'; }, 2000); }
                                 });
                             };
 
