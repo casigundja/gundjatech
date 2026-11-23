@@ -4712,6 +4712,68 @@ body.is-light-mode .gt-csel-opt-check {
     }
 }
 
+/* Modal de Pagamento Executivo (Fintech / Banking Grade) */
+.gt-pay-seg {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    padding: 4px;
+    border-radius: 12px;
+    background: #F1F5F9;
+    border: 1px solid #E2E8F0;
+}
+
+.gt-pay-seg-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 9px 12px;
+    border-radius: 9px;
+    border: 0;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.16s ease;
+    background: transparent;
+    color: #475569;
+}
+
+.gt-pay-seg-btn:hover {
+    color: #063B5C;
+}
+
+.gt-pay-seg-btn.is-active {
+    background: #063B5C;
+    color: #FFFFFF;
+    box-shadow: 0 2px 6px rgba(6, 59, 92, 0.22);
+}
+
+.gt-pay-dropzone {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 12px;
+    border: 1.5px dashed #CBD5E1;
+    background: #F8FAFC;
+    cursor: pointer;
+    transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+.gt-pay-dropzone:hover {
+    border-color: #16749A;
+    background: #E7F0F5;
+}
+
+.gt-pay-dropzone.has-file {
+    border-style: solid;
+    border-color: #16749A;
+    background: #F0F7FA;
+}
+
 
 
 

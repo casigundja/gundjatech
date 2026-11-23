@@ -183,147 +183,211 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                 </div>
             )}
 
-            {/* Modal de Pagamento PIX + TED Nu Empresas + Upload de Comprovante */}
+            {/* Modal de Pagamento Executivo — PIX + TED Nu Empresas + Comprovante */}
             <div
                 id="modal-pagar-fatura"
                 onclick="if(event.target===this)this.style.display='none'"
                 style="display: none; position: fixed; inset: 0; margin: 0; z-index: 200; align-items: center; justify-content: center; padding: 16px;"
-                class="gt-modal-overlay bg-black/80 backdrop-blur-xs"
+                class="gt-modal-overlay bg-[#063B5C]/65 backdrop-blur-xs"
             >
-                <div class="gtb-card gt-modal-card max-w-xl p-5 sm:p-6">
-                    <div class="flex items-start justify-between gap-3 pb-3.5 border-b border-white/10">
-                        <div class="min-w-0">
-                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#F2C230]">Pagamento Seguro GundjaTech</span>
-                            <h2 id="gt-pay-title" class="gt-font-display text-base font-extrabold text-white mt-0.5 truncate">Pagar Fatura</h2>
-                            <div class="flex items-center gap-3 mt-1 text-xs text-[#8C95AA]">
-                                <span>Valor: <strong id="gt-pay-amount" class="text-[#F2C230] font-extrabold">R$ 0,00</strong></span>
-                                <span>•</span>
-                                <span>Vencimento: <strong id="gt-pay-due" class="text-white">—</strong></span>
+                <div class="gtb-card gt-modal-card max-w-xl !p-0 overflow-hidden">
+                    {/* Cabeçalho Executivo */}
+                    <div class="px-6 py-4 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-start justify-between gap-4">
+                        <div class="min-w-0 flex-1">
+                            <div class="inline-flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wider text-[#64748B]">
+                                <svg class="w-3.5 h-3.5 text-[#16749A]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                                <span>Checkout Financeiro • GundjaTech</span>
+                            </div>
+                            <h2 id="gt-pay-title" class="gt-font-display text-[15px] font-extrabold text-[#063B5C] mt-1 truncate">Pagar Fatura</h2>
+                            <div class="text-[11.5px] text-[#64748B] mt-0.5">
+                                Vencimento em <strong id="gt-pay-due" class="text-[#063B5C] font-semibold">—</strong>
                             </div>
                         </div>
-                        <button
-                            type="button"
-                            onclick="document.getElementById('modal-pagar-fatura').style.display='none'"
-                            class="text-[#8C95AA] hover:text-white text-xl leading-none cursor-pointer bg-transparent border-0"
-                            aria-label="Fechar"
-                        >
-                            &times;
-                        </button>
-                    </div>
-
-                    {/* Abas PIX / Transferência TED */}
-                    <div class="grid grid-cols-2 gap-2 mt-4">
-                        <button
-                            type="button"
-                            id="gt-pay-tab-pix"
-                            onclick="window.GT_SwitchPayTab('pix')"
-                            class="gt-btn-primary gt-btn-sm justify-center"
-                        >
-                            PIX Instantâneo (QR Code)
-                        </button>
-                        <button
-                            type="button"
-                            id="gt-pay-tab-ted"
-                            onclick="window.GT_SwitchPayTab('ted')"
-                            class="gt-btn-outline gt-btn-sm justify-center"
-                        >
-                            Transferência / TED (Nu Empresas)
-                        </button>
-                    </div>
-
-                    {/* Conteúdo Aba PIX */}
-                    <div id="gt-pay-pane-pix" class="mt-4 space-y-3.5">
-                        <div class="gtb-surface-box rounded-xl p-4 flex flex-col sm:flex-row items-center gap-4">
-                            <div class="bg-white p-2 rounded-xl shrink-0 shadow-md">
-                                <img id="gt-pay-qr" src="" alt="QR Code PIX GundjaTech" width="168" height="168" class="block w-[168px] h-[168px] object-contain" />
+                        <div class="flex items-start gap-3 shrink-0">
+                            <div class="text-right">
+                                <div class="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">Valor Total</div>
+                                <div id="gt-pay-amount" class="gt-font-display text-lg font-extrabold text-[#063B5C] leading-tight tabular-nums">R$ 0,00</div>
                             </div>
-                            <div class="min-w-0 flex-1 space-y-2 text-xs">
-                                <div class="font-extrabold text-white">Escaneie no app do seu banco</div>
-                                <p class="text-[11.5px] text-[#8C95AA] leading-relaxed">
-                                    O QR Code já contém o valor exato da fatura e a chave CNPJ oficial da <strong class="text-white">{bankSettings.pixHolder}</strong>.
-                                </p>
-                                <div class="text-[11px] text-[#8C95AA] space-y-0.5 pt-1">
-                                    <div>Chave PIX (CNPJ): <strong class="font-mono text-white">{bankSettings.pixKey}</strong></div>
-                                    <div>Identificador: <strong id="gt-pay-txid" class="font-mono text-[#F2C230]">—</strong></div>
+                            <button
+                                type="button"
+                                onclick="document.getElementById('modal-pagar-fatura').style.display='none'"
+                                class="w-7 h-7 rounded-lg flex items-center justify-center text-[#64748B] hover:text-[#063B5C] hover:bg-[#E7F0F5] text-lg leading-none cursor-pointer bg-transparent border-0 transition-colors"
+                                aria-label="Fechar"
+                            >
+                                &times;
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="p-6 space-y-4">
+                        {/* Abas Segmentadas (Estilo Fintech) */}
+                        <div class="gt-pay-seg" role="tablist">
+                            <button
+                                type="button"
+                                id="gt-pay-tab-pix"
+                                onclick="window.GT_SwitchPayTab('pix')"
+                                class="gt-pay-seg-btn is-active"
+                            >
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                                <span>PIX (QR Code)</span>
+                            </button>
+                            <button
+                                type="button"
+                                id="gt-pay-tab-ted"
+                                onclick="window.GT_SwitchPayTab('ted')"
+                                class="gt-pay-seg-btn"
+                            >
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                                <span>Transferência / TED</span>
+                            </button>
+                        </div>
+
+                        {/* Conteúdo Aba PIX */}
+                        <div id="gt-pay-pane-pix" class="space-y-4">
+                            <div class="rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] p-4 flex flex-col sm:flex-row items-center gap-4">
+                                <div class="bg-white p-2.5 rounded-xl border border-[#E2E8F0] shrink-0">
+                                    <img id="gt-pay-qr" src="" alt="QR Code PIX GundjaTech" width="152" height="152" class="block w-[152px] h-[152px] object-contain" />
+                                </div>
+                                <div class="min-w-0 flex-1 space-y-2 text-xs">
+                                    <div class="font-bold text-[#063B5C] text-[13px]">Escaneie o QR Code pelo app do banco</div>
+                                    <p class="text-[11.5px] text-[#64748B] leading-relaxed">
+                                        O valor e os dados oficiais de recebimento já estão preenchidos no padrão Banco Central.
+                                    </p>
+                                    <div class="pt-2 border-t border-[#E2E8F0] space-y-1 text-[11px]">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <span class="text-[#64748B]">Beneficiário</span>
+                                            <strong class="text-[#063B5C] font-semibold">{bankSettings.pixHolder}</strong>
+                                        </div>
+                                        <div class="flex items-center justify-between gap-2">
+                                            <span class="text-[#64748B]">Chave CNPJ</span>
+                                            <strong class="font-mono text-[#063B5C] font-semibold">{bankSettings.pixKey}</strong>
+                                        </div>
+                                        <div class="flex items-center justify-between gap-2">
+                                            <span class="text-[#64748B]">Referência</span>
+                                            <strong id="gt-pay-txid" class="font-mono text-[#16749A] font-semibold">—</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10.5px] font-bold uppercase tracking-wider text-[#64748B] mb-1.5">PIX Copia e Cola</label>
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        id="gt-pay-pix-code"
+                                        type="text"
+                                        readonly
+                                        value=""
+                                        class="w-full rounded-xl px-3 py-2 text-[11.5px] font-mono !bg-[#F8FAFC] !border-[#CBD5E1] !text-[#063B5C]"
+                                    />
+                                    <button
+                                        type="button"
+                                        id="gt-pay-copy-pix"
+                                        onclick="window.GT_CopyText('gt-pay-pix-code', 'gt-pay-copy-pix', 'Copiar código')"
+                                        class="gt-btn-petrol gt-btn-sm shrink-0"
+                                    >
+                                        Copiar código
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
-                        <div>
-                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">PIX Copia e Cola (Padrão Banco Central)</label>
-                            <div class="flex items-center gap-2">
-                                <input id="gt-pay-pix-code" type="text" readonly value="" class="w-full rounded-xl px-3 py-2 text-[11.5px] font-mono" />
-                                <button
-                                    type="button"
-                                    id="gt-pay-copy-pix"
-                                    onclick="window.GT_CopyText('gt-pay-pix-code', 'gt-pay-copy-pix', 'Copiar PIX')"
-                                    class="gt-btn-primary gt-btn-sm shrink-0"
-                                >
-                                    Copiar PIX
-                                </button>
+                        {/* Conteúdo Aba TED */}
+                        <div id="gt-pay-pane-ted" class="hidden">
+                            <div class="rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] p-4 space-y-2.5 text-xs">
+                                <div class="flex items-center justify-between gap-2 pb-2 border-b border-[#E2E8F0]">
+                                    <span class="text-[#64748B]">Instituição</span>
+                                    <strong class="text-[#063B5C] font-semibold text-right">{bankSettings.bankName}</strong>
+                                </div>
+                                <div class="flex items-center justify-between gap-2 pb-2 border-b border-[#E2E8F0]">
+                                    <span class="text-[#64748B]">Agência</span>
+                                    <strong class="font-mono text-[#063B5C] font-semibold">{bankSettings.bankAgency}</strong>
+                                </div>
+                                <div class="flex items-center justify-between gap-2 pb-2 border-b border-[#E2E8F0]">
+                                    <span class="text-[#64748B]">Conta Corrente</span>
+                                    <strong class="font-mono text-[#063B5C] font-semibold">{bankSettings.bankAccount}</strong>
+                                </div>
+                                <div class="flex items-center justify-between gap-2 pb-2 border-b border-[#E2E8F0]">
+                                    <span class="text-[#64748B]">CNPJ</span>
+                                    <strong class="font-mono text-[#063B5C] font-semibold">{bankSettings.bankCnpj}</strong>
+                                </div>
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-[#64748B]">Favorecido</span>
+                                    <strong class="text-[#063B5C] font-semibold">{bankSettings.pixHolder}</strong>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Conteúdo Aba TED */}
-                    <div id="gt-pay-pane-ted" class="mt-4 hidden">
-                        <div class="gtb-surface-box rounded-xl p-4 space-y-2.5 text-xs">
-                            <div class="flex items-center justify-between gap-2 pb-2 border-b border-white/10">
-                                <span class="text-[#8C95AA]">Banco</span>
-                                <strong class="text-white text-right">{bankSettings.bankName}</strong>
+                        {/* Upload de Comprovante (Dropzone Executivo) */}
+                        <form id="gt-pay-receipt-form" action="/portal/financeiro/0/comprovante" method="post" enctype="multipart/form-data" class="pt-4 border-t border-[#E2E8F0] space-y-4">
+                            <input type="hidden" id="gt-pay-method-input" name="payment_method" value="PIX" />
+                            <div>
+                                <div class="text-[10.5px] font-bold uppercase tracking-wider text-[#64748B] mb-1.5">
+                                    Comprovante de pagamento
+                                </div>
+                                <label id="gt-pay-dropzone" class="gt-pay-dropzone">
+                                    <input
+                                        id="gt-pay-file-input"
+                                        type="file"
+                                        name="receipt"
+                                        required
+                                        accept=".pdf,.png,.jpg,.jpeg,.webp"
+                                        onchange="window.GT_UpdateReceiptLabel && window.GT_UpdateReceiptLabel(this)"
+                                        class="hidden"
+                                    />
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <span class="w-8 h-8 rounded-lg bg-[#E7F0F5] text-[#063B5C] flex items-center justify-center shrink-0">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                        </span>
+                                        <div class="min-w-0">
+                                            <div id="gt-pay-file-name" class="text-xs font-bold text-[#063B5C] truncate">Anexar comprovante (PDF, JPG ou PNG)</div>
+                                            <div class="text-[10.5px] text-[#64748B]">Máx. 8 MB • Recibo oficial liberado após conferência</div>
+                                        </div>
+                                    </div>
+                                    <span class="text-[11px] font-bold text-[#16749A] shrink-0">Selecionar</span>
+                                </label>
                             </div>
-                            <div class="flex items-center justify-between gap-2 pb-2 border-b border-white/10">
-                                <span class="text-[#8C95AA]">Agência</span>
-                                <strong class="font-mono text-white">{bankSettings.bankAgency}</strong>
+                            <div class="flex items-center justify-between gap-3 pt-1">
+                                <span class="text-[10.5px] text-[#64748B] hidden sm:inline">Dados protegidos • Padrão BCB</span>
+                                <div class="flex items-center gap-2.5 ml-auto">
+                                    <button
+                                        type="button"
+                                        onclick="document.getElementById('modal-pagar-fatura').style.display='none'"
+                                        class="gt-btn-outline gt-btn-sm"
+                                    >
+                                        Fechar
+                                    </button>
+                                    <button type="submit" data-loading-text="Enviando..." class="gt-btn-primary gt-btn-sm">
+                                        Enviar Comprovante
+                                    </button>
+                                </div>
                             </div>
-                            <div class="flex items-center justify-between gap-2 pb-2 border-b border-white/10">
-                                <span class="text-[#8C95AA]">Conta Corrente</span>
-                                <strong class="font-mono text-white">{bankSettings.bankAccount}</strong>
-                            </div>
-                            <div class="flex items-center justify-between gap-2 pb-2 border-b border-white/10">
-                                <span class="text-[#8C95AA]">CNPJ</span>
-                                <strong class="font-mono text-[#F2C230]">{bankSettings.bankCnpj}</strong>
-                            </div>
-                            <div class="flex items-center justify-between gap-2">
-                                <span class="text-[#8C95AA]">Favorecido</span>
-                                <strong class="text-white">{bankSettings.pixHolder}</strong>
-                            </div>
-                        </div>
+                        </form>
                     </div>
-
-                    {/* Upload de Comprovante */}
-                    <form id="gt-pay-receipt-form" action="/portal/financeiro/0/comprovante" method="post" enctype="multipart/form-data" class="mt-4 pt-4 border-t border-white/10 space-y-3">
-                        <input type="hidden" id="gt-pay-method-input" name="payment_method" value="PIX" />
-                        <div>
-                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
-                                Já realizou o pagamento? Anexe o comprovante (PDF, JPG ou PNG)
-                            </label>
-                            <input
-                                type="file"
-                                name="receipt"
-                                required
-                                accept=".pdf,.png,.jpg,.jpeg,.webp"
-                                class="w-full rounded-xl px-3 py-2 text-xs"
-                            />
-                        </div>
-                        <div class="flex items-center justify-end gap-2.5">
-                            <button
-                                type="button"
-                                onclick="document.getElementById('modal-pagar-fatura').style.display='none'"
-                                class="gt-btn-outline gt-btn-sm"
-                            >
-                                Fechar
-                            </button>
-                            <button type="submit" data-loading-text="Enviando..." class="gt-btn-primary gt-btn-sm">
-                                Enviar Comprovante
-                            </button>
-                        </div>
-                    </form>
                 </div>
             </div>
 
             <script dangerouslySetInnerHTML={{
                 __html: `
+                window.GT_FormatBrDate = function (val) {
+                    if (!val) return '—';
+                    var m = String(val).match(/^(\\d{4})-(\\d{2})-(\\d{2})/);
+                    return m ? (m[3] + '/' + m[2] + '/' + m[1]) : String(val);
+                };
+
+                window.GT_UpdateReceiptLabel = function (inp) {
+                    var labelEl = document.getElementById('gt-pay-file-name');
+                    var zoneEl = document.getElementById('gt-pay-dropzone');
+                    var f = inp && inp.files && inp.files[0];
+                    if (f) {
+                        if (labelEl) labelEl.textContent = f.name;
+                        if (zoneEl) zoneEl.classList.add('has-file');
+                    } else {
+                        if (labelEl) labelEl.textContent = 'Anexar comprovante (PDF, JPG ou PNG)';
+                        if (zoneEl) zoneEl.classList.remove('has-file');
+                    }
+                };
+
                 window.GT_SwitchPayTab = function (tab) {
                     var pixPane = document.getElementById('gt-pay-pane-pix');
                     var tedPane = document.getElementById('gt-pay-pane-ted');
@@ -333,8 +397,8 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                     var isPix = tab !== 'ted';
                     if (pixPane) pixPane.classList.toggle('hidden', !isPix);
                     if (tedPane) tedPane.classList.toggle('hidden', isPix);
-                    if (pixTab) pixTab.className = (isPix ? 'gt-btn-primary' : 'gt-btn-outline') + ' gt-btn-sm justify-center';
-                    if (tedTab) tedTab.className = (!isPix ? 'gt-btn-primary' : 'gt-btn-outline') + ' gt-btn-sm justify-center';
+                    if (pixTab) pixTab.classList.toggle('is-active', isPix);
+                    if (tedTab) tedTab.classList.toggle('is-active', !isPix);
                     if (methodInp) methodInp.value = isPix ? 'PIX' : 'Transferência / TED';
                 };
 
@@ -344,7 +408,7 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                     if (!inp || !inp.value) return;
                     navigator.clipboard.writeText(inp.value).then(function () {
                         if (btn) {
-                            btn.textContent = 'Copiado!';
+                            btn.textContent = 'Copiado ✓';
                             setTimeout(function () { btn.textContent = defaultLabel; }, 2200);
                         }
                     });
@@ -363,6 +427,9 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                     var qrUri = btn.getAttribute('data-qr') || '';
 
                     form.setAttribute('action', '/portal/financeiro/' + encodeURIComponent(id) + '/comprovante');
+                    var fileInp = document.getElementById('gt-pay-file-input');
+                    if (fileInp) { fileInp.value = ''; window.GT_UpdateReceiptLabel(fileInp); }
+
                     var titleEl = document.getElementById('gt-pay-title');
                     var amountEl = document.getElementById('gt-pay-amount');
                     var dueEl = document.getElementById('gt-pay-due');
@@ -372,7 +439,7 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
 
                     if (titleEl) titleEl.textContent = desc;
                     if (amountEl) amountEl.textContent = amount;
-                    if (dueEl) dueEl.textContent = due;
+                    if (dueEl) dueEl.textContent = window.GT_FormatBrDate(due);
                     if (txidEl) txidEl.textContent = txid;
                     if (pixEl) pixEl.value = pix;
                     if (qrEl && qrUri) {
