@@ -6,6 +6,12 @@ import { ensureClientProfile, getPortalDashboard } from '../lib/client-portal';
 import { getFile, streamR2Response } from '../lib/storage';
 import { generatePixPayload, loadBankPaymentSettings, validateReceiptMagicBytes, renderOfficialPaymentReceiptHtml } from '../lib/pix';
 import { renderQrCodeDataUri } from '../lib/qr';
+import {
+    getOrCreateDynamicPixCharge,
+    loadPixGatewayConfig,
+    settleInvoiceAsPaid,
+    verifyGatewayPaymentPaid
+} from '../services/pix-gateway';
 import { sendEmail } from '../lib/email';
 import { recordRequestTimeline } from '../lib/timeline';
 import { AutonomousCrmAgent } from '../services/ai-crm-agent';
@@ -706,11 +712,12 @@ portalRoutes.post('/dominios/:id/renovacao', async (c) => {
 portalRoutes.get('/financeiro', async (c) => {
     const { user, db, client } = await getClientContext(c);
 
-    const [txsRes, bankSettings] = await Promise.all([
+    const [txsRes, bankSettings, gatewayCfg] = await Promise.all([
         db.prepare(
             'SELECT * FROM financial_transactions WHERE client_id = ? ORDER BY due_date DESC'
         ).bind(client.id).all(),
-        loadBankPaymentSettings(db)
+        loadBankPaymentSettings(db),
+        loadPixGatewayConfig(db)
     ]);
 
     const proofMap = new Map<number, string>();
@@ -754,6 +761,7 @@ portalRoutes.get('/financeiro', async (c) => {
             clientName={client.company || client.name}
             transactions={transactions}
             bankSettings={bankSettings}
+            pixGatewayProvider={gatewayCfg.provider}
             successMessage={c.req.query('success')}
             errorMessage={c.req.query('error')}
         />
@@ -866,6 +874,82 @@ portalRoutes.get('/financeiro/:id/comprovante', async (c) => {
     headers.set('Content-Security-Policy', 'sandbox');
     headers.set('Cache-Control', 'private, no-store');
     return new Response(obj.body, { headers });
+});
+
+// Status ao vivo da fatura (polling do modal de pagamento a cada 3,5s)
+portalRoutes.get('/financeiro/:id/status', async (c) => {
+    const { db, client } = await getClientContext(c);
+    const txId = Number(c.req.param('id'));
+
+    const tx = (await db.prepare(
+        `SELECT id, status, paid_at, amount FROM financial_transactions WHERE id = ? AND client_id = ?`
+    ).bind(txId, client.id).first()) as any;
+
+    if (!tx) {
+        return c.json({ error: 'Fatura não encontrada' }, 404);
+    }
+
+    // Se ainda não foi paga e há cobrança dinâmica ativa no gateway, faz checagem ao vivo
+    if (tx.status !== 'paid' && tx.status !== 'canceled' && c.env.KV_CACHE) {
+        try {
+            const gwRaw = await c.env.KV_CACHE.get(`pix_tx_gw:${txId}`);
+            if (gwRaw) {
+                const gw = JSON.parse(gwRaw) as { provider: 'mercadopago' | 'asaas'; gatewayPaymentId: string };
+                const check = await verifyGatewayPaymentPaid(db, gw.provider, gw.gatewayPaymentId);
+                if (check.paid) {
+                    await settleInvoiceAsPaid(c.env, db, txId, {
+                        provider: gw.provider === 'mercadopago' ? 'Mercado Pago PIX' : 'Asaas PIX',
+                        gatewayReference: gw.gatewayPaymentId
+                    });
+                    return c.json({
+                        id: txId,
+                        status: 'paid',
+                        paid_at: new Date().toISOString(),
+                        receipt_url: `/portal/financeiro/${txId}/recibo`
+                    });
+                }
+            }
+        } catch { }
+    }
+
+    return c.json({
+        id: txId,
+        status: tx.status,
+        paid_at: tx.paid_at || null,
+        receipt_url: tx.status === 'paid' ? `/portal/financeiro/${txId}/recibo` : null
+    });
+});
+
+// Geração sob demanda de PIX Dinâmico (Mercado Pago / Asaas) ao abrir o modal
+portalRoutes.post('/financeiro/:id/gerar-pix', async (c) => {
+    const { db, client } = await getClientContext(c);
+    const txId = Number(c.req.param('id'));
+
+    const tx = (await db.prepare(
+        `SELECT * FROM financial_transactions WHERE id = ? AND client_id = ?`
+    ).bind(txId, client.id).first()) as any;
+
+    if (!tx) return c.json({ ok: false, error: 'Fatura não encontrada' }, 404);
+    if (tx.status === 'paid') {
+        return c.json({ ok: true, status: 'paid', receipt_url: `/portal/financeiro/${txId}/recibo` });
+    }
+    if (tx.status === 'canceled') {
+        return c.json({ ok: false, error: 'Fatura cancelada' }, 400);
+    }
+
+    const dynamicCharge = await getOrCreateDynamicPixCharge(c.env, db, tx, client);
+    if (!dynamicCharge) {
+        return c.json({ ok: true, mode: 'static' });
+    }
+
+    return c.json({
+        ok: true,
+        mode: 'dynamic',
+        provider: dynamicCharge.provider,
+        pixPayload: dynamicCharge.pixPayload,
+        qrDataUri: dynamicCharge.qrDataUri,
+        gatewayPaymentId: dynamicCharge.gatewayPaymentId
+    });
 });
 
 portalRoutes.get('/financeiro/:id/recibo', async (c) => {

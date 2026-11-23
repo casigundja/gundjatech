@@ -239,6 +239,70 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                                         />
                                     </div>
                                 </div>
+
+                                <div class="pt-3.5 mt-3.5 border-t border-white/10 space-y-3">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <div>
+                                            <div class="text-[11px] font-extrabold uppercase tracking-wider text-[#F2C230]">Confirmação Instantânea (PIX Automático via Webhook)</div>
+                                            <p class="text-[10.5px] text-[#8C95AA] mt-0.5">Quando ativado, o pagamento é validado em segundos, remove o QR Code da tela do cliente e notifica cliente + financeiro.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="gt-grid-2 !gap-3.5">
+                                        <div>
+                                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Provedor PIX Automático</label>
+                                            <select name="payment_gateway_provider" class="w-full rounded-xl px-3.5 py-2 text-xs">
+                                                <option value="static" selected={!settings.payment_gateway_provider || settings.payment_gateway_provider === 'static'}>PIX Estático (Nu Empresas — conferência manual)</option>
+                                                <option value="mercadopago" selected={settings.payment_gateway_provider === 'mercadopago'}>Mercado Pago (PIX Dinâmico + Baixa Automática)</option>
+                                                <option value="asaas" selected={settings.payment_gateway_provider === 'asaas'}>Asaas (PIX Dinâmico + Baixa Automática)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1.5">
+                                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Access Token / API Key</label>
+                                                {settings.payment_gateway_api_key && (
+                                                    <span class="text-[10px] font-extrabold text-emerald-400">✓ SALVO</span>
+                                                )}
+                                            </div>
+                                            <input
+                                                type="password"
+                                                name="payment_gateway_api_key"
+                                                placeholder={settings.payment_gateway_api_key ? '•••••••• (deixe vazio para manter)' : 'APP_USR-... ou $aact_...'}
+                                                autocomplete="off"
+                                                class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div class="gt-grid-2 !gap-3.5">
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1.5">
+                                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Webhook Token / Secret (Opcional)</label>
+                                                {settings.payment_gateway_webhook_secret && (
+                                                    <span class="text-[10px] font-extrabold text-emerald-400">✓ SALVO</span>
+                                                )}
+                                            </div>
+                                            <input
+                                                type="password"
+                                                name="payment_gateway_webhook_secret"
+                                                placeholder={settings.payment_gateway_webhook_secret ? '•••••••• (deixe vazio para manter)' : 'Token de validação (ex: Asaas)'}
+                                                autocomplete="off"
+                                                class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">URL do Webhook PIX (Cole no Provedor)</label>
+                                            <input
+                                                type="text"
+                                                readonly
+                                                value="https://gundjatech.casimirogundja.workers.dev/api/webhooks/pix"
+                                                onclick="this.select();navigator.clipboard&&navigator.clipboard.writeText(this.value)"
+                                                title="Clique para copiar"
+                                                class="w-full rounded-xl px-3.5 py-2 text-[11px] font-mono cursor-pointer"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </details>
 

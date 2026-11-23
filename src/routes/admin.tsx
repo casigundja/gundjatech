@@ -4448,10 +4448,12 @@ adminRoutes.post('/configuracoes', async (c) => {
         ['whatsapp_evolution_url', String(body.whatsapp_evolution_url || '').trim()],
         ['whatsapp_evolution_instance', String(body.whatsapp_evolution_instance || '').trim()],
         ['whatsapp_evolution_api_key', String(body.whatsapp_evolution_api_key || '').trim()],
-        ['meta_social_access_token', String(body.meta_social_access_token || '').trim()]
+        ['meta_social_access_token', String(body.meta_social_access_token || '').trim()],
+        ['payment_gateway_api_key', String(body.payment_gateway_api_key || '').trim()],
+        ['payment_gateway_webhook_secret', String(body.payment_gateway_webhook_secret || '').trim()]
     ];
     for (const [k, v] of optionalSecrets) {
-        if (v) pairs.push([k, v, 'integrations']);
+        if (v) pairs.push([k, v, k.startsWith('payment_') ? 'payments' : 'integrations']);
     }
 
     // Redes Sociais: Instagram & Facebook Sync + Curadoria Manual
@@ -4464,7 +4466,8 @@ adminRoutes.post('/configuracoes', async (c) => {
         ['payment_bank_name', String(body.payment_bank_name || '').trim(), 'payments'],
         ['payment_bank_agency', String(body.payment_bank_agency || '').trim(), 'payments'],
         ['payment_bank_account', String(body.payment_bank_account || '').trim(), 'payments'],
-        ['payment_bank_cnpj', String(body.payment_bank_cnpj || '').trim(), 'payments']
+        ['payment_bank_cnpj', String(body.payment_bank_cnpj || '').trim(), 'payments'],
+        ['payment_gateway_provider', String(body.payment_gateway_provider || 'static').trim(), 'payments']
     );
 
     const manualReels: Array<{ permalink: string; imageUrl: string; caption: string; platform: string }> = [];

@@ -7,6 +7,7 @@ interface PortalFinanceProps {
     clientName?: string;
     transactions: any[];
     bankSettings?: BankPaymentSettings;
+    pixGatewayProvider?: 'static' | 'mercadopago' | 'asaas';
     successMessage?: string | null;
     errorMessage?: string | null;
 }
@@ -16,6 +17,7 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
     clientName,
     transactions,
     bankSettings = DEFAULT_BANK_PAYMENT_SETTINGS,
+    pixGatewayProvider = 'static',
     successMessage,
     errorMessage
 }) => {
@@ -183,10 +185,11 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                 </div>
             )}
 
-            {/* Modal de Pagamento Executivo — PIX + TED Nu Empresas + Comprovante */}
+            {/* Modal de Pagamento Executivo — PIX + TED Nu Empresas + Comprovante + Confirmação em Tempo Real */}
             <div
                 id="modal-pagar-fatura"
-                onclick="if(event.target===this)this.style.display='none'"
+                data-pix-provider={pixGatewayProvider}
+                onclick="if(event.target===this){window.GT_ClosePayModal&&window.GT_ClosePayModal();}"
                 style="display: none; position: fixed; inset: 0; margin: 0; z-index: 200; align-items: center; justify-content: center; padding: 16px;"
                 class="gt-modal-overlay bg-[#063B5C]/65 backdrop-blur-xs"
             >
@@ -210,7 +213,7 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                             </div>
                             <button
                                 type="button"
-                                onclick="document.getElementById('modal-pagar-fatura').style.display='none'"
+                                onclick="window.GT_ClosePayModal && window.GT_ClosePayModal()"
                                 class="w-7 h-7 rounded-lg flex items-center justify-center text-[#64748B] hover:text-[#063B5C] hover:bg-[#E7F0F5] text-lg leading-none cursor-pointer bg-transparent border-0 transition-colors"
                                 aria-label="Fechar"
                             >
@@ -219,7 +222,51 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                         </div>
                     </div>
 
-                    <div class="p-6 space-y-4">
+                    {/* Estado de Sucesso em Tempo Real (substitui o QR Code automaticamente quando pago) */}
+                    <div id="gt-pay-confirmed-view" class="hidden p-8 text-center space-y-4">
+                        <div class="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto">
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7" /></svg>
+                        </div>
+                        <div>
+                            <div class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-600">Pagamento Validado</div>
+                            <h3 class="gt-font-display text-lg font-extrabold text-[#063B5C] mt-1">Pagamento confirmado com sucesso!</h3>
+                            <p class="text-xs text-[#64748B] mt-1.5 max-w-md mx-auto leading-relaxed">
+                                Recebemos a confirmação do seu pagamento. Uma notificação foi enviada automaticamente para você e para o financeiro da GundjaTech.
+                            </p>
+                        </div>
+                        <div class="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+                            <a
+                                id="gt-pay-receipt-link"
+                                href="#"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="gt-btn-primary gt-btn-sm no-underline"
+                            >
+                                Baixar Recibo Oficial (PDF)
+                            </a>
+                            <button
+                                type="button"
+                                onclick="window.location.reload()"
+                                class="gt-btn-petrol gt-btn-sm"
+                            >
+                                Concluir e Atualizar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="gt-pay-checkout-body" class="p-6 space-y-4">
+                        {/* Barra de status ao vivo */}
+                        <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#F0F7FA] border border-[#D4E4EE] text-[11px] text-[#063B5C]">
+                            <span class="inline-flex items-center gap-2 font-semibold">
+                                <span class="w-2 h-2 rounded-full bg-[#16749A] animate-pulse"></span>
+                                <span id="gt-pay-live-label">
+                                    {pixGatewayProvider !== 'static'
+                                        ? 'Verificação automática ativa — assim que pagar, esta tela confirma sozinha.'
+                                        : 'Aguardando pagamento — assim que confirmado, esta tela atualiza automaticamente.'}
+                                </span>
+                            </span>
+                        </div>
+
                         {/* Abas Segmentadas (Estilo Fintech) */}
                         <div class="gt-pay-seg" role="tablist">
                             <button
@@ -323,7 +370,7 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                             <input type="hidden" id="gt-pay-method-input" name="payment_method" value="PIX" />
                             <div>
                                 <div class="text-[10.5px] font-bold uppercase tracking-wider text-[#64748B] mb-1.5">
-                                    Comprovante de pagamento
+                                    Comprovante de pagamento {pixGatewayProvider !== 'static' ? '(opcional para TED)' : ''}
                                 </div>
                                 <label id="gt-pay-dropzone" class="gt-pay-dropzone">
                                     <input
@@ -352,7 +399,7 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                                 <div class="flex items-center gap-2.5 ml-auto">
                                     <button
                                         type="button"
-                                        onclick="document.getElementById('modal-pagar-fatura').style.display='none'"
+                                        onclick="window.GT_ClosePayModal && window.GT_ClosePayModal()"
                                         class="gt-btn-outline gt-btn-sm"
                                     >
                                         Fechar
@@ -369,6 +416,50 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
 
             <script dangerouslySetInnerHTML={{
                 __html: `
+                window.__GT_PAY_POLL = null;
+
+                window.GT_StopPayPoll = function () {
+                    if (window.__GT_PAY_POLL) {
+                        clearInterval(window.__GT_PAY_POLL);
+                        window.__GT_PAY_POLL = null;
+                    }
+                };
+
+                window.GT_ClosePayModal = function () {
+                    window.GT_StopPayPoll();
+                    var modal = document.getElementById('modal-pagar-fatura');
+                    if (modal) modal.style.display = 'none';
+                };
+
+                window.GT_ShowPayConfirmed = function (receiptUrl) {
+                    window.GT_StopPayPoll();
+                    var bodyEl = document.getElementById('gt-pay-checkout-body');
+                    var okEl = document.getElementById('gt-pay-confirmed-view');
+                    var recLink = document.getElementById('gt-pay-receipt-link');
+                    if (bodyEl) bodyEl.classList.add('hidden');
+                    if (okEl) okEl.classList.remove('hidden');
+                    if (recLink && receiptUrl) recLink.setAttribute('href', receiptUrl);
+                };
+
+                window.GT_StartPayPoll = function (txId) {
+                    window.GT_StopPayPoll();
+                    if (!txId) return;
+                    var poll = function () {
+                        fetch('/portal/financeiro/' + encodeURIComponent(txId) + '/status', {
+                            headers: { 'Accept': 'application/json' },
+                            credentials: 'same-origin'
+                        })
+                            .then(function (r) { return r.ok ? r.json() : null; })
+                            .then(function (data) {
+                                if (data && data.status === 'paid') {
+                                    window.GT_ShowPayConfirmed(data.receipt_url || ('/portal/financeiro/' + encodeURIComponent(txId) + '/recibo'));
+                                }
+                            })
+                            .catch(function () {});
+                    };
+                    window.__GT_PAY_POLL = setInterval(poll, 3500);
+                };
+
                 window.GT_FormatBrDate = function (val) {
                     if (!val) return '—';
                     var m = String(val).match(/^(\\d{4})-(\\d{2})-(\\d{2})/);
@@ -426,6 +517,11 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                     var pix = btn.getAttribute('data-pix') || '';
                     var qrUri = btn.getAttribute('data-qr') || '';
 
+                    var bodyEl = document.getElementById('gt-pay-checkout-body');
+                    var okEl = document.getElementById('gt-pay-confirmed-view');
+                    if (bodyEl) bodyEl.classList.remove('hidden');
+                    if (okEl) okEl.classList.add('hidden');
+
                     form.setAttribute('action', '/portal/financeiro/' + encodeURIComponent(id) + '/comprovante');
                     var fileInp = document.getElementById('gt-pay-file-input');
                     if (fileInp) { fileInp.value = ''; window.GT_UpdateReceiptLabel(fileInp); }
@@ -442,11 +538,34 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                     if (dueEl) dueEl.textContent = window.GT_FormatBrDate(due);
                     if (txidEl) txidEl.textContent = txid;
                     if (pixEl) pixEl.value = pix;
-                    if (qrEl && qrUri) {
-                        qrEl.src = qrUri;
-                    }
+                    if (qrEl && qrUri) qrEl.src = qrUri;
+
                     window.GT_SwitchPayTab('pix');
                     modal.style.display = 'flex';
+                    window.GT_StartPayPoll(id);
+
+                    // Se o gateway PIX dinâmico (Mercado Pago / Asaas) estiver ativo, gera/atualiza cobrança dinâmica automaticamente
+                    var provider = modal.getAttribute('data-pix-provider') || 'static';
+                    if (provider !== 'static' && id) {
+                        fetch('/portal/financeiro/' + encodeURIComponent(id) + '/gerar-pix', {
+                            method: 'POST',
+                            headers: { 'Accept': 'application/json' },
+                            credentials: 'same-origin'
+                        })
+                            .then(function (r) { return r.ok ? r.json() : null; })
+                            .then(function (data) {
+                                if (!data) return;
+                                if (data.status === 'paid') {
+                                    window.GT_ShowPayConfirmed(data.receipt_url);
+                                    return;
+                                }
+                                if (data.mode === 'dynamic' && data.pixPayload && data.qrDataUri) {
+                                    if (pixEl) pixEl.value = data.pixPayload;
+                                    if (qrEl) qrEl.src = data.qrDataUri;
+                                }
+                            })
+                            .catch(function () {});
+                    }
                 };
             ` }} />
         </PortalLayout>
