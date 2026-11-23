@@ -223,31 +223,34 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
 
             {/* ROW 2: PIPELINE TABLE (7fr) + AI CONFIG PANEL (5fr) */}
             <div class="gt-crm-grid">
-                <section class="gtb-card !p-4 space-y-4">
-                    <div class="flex items-center justify-between gap-3 flex-wrap pb-3 border-b border-white/10">
+                <section class="gtb-card !p-5 flex flex-col">
+                    <div class="flex items-center justify-between gap-3 flex-wrap pb-3.5 border-b border-white/10">
                         <div>
-                            <h2 class="gt-font-display text-sm sm:text-[15px] font-extrabold text-white">Pipeline de Qualificação Autônoma</h2>
-                            <p class="text-[11.5px] text-[#8C95AA] mt-0.5">Visitantes do site e WhatsApp qualificados pela IA com pontuação e rascunho de proposta.</p>
+                            <h2 class="gt-font-display text-sm sm:text-base font-extrabold text-white">Pipeline de Qualificação Autônoma</h2>
+                            <p class="text-xs text-[#8C95AA] mt-0.5">Visitantes do site e WhatsApp qualificados pela IA com pontuação e rascunho de proposta.</p>
                         </div>
+                        <a href="/admin/atendimento" class="gt-btn-outline gt-btn-xs shrink-0">
+                            Ver Inbox →
+                        </a>
                     </div>
 
                     {conversations.length === 0 ? (
-                        <div class="flex flex-col items-center text-center px-4 py-7">
-                            <span class="gtb-icon-box !w-10 !h-10 !rounded-xl mb-2.5" aria-hidden="true">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <div class="flex-1 flex flex-col items-center justify-center text-center px-6 py-10">
+                            <span class="gtb-icon-box !w-12 !h-12 !rounded-2xl mb-3" aria-hidden="true">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M13 10V3L4 14h7v7l9-11h-7z" />
                                 </svg>
                             </span>
                             <h3 class="gt-font-display text-sm font-extrabold text-white">Aguardando novos atendimentos da IA</h3>
-                            <p class="text-xs text-[#8C95AA] mt-1 max-w-md leading-relaxed">
+                            <p class="text-xs text-[#8C95AA] mt-1.5 max-w-sm leading-relaxed">
                                 Assim que um visitante iniciar conversa no site ou no WhatsApp, o lead aparece aqui com pontuação em tempo real.
                             </p>
-                            <div class="flex items-center justify-center gap-2 flex-wrap mt-3 text-[10.5px] font-bold text-[#8C95AA]">
-                                <span>01 · Captação 24/7</span>
+                            <div class="flex items-center justify-center gap-2 flex-wrap mt-5 text-[11px] font-bold text-[#8C95AA]">
+                                <span class="gtb-surface-box rounded-lg px-2.5 py-1">01 · Captação 24/7</span>
                                 <span>→</span>
-                                <span>02 · Score &amp; Escopo</span>
+                                <span class="gtb-surface-box rounded-lg px-2.5 py-1">02 · Score &amp; Escopo</span>
                                 <span>→</span>
-                                <span>03 · Pré-Orçamento</span>
+                                <span class="gtb-surface-box rounded-lg px-2.5 py-1">03 · Pré-Orçamento</span>
                             </div>
                         </div>
                     ) : (
@@ -368,19 +371,19 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
 
                     <form id="gt-crm-config-form" action="/admin/crm-autonomo/configuracoes" method="post" data-dirty-guard="1" class="space-y-3 text-xs">
                         {/* Switches compactos */}
-                        <div class="gtb-surface-box rounded-xl divide-y divide-white/10 overflow-hidden">
-                            <label class="flex items-center justify-between gap-3 px-3 py-2 cursor-pointer">
+                        <div class="gtb-surface-box rounded-xl overflow-hidden">
+                            <label class="flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                                 <div class="min-w-0">
                                     <div class="text-xs font-bold text-white leading-tight">Piloto Automático Global</div>
-                                    <div class="text-[10.5px] text-[#8C95AA]">Chave geral de respostas automáticas</div>
+                                    <div class="text-[11px] text-[#8C95AA]">Chave geral de respostas automáticas</div>
                                 </div>
                                 <input type="checkbox" name="crm_ai_enabled" value="1" checked={aiEnabled} class="gt-switch shrink-0" />
                             </label>
 
-                            <label class="flex items-center justify-between gap-3 px-3 py-2 cursor-pointer">
+                            <label class="flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer">
                                 <div class="min-w-0">
                                     <div class="text-xs font-bold text-white leading-tight">Auto-gerar Pré-Orçamento</div>
-                                    <div class="text-[10.5px] text-[#8C95AA]">Criar rascunho ao qualificar lead</div>
+                                    <div class="text-[11px] text-[#8C95AA]">Criar rascunho ao qualificar lead</div>
                                 </div>
                                 <input type="checkbox" name="crm_ai_auto_draft_quotation" value="1" checked={autoDraft} class="gt-switch shrink-0" />
                             </label>

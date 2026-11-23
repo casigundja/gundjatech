@@ -4062,7 +4062,7 @@ html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-danger {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 20px;
-    align-items: start;
+    align-items: stretch;
 }
 
 @media (min-width: 1180px) {
