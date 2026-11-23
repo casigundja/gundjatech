@@ -2729,7 +2729,7 @@ adminRoutes.get('/configuracoes', async (c) => {
     const whatsappDirectorEnabled = settingsMap.whatsapp_director_enabled !== '0';
     const whatsappConfigured =
         activeProvider === 'zapi' || activeProvider === 'zapi_omni'
-            ? Boolean(settingsMap.whatsapp_zapi_instance_id && settingsMap.whatsapp_zapi_token)
+            ? Boolean(settingsMap.whatsapp_zapi_instance_id && (settingsMap.whatsapp_zapi_token || settingsMap.whatsapp_zapi_client_token))
             : activeProvider === 'evolution'
                 ? Boolean(settingsMap.whatsapp_evolution_url && settingsMap.whatsapp_evolution_instance && settingsMap.whatsapp_evolution_api_key)
                 : Boolean((c.env.WHATSAPP_ACCESS_TOKEN || settingsMap.whatsapp_access_token) && (c.env.WHATSAPP_PHONE_NUMBER_ID || settingsMap.whatsapp_phone_number_id));
@@ -2821,6 +2821,36 @@ adminRoutes.post('/configuracoes', async (c) => {
     } catch { }
 
     return c.redirect('/admin/configuracoes?success=Configurações gerais salvas com sucesso');
+});
+
+adminRoutes.post('/configuracoes/testar-whatsapp', async (c) => {
+    const db = c.env.DB;
+    let targetPhone = '';
+    try {
+        const rows = await db.prepare(
+            `SELECT key, value FROM system_settings WHERE key IN ('whatsapp_director_phone', 'company_whatsapp')`
+        ).all<{ key: string; value: string }>();
+        const map: Record<string, string> = {};
+        for (const r of rows.results || []) map[r.key] = String(r.value || '').replace(/\D+/g, '');
+        targetPhone = map.whatsapp_director_phone || map.company_whatsapp || '';
+    } catch { }
+
+    if (!targetPhone) {
+        return c.redirect('/admin/configuracoes?error=Informe um número de WhatsApp (Oficial ou Diretor) antes de testar.');
+    }
+
+    const res = await sendWhatsAppTextMessage(
+        c.env,
+        targetPhone,
+        '✅ Teste de integração GundjaTech CRM concluído com sucesso! Sua conexão WhatsApp está operando normalmente.',
+        undefined,
+        { bypassSyncPause: true }
+    );
+
+    if (res.ok) {
+        return c.redirect(`/admin/configuracoes?success=${encodeURIComponent(`Mensagem de teste enviada via ${res.provider || 'WhatsApp'} para ${targetPhone}`)}`);
+    }
+    return c.redirect(`/admin/configuracoes?error=${encodeURIComponent(res.error || 'Falha ao enviar mensagem de teste no WhatsApp')}`);
 });
 
 // ==========================================
