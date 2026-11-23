@@ -44,7 +44,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
-                <link rel="stylesheet" href="/css/gt-admin.css?v=53" />
+                <link rel="stylesheet" href="/css/gt-admin.css?v=54" />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
@@ -212,7 +212,19 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                     id="gt-admin-sidebar"
                     class="gtb-sidebar fixed inset-y-0 left-0 z-50 lg:static lg:inset-0 shrink-0 -translate-x-full lg:translate-x-0 transition-transform duration-200"
                 >
-                    <div class="flex flex-col min-h-0 flex-1">
+                    <button
+                        type="button"
+                        id="gt-sidebar-collapse-btn"
+                        onclick="window.GT_ToggleAdminSidebar && window.GT_ToggleAdminSidebar()"
+                        class="gtb-sidebar-collapse-btn gtb-sidebar-edge-pill"
+                        title="Recolher menu"
+                        aria-label="Recolher ou expandir menu lateral"
+                    >
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m15 18-6-6 6-6" />
+                        </svg>
+                    </button>
+                    <div class="flex flex-col min-h-0 flex-1 overflow-x-hidden">
                         {/* Brand Header */}
                         <div class="gtb-sidebar-brand-row h-[72px] flex items-center justify-between px-4 shrink-0">
                             <a href="/admin/dashboard" class="flex items-center gap-2.5 no-underline">
@@ -389,20 +401,6 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                 aria-label="Abrir menu"
                             >
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                            </button>
-                            <button
-                                type="button"
-                                id="gt-sidebar-collapse-btn"
-                                onclick="window.GT_ToggleAdminSidebar && window.GT_ToggleAdminSidebar()"
-                                class="gtb-sidebar-collapse-btn gtb-icon-btn rounded-xl shrink-0"
-                                title="Recolher menu"
-                                aria-label="Recolher ou expandir menu lateral"
-                            >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect width="18" height="18" x="3" y="3" rx="2" />
-                                    <path d="M9 3v18" />
-                                    <path d="m15 9-3 3 3 3" />
-                                </svg>
                             </button>
                             <h1 class="gt-font-display gtb-topbar-title hidden md:block text-lg sm:text-xl font-bold tracking-tight truncate">
                                 {headerTitle}

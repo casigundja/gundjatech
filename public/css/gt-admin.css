@@ -76,9 +76,10 @@ body.gt-admin-boost .gt-font-display {
     flex-direction: column;
     justify-content: space-between;
     transition: transform 0.25s ease, background-color 0.2s ease;
-    z-index: 50;
+    z-index: 85;
     user-select: none;
-    overflow-x: hidden;
+    overflow: visible !important;
+    position: relative;
 }
 
 html.gt-sidebar-animating .gtb-sidebar {
@@ -133,18 +134,66 @@ html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-nav-item > div {
     gap: 0;
 }
 
+/* Pílula Flutuante na Borda Direita da Sidebar (Opção 1) */
+.gtb-sidebar-edge-pill,
 .gtb-sidebar-collapse-btn,
 #gt-sidebar-collapse-btn,
 #gt-portal-collapse-btn {
+    position: absolute !important;
+    top: 84px !important;
+    right: -13px !important;
+    width: 26px !important;
+    height: 26px !important;
+    border-radius: 9999px !important;
     display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #063B5C !important;
+    color: #F2C230 !important;
+    border: 1.5px solid rgba(242, 194, 48, 0.45) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+    cursor: pointer !important;
+    z-index: 95 !important;
+    padding: 0 !important;
+    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease !important;
+}
+
+.gtb-sidebar-edge-pill:hover,
+.gtb-sidebar-collapse-btn:hover {
+    background: #F2C230 !important;
+    color: #063B5C !important;
+    border-color: #F2C230 !important;
+    transform: scale(1.08);
+}
+
+html[data-admin-theme="light"] .gtb-sidebar-edge-pill,
+body.is-light-mode .gtb-sidebar-edge-pill {
+    background: #FFFFFF !important;
+    color: #063B5C !important;
+    border: 1.5px solid rgba(22, 116, 154, 0.35) !important;
+    box-shadow: 0 4px 12px rgba(6, 59, 92, 0.14) !important;
+}
+
+html[data-admin-theme="light"] .gtb-sidebar-edge-pill:hover,
+body.is-light-mode .gtb-sidebar-edge-pill:hover {
+    background: #F2C230 !important;
+    color: #063B5C !important;
+    border-color: #E0B020 !important;
 }
 
 @media (max-width: 1023px) {
-    /* Em mobile (< 1024px), quando a sidebar está recolhida (76px), ajusta o cabeçalho para o logo e o botão X caberem sem apertar */
+    /* No mobile, quando a gaveta lateral está fechada (-translate-x-full), esconde a pílula da borda para não vazar na margem esquerda da tela */
+    aside.gtb-sidebar.-translate-x-full .gtb-sidebar-edge-pill,
+    aside.gtb-sidebar.-translate-x-full .gtb-sidebar-collapse-btn {
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+
+    /* Quando a sidebar está recolhida (76px) no mobile, ajusta o topo para o logo G-Nexus e o botão X caberem confortavelmente */
     .gtb-sidebar.is-collapsed .gtb-sidebar-brand-row,
     html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-sidebar-brand-row {
         justify-content: space-between;
-        padding-left: 6px !important;
+        padding-left: 8px !important;
         padding-right: 6px !important;
         gap: 2px;
     }
@@ -153,24 +202,6 @@ html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-nav-item > div {
     html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-brand-badge {
         width: 30px;
         height: 30px;
-    }
-
-    /* Quando a gaveta lateral mobile está aberta (:not(.-translate-x-full)):
-       1) Oculta o botão hambúrguer da topbar (pois o botão X já está no topo da sidebar aberta)
-       2) Desloca o conteúdo da topbar para a direita da sidebar aberta, impedindo que a sidebar sobreponha o botão "Expandir/Recolher menu" */
-    body:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-mobile-toggle {
-        display: none !important;
-    }
-
-    body:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-topbar {
-        padding-left: calc(min(252px, 84vw) + 10px) !important;
-        transition: padding-left 0.22s ease;
-    }
-
-    html[data-sidebar-collapsed="1"] body:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-topbar,
-    body.gt-sidebar-is-collapsed:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-topbar,
-    body:has(aside.gtb-sidebar.is-collapsed:not(.-translate-x-full)) .gtb-topbar {
-        padding-left: 86px !important;
     }
 }
 
@@ -3393,21 +3424,6 @@ html[data-admin-theme="light"] .gt-confirm-actions {
         height: 100dvh !important;
         max-width: 84vw !important;
     }
-
-    body:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-mobile-toggle {
-        display: none !important;
-    }
-
-    body:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-topbar {
-        padding-left: calc(min(252px, 84vw) + 10px) !important;
-        transition: padding-left 0.22s ease;
-    }
-
-    html[data-sidebar-collapsed="1"] body:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-topbar,
-    body.gt-sidebar-is-collapsed:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-topbar,
-    body:has(aside.gtb-sidebar.is-collapsed:not(.-translate-x-full)) .gtb-topbar {
-        padding-left: 86px !important;
-    }
 }
 
 @media (max-width: 639px) {
@@ -3422,19 +3438,8 @@ html[data-admin-theme="light"] .gt-confirm-actions {
     }
 
     .gtb-topbar {
-        padding-left: 12px !important;
-        padding-right: 12px !important;
+        padding: 0 12px !important;
         gap: 8px !important;
-    }
-
-    body:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-topbar {
-        padding-left: calc(min(252px, 84vw) + 10px) !important;
-    }
-
-    html[data-sidebar-collapsed="1"] body:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-topbar,
-    body.gt-sidebar-is-collapsed:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-topbar,
-    body:has(aside.gtb-sidebar.is-collapsed:not(.-translate-x-full)) .gtb-topbar {
-        padding-left: 86px !important;
     }
 
     .gtb-topbar-left h1 {
