@@ -4,7 +4,7 @@ import { renderPublicBladePage, renderPublicLayoutShell } from '../views/public-
 import { getRequestBody } from '../lib/request';
 import { sendQuoteConfirmationEmail, sendNewLeadStaffNotification } from '../lib/email';
 import { rateLimit } from '../middleware/security';
-import { getSocialFeed, renderSocialFeedCardsHtml } from '../services/social-feed';
+import { getSocialFeed, renderSocialFeedCardsHtml, renderSocialCarouselControlsHtml } from '../services/social-feed';
 
 export const publicRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -569,9 +569,10 @@ publicRoutes.get('/', async (c) => {
         const feed = await getSocialFeed(c.env);
         const liveCards = renderSocialFeedCardsHtml(feed.items);
         if (liveCards) {
+            const controlsHtml = renderSocialCarouselControlsHtml(feed.items.length);
             html = html.replace(
                 /<div class="gt-reels-grid">[\s\S]*?<\/div>\s*<!--__GT_REELS_END__-->/,
-                `<div class="gt-reels-grid">\n${liveCards}\n    </div><!--__GT_REELS_END__-->`
+                `<div class="gt-reels-grid">\n${liveCards}\n    </div>${controlsHtml}<!--__GT_REELS_END__-->`
             );
         }
     } catch { }

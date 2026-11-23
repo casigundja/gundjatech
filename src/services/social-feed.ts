@@ -18,8 +18,9 @@ export interface SocialFeedResult {
     error?: string | null;
 }
 
-const CACHE_KEY = 'gt:social_feed:v1';
+const CACHE_KEY = 'gt:social_feed:v2';
 const CACHE_TTL_SECONDS = 900; // 15 minutos
+const MAX_FEED_ITEMS = 12;
 
 function escapeHtml(str: unknown): string {
     return String(str ?? '')
@@ -91,7 +92,7 @@ async function fetchFromMetaGraphApi(
             const igUrl =
                 `https://graph.facebook.com/v21.0/${encodeURIComponent(igAccountId)}/media` +
                 `?fields=id,caption,media_type,media_product_type,media_url,thumbnail_url,permalink,timestamp` +
-                `&limit=8&access_token=${encodeURIComponent(accessToken)}`;
+                `&limit=${MAX_FEED_ITEMS}&access_token=${encodeURIComponent(accessToken)}`;
 
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), 5000);
@@ -123,7 +124,7 @@ async function fetchFromMetaGraphApi(
                         permalink: String(m.permalink),
                         timestamp: String(m.timestamp || new Date().toISOString())
                     });
-                    if (items.length >= 4) break;
+                    if (items.length >= MAX_FEED_ITEMS) break;
                 }
             }
         } catch (err: any) {
@@ -131,13 +132,13 @@ async function fetchFromMetaGraphApi(
         }
     }
 
-    // 2. Facebook Page Posts API (complementa até 4 cards se configurado)
-    if (fbPageId && accessToken && items.length < 4) {
+    // 2. Facebook Page Posts API (complementa até MAX_FEED_ITEMS cards se configurado)
+    if (fbPageId && accessToken && items.length < MAX_FEED_ITEMS) {
         try {
             const fbUrl =
                 `https://graph.facebook.com/v21.0/${encodeURIComponent(fbPageId)}/posts` +
                 `?fields=id,message,full_picture,permalink_url,created_time` +
-                `&limit=6&access_token=${encodeURIComponent(accessToken)}`;
+                `&limit=8&access_token=${encodeURIComponent(accessToken)}`;
 
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), 5000);
@@ -159,7 +160,7 @@ async function fetchFromMetaGraphApi(
                         permalink: String(p.permalink_url),
                         timestamp: String(p.created_time || new Date().toISOString())
                     });
-                    if (items.length >= 4) break;
+                    if (items.length >= MAX_FEED_ITEMS) break;
                 }
             }
         } catch (err: any) {
@@ -168,7 +169,7 @@ async function fetchFromMetaGraphApi(
     }
 
     return {
-        items: items.slice(0, 4),
+        items: items.slice(0, MAX_FEED_ITEMS),
         error: errors.length > 0 ? errors.join(' | ') : undefined
     };
 }
@@ -250,8 +251,8 @@ export async function clearSocialFeedCache(env: Env): Promise<void> {
 export function renderSocialFeedCardsHtml(items: SocialFeedItem[]): string | null {
     if (!items || items.length === 0) return null;
 
-    return items
-        .slice(0, 4)
+    const sliced = items.slice(0, MAX_FEED_ITEMS);
+    const cardsHtml = sliced
         .map((item, idx) => {
             const isVideo = item.mediaType === 'REEL' || item.mediaType === 'VIDEO';
             const badgeLabel = item.platform === 'facebook' ? 'Facebook' : isVideo ? 'Reels' : 'Instagram';
@@ -285,4 +286,67 @@ export function renderSocialFeedCardsHtml(items: SocialFeedItem[]): string | nul
       </a>`;
         })
         .join('\n');
+
+    return cardsHtml;
+}
+
+export function renderSocialCarouselControlsHtml(itemCount: number): string {
+    if (itemCount <= 4) return '';
+    return `
+    <div class="gt-reels-ctrl">
+      <div class="gt-reels-arrows">
+        <button type="button" class="gt-reels-arrow" id="gt-reels-prev" aria-label="Publicações anteriores">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+        </button>
+        <button type="button" class="gt-reels-arrow" id="gt-reels-next" aria-label="Próximas publicações">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var track = document.querySelector('#acompanhe .gt-reels-grid');
+        if (!track || track.dataset.gtCarouselInit === '1') return;
+        track.dataset.gtCarouselInit = '1';
+        var prevBtn = document.getElementById('gt-reels-prev');
+        var nextBtn = document.getElementById('gt-reels-next');
+        var paused = false;
+
+        function stepWidth() {
+          var first = track.querySelector('.gt-reel-card');
+          if (!first) return 320;
+          var gap = parseFloat(getComputedStyle(track).gap || '18') || 18;
+          return first.getBoundingClientRect().width + gap;
+        }
+
+        function goNext() {
+          var maxScroll = track.scrollWidth - track.clientWidth - 8;
+          if (track.scrollLeft >= maxScroll) {
+            track.scrollTo({ left: 0, behavior: 'smooth' });
+          } else {
+            track.scrollBy({ left: stepWidth(), behavior: 'smooth' });
+          }
+        }
+
+        function goPrev() {
+          if (track.scrollLeft <= 8) {
+            track.scrollTo({ left: track.scrollWidth, behavior: 'smooth' });
+          } else {
+            track.scrollBy({ left: -stepWidth(), behavior: 'smooth' });
+          }
+        }
+
+        if (prevBtn) prevBtn.addEventListener('click', goPrev);
+        if (nextBtn) nextBtn.addEventListener('click', goNext);
+
+        track.addEventListener('mouseenter', function () { paused = true; });
+        track.addEventListener('mouseleave', function () { paused = false; });
+        track.addEventListener('touchstart', function () { paused = true; }, { passive: true });
+        track.addEventListener('touchend', function () { setTimeout(function () { paused = false; }, 3500); }, { passive: true });
+
+        setInterval(function () {
+          if (!paused && !document.hidden) goNext();
+        }, 4500);
+      })();
+    </script>`;
 }
