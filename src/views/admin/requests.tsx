@@ -147,6 +147,18 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                     </a>
 
                     <div class="gt-detail-toolbar-actions">
+                        <button
+                            type="button"
+                            onclick="var p=document.getElementById('gt-profile-menu');if(p)p.classList.add('hidden');var n=document.getElementById('gt-notif-dropdown');if(n)n.classList.add('hidden');var m=document.getElementById('gt-edit-request-modal');if(m){m.classList.remove('hidden');var first=m.querySelector('input[name=service_title]');if(first)setTimeout(function(){first.focus();},50);}"
+                            class="gt-btn-outline gt-btn-sm"
+                        >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20h9" />
+                                <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                            </svg>
+                            <span>Editar</span>
+                        </button>
+
                         {isConvertedToProject ? (
                             <a href={linkedProject?.id ? `/admin/projetos/${linkedProject.id}` : '/admin/projetos'} class="gt-btn-petrol gt-btn-sm">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -202,42 +214,6 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                 </button>
                             </form>
                         ) : null}
-
-                        <button
-                            type="button"
-                            onclick="var p=document.getElementById('gt-profile-menu');if(p)p.classList.add('hidden');var n=document.getElementById('gt-notif-dropdown');if(n)n.classList.add('hidden');var m=document.getElementById('gt-edit-request-modal');if(m){m.classList.remove('hidden');var first=m.querySelector('input[name=service_title]');if(first)setTimeout(function(){first.focus();},50);}"
-                            class="gt-btn-outline gt-btn-sm"
-                        >
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 20h9" />
-                                <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-                            </svg>
-                            <span>Editar</span>
-                        </button>
-
-                        {requestDetail.status !== 'cancelled' && (
-                            <form action={`/admin/solicitacoes/${requestDetail.id}/cancelar`} method="post" class="m-0">
-                                <button type="submit" data-loading-text="Cancelando..." class="gt-btn-outline gt-btn-sm">
-                                    Cancelar
-                                </button>
-                            </form>
-                        )}
-
-                        <form
-                            action={`/admin/solicitacoes/${requestDetail.id}/excluir`}
-                            method="post"
-                            class="m-0"
-                            onsubmit="return confirm('Deseja realmente excluir esta solicitação permanentemente?')"
-                        >
-                            <button type="submit" data-loading-text="Excluindo..." class="gt-btn-danger-ghost gt-btn-sm">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M3 6h18" />
-                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                                </svg>
-                                <span>Excluir</span>
-                            </button>
-                        </form>
                     </div>
                 </div>
 
@@ -512,14 +488,14 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
 
                     {/* Coluna Lateral: Atualizar Status + Ações Rápidas */}
                     <div class="min-w-0" style="display: flex; flex-direction: column; gap: 14px; height: 100%; max-height: 100%; overflow: hidden;">
-                        <aside class="gtb-card !p-4 min-w-0" style="flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+                        <aside class="gtb-card !p-4 min-w-0" style="flex-shrink: 0; display: flex; flex-direction: column;">
                             <div class="pb-2.5" style="flex-shrink: 0; border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                                 <h2 class="gt-font-display text-sm font-extrabold text-white">Atualizar Status Operacional</h2>
                                 <p class="text-[11px] text-[#8C95AA] mt-0.5">Registre o avanço no pipeline comercial.</p>
                             </div>
 
-                            <form action={`/admin/solicitacoes/${requestDetail.id}/status`} method="post" data-dirty-guard="1" style="flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
-                                <div style="flex-shrink: 0;">
+                            <form action={`/admin/solicitacoes/${requestDetail.id}/status`} method="post" data-dirty-guard="1" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                                <div>
                                     <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Novo Status</label>
                                     <select name="status" class="w-full rounded-xl px-3 py-2 text-xs">
                                         <option value="new" selected={requestDetail.status === 'new'}>1. Novo / Recebido</option>
@@ -543,61 +519,89 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                     )}
                                 </div>
 
-                                <div style="flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column;">
+                                <div>
                                     <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Comentário de Atualização</label>
                                     <textarea
                                         name="comment"
-                                        rows={2}
+                                        rows={3}
                                         placeholder="Descreva o motivo ou avanço desta etapa..."
                                         class="w-full rounded-xl px-3 py-2 text-xs"
-                                        style="flex: 1 1 0%; min-height: 48px; resize: none;"
+                                        style="height: 82px; min-height: 82px; max-height: 112px; resize: none;"
                                     ></textarea>
                                 </div>
 
-                                <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm w-full justify-center" style="flex-shrink: 0; margin-top: auto;">
+                                <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm w-full justify-center">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                     <span>Salvar Alteração</span>
                                 </button>
                             </form>
                         </aside>
 
-                        {/* Card de Ações Rápidas & Compartilhamento */}
-                        <aside class="gtb-card !p-4 space-y-2.5 min-w-0" style="flex-shrink: 0;">
-                            <div>
-                                <h2 class="gt-font-display text-sm font-extrabold text-white">Ações Rápidas</h2>
-                                <p class="text-[11px] text-[#8C95AA] mt-0.5">Comunicação direta e rastreio do cliente.</p>
+                        {/* Card de Ações Rápidas & Gestão */}
+                        <aside class="gtb-card !p-4 min-w-0" style="flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; overflow-y: auto;">
+                            <div class="space-y-2.5">
+                                <div class="pb-2" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                                    <h2 class="gt-font-display text-sm font-extrabold text-white">Ações Rápidas &amp; Gestão</h2>
+                                    <p class="text-[11px] text-[#8C95AA] mt-0.5">Comunicação direta, rastreio e controle administrativo.</p>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <button
+                                        type="button"
+                                        onclick={`var url=window.location.origin+'${trackingPath}';navigator.clipboard.writeText(url).then(function(){var el=document.getElementById('gt-copy-track-lbl');if(el){el.textContent='Link copiado!';setTimeout(function(){el.textContent='Copiar Link de Rastreio';},2000);}});`}
+                                        class="gt-quick-action-btn"
+                                    >
+                                        <span class="flex items-center gap-2.5">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                                            <span id="gt-copy-track-lbl">Copiar Link de Rastreio</span>
+                                        </span>
+                                        <span class="text-[10.5px] font-extrabold text-[#F2C230]">COPIAR</span>
+                                    </button>
+
+                                    <a href={trackingPath} target="_blank" rel="noopener noreferrer" class="gt-quick-action-btn">
+                                        <span class="flex items-center gap-2.5">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                            <span>Ver Página Pública</span>
+                                        </span>
+                                        <span class="text-[11px] text-[#8C95AA]">↗</span>
+                                    </a>
+
+                                    {whatsappUrl && (
+                                        <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" class="gt-quick-action-btn">
+                                            <span class="flex items-center gap-2.5">
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                                                <span>Chamar no WhatsApp</span>
+                                            </span>
+                                            <span class="text-[11px] text-[#10B981] font-extrabold">ABRIR</span>
+                                        </a>
+                                    )}
+                                </div>
                             </div>
 
-                            <div class="space-y-2">
-                                <button
-                                    type="button"
-                                    onclick={`var url=window.location.origin+'${trackingPath}';navigator.clipboard.writeText(url).then(function(){var el=document.getElementById('gt-copy-track-lbl');if(el){el.textContent='Link copiado!';setTimeout(function(){el.textContent='Copiar Link de Rastreio';},2000);}});`}
-                                    class="gt-quick-action-btn"
-                                >
-                                    <span class="flex items-center gap-2.5">
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                                        <span id="gt-copy-track-lbl">Copiar Link de Rastreio</span>
-                                    </span>
-                                    <span class="text-[10.5px] font-extrabold text-[#F2C230]">COPIAR</span>
-                                </button>
-
-                                <a href={trackingPath} target="_blank" rel="noopener noreferrer" class="gt-quick-action-btn">
-                                    <span class="flex items-center gap-2.5">
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                                        <span>Ver Página Pública</span>
-                                    </span>
-                                    <span class="text-[11px] text-[#8C95AA]">↗</span>
-                                </a>
-
-                                {whatsappUrl && (
-                                    <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" class="gt-quick-action-btn">
-                                        <span class="flex items-center gap-2.5">
-                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                                            <span>Chamar no WhatsApp</span>
-                                        </span>
-                                        <span class="text-[11px] text-[#10B981] font-extrabold">ABRIR</span>
-                                    </a>
+                            <div class={`grid gap-2 pt-2.5 ${requestDetail.status !== 'cancelled' ? 'grid-cols-2' : 'grid-cols-1'}`} style="border-top: 1px solid rgba(22, 116, 154, 0.14); flex-shrink: 0;">
+                                {requestDetail.status !== 'cancelled' && (
+                                    <form action={`/admin/solicitacoes/${requestDetail.id}/cancelar`} method="post" class="m-0">
+                                        <button type="submit" data-loading-text="Cancelando..." class="gt-btn-outline gt-btn-sm w-full justify-center">
+                                            Cancelar
+                                        </button>
+                                    </form>
                                 )}
+
+                                <form
+                                    action={`/admin/solicitacoes/${requestDetail.id}/excluir`}
+                                    method="post"
+                                    class="m-0"
+                                    onsubmit="return confirm('Deseja realmente excluir esta solicitação permanentemente?')"
+                                >
+                                    <button type="submit" data-loading-text="Excluindo..." class="gt-btn-danger-ghost gt-btn-sm w-full justify-center">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 6h18" />
+                                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                        </svg>
+                                        <span>Excluir</span>
+                                    </button>
+                                </form>
                             </div>
                         </aside>
                     </div>
