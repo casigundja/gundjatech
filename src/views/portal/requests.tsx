@@ -264,7 +264,7 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                     </a>
                 </div>
 
-                <div class="gtb-card !p-6" style="display: flex; flex-direction: column; gap: 20px; min-height: calc(100vh - 172px);">
+                <div class="gtb-card !p-5" style="display: flex; flex-direction: column; gap: 14px; height: calc(100vh - 176px); max-height: calc(100vh - 176px); overflow: hidden;">
                     <div class="gtb-card-accent-top gtb-card-accent-gold"></div>
                     <div class="flex items-start justify-between gap-4 flex-wrap pb-5 border-b border-white/10">
                         <div class="min-w-0 flex-1">
@@ -386,15 +386,15 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                     </div>
 
                     {/* Histórico em Feed de Atividades */}
-                    <div style="flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0;">
-                        <div class="flex items-center justify-between gap-2 mb-2.5">
+                    <div style="flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+                        <div class="flex items-center justify-between gap-2 mb-2" style="flex-shrink: 0;">
                             <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Histórico de Atividades</h2>
                             <span class="text-[11px] font-semibold text-[#8C95AA]">{history.length} {history.length === 1 ? 'evento' : 'eventos'}</span>
                         </div>
                         {history.length === 0 ? (
-                            <div class="gt-empty-state" style="flex: 1 1 auto;">Aguardando primeira movimentação da equipe técnica.</div>
+                            <div class="gt-empty-state" style="flex: 1 1 0%;">Aguardando primeira movimentação da equipe técnica.</div>
                         ) : (
-                            <div class="gt-activity-feed" id="gt-portal-activity-feed" style="flex: 1 1 0%; min-height: 225px; max-height: calc(100vh - 515px); overflow-y: auto; padding-right: 4px;">
+                            <div class="gt-activity-feed" id="gt-portal-activity-feed" style="flex: 1 1 0%; min-height: 0; overflow-y: auto; padding-right: 4px;">
                                 {history.map((h: any, idx: number) => {
                                     const fromSt = h.old_status || h.from_status || h.status_from || '';
                                     const toSt = h.new_status || h.to_status || h.status_to || '';
