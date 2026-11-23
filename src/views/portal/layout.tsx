@@ -43,7 +43,7 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
-                <link rel="stylesheet" href="/css/gt-admin.css?v=47" />
+                <link rel="stylesheet" href="/css/gt-admin.css?v=48" />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
@@ -66,24 +66,33 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                         try { saved = localStorage.getItem('gt_portal_theme') || 'light'; } catch (e) {}
                         applyPortalTheme(saved);
 
-                        function applyPortalSidebar(collapsed) {
+                        function applyPortalSidebar(collapsed, animate) {
+                            var isCol = !!collapsed;
+                            if (animate) {
+                                document.documentElement.classList.add('gt-sidebar-animating');
+                                clearTimeout(window.__gtPortalSidebarAnimTimer);
+                                window.__gtPortalSidebarAnimTimer = setTimeout(function () {
+                                    document.documentElement.classList.remove('gt-sidebar-animating');
+                                }, 280);
+                            }
+                            document.documentElement.setAttribute('data-sidebar-collapsed', isCol ? '1' : '0');
                             var aside = document.getElementById('gt-portal-sidebar');
                             var btn = document.getElementById('gt-portal-collapse-btn');
-                            if (aside) aside.classList.toggle('is-collapsed', !!collapsed);
-                            if (document.body) document.body.classList.toggle('gt-sidebar-is-collapsed', !!collapsed);
-                            if (btn) btn.setAttribute('title', collapsed ? 'Expandir menu' : 'Recolher menu');
+                            if (aside) aside.classList.toggle('is-collapsed', isCol);
+                            if (document.body) document.body.classList.toggle('gt-sidebar-is-collapsed', isCol);
+                            if (btn) btn.setAttribute('title', isCol ? 'Expandir menu' : 'Recolher menu');
                         }
+                        var initPortalCollapsed = false;
+                        try { initPortalCollapsed = localStorage.getItem('gt_portal_sidebar_collapsed') === '1'; } catch (e) {}
+                        document.documentElement.setAttribute('data-sidebar-collapsed', initPortalCollapsed ? '1' : '0');
+
                         window.GT_TogglePortalSidebar = function () {
-                            var aside = document.getElementById('gt-portal-sidebar');
-                            if (!aside) return;
-                            var next = !aside.classList.contains('is-collapsed');
-                            applyPortalSidebar(next);
+                            var next = document.documentElement.getAttribute('data-sidebar-collapsed') !== '1';
+                            applyPortalSidebar(next, true);
                             try { localStorage.setItem('gt_portal_sidebar_collapsed', next ? '1' : '0'); } catch (e) {}
                         };
                         document.addEventListener('DOMContentLoaded', function () {
-                            var collapsed = false;
-                            try { collapsed = localStorage.getItem('gt_portal_sidebar_collapsed') === '1'; } catch (e) {}
-                            if (collapsed) applyPortalSidebar(true);
+                            applyPortalSidebar(initPortalCollapsed, false);
                         });
                     })();
                 ` }} />

@@ -75,13 +75,18 @@ body.gt-admin-boost .gt-font-display {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    transition: width 0.25s cubic-bezier(0.16, 0.84, 0.3, 1), transform 0.25s ease, background-color 0.2s ease;
+    transition: transform 0.25s ease, background-color 0.2s ease;
     z-index: 50;
     user-select: none;
     overflow-x: hidden;
 }
 
-.gtb-sidebar.is-collapsed {
+html.gt-sidebar-animating .gtb-sidebar {
+    transition: width 0.24s cubic-bezier(0.16, 0.84, 0.3, 1), transform 0.25s ease, background-color 0.2s ease;
+}
+
+.gtb-sidebar.is-collapsed,
+html[data-sidebar-collapsed="1"] .gtb-sidebar {
     width: 76px;
 }
 
@@ -91,28 +96,39 @@ body.gt-admin-boost .gt-font-display {
 .gtb-sidebar.is-collapsed .gt-portal-workspace-card,
 .gtb-sidebar.is-collapsed .gt-portal-footer-user > div,
 .gtb-sidebar.is-collapsed .gtb-nav-item > div > span,
-.gtb-sidebar.is-collapsed .gtb-count-circle {
+.gtb-sidebar.is-collapsed .gtb-count-circle,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-brand-word,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-section-head,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-promo-card,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gt-portal-workspace-card,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gt-portal-footer-user > div,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-nav-item > div > span,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-count-circle {
     display: none !important;
 }
 
-.gtb-sidebar.is-collapsed .gtb-sidebar-brand-row {
+.gtb-sidebar.is-collapsed .gtb-sidebar-brand-row,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-sidebar-brand-row {
     justify-content: center;
     padding-left: 0;
     padding-right: 0;
 }
 
-.gtb-sidebar.is-collapsed nav {
+.gtb-sidebar.is-collapsed nav,
+html[data-sidebar-collapsed="1"] .gtb-sidebar nav {
     padding-left: 10px;
     padding-right: 10px;
 }
 
-.gtb-sidebar.is-collapsed .gtb-nav-item {
+.gtb-sidebar.is-collapsed .gtb-nav-item,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-nav-item {
     justify-content: center;
     padding: 11px 0;
     width: 100%;
 }
 
-.gtb-sidebar.is-collapsed .gtb-nav-item > div {
+.gtb-sidebar.is-collapsed .gtb-nav-item > div,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-nav-item > div {
     justify-content: center;
     gap: 0;
 }
@@ -131,7 +147,8 @@ body.gt-admin-boost .gt-font-display {
     transition: transform 0.2s ease;
 }
 
-body.gt-sidebar-is-collapsed .gtb-sidebar-collapse-btn svg {
+body.gt-sidebar-is-collapsed .gtb-sidebar-collapse-btn svg,
+html[data-sidebar-collapsed="1"] .gtb-sidebar-collapse-btn svg {
     transform: rotate(180deg);
 }
 
