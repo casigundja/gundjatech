@@ -579,6 +579,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <script dangerouslySetInnerHTML={{ __html: `
                 (function () {
                     var audioCtx = null;
+                    var audioUnlocked = false;
                     var STORAGE_KEY = 'gt_admin_dismissed_notifs_v1';
 
                     function ensureAudioUnlocked() {
@@ -586,13 +587,32 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             var Ctx = window.AudioContext || window.webkitAudioContext;
                             if (!Ctx) return null;
                             if (!audioCtx) audioCtx = new Ctx();
-                            if (audioCtx.state === 'suspended') audioCtx.resume();
+                            if (audioCtx.state === 'suspended') {
+                                audioCtx.resume().catch(function () {});
+                            }
+                            if (!audioUnlocked && audioCtx.state === 'running') {
+                                var silentBuf = audioCtx.createBuffer(1, 1, 22050);
+                                var silentSrc = audioCtx.createBufferSource();
+                                silentSrc.buffer = silentBuf;
+                                silentSrc.connect(audioCtx.destination);
+                                silentSrc.start(0);
+                                audioUnlocked = true;
+                            }
                             return audioCtx;
                         } catch (e) { return null; }
                     }
 
-                    ['pointerdown', 'keydown'].forEach(function (evName) {
-                        window.addEventListener(evName, function () { ensureAudioUnlocked(); }, { once: true, passive: true });
+                    function onUserGestureUnlock() {
+                        var ctx = ensureAudioUnlocked();
+                        if (ctx && ctx.state === 'running') {
+                            ['click', 'pointerdown', 'touchstart', 'keydown'].forEach(function (evName) {
+                                window.removeEventListener(evName, onUserGestureUnlock, true);
+                            });
+                        }
+                    }
+
+                    ['click', 'pointerdown', 'touchstart', 'keydown'].forEach(function (evName) {
+                        window.addEventListener(evName, onUserGestureUnlock, { capture: true, passive: true });
                     });
 
                     function isSoundEnabled() {
@@ -618,19 +638,19 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             var ctx = ensureAudioUnlocked();
                             if (!ctx) return;
                             var runTones = function () {
-                                var now = ctx.currentTime;
-                                [783.99, 1046.5, 1318.51].forEach(function (freq, idx) {
+                                var now = ctx.currentTime + 0.01;
+                                [880, 1174.66, 1318.51].forEach(function (freq, idx) {
                                     var osc = ctx.createOscillator();
                                     var gain = ctx.createGain();
-                                    osc.type = 'triangle';
-                                    osc.frequency.setValueAtTime(freq, now + idx * 0.095);
-                                    gain.gain.setValueAtTime(0.001, now + idx * 0.095);
-                                    gain.gain.exponentialRampToValueAtTime(0.22, now + idx * 0.095 + 0.02);
-                                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.095 + 0.28);
+                                    osc.type = 'sine';
+                                    osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+                                    gain.gain.setValueAtTime(0.001, now + idx * 0.09);
+                                    gain.gain.exponentialRampToValueAtTime(0.32, now + idx * 0.09 + 0.018);
+                                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.32);
                                     osc.connect(gain);
                                     gain.connect(ctx.destination);
-                                    osc.start(now + idx * 0.095);
-                                    osc.stop(now + idx * 0.095 + 0.30);
+                                    osc.start(now + idx * 0.09);
+                                    osc.stop(now + idx * 0.09 + 0.34);
                                 });
                             };
                             if (ctx.state === 'suspended') {
