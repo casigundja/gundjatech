@@ -287,6 +287,36 @@ portalRoutes.post('/orcamentos/:id/aprovar', async (c) => {
              VALUES (?, ?, ?, ?, ?, 'in_progress', 'high', 50, date('now'), datetime('now'), datetime('now'))`
         ).bind(client.id, projectName, projectName, projectSlug, projectDesc).run();
         createdProjectId = Number(insProj?.meta?.last_row_id || 0) || undefined;
+
+        if (createdProjectId) {
+            const defaultStages = [
+                '1. Levantamento Técnico & Arquitetura',
+                '2. Desenvolvimento & Implementação',
+                '3. Testes & Homologação com Cliente',
+                '4. Deploy & Entrega Final'
+            ];
+            for (let i = 0; i < defaultStages.length; i++) {
+                await db.prepare(
+                    `INSERT INTO project_stages (project_id, title, status, sort_order, created_at, updated_at)
+                     VALUES (?, ?, 'pending', ?, datetime('now'), datetime('now'))`
+                ).bind(createdProjectId, defaultStages[i], i + 1).run();
+            }
+        }
+
+        const quoteAmt = Number(quote.final_amount ?? quote.total_amount ?? 0);
+        if (quoteAmt > 0) {
+            const dueDate = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+            await db.prepare(
+                `INSERT INTO financial_transactions (client_id, type, category, description, amount, status, due_date, payment_method, invoice_number, created_at, updated_at)
+                 VALUES (?, 'income', 'contract', ?, ?, 'pending', ?, 'PIX', ?, datetime('now'), datetime('now'))`
+            ).bind(
+                client.id,
+                `Contrato Aprovado: ${projectName} (Orçamento ${quote.reference_code})`,
+                quoteAmt,
+                dueDate,
+                quote.reference_code || `ORC-${quoteId}`
+            ).run();
+        }
     } catch {}
 
     // Se estiver associado a uma service_request, avança automaticamente para Em Execução (in_progress) e sincroniza ambas as timelines
@@ -528,6 +558,36 @@ portalRoutes.post('/solicitacoes/:id/aprovar', async (c) => {
              VALUES (?, ?, ?, ?, ?, 'in_progress', 'high', 50, date('now'), datetime('now'), datetime('now'))`
         ).bind(client.id, projectName, projectName, projectSlug, projectDesc).run();
         createdProjectId = Number(insProj?.meta?.last_row_id || 0) || undefined;
+
+        if (createdProjectId) {
+            const defaultStages = [
+                '1. Levantamento Técnico & Arquitetura',
+                '2. Desenvolvimento & Implementação',
+                '3. Testes & Homologação com Cliente',
+                '4. Deploy & Entrega Final'
+            ];
+            for (let i = 0; i < defaultStages.length; i++) {
+                await db.prepare(
+                    `INSERT INTO project_stages (project_id, title, status, sort_order, created_at, updated_at)
+                     VALUES (?, ?, 'pending', ?, datetime('now'), datetime('now'))`
+                ).bind(createdProjectId, defaultStages[i], i + 1).run();
+            }
+        }
+
+        const quoteAmt = Number(linkedQuote?.final_amount ?? linkedQuote?.total_amount ?? request.estimated_budget ?? 0);
+        if (quoteAmt > 0) {
+            const dueDate = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+            await db.prepare(
+                `INSERT INTO financial_transactions (client_id, type, category, description, amount, status, due_date, payment_method, invoice_number, created_at, updated_at)
+                 VALUES (?, 'income', 'contract', ?, ?, 'pending', ?, 'PIX', ?, datetime('now'), datetime('now'))`
+            ).bind(
+                client.id,
+                `Contrato Aprovado: ${projectName}${linkedQuote?.reference_code ? ` (Orçamento ${linkedQuote.reference_code})` : ''}`,
+                quoteAmt,
+                dueDate,
+                linkedQuote?.reference_code || request.protocol || `REQ-${reqId}`
+            ).run();
+        }
     } catch {}
 
     await db.prepare(

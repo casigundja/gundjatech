@@ -754,6 +754,78 @@ async function ensureClientForRequest(db: any, req: any): Promise<number | null>
     return clientId;
 }
 
+const DEFAULT_PROJECT_STAGES = [
+    '1. Levantamento Técnico & Arquitetura',
+    '2. Desenvolvimento & Implementação',
+    '3. Testes & Homologação com Cliente',
+    '4. Deploy & Entrega Final'
+];
+
+async function seedDefaultProjectStages(db: any, projectId?: number | null): Promise<void> {
+    if (!projectId) return;
+    try {
+        const existingStages = await db.prepare(
+            `SELECT id FROM project_stages WHERE project_id = ? LIMIT 1`
+        ).bind(projectId).all();
+        if ((existingStages?.results || []).length > 0) return;
+
+        for (let i = 0; i < DEFAULT_PROJECT_STAGES.length; i++) {
+            await db.prepare(
+                `INSERT INTO project_stages (project_id, title, status, sort_order, created_at, updated_at)
+                 VALUES (?, ?, 'pending', ?, datetime('now'), datetime('now'))`
+            ).bind(projectId, DEFAULT_PROJECT_STAGES[i], i + 1).run();
+        }
+    } catch { }
+}
+
+async function ensurePendingReceivableOnApproval(
+    db: any,
+    options: {
+        clientId?: number | null;
+        projectTitle: string;
+        quotation?: any;
+        request?: any;
+        projectId?: number;
+    }
+): Promise<void> {
+    const clientId = options.clientId ? Number(options.clientId) : null;
+    if (!clientId) return;
+
+    const amount = Number(
+        options.quotation?.final_amount ??
+        options.quotation?.total_amount ??
+        options.request?.estimated_budget ??
+        0
+    );
+    if (Number.isNaN(amount) || amount <= 0) return;
+
+    const invoiceRef = String(
+        options.quotation?.reference_code ||
+        options.request?.protocol ||
+        (options.projectId ? `PROJ-${options.projectId}` : `ORC-${clientId}`)
+    ).trim();
+
+    const description = options.quotation?.reference_code
+        ? `Contrato Aprovado: ${options.projectTitle} (Orçamento ${options.quotation.reference_code})`
+        : `Contrato Aprovado: ${options.projectTitle}`;
+
+    try {
+        const existingTx = (await db.prepare(
+            `SELECT id FROM financial_transactions
+             WHERE client_id = ? AND (invoice_number = ? OR lower(description) = lower(?))
+             ORDER BY id DESC LIMIT 1`
+        ).bind(clientId, invoiceRef, description).first()) as { id: number } | null;
+
+        if (existingTx?.id) return;
+
+        const dueDate = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+        await db.prepare(
+            `INSERT INTO financial_transactions (client_id, type, category, description, amount, status, due_date, payment_method, invoice_number, created_at, updated_at)
+             VALUES (?, 'income', 'contract', ?, ?, 'pending', ?, ?, ?, datetime('now'), datetime('now'))`
+        ).bind(clientId, description, amount, dueDate, 'PIX', invoiceRef).run();
+    } catch { }
+}
+
 async function autoStartProjectFromApprovedRequest(
     db: any,
     env: any,
@@ -837,6 +909,16 @@ async function autoStartProjectFromApprovedRequest(
             newProjectId = Number(insProj.meta?.last_row_id || 0) || undefined;
         } catch { }
     }
+
+    // Popula automaticamente as 4 etapas obrigatórias do cronograma e lança a fatura A RECEBER
+    await seedDefaultProjectStages(db, newProjectId);
+    await ensurePendingReceivableOnApproval(db, {
+        clientId,
+        projectTitle: projectName,
+        quotation,
+        request: req,
+        projectId: newProjectId
+    });
 
     if (req?.id) {
         const prevStatus = String(req.status || 'quotation_sent');
@@ -1113,6 +1195,14 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
         // Quando o orçamento é aprovado (ou a solicitação é marcada como Aprovada com orçamento emitido),
         // aprova o orçamento e já inicia o Projeto automaticamente movendo para Em Execução!
         if (newStatus === 'approved' || (newStatus === 'in_progress' && linkedQuotation?.status === 'approved' && current.status !== 'in_progress')) {
+            const quoteAmount = Number(linkedQuotation?.final_amount ?? linkedQuotation?.total_amount ?? current.estimated_budget ?? 0);
+            if (quoteAmount <= 0) {
+                const targetUrl = linkedQuotation?.id ? `/admin/orcamentos/${linkedQuotation.id}` : `/admin/solicitacoes/${id}`;
+                return c.redirect(
+                    `${targetUrl}?error=${encodeURIComponent('Trava Comercial: Defina um valor maior que R$ 0,00 no orçamento antes de aprovar e iniciar o projeto.')}`
+                );
+            }
+
             if (linkedQuotation && linkedQuotation.status !== 'approved') {
                 try {
                     await db.prepare(
@@ -1129,7 +1219,44 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
             });
 
             return c.redirect(
-                `/admin/solicitacoes/${id}?success=${encodeURIComponent('Orçamento aprovado! O Projeto foi criado automaticamente e a solicitação entrou em Execução.')}`
+                `/admin/solicitacoes/${id}?success=${encodeURIComponent('Orçamento aprovado! O Projeto foi criado automaticamente com as 4 etapas padrão e a solicitação entrou em Execução.')}`
+            );
+        }
+
+        // Trava de Conclusão na Solicitação: exige que todas as etapas do projeto vinculado estejam concluídas
+        if (newStatus === 'completed') {
+            const projTitleCheck = String(current.service_title || current.title || '').trim();
+            if (current.client_id && projTitleCheck) {
+                try {
+                    const projRow = (await db.prepare(
+                        `SELECT id FROM projects
+                         WHERE client_id = ? AND (lower(title) = lower(?) OR lower(name) = lower(?))
+                         ORDER BY id DESC LIMIT 1`
+                    ).bind(current.client_id, projTitleCheck, projTitleCheck).first()) as { id: number } | null;
+                    if (projRow?.id) {
+                        const stRes = await db.prepare(
+                            `SELECT status FROM project_stages WHERE project_id = ?`
+                        ).bind(projRow.id).all();
+                        const allSt = (stRes?.results || []) as Array<{ status: string }>;
+                        const pendingSt = allSt.filter((s) => s.status !== 'completed');
+                        if (allSt.length > 0 && pendingSt.length > 0) {
+                            return c.redirect(
+                                `/admin/solicitacoes/${id}?error=${encodeURIComponent(`Trava de Qualidade: O projeto possui ${pendingSt.length} etapa(s) pendente(s) no cronograma (${allSt.length - pendingSt.length}/${allSt.length} concluídas). Conclua todas as etapas em Projetos antes de encerrar.`)}`
+                            );
+                        }
+                    }
+                } catch { }
+            }
+        }
+    }
+
+    // Trava Comercial: impede marcar como "Orçamento Enviado" com valor R$ 0,00
+    if (newStatus === 'quotation_sent') {
+        const quoteAmount = Number(linkedQuotation?.final_amount ?? linkedQuotation?.total_amount ?? current.estimated_budget ?? 0);
+        if (quoteAmount <= 0) {
+            const targetUrl = linkedQuotation?.id ? `/admin/orcamentos/${linkedQuotation.id}` : `/admin/solicitacoes/${id}`;
+            return c.redirect(
+                `${targetUrl}?error=${encodeURIComponent('Trava Comercial: Elabore o orçamento e defina um valor maior que R$ 0,00 antes de enviá-lo ao cliente.')}`
             );
         }
     }
@@ -1860,11 +1987,32 @@ adminRoutes.get('/atendimento', async (c) => {
         ).bind(activeConversation.id).all()).results || [];
     }
 
+    let linkedRequest: any = null;
+    if (activeConversation) {
+        try {
+            if (activeConversation.client_id) {
+                linkedRequest = await db.prepare(
+                    `SELECT id, protocol, status, service_title FROM service_requests
+                     WHERE client_id = ? AND status != 'cancelled'
+                     ORDER BY id DESC LIMIT 1`
+                ).bind(activeConversation.client_id).first();
+            }
+            if (!linkedRequest && activeConversation.visitor_email && !String(activeConversation.visitor_email).endsWith('.local')) {
+                linkedRequest = await db.prepare(
+                    `SELECT id, protocol, status, service_title FROM service_requests
+                     WHERE lower(email) = lower(?) AND status != 'cancelled'
+                     ORDER BY id DESC LIMIT 1`
+                ).bind(activeConversation.visitor_email).first();
+            }
+        } catch { }
+    }
+
     return c.html(
         <AdminChatView
             currentUser={user}
             conversations={conversations}
             activeConversation={activeConversation}
+            linkedRequest={linkedRequest}
             messages={messages}
             statusFilter={statusFilter}
             counts={counts}
@@ -1872,6 +2020,102 @@ adminRoutes.get('/atendimento', async (c) => {
             errorMessage={errorMessage}
         />
     );
+});
+
+adminRoutes.post('/atendimento/:id/gerar-solicitacao', async (c) => {
+    const user = c.get('user')!;
+    const db = c.env.DB;
+    const convId = c.req.param('id');
+
+    const conv = await db.prepare(`SELECT * FROM conversations WHERE id = ?`).bind(convId).first<any>();
+    if (!conv) {
+        return c.redirect('/admin/atendimento?error=Conversa não encontrada.');
+    }
+
+    let clientId = conv.client_id ? Number(conv.client_id) : null;
+    const visitorName = String(conv.visitor_name || conv.subject || 'Cliente').trim();
+    const visitorEmail = String(conv.visitor_email || `lead-${conv.id}@gundjatech.local`).trim().toLowerCase();
+    const visitorPhone = String(conv.visitor_phone || '').trim() || null;
+
+    if (!clientId) {
+        try {
+            const existingClient = (await db.prepare(`SELECT id FROM clients WHERE lower(email) = lower(?)`).bind(visitorEmail).first()) as { id: number } | null;
+            if (existingClient?.id) {
+                clientId = Number(existingClient.id);
+            } else {
+                const insClient = await db.prepare(
+                    `INSERT INTO clients (name, company, email, phone, status, is_active, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, 'lead', 1, datetime('now'), datetime('now'))`
+                ).bind(visitorName, conv.visitor_company || null, visitorEmail, visitorPhone).run();
+                clientId = Number(insClient.meta?.last_row_id || 0) || null;
+            }
+            if (clientId) {
+                await db.prepare(`UPDATE conversations SET client_id = ? WHERE id = ?`).bind(clientId, convId).run();
+            }
+        } catch { }
+    }
+
+    if (clientId) {
+        try {
+            const existingReq = (await db.prepare(
+                `SELECT id FROM service_requests WHERE client_id = ? AND status != 'cancelled' ORDER BY id DESC LIMIT 1`
+            ).bind(clientId).first()) as { id: number } | null;
+            if (existingReq?.id) {
+                return c.redirect(`/admin/solicitacoes/${existingReq.id}?success=${encodeURIComponent('Solicitação vinculada a este atendimento carregada.')}`);
+            }
+        } catch { }
+    }
+
+    let summaryText = String(conv.visitor_objective || conv.subject || 'Atendimento comercial via Inbox').trim();
+    try {
+        const msgsRes = await db.prepare(
+            `SELECT sender_type, message FROM conversation_messages WHERE conversation_id = ? ORDER BY id ASC LIMIT 8`
+        ).bind(convId).all();
+        const clientMsgs = (msgsRes.results || [])
+            .filter((m: any) => m.sender_type === 'client' || m.sender_type === 'visitor')
+            .map((m: any) => String(m.message || '').trim())
+            .filter(Boolean);
+        if (clientMsgs.length > 0) {
+            summaryText = clientMsgs.join('\n');
+        }
+    } catch { }
+
+    const prefix = conv.channel === 'whatsapp' ? 'WA' : 'CHAT';
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const protocol = `${prefix}-${dateStr}-${rand}`;
+    const reqTitle = String(conv.visitor_objective || conv.subject || `Demanda ${conv.channel === 'whatsapp' ? 'WhatsApp' : 'Chat'} • ${visitorName}`).trim();
+
+    const insReq = await db.prepare(
+        `INSERT INTO service_requests (protocol, tracking_code, client_id, name, company, email, phone, title, service_title, description, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'analyzing', datetime('now'), datetime('now'))`
+    ).bind(
+        protocol,
+        protocol,
+        clientId,
+        visitorName,
+        conv.visitor_company || null,
+        visitorEmail,
+        visitorPhone,
+        reqTitle,
+        reqTitle,
+        summaryText
+    ).run();
+    const newReqId = Number(insReq.meta?.last_row_id || 0);
+
+    if (newReqId > 0) {
+        await recordRequestTimeline(db, {
+            serviceRequestId: newReqId,
+            userId: user.id,
+            action: 'created',
+            fromStatus: null,
+            toStatus: 'analyzing',
+            notes: `Solicitação formalizada a partir do atendimento #${convId} (${conv.channel === 'whatsapp' ? 'WhatsApp Oficial' : 'Chat do Site'})`
+        });
+        return c.redirect(`/admin/solicitacoes/${newReqId}?success=${encodeURIComponent(`Solicitação ${protocol} gerada! Clique em "Elaborar Orçamento" para enviar a proposta.`)}`);
+    }
+
+    return c.redirect('/admin/solicitacoes?success=Solicitação criada a partir do atendimento.');
 });
 
 adminRoutes.get('/atendimento/lista', async (c) => {
@@ -2165,6 +2409,22 @@ adminRoutes.post('/projetos/:id', async (c) => {
             ? (STATUS_DEFAULT_PROGRESS[status] ?? prevProgress)
             : Math.min(100, Math.max(0, parsedProgress));
 
+    // Trava de Qualidade: impede marcar projeto como Concluído se houver etapas pendentes no cronograma
+    if (status === 'completed' && prevStatus !== 'completed') {
+        try {
+            const stRes = await db.prepare(
+                `SELECT status FROM project_stages WHERE project_id = ?`
+            ).bind(id).all();
+            const allStages = (stRes?.results || []) as Array<{ status: string }>;
+            const pendingStages = allStages.filter((s) => s.status !== 'completed');
+            if (allStages.length > 0 && pendingStages.length > 0) {
+                return c.redirect(
+                    `/admin/projetos/${id}?error=${encodeURIComponent(`Trava de Qualidade: Conclua todas as etapas do cronograma (${allStages.length - pendingStages.length}/${allStages.length} concluídas) antes de finalizar o projeto.`)}`
+                );
+            }
+        } catch { }
+    }
+
     await db.prepare(
         `UPDATE projects 
          SET status = ?, progress_percentage = ?, start_date = ?, expected_end_date = ?, updated_at = datetime('now')
@@ -2284,7 +2544,41 @@ adminRoutes.post('/projetos/:id/etapas/:stageId/toggle', async (c) => {
          WHERE id = ?`
     ).bind(nextStatus, nextStatus, stageId).run();
 
-    return c.redirect(`/admin/projetos/${id}?success=Status da etapa atualizado`);
+    // Recalcula automaticamente o progresso e a fase do projeto com base nas etapas concluídas
+    try {
+        const stagesRes = await db.prepare(
+            `SELECT status FROM project_stages WHERE project_id = ?`
+        ).bind(id).all();
+        const allStages = (stagesRes?.results || []) as Array<{ status: string }>;
+        if (allStages.length > 0) {
+            const doneCount = allStages.filter((s) => s.status === 'completed').length;
+            const totalCount = allStages.length;
+            let autoStatus = 'in_progress';
+            let autoProgress = 50;
+
+            if (doneCount === 0) {
+                autoStatus = 'planning';
+                autoProgress = 15;
+            } else if (doneCount === totalCount) {
+                autoStatus = 'reviewing';
+                autoProgress = 95;
+            } else {
+                autoProgress = Math.max(25, Math.min(85, Math.round((doneCount / totalCount) * 80) + 10));
+                autoStatus = doneCount >= totalCount - 1 ? 'reviewing' : 'in_progress';
+            }
+
+            const projRow = (await db.prepare(`SELECT status, start_date, expected_end_date FROM projects WHERE id = ?`).bind(id).first()) as any;
+            if (!projRow || projRow.status !== 'completed') {
+                await db.prepare(
+                    `UPDATE projects
+                     SET status = ?, progress_percentage = ?, start_date = ?, expected_end_date = ?, updated_at = datetime('now')
+                     WHERE id = ?`
+                ).bind(autoStatus, autoProgress, projRow?.start_date || null, projRow?.expected_end_date || null, id).run();
+            }
+        }
+    } catch { }
+
+    return c.redirect(`/admin/projetos/${id}?success=Status da etapa e progresso do projeto atualizados`);
 });
 
 adminRoutes.post('/projetos/:id/anexos', async (c) => {
@@ -2934,6 +3228,12 @@ adminRoutes.post('/orcamentos/:id', async (c) => {
         return c.redirect(`/admin/orcamentos/${id}?error=O título da proposta é obrigatório.`);
     }
 
+    if ((status === 'sent' || status === 'approved') && finalAmount <= 0) {
+        return c.redirect(
+            `/admin/orcamentos/${id}?error=${encodeURIComponent('Trava Comercial: Informe um valor líquido maior que R$ 0,00 antes de enviar ou aprovar o orçamento.')}`
+        );
+    }
+
     const prevQuote = await db.prepare(`SELECT * FROM quotations WHERE id = ?`).bind(id).first<any>();
 
     await db.prepare(
@@ -3016,16 +3316,25 @@ adminRoutes.post('/orcamentos/:id/status', async (c) => {
 
     const quotation = await db.prepare('SELECT * FROM quotations WHERE id = ?').bind(id).first<any>();
 
-    await db.prepare(
-        `UPDATE quotations SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
-    ).bind(status, id).run();
-
     const referer = c.req.header('referer') || '';
     const backUrl = referer.includes(`/admin/solicitacoes/`) && quotation?.service_request_id
         ? `/admin/solicitacoes/${quotation.service_request_id}`
         : referer.includes(`/admin/orcamentos/${id}`)
         ? `/admin/orcamentos/${id}`
         : '/admin/orcamentos';
+
+    if (status === 'sent' || status === 'approved') {
+        const quoteFinalAmt = Number(quotation?.final_amount ?? quotation?.total_amount ?? 0);
+        if (quoteFinalAmt <= 0) {
+            return c.redirect(
+                `/admin/orcamentos/${id}?error=${encodeURIComponent('Trava Comercial: Defina um valor maior que R$ 0,00 na proposta antes de enviá-la ou aprová-la.')}`
+            );
+        }
+    }
+
+    await db.prepare(
+        `UPDATE quotations SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+    ).bind(status, id).run();
 
     // Quando o orçamento é aprovado: cria o Projeto automaticamente e avança a Solicitação para Em Execução!
     if (status === 'approved') {

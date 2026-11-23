@@ -251,6 +251,13 @@ function createAdminMockEnv() {
                                 const st = data.project_stages.find(x => x.id === Number(params[0]));
                                 return (st || null) as unknown as T;
                             }
+                            if (q.includes('from financial_transactions') && q.includes('where client_id =')) {
+                                const tx = data.financial_transactions.find(
+                                    x => Number(x.client_id) === Number(params[0]) &&
+                                         (x.invoice_number === params[1] || String(x.description || '').toLowerCase() === String(params[2] || '').toLowerCase())
+                                );
+                                return (tx || null) as unknown as T;
+                            }
                             if (q.includes('from conversations where id =')) {
                                 const c = data.conversations.find(x => x.id === Number(params[0]));
                                 return (c || null) as unknown as T;
@@ -445,8 +452,9 @@ function createAdminMockEnv() {
                                 });
                                 return { success: true, meta: { last_row_id: tId } };
                             }
-                            if (q.includes("update financial_transactions set status = 'paid'")) {
-                                const t = data.financial_transactions.find(x => x.id === Number(params[0]));
+                            if (q.includes('update financial_transactions') && q.includes("status = 'paid'")) {
+                                const targetId = Number(params[params.length - 1]);
+                                const t = data.financial_transactions.find(x => x.id === targetId);
                                 if (t) t.status = 'paid';
                                 return { success: true };
                             }
@@ -789,7 +797,20 @@ describe('Fase 4 • Módulo 5 & 6: Painel Administrativo Core & Avançado (/adm
         expect(prematureConvertRes.headers.get('Location')).toContain('error=');
         expect(data.projects.length).toBe(1);
 
-        // Elabora / envia o orçamento da solicitação
+        // Tentativa de enviar orçamento com valor R$ 0,00 deve ser bloqueada pela Trava Comercial
+        const zeroQuoteRes = await app.request('/admin/solicitacoes/1/status', {
+            method: 'POST',
+            headers: {
+                'Cookie': adminCookie,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'status=quotation_sent&notes=Proposta+sem+valor'
+        }, env);
+        expect(zeroQuoteRes.status).toBe(302);
+        expect(zeroQuoteRes.headers.get('Location')).toContain('error=');
+
+        // Define valor estimado (> R$ 0,00) e envia o orçamento da solicitação
+        (data.service_requests[0] as any).estimated_budget = 15000;
         const quoteSentRes = await app.request('/admin/solicitacoes/1/status', {
             method: 'POST',
             headers: {
@@ -801,7 +822,8 @@ describe('Fase 4 • Módulo 5 & 6: Painel Administrativo Core & Avançado (/adm
         expect(quoteSentRes.status).toBe(302);
         expect(data.service_requests[0].status).toBe('quotation_sent');
 
-        // Aprovação do orçamento cria automaticamente o Projeto e move a solicitação para Em Execução (in_progress)
+        // Aprovação do orçamento cria automaticamente o Projeto com as 4 etapas padrão e lança a fatura A RECEBER (pending)
+        const initialTxCount = data.financial_transactions.length;
         const approveRes = await app.request('/admin/solicitacoes/1/status', {
             method: 'POST',
             headers: {
@@ -814,9 +836,25 @@ describe('Fase 4 • Módulo 5 & 6: Painel Administrativo Core & Avançado (/adm
         expect(approveRes.headers.get('Location')).toContain('success=');
         expect(data.service_requests[0].status).toBe('in_progress');
         expect(data.projects.length).toBe(2);
+        const createdProjStages = data.project_stages.filter(s => s.project_id === 2);
+        expect(createdProjStages.length).toBe(4);
+        expect(data.financial_transactions.length).toBe(initialTxCount + 1);
+        expect(data.financial_transactions[data.financial_transactions.length - 1].status).toBe('pending');
 
-        // Conclusão do projeto lança automaticamente a receita liquidada em Receita & Caixa
-        const initialTxCount = data.financial_transactions.length;
+        // Tentativa de concluir o Projeto #2 com etapas pendentes deve ser bloqueada pela Trava de Qualidade
+        const prematureProjComplete = await app.request('/admin/projetos/2', {
+            method: 'POST',
+            headers: {
+                'Cookie': adminCookie,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'status=completed&progress_percentage=100'
+        }, env);
+        expect(prematureProjComplete.status).toBe(302);
+        expect(prematureProjComplete.headers.get('Location')).toContain('error=');
+
+        // Conclui todas as 4 etapas do Projeto #2 e finaliza a entrega
+        createdProjStages.forEach(s => { s.status = 'completed'; });
         const completeRes = await app.request('/admin/solicitacoes/1/status', {
             method: 'POST',
             headers: {
@@ -827,7 +865,6 @@ describe('Fase 4 • Módulo 5 & 6: Painel Administrativo Core & Avançado (/adm
         }, env);
         expect(completeRes.status).toBe(302);
         expect(data.service_requests[0].status).toBe('completed');
-        expect(data.financial_transactions.length).toBe(initialTxCount + 1);
         const autoRevenueTx = data.financial_transactions[data.financial_transactions.length - 1];
         expect(autoRevenueTx.type).toBe('income');
         expect(autoRevenueTx.status).toBe('paid');

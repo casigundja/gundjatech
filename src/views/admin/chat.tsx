@@ -5,6 +5,7 @@ interface AdminChatProps {
     currentUser: any;
     conversations: any[];
     activeConversation?: any;
+    linkedRequest?: any;
     messages?: any[];
     statusFilter?: string;
     counts?: {
@@ -36,6 +37,7 @@ export const AdminChatView: FC<AdminChatProps> = ({
     currentUser,
     conversations = [],
     activeConversation,
+    linkedRequest = null,
     messages = [],
     statusFilter = 'open',
     counts = { all: 0, open: 0, handoff: 0, closed: 0 },
@@ -272,6 +274,27 @@ export const AdminChatView: FC<AdminChatProps> = ({
                                 </div>
 
                                 <div class="flex items-center gap-2 flex-wrap">
+                                    {linkedRequest?.id ? (
+                                        <a
+                                            href={`/admin/solicitacoes/${linkedRequest.id}`}
+                                            class="gt-btn-primary gt-btn-xs"
+                                            title="Abrir Solicitação e Orçamento vinculados a este atendimento"
+                                        >
+                                            <span>Solicitação {linkedRequest.protocol} →</span>
+                                        </a>
+                                    ) : (
+                                        <form action={`/admin/atendimento/${activeConversation.id}/gerar-solicitacao`} method="post" class="m-0">
+                                            <button
+                                                type="submit"
+                                                data-loading-text="Gerando..."
+                                                class="gt-btn-primary gt-btn-xs"
+                                                title="Formalizar este atendimento em Solicitação e Orçamento"
+                                            >
+                                                <span>+ Gerar Solicitação / Orçamento</span>
+                                            </button>
+                                        </form>
+                                    )}
+
                                     {!isActiveClosed && (
                                         <form action={`/admin/atendimento/${activeConversation.id}/toggle-ai`} method="post" class="m-0">
                                             <button

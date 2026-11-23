@@ -158,7 +158,13 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                                     <option value="planning" selected={projectDetail.status === 'planning'}>Planejamento</option>
                                     <option value="in_progress" selected={projectDetail.status === 'in_progress'}>Em Desenvolvimento</option>
                                     <option value="reviewing" selected={projectDetail.status === 'reviewing'}>Em Homologação</option>
-                                    <option value="completed" selected={projectDetail.status === 'completed'}>Entregue / Concluído</option>
+                                    <option
+                                        value="completed"
+                                        selected={projectDetail.status === 'completed'}
+                                        disabled={stages.length > 0 && completedStages < stages.length && projectDetail.status !== 'completed'}
+                                    >
+                                        Entregue / Concluído{stages.length > 0 && completedStages < stages.length && projectDetail.status !== 'completed' ? ` (Requer ${stages.length}/${stages.length} etapas)` : ''}
+                                    </option>
                                     <option value="canceled" selected={projectDetail.status === 'canceled'}>Cancelado</option>
                                 </select>
                             </div>
