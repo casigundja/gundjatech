@@ -629,11 +629,12 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
             {/* Modal Novo Orçamento */}
             <div
                 id="modal-novo-orcamento"
-                style="display: none; position: fixed; inset: 0; z-index: 100; align-items: center; justify-content: center; padding: 16px;"
-                class="bg-black/80 backdrop-blur-xs"
+                onclick="if(event.target===this)this.style.display='none'"
+                style="display: none; position: fixed; inset: 0; margin: 0; z-index: 200; align-items: center; justify-content: center; padding: 16px;"
+                class="gt-modal-overlay bg-black/80 backdrop-blur-xs"
             >
-                <div class="gtb-card gt-modal-card max-w-xl p-6 sm:p-8">
-                    <div class="flex items-center justify-between gap-3 mb-5">
+                <div class="gtb-card gt-modal-card max-w-xl p-5 sm:p-6">
+                    <div class="flex items-center justify-between gap-3 mb-4">
                         <h2 class="gt-font-display text-lg font-extrabold text-white">Criar Novo Orçamento / Proposta</h2>
                         <button
                             type="button"
@@ -644,7 +645,7 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                         </button>
                     </div>
 
-                    <form action="/admin/orcamentos" method="post" class="space-y-4">
+                    <form action="/admin/orcamentos" method="post" class="space-y-3.5">
                         <div>
                             <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Cliente *</label>
                             <select name="client_id" required class="w-full rounded-xl px-3.5 py-2.5 text-[13px]">

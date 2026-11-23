@@ -251,16 +251,35 @@ html[data-sidebar-collapsed="1"] .gtb-sidebar-collapse-btn svg {
     flex-shrink: 0;
 }
 
+.gtb-sidebar-brand-row {
+    height: 72px !important;
+    border-bottom: 1px solid var(--gtb-border) !important;
+    margin-bottom: 0 !important;
+    box-sizing: border-box;
+}
+
 .gtb-section-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 14px 6px;
+    padding: 14px 16px 6px;
     font-size: 9.5px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.09em;
     color: var(--gtb-subtle);
+}
+
+.gtb-section-head.gtb-section-head-divided {
+    margin-top: 10px;
+    padding: 12px 12px 6px;
+    border-top: 1px solid var(--gtb-border);
+}
+
+.gtb-sidebar-nav-divider {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--gtb-border);
 }
 
 /* Barra de rolagem invisível / minimalista na sidebar e listas internas */
@@ -4336,6 +4355,30 @@ html[data-admin-theme="light"] .gt-chat-channel-card {
 .btn-primary .gt-chat-tab-count {
     background: rgba(6, 59, 92, 0.16);
     color: #063B5C;
+}
+
+/* ==========================================================================
+   MODAL OVERLAY & VIEWPORT SAFETY (Impede space-y-5 do <main> de deslocar modais)
+   ========================================================================== */
+.gt-admin-main > .gt-modal-overlay,
+.gt-admin-main > [id^="modal-"],
+.gt-admin-main > [id$="-modal"],
+.gt-modal-overlay,
+[id^="modal-"],
+[id$="-modal"] {
+    margin: 0 !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    z-index: 200 !important;
+}
+
+.gt-modal-card {
+    width: 100%;
+    max-height: calc(100dvh - 32px) !important;
+    overflow-y: auto !important;
+    margin: auto !important;
 }
 
 
