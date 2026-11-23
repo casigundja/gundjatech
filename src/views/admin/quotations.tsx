@@ -42,6 +42,12 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
         const totalAmt = Number(quotationDetail.total_amount || 0);
         const discountAmt = Number(quotationDetail.discount_amount || 0);
         const finalAmt = Number(quotationDetail.final_amount || Math.max(0, totalAmt - discountAmt));
+        const quoteSteps = [
+            { key: 'draft', label: 'Rascunho' },
+            { key: 'sent', label: 'Enviado ao Cliente' },
+            { key: 'approved', label: 'Aprovado' },
+        ];
+        const currQuoteIdx = quoteSteps.findIndex((s) => s.key === quotationDetail.status);
 
         return (
             <AdminLayout
@@ -114,7 +120,7 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                         <div class="flex items-start justify-between gap-3 flex-wrap pb-4 border-b border-white/10">
                             <div class="min-w-0">
                                 <div class="flex items-center gap-2 flex-wrap mb-1.5">
-                                    <span class="font-mono text-xs font-extrabold text-[#F2C230]">{quotationDetail.reference_code}</span>
+                                    <span class="gt-req-pill-neutral font-mono">{quotationDetail.reference_code}</span>
                                     <span class={`gt-badge ${meta.badgeClass}`}>{meta.label}</span>
                                 </div>
                                 <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white">{quotationDetail.title}</h1>
@@ -128,6 +134,28 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                                 <div class="gt-font-display text-2xl font-extrabold text-[#F2C230]">{formatBRL(finalAmt)}</div>
                             </div>
                         </div>
+
+                        {quotationDetail.status !== 'rejected' && quotationDetail.status !== 'expired' && (
+                            <div class="gt-req-stepper gt-req-stepper--3 gt-no-print" role="list" aria-label="Etapas do orçamento">
+                                {quoteSteps.map((step, idx) => {
+                                    const isDoneAll = quotationDetail.status === 'approved';
+                                    const isDone = isDoneAll || (currQuoteIdx >= 0 && idx < currQuoteIdx);
+                                    const isActive = !isDoneAll && idx === currQuoteIdx;
+                                    return (
+                                        <div class={`gt-req-step ${isDone ? 'is-done' : ''} ${isActive ? 'is-active' : ''}`} role="listitem">
+                                            <span class="gt-req-step-dot" aria-hidden="true">
+                                                {isDone ? (
+                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                ) : (
+                                                    idx + 1
+                                                )}
+                                            </span>
+                                            <span class="gt-req-step-label">{step.label}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
 
                         <form action={`/admin/orcamentos/${quotationDetail.id}`} method="post" data-dirty-guard="1" class="space-y-4">
                             <div>

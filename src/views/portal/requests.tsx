@@ -25,6 +25,53 @@ const reqStatusLabel: Record<string, string> = {
     cancelled: 'Cancelado'
 };
 
+const PORTAL_PIPELINE_STEPS = [
+    { key: 'new', label: 'Recebido' },
+    { key: 'analyzing', label: 'Análise' },
+    { key: 'quotation_sent', label: 'Orçamento' },
+    { key: 'approved', label: 'Aprovado' },
+    { key: 'in_progress', label: 'Execução' },
+    { key: 'completed', label: 'Concluído' },
+];
+
+function formatPortalDateBrt(raw?: string | null): string {
+    if (!raw) return '—';
+    const normalized = raw.includes('T') ? raw : `${raw.replace(' ', 'T')}Z`;
+    const dt = new Date(normalized);
+    if (Number.isNaN(dt.getTime())) return raw;
+    try {
+        const parts = new Intl.DateTimeFormat('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+        }).formatToParts(dt);
+        const get = (t: string) => parts.find((p) => p.type === t)?.value || '';
+        return `${get('day')}/${get('month')}/${get('year')} às ${get('hour')}:${get('minute')}`;
+    } catch {
+        return raw;
+    }
+}
+
+function parsePortalDescription(raw?: string | null): Array<{ key: string; value: string; isUrl: boolean }> | null {
+    if (!raw || !raw.includes('|') || !raw.includes(':')) return null;
+    const segments = raw.split('|').map((s) => s.trim()).filter(Boolean);
+    if (segments.length < 2) return null;
+    const parsed: Array<{ key: string; value: string; isUrl: boolean }> = [];
+    for (const seg of segments) {
+        const idx = seg.indexOf(':');
+        if (idx <= 0 || idx > 28) return null;
+        const key = seg.slice(0, idx).trim();
+        const value = seg.slice(idx + 1).trim();
+        if (!key || !value) continue;
+        parsed.push({ key, value, isUrl: /^https?:\/\//i.test(value) });
+    }
+    return parsed.length >= 2 ? parsed : null;
+}
+
 export const PortalRequestsView: FC<PortalRequestsProps> = ({
     currentUser,
     clientName,
@@ -195,6 +242,10 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
     }
 
     if (requestDetail) {
+        const normalizedSt = requestDetail.status === 'in_review' ? 'analyzing' : requestDetail.status;
+        const currentStepIndex = PORTAL_PIPELINE_STEPS.findIndex((s) => s.key === normalizedSt);
+        const structuredDesc = parsePortalDescription(requestDetail.description);
+
         return (
             <PortalLayout
                 title={`Solicitação ${requestDetail.protocol} • Portal do Cliente`}
@@ -211,16 +262,19 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                     </a>
                 </div>
 
-                <div class="gtb-card !p-6">
+                <div class="gtb-card !p-6 space-y-6">
                     <div class="gtb-card-accent-top gtb-card-accent-gold"></div>
-                    <div class="flex items-start justify-between gap-4 flex-wrap mb-4">
-                        <div>
-                            <span class={`gt-badge ${requestDetail.status === 'approved' || requestDetail.status === 'completed' ? 'gt-badge-success' : 'gt-badge-warning'} mb-2`}>
-                                {reqStatusLabel[requestDetail.status] || requestDetail.status}
-                            </span>
+                    <div class="flex items-start justify-between gap-4 flex-wrap pb-5 border-b border-white/10">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-2 flex-wrap mb-2">
+                                <span class="gt-req-pill-neutral font-mono">{requestDetail.protocol}</span>
+                                <span class={`gt-badge ${requestDetail.status === 'approved' || requestDetail.status === 'completed' ? 'gt-badge-success' : requestDetail.status === 'cancelled' ? 'gt-badge-danger' : 'gt-badge-info'}`}>
+                                    {reqStatusLabel[requestDetail.status] || requestDetail.status}
+                                </span>
+                            </div>
                             <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white">{requestDetail.service_title || requestDetail.title}</h1>
                             <div class="text-xs text-[#8C95AA] mt-1">
-                                Protocolo: <strong class="text-white font-mono">{requestDetail.protocol}</strong> • Aberta em: {requestDetail.created_at}
+                                Aberta em {formatPortalDateBrt(requestDetail.created_at)}
                             </div>
                         </div>
 
@@ -241,31 +295,136 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                         )}
                     </div>
 
-                    <div class="text-xs text-[#8C95AA] leading-relaxed whitespace-pre-wrap p-4 rounded-xl bg-[#032033]/40 border border-white/10 mb-6">
-                        {requestDetail.description}
-                    </div>
-
-                    <h2 class="text-sm font-extrabold text-white pb-3 mb-4 border-b border-white/5">Histórico de Andamento</h2>
-                    {history.length === 0 ? (
-                        <div class="gt-empty-state">Aguardando primeira movimentação da equipe técnica.</div>
-                    ) : (
-                        <div class="space-y-3">
-                            {history.map((h: any) => (
-                                <div class="flex items-start gap-3.5 p-3.5 rounded-xl bg-[#032033]/40 border border-white/10">
-                                    <span class="w-7 h-7 rounded-lg bg-[#16749A]/15 border border-[#16749A]/30 flex items-center justify-center text-[#16749A] shrink-0">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                    </span>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center justify-between gap-2 flex-wrap">
-                                            <span class="text-xs font-extrabold text-white">Status: {reqStatusLabel[h.new_status] || h.new_status}</span>
-                                            <span class="text-[11px] text-[#8C95AA]">{h.created_at}</span>
+                    {/* Esteira Visual do Pipeline (idêntica ao Admin) */}
+                    {requestDetail.status !== 'cancelled' && (
+                        <div>
+                            <div class="flex items-center justify-between gap-2 mb-2.5">
+                                <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Progresso no Pipeline</h2>
+                                <span class="text-[11px] font-bold text-[#8C95AA]">
+                                    Etapa {Math.max(1, currentStepIndex + 1)} de {PORTAL_PIPELINE_STEPS.length}
+                                </span>
+                            </div>
+                            <div class="gt-req-stepper" role="list" aria-label="Etapas da solicitação">
+                                {PORTAL_PIPELINE_STEPS.map((step, idx) => {
+                                    const isCompletedAll = normalizedSt === 'completed';
+                                    const isDone = isCompletedAll || (currentStepIndex >= 0 && idx < currentStepIndex);
+                                    const isActive = !isCompletedAll && idx === currentStepIndex;
+                                    return (
+                                        <div class={`gt-req-step ${isDone ? 'is-done' : ''} ${isActive ? 'is-active' : ''}`} role="listitem">
+                                            <span class="gt-req-step-dot" aria-hidden="true">
+                                                {isDone ? (
+                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                ) : (
+                                                    idx + 1
+                                                )}
+                                            </span>
+                                            <span class="gt-req-step-label">{step.label}</span>
                                         </div>
-                                        {h.comment && <p class="text-xs text-[#8C95AA] mt-1">{h.comment}</p>}
-                                    </div>
-                                </div>
-                            ))}
+                                    );
+                                })}
+                            </div>
                         </div>
                     )}
+
+                    {/* Descrição da Demanda */}
+                    <div>
+                        <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-2.5">Descrição da Demanda</h2>
+                        <div class="gt-req-briefing">
+                            {structuredDesc ? (
+                                <div class="gt-req-kv-list">
+                                    {structuredDesc.map((item) => (
+                                        <div class="gt-req-kv-item">
+                                            <div class="gt-req-kv-key">{item.key}</div>
+                                            <div class="gt-req-kv-val">
+                                                {item.isUrl ? (
+                                                    <a href={item.value} target="_blank" rel="noopener noreferrer" class="text-[#16749A] hover:underline block truncate" title={item.value}>
+                                                        {item.value} ↗
+                                                    </a>
+                                                ) : (
+                                                    item.value
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div class="text-[13.5px] text-white leading-relaxed whitespace-pre-wrap">
+                                    {requestDetail.description || 'Sem descrição detalhada.'}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Histórico em Feed de Atividades */}
+                    <div>
+                        <div class="flex items-center justify-between gap-2 mb-2.5">
+                            <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Histórico de Atividades</h2>
+                            <span class="text-[11px] font-semibold text-[#8C95AA]">{history.length} {history.length === 1 ? 'evento' : 'eventos'}</span>
+                        </div>
+                        {history.length === 0 ? (
+                            <div class="gt-empty-state">Aguardando primeira movimentação da equipe técnica.</div>
+                        ) : (
+                            <div class="gt-activity-feed" id="gt-portal-activity-feed">
+                                {history.map((h: any, idx: number) => {
+                                    const fromSt = h.old_status || h.from_status || h.status_from || '';
+                                    const toSt = h.new_status || h.to_status || h.status_to || '';
+                                    const fromLabel = fromSt ? (reqStatusLabel[fromSt] || fromSt) : '';
+                                    const toLabel = toSt ? (reqStatusLabel[toSt] || toSt) : 'Atualização';
+                                    const hasTransition = Boolean(fromLabel && toLabel && fromSt !== toSt);
+                                    const noteText = String(h.comment || h.notes || '').trim();
+                                    const isDanger = toSt === 'cancelled';
+                                    const isHiddenExtra = idx >= 5;
+
+                                    return (
+                                        <div
+                                            class={`gt-activity-item ${idx === 0 ? 'is-latest' : ''}`}
+                                            data-extra-history={isHiddenExtra ? '1' : undefined}
+                                            style={isHiddenExtra ? 'display: none;' : undefined}
+                                        >
+                                            <div class="gt-activity-rail" aria-hidden="true">
+                                                <span class={`gt-activity-node ${isDanger ? 'gt-activity-node--danger' : ''}`}>
+                                                    {isDanger ? (
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                                    ) : toSt === 'completed' || toSt === 'approved' ? (
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                    ) : (
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                                    )}
+                                                </span>
+                                            </div>
+                                            <div class="gt-activity-body">
+                                                <div class="gt-activity-head">
+                                                    <div class="gt-activity-title">
+                                                        {hasTransition ? (
+                                                            <>
+                                                                <span class="gt-activity-from">{fromLabel}</span>
+                                                                <span class="gt-activity-arrow">→</span>
+                                                                <span>{toLabel}</span>
+                                                            </>
+                                                        ) : (
+                                                            <span>{toLabel}</span>
+                                                        )}
+                                                    </div>
+                                                    <span class="gt-activity-time">{formatPortalDateBrt(h.created_at)}</span>
+                                                </div>
+                                                {noteText && <div class="gt-activity-note">{noteText}</div>}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+
+                                {history.length > 5 && (
+                                    <button
+                                        type="button"
+                                        onclick={`(function(btn){var feed=document.getElementById('gt-portal-activity-feed');if(!feed)return;var expanded=btn.dataset.expanded==='1';feed.querySelectorAll('[data-extra-history="1"]').forEach(function(el){el.style.display=expanded?'none':'flex';});btn.dataset.expanded=expanded?'0':'1';btn.textContent=expanded?'Mostrar mais ${history.length - 5} ${history.length - 5 === 1 ? 'evento' : 'eventos'}':'Mostrar menos';})(this)`}
+                                        class="gt-activity-more-btn"
+                                    >
+                                        Mostrar mais {history.length - 5} {history.length - 5 === 1 ? 'evento' : 'eventos'}
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </PortalLayout>
         );

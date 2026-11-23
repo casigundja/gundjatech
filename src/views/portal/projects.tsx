@@ -32,6 +32,14 @@ export const PortalProjectsView: FC<PortalProjectsProps> = ({
 }) => {
     if (projectDetail) {
         const stInfo = statusMap[projectDetail.status] || { label: projectDetail.status, badge: 'gt-badge-info' };
+        const projSteps = [
+            { key: 'planning', label: 'Planejamento' },
+            { key: 'in_progress', label: 'Execução' },
+            { key: 'testing', label: 'Homologação' },
+            { key: 'completed', label: 'Concluído' },
+        ];
+        const normProjSt = projectDetail.status === 'reviewing' ? 'testing' : projectDetail.status;
+        const currProjIdx = projSteps.findIndex((s) => s.key === normProjSt);
 
         return (
             <PortalLayout
@@ -49,9 +57,9 @@ export const PortalProjectsView: FC<PortalProjectsProps> = ({
                     </a>
                 </div>
 
-                <div class="gtb-card !p-6">
+                <div class="gtb-card !p-6 space-y-5">
                     <div class="gtb-card-accent-top gtb-card-accent-blue"></div>
-                    <div class="flex items-start justify-between gap-4 flex-wrap mb-4">
+                    <div class="flex items-start justify-between gap-4 flex-wrap">
                         <div class="min-w-0 flex-1">
                             <span class={`gt-badge ${stInfo.badge} mb-2`}>{stInfo.label}</span>
                             <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white">{projectDetail.title}</h1>
@@ -63,34 +71,66 @@ export const PortalProjectsView: FC<PortalProjectsProps> = ({
                         </div>
                     </div>
 
+                    {normProjSt !== 'on_hold' && normProjSt !== 'canceled' && (
+                        <div class="gt-req-stepper gt-req-stepper--4" role="list" aria-label="Fases do projeto">
+                            {projSteps.map((step, idx) => {
+                                const isDoneAll = normProjSt === 'completed';
+                                const isDone = isDoneAll || (currProjIdx >= 0 && idx < currProjIdx);
+                                const isActive = !isDoneAll && idx === currProjIdx;
+                                return (
+                                    <div class={`gt-req-step ${isDone ? 'is-done' : ''} ${isActive ? 'is-active' : ''}`} role="listitem">
+                                        <span class="gt-req-step-dot" aria-hidden="true">
+                                            {isDone ? (
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                            ) : (
+                                                idx + 1
+                                            )}
+                                        </span>
+                                        <span class="gt-req-step-label">{step.label}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
                     <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                        <div style={`width: ${projectDetail.progress_percentage || 0}%; height: 100%; background: linear-gradient(90deg, #16749A 0%, #F2C230 100%);`}></div>
+                        <div style={`width: ${projectDetail.progress_percentage || 0}%; height: 100%; background: linear-gradient(90deg, #063B5C 0%, #16749A 65%, #F2C230 100%);`}></div>
                     </div>
                 </div>
 
                 <div class="gt-grid-detail">
                     <div class="gtb-card !p-5">
-                        <h2 class="text-sm font-extrabold text-white pb-3 mb-4 border-b border-white/5">Etapas &amp; Entregas do Cronograma</h2>
+                        <div class="flex items-center justify-between gap-2 pb-3 mb-4 border-b border-white/5">
+                            <h2 class="text-sm font-extrabold text-white">Etapas &amp; Entregas do Cronograma</h2>
+                            <span class="text-[11px] font-semibold text-[#8C95AA]">{stages.length} {stages.length === 1 ? 'etapa' : 'etapas'}</span>
+                        </div>
                         {stages.length === 0 ? (
                             <div class="gt-empty-state">Nenhuma etapa detalhada no momento.</div>
                         ) : (
-                            <div class="space-y-3">
-                                {stages.map((st: any, idx: number) => (
-                                    <div class="flex items-start gap-3.5 p-3.5 rounded-xl bg-[#032033]/40 border border-white/10">
-                                        <span class="gt-step-badge">
-                                            {idx + 1}
-                                        </span>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex items-center justify-between gap-2 flex-wrap">
-                                                <strong class="text-xs font-extrabold text-white">{st.title}</strong>
-                                                <span class={`gt-badge ${st.status === 'completed' ? 'gt-badge-success' : 'gt-badge-warning'}`}>
-                                                    {st.status === 'completed' ? 'Concluída' : 'Em Andamento'}
+                            <div class="gt-activity-feed">
+                                {stages.map((st: any) => {
+                                    const isDone = st.status === 'completed';
+                                    return (
+                                        <div class={`gt-activity-item ${isDone ? 'is-latest' : ''}`}>
+                                            <div class="gt-activity-rail" aria-hidden="true">
+                                                <span class="gt-activity-node">
+                                                    {isDone ? (
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                    ) : (
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="4"/></svg>
+                                                    )}
                                                 </span>
                                             </div>
-                                            {st.description && <p class="text-xs text-[#8C95AA] mt-1">{st.description}</p>}
+                                            <div class="gt-activity-body">
+                                                <div class="gt-activity-head">
+                                                    <span class="gt-activity-title">{st.title}</span>
+                                                    <span class="gt-activity-time">{isDone ? 'Concluída' : 'Em andamento'}</span>
+                                                </div>
+                                                {st.description && <div class="gt-activity-note">{st.description}</div>}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

@@ -41,6 +41,13 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
         const statusMeta = STATUS_LABELS[projectDetail.status] || { label: projectDetail.status || 'Planejamento', badgeClass: 'gt-badge-info' };
         const progress = Math.max(0, Math.min(100, Number(projectDetail.progress_percentage || 0)));
         const completedStages = stages.filter((s) => s.status === 'completed').length;
+        const projectSteps = [
+            { key: 'planning', label: 'Planejamento' },
+            { key: 'in_progress', label: 'Desenvolvimento' },
+            { key: 'reviewing', label: 'Homologação' },
+            { key: 'completed', label: 'Concluído' },
+        ];
+        const currentProjStep = projectSteps.findIndex((s) => s.key === projectDetail.status);
 
         return (
             <AdminLayout
@@ -106,9 +113,32 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                         </div>
                     </div>
 
+                    {/* Esteira Visual de Etapas do Projeto */}
+                    {projectDetail.status !== 'canceled' && (
+                        <div class="gt-req-stepper gt-req-stepper--4" role="list" aria-label="Fases do projeto">
+                            {projectSteps.map((step, idx) => {
+                                const isDoneAll = projectDetail.status === 'completed';
+                                const isDone = isDoneAll || (currentProjStep >= 0 && idx < currentProjStep);
+                                const isActive = !isDoneAll && idx === currentProjStep;
+                                return (
+                                    <div class={`gt-req-step ${isDone ? 'is-done' : ''} ${isActive ? 'is-active' : ''}`} role="listitem">
+                                        <span class="gt-req-step-dot" aria-hidden="true">
+                                            {isDone ? (
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                            ) : (
+                                                idx + 1
+                                            )}
+                                        </span>
+                                        <span class="gt-req-step-label">{step.label}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
                     {/* Barra de Progresso Visual */}
-                    <div class="w-full h-2.5 rounded-full overflow-hidden" style="background: rgba(140, 149, 170, 0.22);">
-                        <div style={`height: 100%; width: ${progress}%; background: linear-gradient(90deg, #16749A 0%, #F2C230 100%); border-radius: 999px; transition: width 0.3s ease;`} />
+                    <div class="w-full h-2 rounded-full overflow-hidden" style="background: rgba(140, 149, 170, 0.22);">
+                        <div style={`height: 100%; width: ${progress}%; background: linear-gradient(90deg, #063B5C 0%, #16749A 65%, #F2C230 100%); border-radius: 999px; transition: width 0.3s ease;`} />
                     </div>
 
                     {/* Formulário de Atualização de Status & Cronograma */}

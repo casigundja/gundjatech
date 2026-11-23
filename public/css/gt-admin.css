@@ -88,6 +88,8 @@ body.gt-admin-boost .gt-font-display {
 .gtb-sidebar.is-collapsed .gtb-brand-word,
 .gtb-sidebar.is-collapsed .gtb-section-head,
 .gtb-sidebar.is-collapsed .gtb-promo-card,
+.gtb-sidebar.is-collapsed .gt-portal-workspace-card,
+.gtb-sidebar.is-collapsed .gt-portal-footer-user > div,
 .gtb-sidebar.is-collapsed .gtb-nav-item > div > span,
 .gtb-sidebar.is-collapsed .gtb-count-circle {
     display: none !important;
@@ -2333,6 +2335,14 @@ html[data-admin-theme="light"] .gt-modal-input:focus {
     border: 1px solid var(--gtb-border);
 }
 
+.gt-req-stepper--4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.gt-req-stepper--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 html[data-admin-theme="light"] .gt-req-stepper {
     background: #F4F9FC;
     border-color: #DCE8F0;
@@ -3433,27 +3443,27 @@ body.gt-admin-boost .gt-badge {
 }
 
 body.gt-admin-boost .gt-badge-success {
-    background: rgba(16, 185, 129, 0.18);
-    color: #34D399;
-    border: 1px solid rgba(16, 185, 129, 0.35);
+    background: rgba(16, 185, 129, 0.12);
+    color: #6EE7B7;
+    border: 1px solid rgba(16, 185, 129, 0.28);
 }
 
 body.gt-admin-boost .gt-badge-warning {
-    background: rgba(242, 194, 48, 0.18);
+    background: rgba(242, 194, 48, 0.14);
     color: #F2C230;
-    border: 1px solid rgba(242, 194, 48, 0.38);
+    border: 1px solid rgba(242, 194, 48, 0.32);
 }
 
 body.gt-admin-boost .gt-badge-info {
-    background: rgba(22, 116, 154, 0.22);
-    color: #60A5FA;
-    border: 1px solid rgba(22, 116, 154, 0.4);
+    background: rgba(22, 116, 154, 0.18);
+    color: #7DD3FC;
+    border: 1px solid rgba(22, 116, 154, 0.34);
 }
 
 body.gt-admin-boost .gt-badge-danger {
-    background: rgba(239, 68, 68, 0.18);
-    color: #F87171;
-    border: 1px solid rgba(239, 68, 68, 0.35);
+    background: rgba(239, 68, 68, 0.14);
+    color: #FCA5A5;
+    border: 1px solid rgba(239, 68, 68, 0.28);
 }
 
 /* Portal Sidebar Workspace Card & Footer — Dark Mode */
@@ -3693,27 +3703,27 @@ html[data-admin-theme="light"] .gt-chat-sender-them {
 
 /* Light Mode — Badge & Surface Refinement */
 html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-success {
-    background: #DCFCE7 !important;
-    color: #065F46 !important;
-    border-color: #86EFAC !important;
+    background: #ECF6F2 !important;
+    color: #0F5132 !important;
+    border-color: #B7DEC9 !important;
 }
 
 html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-warning {
-    background: #FEF3C7 !important;
-    color: #92400E !important;
-    border-color: #FCD34D !important;
+    background: #FDF7E6 !important;
+    color: #7A5900 !important;
+    border-color: #EBD494 !important;
 }
 
 html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-info {
-    background: #E0F2FE !important;
-    color: #075985 !important;
-    border-color: #7DD3FC !important;
+    background: #EDF5FA !important;
+    color: #063B5C !important;
+    border-color: #C4DBE8 !important;
 }
 
 html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-danger {
-    background: #FEE2E2 !important;
+    background: #FDF0F0 !important;
     color: #991B1B !important;
-    border-color: #FCA5A5 !important;
+    border-color: #EBC3C3 !important;
 }
 
 /* Signature Petrol Accent CTA Card (High Contrast in Light & Dark Mode) */
