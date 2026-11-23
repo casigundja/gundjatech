@@ -3331,7 +3331,35 @@ adminRoutes.post('/orcamentos', async (c) => {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
     ).bind(clientId, title, referenceCode, totalAmount, discountAmount, finalAmount, status, expiresAt, notes).run();
 
-    const newId = result.meta?.last_row_id;
+    const newId = Number(result.meta?.last_row_id || 0);
+    if (status === 'sent') {
+        try {
+            await autoProvisionPortalUserForClient(db, c.env, {
+                clientId,
+                promoteActive: false,
+                sendInviteEmail: true,
+                baseUrl: new URL(c.req.url).origin
+            });
+        } catch { }
+    } else if (status === 'approved') {
+        try {
+            await autoStartProjectFromApprovedRequest(db, c.env, (c.get('user') as any)?.id || null, {
+                quotation: {
+                    id: newId,
+                    client_id: clientId,
+                    title,
+                    reference_code: referenceCode,
+                    total_amount: totalAmount,
+                    discount_amount: discountAmount,
+                    final_amount: finalAmount,
+                    status: 'approved',
+                    notes
+                },
+                approvalNote: `Orçamento ${referenceCode} criado já aprovado`
+            });
+        } catch { }
+    }
+
     if (newId) {
         return c.redirect(`/admin/orcamentos/${newId}?success=Orçamento ${encodeURIComponent(referenceCode)} criado com sucesso!`);
     }
@@ -3358,6 +3386,28 @@ adminRoutes.get('/orcamentos/:id', async (c) => {
 
     if (!quotationDetail) {
         return c.redirect('/admin/orcamentos?error=Orçamento não encontrado.');
+    }
+
+    // Se o orçamento já está Enviado ou Aprovado e o cliente possui e-mail válido, mas ainda não tem usuário ativo,
+    // provisiona automaticamente ao abrir a tela para que o status "Usuário Ativo" esteja sempre sincronizado
+    if (
+        (quotationDetail.status === 'sent' || quotationDetail.status === 'approved') &&
+        Number(quotationDetail.portal_user_active) !== 1 &&
+        quotationDetail.client_id &&
+        quotationDetail.client_email &&
+        !String(quotationDetail.client_email).endsWith('.local')
+    ) {
+        try {
+            const prov = await autoProvisionPortalUserForClient(db, c.env, {
+                clientId: Number(quotationDetail.client_id),
+                promoteActive: quotationDetail.status === 'approved',
+                sendInviteEmail: false,
+                baseUrl: new URL(c.req.url).origin
+            });
+            if (prov.provisioned) {
+                quotationDetail.portal_user_active = 1;
+            }
+        } catch { }
     }
 
     let linkedRequest: any = null;

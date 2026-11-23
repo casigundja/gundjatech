@@ -118,29 +118,29 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                     </div>
                 </div>
 
-                <div class="gt-grid-detail items-start">
+                <div class="gt-grid-detail" style="height: calc(100vh - 176px); max-height: calc(100vh - 176px); align-items: stretch; overflow: hidden;">
                     {/* Coluna Principal: Formulário de Edição */}
-                    <section class="gtb-card space-y-5 min-w-0">
-                        <div class="flex items-start justify-between gap-3 flex-wrap pb-4 border-b border-white/10">
+                    <section class="gtb-card !p-4 min-w-0" style="display: flex; flex-direction: column; gap: 10px; height: 100%; max-height: 100%; overflow: hidden;">
+                        <div class="flex items-start justify-between gap-3 flex-wrap pb-2.5 border-b border-white/10" style="flex-shrink: 0;">
                             <div class="min-w-0">
-                                <div class="flex items-center gap-2 flex-wrap mb-1.5">
+                                <div class="flex items-center gap-2 flex-wrap mb-1">
                                     <span class="gt-req-pill-neutral font-mono">{quotationDetail.reference_code}</span>
                                     <span class={`gt-badge ${meta.badgeClass}`}>{meta.label}</span>
                                 </div>
-                                <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white">{quotationDetail.title}</h1>
-                                <p class="text-xs text-[#8C95AA] mt-1">
+                                <h1 class="gt-font-display text-base sm:text-lg font-extrabold text-white leading-tight truncate">{quotationDetail.title}</h1>
+                                <p class="text-[11.5px] text-[#8C95AA] mt-0.5 truncate">
                                     Cliente: <strong class="text-white">{quotationDetail.company || quotationDetail.client_name || 'Cliente'}</strong>
                                     {quotationDetail.client_email && !String(quotationDetail.client_email).endsWith('.local') ? ` (${quotationDetail.client_email})` : ''}
                                 </p>
                             </div>
-                            <div class="text-right">
-                                <div class="text-[10.5px] font-bold uppercase tracking-wider text-[#8C95AA]">Valor Final</div>
-                                <div class="gt-font-display text-2xl font-extrabold text-[#F2C230]">{formatBRL(finalAmt)}</div>
+                            <div class="text-right shrink-0">
+                                <div class="text-[10px] font-bold uppercase tracking-wider text-[#8C95AA]">Valor Final</div>
+                                <div class="gt-font-display text-xl sm:text-2xl font-extrabold text-[#F2C230] leading-tight">{formatBRL(finalAmt)}</div>
                             </div>
                         </div>
 
                         {quotationDetail.status !== 'rejected' && quotationDetail.status !== 'expired' && (
-                            <div class="gt-req-stepper gt-req-stepper--3 gt-no-print" role="list" aria-label="Etapas do orçamento">
+                            <div class="gt-req-stepper gt-req-stepper--3 gt-no-print" style="padding: 8px 12px; flex-shrink: 0;" role="list" aria-label="Etapas do orçamento">
                                 {quoteSteps.map((step, idx) => {
                                     const isDoneAll = quotationDetail.status === 'approved';
                                     const isDone = isDoneAll || (currQuoteIdx >= 0 && idx < currQuoteIdx);
@@ -161,21 +161,35 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                             </div>
                         )}
 
-                        <form action={`/admin/orcamentos/${quotationDetail.id}`} method="post" data-dirty-guard="1" class="space-y-4">
-                            <div>
-                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Título da Proposta *</label>
-                                <input
-                                    type="text"
-                                    name="title"
-                                    required
-                                    value={quotationDetail.title || ''}
-                                    class="w-full rounded-xl px-3.5 py-2.5 text-[13px]"
-                                />
+                        <form action={`/admin/orcamentos/${quotationDetail.id}`} method="post" data-dirty-guard="1" style="flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow: hidden;">
+                            <div class="gt-grid-2" style="flex-shrink: 0;">
+                                <div>
+                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Título da Proposta *</label>
+                                    <input
+                                        type="text"
+                                        name="title"
+                                        required
+                                        value={quotationDetail.title || ''}
+                                        class="w-full rounded-xl px-3 py-2 text-[12.5px]"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">
+                                        E-mail do Cliente (Acesso ao Portal) *
+                                    </label>
+                                    <input
+                                        type="email"
+                                        name="client_email"
+                                        placeholder="cliente@empresa.com"
+                                        value={quotationDetail.client_email && !String(quotationDetail.client_email).endsWith('.local') ? quotationDetail.client_email : ''}
+                                        class="w-full rounded-xl px-3 py-2 text-[12.5px]"
+                                    />
+                                </div>
                             </div>
 
-                            <div class="gt-grid-2">
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" style="flex-shrink: 0;">
                                 <div>
-                                    <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Valor Bruto (R$) *</label>
+                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Valor Bruto (R$) *</label>
                                     <input
                                         type="number"
                                         step="0.01"
@@ -183,72 +197,57 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                                         name="total_amount"
                                         required
                                         value={totalAmt}
-                                        class="w-full rounded-xl px-3.5 py-2.5 text-[13px] font-mono"
+                                        class="w-full rounded-xl px-3 py-2 text-[12.5px] font-mono"
                                     />
                                 </div>
                                 <div>
-                                    <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Desconto (R$)</label>
+                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Desconto (R$)</label>
                                     <input
                                         type="number"
                                         step="0.01"
                                         min="0"
                                         name="discount_amount"
                                         value={discountAmt}
-                                        class="w-full rounded-xl px-3.5 py-2.5 text-[13px] font-mono"
+                                        class="w-full rounded-xl px-3 py-2 text-[12.5px] font-mono"
                                     />
                                 </div>
-                            </div>
-
-                            <div class="gt-grid-2">
                                 <div>
-                                    <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Status da Proposta</label>
-                                    <select name="status" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]">
+                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Status da Proposta</label>
+                                    <select name="status" class="w-full rounded-xl px-3 py-2 text-[12.5px]">
                                         <option value="draft" selected={quotationDetail.status === 'draft'}>Rascunho</option>
-                                        <option value="sent" selected={quotationDetail.status === 'sent'}>Enviado ao Cliente (Libera Portal)</option>
+                                        <option value="sent" selected={quotationDetail.status === 'sent'}>Enviado (Libera Portal)</option>
                                         <option value="approved" selected={quotationDetail.status === 'approved'}>Aprovado (Inicia Projeto)</option>
                                         <option value="rejected" selected={quotationDetail.status === 'rejected'}>Recusado</option>
                                         <option value="expired" selected={quotationDetail.status === 'expired'}>Expirado</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Validade da Proposta</label>
+                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Validade</label>
                                     <input
                                         type="date"
                                         name="expires_at"
                                         value={String(quotationDetail.expires_at || '').slice(0, 10)}
-                                        class="w-full rounded-xl px-3.5 py-2.5 text-[13px]"
+                                        class="w-full rounded-xl px-3 py-2 text-[12.5px]"
                                     />
                                 </div>
                             </div>
 
-                            <div>
-                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
-                                    E-mail do Cliente para Acesso ao Portal *
-                                </label>
-                                <input
-                                    type="email"
-                                    name="client_email"
-                                    placeholder="cliente@empresa.com (obrigatório ao enviar o orçamento)"
-                                    value={quotationDetail.client_email && !String(quotationDetail.client_email).endsWith('.local') ? quotationDetail.client_email : ''}
-                                    class="w-full rounded-xl px-3.5 py-2.5 text-[13px]"
-                                />
-                                <p class="text-[11px] text-[#8C95AA] mt-1">
-                                    O usuário do Portal do Cliente é criado/ativado automaticamente quando este orçamento é marcado como <strong>Enviado ao Cliente</strong> ou <strong>Aprovado</strong>.
-                                </p>
-                            </div>
-
-                            <div>
-                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Escopo, Entregáveis &amp; Condições Comerciais</label>
+                            <div style="flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column;">
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1" style="flex-shrink: 0;">Escopo, Entregáveis &amp; Condições Comerciais</label>
                                 <textarea
                                     name="notes"
-                                    rows={6}
+                                    rows={3}
                                     placeholder="Descreva os entregáveis, prazo estimado, forma de pagamento e observações comerciais..."
-                                    class="w-full rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed"
+                                    class="w-full rounded-xl px-3 py-2 text-[12.5px] leading-relaxed"
+                                    style="flex: 1 1 0%; min-height: 64px; resize: none;"
                                 >{quotationDetail.notes || ''}</textarea>
                             </div>
 
-                            <div class="flex items-center justify-between gap-3 pt-2 flex-wrap gt-no-print">
-                                <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary">
+                            <div class="flex items-center justify-between gap-3 pt-1 flex-wrap gt-no-print" style="flex-shrink: 0;">
+                                <span class="text-[11px] text-[#8C95AA]">
+                                    O login do Portal do Cliente é ativado automaticamente ao enviar ou aprovar a proposta.
+                                </span>
+                                <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
                                         <polyline points="17 21 17 13 7 13 7 21" />
@@ -261,59 +260,61 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                     </section>
 
                     {/* Coluna Lateral: Resumo Financeiro & Ações Críticas */}
-                    <aside class="gtb-card space-y-4 min-w-0">
-                        <h2 class="gt-font-display text-sm font-extrabold text-white">Resumo Comercial</h2>
+                    <aside class="gtb-card !p-4 min-w-0" style="display: flex; flex-direction: column; justify-content: space-between; gap: 10px; height: 100%; max-height: 100%; overflow: hidden;">
+                        <div class="space-y-3" style="flex-shrink: 0;">
+                            <h2 class="gt-font-display text-sm font-extrabold text-white">Resumo Comercial</h2>
 
-                        <div class="gtb-surface-box rounded-xl p-4 space-y-2.5 text-xs">
-                            <div class="flex items-center justify-between">
-                                <span class="text-[#8C95AA]">Valor Bruto</span>
-                                <span class="font-bold text-white">{formatBRL(totalAmt)}</span>
+                            <div class="gtb-surface-box rounded-xl p-3 space-y-2 text-xs">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[#8C95AA]">Valor Bruto</span>
+                                    <span class="font-bold text-white">{formatBRL(totalAmt)}</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[#8C95AA]">Desconto</span>
+                                    <span class="font-bold text-emerald-400">- {formatBRL(discountAmt)}</span>
+                                </div>
+                                <div class="pt-2 border-t border-white/10 flex items-center justify-between">
+                                    <span class="font-extrabold text-white">Total Líquido</span>
+                                    <span class="gt-font-display text-base font-extrabold text-[#F2C230]">{formatBRL(finalAmt)}</span>
+                                </div>
                             </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-[#8C95AA]">Desconto</span>
-                                <span class="font-bold text-emerald-400">- {formatBRL(discountAmt)}</span>
-                            </div>
-                            <div class="pt-2.5 border-t border-white/10 flex items-center justify-between">
-                                <span class="font-extrabold text-white">Total Líquido</span>
-                                <span class="gt-font-display text-base font-extrabold text-[#F2C230]">{formatBRL(finalAmt)}</span>
-                            </div>
-                        </div>
 
-                        <div class="text-[11px] text-[#8C95AA] space-y-1">
-                            <div>Emitido em: <strong class="text-white">{quotationDetail.created_at ? new Date(quotationDetail.created_at).toLocaleDateString('pt-BR') : '—'}</strong></div>
-                            <div>Validade: <strong class="text-white">{quotationDetail.expires_at ? String(quotationDetail.expires_at).slice(0, 10) : 'Sem prazo'}</strong></div>
-                        </div>
+                            <div class="flex items-center justify-between text-[11px] text-[#8C95AA] px-0.5">
+                                <span>Emitido: <strong class="text-white">{quotationDetail.created_at ? new Date(quotationDetail.created_at).toLocaleDateString('pt-BR') : '—'}</strong></span>
+                                <span>Validade: <strong class="text-white">{quotationDetail.expires_at ? String(quotationDetail.expires_at).slice(0, 10) : 'Sem prazo'}</strong></span>
+                            </div>
 
-                        {/* Card de Governança do Usuário do Portal */}
-                        <div class="gtb-surface-box rounded-xl p-3.5 space-y-2 text-xs gt-no-print">
-                            <div class="flex items-center justify-between gap-2">
-                                <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Acesso ao Portal</span>
-                                {Number(quotationDetail.portal_user_active) === 1 ? (
-                                    <span class="gt-badge gt-badge-success">Usuário Ativo</span>
-                                ) : (
-                                    <span class="gt-badge gt-badge-warning">Aguardando Envio</span>
+                            {/* Card de Governança do Usuário do Portal */}
+                            <div class="gtb-surface-box rounded-xl p-3 space-y-2 text-xs gt-no-print">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Acesso ao Portal</span>
+                                    {Number(quotationDetail.portal_user_active) === 1 || quotationDetail.status === 'sent' || quotationDetail.status === 'approved' ? (
+                                        <span class="gt-badge gt-badge-success">Usuário Ativo</span>
+                                    ) : (
+                                        <span class="gt-badge gt-badge-warning">Aguardando Envio</span>
+                                    )}
+                                </div>
+                                <p class="text-[11px] text-[#8C95AA] leading-snug">
+                                    {Number(quotationDetail.portal_user_active) === 1 || quotationDetail.status === 'sent' || quotationDetail.status === 'approved'
+                                        ? 'Login ativo para o cliente visualizar a proposta e acompanhar o projeto no Portal.'
+                                        : 'O login do cliente será criado automaticamente assim que a proposta for enviada (> R$ 0,00).'}
+                                </p>
+                                {quotationDetail.client_id && (quotationDetail.status === 'sent' || quotationDetail.status === 'approved') && (
+                                    <div class="pt-0.5">
+                                        <button
+                                            type="button"
+                                            id="gt-quote-portal-wa-btn"
+                                            onclick={`(function(btn){btn.disabled=true;var orig=btn.innerHTML;btn.textContent='Gerando link seguro...';fetch('/admin/clientes/${quotationDetail.client_id}/ativar-portal',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({send_email:true,promote_active:${quotationDetail.status === 'approved' ? 'true' : 'false'}})}).then(function(r){return r.json();}).then(function(d){btn.disabled=false;btn.innerHTML=orig;if(d&&d.ok&&d.whatsapp_url){window.open(d.whatsapp_url,'_blank');}else{alert((d&&d.error)||'Informe um e-mail válido para o cliente primeiro.');}}).catch(function(){btn.disabled=false;btn.innerHTML=orig;});})(this)`}
+                                            class="gt-btn-petrol gt-btn-sm w-full justify-center"
+                                        >
+                                            <span>Enviar Link do Portal via WhatsApp</span>
+                                        </button>
+                                    </div>
                                 )}
                             </div>
-                            <p class="text-[11px] text-[#8C95AA] leading-relaxed">
-                                {Number(quotationDetail.portal_user_active) === 1
-                                    ? 'O cliente já possui login ativo para visualizar e aprovar esta proposta no Portal.'
-                                    : 'O login do cliente será criado automaticamente assim que a proposta for enviada (> R$ 0,00).'}
-                            </p>
-                            {quotationDetail.client_id && (quotationDetail.status === 'sent' || quotationDetail.status === 'approved') && (
-                                <div class="pt-1 space-y-2">
-                                    <button
-                                        type="button"
-                                        id="gt-quote-portal-wa-btn"
-                                        onclick={`(function(btn){btn.disabled=true;var orig=btn.innerHTML;btn.textContent='Gerando link seguro...';fetch('/admin/clientes/${quotationDetail.client_id}/ativar-portal',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({send_email:true,promote_active:${quotationDetail.status === 'approved' ? 'true' : 'false'}})}).then(function(r){return r.json();}).then(function(d){btn.disabled=false;btn.innerHTML=orig;if(d&&d.ok&&d.whatsapp_url){window.open(d.whatsapp_url,'_blank');}else{alert((d&&d.error)||'Informe um e-mail válido para o cliente primeiro.');}}).catch(function(){btn.disabled=false;btn.innerHTML=orig;});})(this)`}
-                                        class="gt-btn-petrol gt-btn-sm w-full justify-center"
-                                    >
-                                        <span>Enviar Link do Portal via WhatsApp</span>
-                                    </button>
-                                </div>
-                            )}
                         </div>
 
-                        <div class="pt-3 border-t border-white/10 space-y-2 gt-no-print">
+                        <div class="pt-2.5 border-t border-white/10 space-y-2 gt-no-print" style="flex-shrink: 0;">
                             {quotationDetail.status !== 'rejected' && (
                                 <form action={`/admin/orcamentos/${quotationDetail.id}/status`} method="post" class="m-0">
                                     <input type="hidden" name="status" value="rejected" />
