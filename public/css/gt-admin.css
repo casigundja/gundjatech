@@ -4464,29 +4464,21 @@ html[data-admin-theme="light"] .gt-chat-channel-card {
 }
 
 .gt-csel-menu {
-    position: absolute;
-    top: calc(100% + 6px);
+    position: fixed;
+    top: 0;
     left: 0;
-    right: 0;
-    width: 100%;
-    max-width: 100%;
-    z-index: 260;
+    z-index: 350;
     display: none;
     flex-direction: column;
     border-radius: 14px;
     border: 1px solid rgba(22, 116, 154, 0.45);
     background: #062134;
-    box-shadow: 0 20px 44px -10px rgba(0, 0, 0, 0.72), 0 0 0 1px rgba(242, 194, 48, 0.12);
+    box-shadow: 0 22px 48px -10px rgba(0, 0, 0, 0.78), 0 0 0 1px rgba(242, 194, 48, 0.14);
     overflow: hidden;
 }
 
-.gt-csel.is-open .gt-csel-menu {
+.gt-csel-menu.is-open {
     display: flex;
-}
-
-.gt-csel.is-dropup .gt-csel-menu {
-    top: auto;
-    bottom: calc(100% + 6px);
 }
 
 .gt-csel-search-wrap {

@@ -44,7 +44,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
-                <link rel="stylesheet" href="/css/gt-admin.css?v=61" />
+                <link rel="stylesheet" href="/css/gt-admin.css?v=62" />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
@@ -1054,7 +1054,16 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
 
                         function closeAll(except) {
                             document.querySelectorAll('.gt-csel.is-open').forEach(function (el) {
-                                if (el !== except) el.classList.remove('is-open');
+                                if (el !== except) {
+                                    el.classList.remove('is-open');
+                                    var trig = el.querySelector('.gt-csel-trigger');
+                                    if (trig) trig.setAttribute('aria-expanded', 'false');
+                                }
+                            });
+                            document.querySelectorAll('.gt-csel-menu.is-open').forEach(function (m) {
+                                if (!except || m._gtOwner !== except) {
+                                    m.classList.remove('is-open');
+                                }
                             });
                         }
 
@@ -1154,6 +1163,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                     select.dispatchEvent(new Event('change', { bubbles: true }));
                                     syncSelectUI(select);
                                     wrap.classList.remove('is-open');
+                                    menu.classList.remove('is-open');
                                     trigger.setAttribute('aria-expanded', 'false');
                                 });
                                 list.appendChild(btn);
@@ -1162,9 +1172,10 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             menu.appendChild(list);
 
                             wrap.appendChild(trigger);
-                            wrap.appendChild(menu);
+                            menu._gtOwner = wrap;
+                            document.body.appendChild(menu);
 
-                            select._gtCsel = { wrap: wrap, trigger: trigger, label: label, list: list, searchInput: searchInput };
+                            select._gtCsel = { wrap: wrap, trigger: trigger, label: label, list: list, menu: menu, searchInput: searchInput };
 
                             // Intercepta atribuição programática select.value = '...'
                             var desc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
@@ -1179,19 +1190,36 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                 });
                             }
 
+                            function positionMenu() {
+                                var r = trigger.getBoundingClientRect();
+                                var vw = window.innerWidth;
+                                var vh = window.innerHeight;
+                                var width = Math.min(r.width, vw - 24);
+                                var left = Math.max(12, Math.min(r.left, vw - width - 12));
+                                menu.style.width = width + 'px';
+                                menu.style.left = left + 'px';
+                                var spaceBelow = vh - r.bottom - 12;
+                                var spaceAbove = r.top - 12;
+                                if (spaceBelow >= 160 || spaceBelow >= spaceAbove) {
+                                    menu.style.top = (r.bottom + 6) + 'px';
+                                    menu.style.bottom = 'auto';
+                                    list.style.maxHeight = Math.min(240, Math.max(120, spaceBelow - 54)) + 'px';
+                                } else {
+                                    menu.style.top = 'auto';
+                                    menu.style.bottom = (vh - r.top + 6) + 'px';
+                                    list.style.maxHeight = Math.min(240, Math.max(120, spaceAbove - 54)) + 'px';
+                                }
+                            }
+
                             trigger.addEventListener('click', function (e) {
                                 e.stopPropagation();
                                 var willOpen = !wrap.classList.contains('is-open');
                                 closeAll(wrap);
                                 if (willOpen) {
-                                    var trigRect = trigger.getBoundingClientRect();
-                                    var card = wrap.closest('.gt-modal-card');
-                                    var bounds = card ? card.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
-                                    var spaceBelow = bounds.bottom - trigRect.bottom;
-                                    var spaceAbove = trigRect.top - bounds.top;
-                                    wrap.classList.toggle('is-dropup', spaceBelow < 220 && spaceAbove > spaceBelow);
+                                    positionMenu();
                                 }
                                 wrap.classList.toggle('is-open', willOpen);
+                                menu.classList.toggle('is-open', willOpen);
                                 trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
                                 if (willOpen && searchInput) {
                                     searchInput.value = '';
@@ -1200,6 +1228,13 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                     setTimeout(function () { searchInput.focus(); }, 20);
                                 }
                             });
+
+                            var modalCard = wrap.closest('.gt-modal-card');
+                            if (modalCard) {
+                                modalCard.addEventListener('scroll', function () {
+                                    if (wrap.classList.contains('is-open')) positionMenu();
+                                }, { passive: true });
+                            }
 
                             if (searchInput) {
                                 searchInput.addEventListener('click', function (e) { e.stopPropagation(); });
