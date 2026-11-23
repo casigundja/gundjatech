@@ -388,11 +388,11 @@ whatsappRoutes.post('/', async (c) => {
                     clientId = client.id;
                 }
 
-                // 2. Localiza conversa aberta de WhatsApp ou cria uma nova
+                // 2. Localiza conversa aberta/em atendimento de WhatsApp ou cria uma nova
                 const sessionId = `wa:${fromPhone}`;
                 const existingConv = await c.env.DB.prepare(
                     `SELECT id, ai_enabled FROM conversations
-                     WHERE session_id = ? AND status = 'open'
+                     WHERE session_id = ? AND status != 'closed'
                      ORDER BY id DESC LIMIT 1`
                 ).bind(sessionId).first<{ id: number; ai_enabled: number }>();
 

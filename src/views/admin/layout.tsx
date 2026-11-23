@@ -776,15 +776,24 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             var prevConv = readSeen('gt_seen_conv_id');
                             var prevMsg = readSeen('gt_seen_msg_id');
                             var prevReq = readSeen('gt_seen_req_id');
+                            var prevHandoff = readSeen('gt_seen_handoff_id');
 
                             if (prevConv === null || prevMsg === null || prevReq === null) {
                                 writeSeen('gt_seen_conv_id', data.latest_conversation_id || 0);
                                 writeSeen('gt_seen_msg_id', data.latest_client_message_id || 0);
                                 writeSeen('gt_seen_req_id', data.latest_request_id || 0);
+                                writeSeen('gt_seen_handoff_id', data.latest_handoff_id || 0);
                                 return;
                             }
+                            if (prevHandoff === null) prevHandoff = 0;
 
-                            if ((data.latest_conversation_id || 0) > prevConv) {
+                            if ((data.latest_handoff_id || 0) > prevHandoff) {
+                                writeSeen('gt_seen_handoff_id', data.latest_handoff_id);
+                                writeSeen('gt_seen_conv_id', Math.max(prevConv, data.latest_conversation_id || 0));
+                                writeSeen('gt_seen_msg_id', Math.max(prevMsg, data.latest_client_message_id || 0));
+                                playChime();
+                                showToast('Atendimento humano solicitado!', 'Um cliente pediu para falar com um atendente humano. Clique para assumir no Inbox.', '/admin/atendimento?status=handoff');
+                            } else if ((data.latest_conversation_id || 0) > prevConv) {
                                 writeSeen('gt_seen_conv_id', data.latest_conversation_id);
                                 writeSeen('gt_seen_msg_id', Math.max(prevMsg, data.latest_client_message_id || 0));
                                 writeSeen('gt_seen_req_id', Math.max(prevReq, data.latest_request_id || 0));

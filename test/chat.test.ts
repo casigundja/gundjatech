@@ -181,4 +181,23 @@ describe('Fase 4 - Módulo 3: Chat ao Vivo & Autonomous CRM AI', () => {
 
         fetchSpy.mockRestore();
     });
+
+    it('deve detectar pedido de atendimento humano em /api/chat/start e marcar status waiting_staff + handoff_human', async () => {
+        const res = await app.request('/api/chat/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nome: 'Cliente Urgente',
+                email: 'urgente@empresa.com',
+                mensagem: 'Quero falar com um atendente humano agora'
+            })
+        });
+
+        expect(res.status).toBe(201);
+        const data = (await res.json()) as any;
+        expect(data.ok).toBe(true);
+        expect(data.status).toBe('waiting_staff');
+        expect(data.crm_stage).toBe('handoff_human');
+        expect(data.ai_enabled).toBe(false);
+    });
 });

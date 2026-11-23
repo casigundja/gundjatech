@@ -1387,6 +1387,60 @@ adminRoutes.post('/usuarios/:id/excluir', async (c) => {
 // ==========================================
 // 6. CENTRAL DE ATENDIMENTO CRM & CHAT AO VIVO
 // ==========================================
+async function loadInboxConversations(db: any, statusFilter: string) {
+    let whereSql = `WHERE 1=1`;
+    if (statusFilter === 'open') {
+        whereSql += ` AND c.status != 'closed'`;
+    } else if (statusFilter === 'handoff') {
+        whereSql += ` AND c.status != 'closed' AND (c.status = 'waiting_staff' OR c.crm_stage = 'handoff_human')`;
+    } else if (statusFilter === 'closed') {
+        whereSql += ` AND c.status = 'closed'`;
+    }
+
+    let conversations: any[] = [];
+    try {
+        const res = await db.prepare(
+            `SELECT c.*,
+                    cl.name AS client_name,
+                    cl.email AS client_email,
+                    cl.phone AS client_phone,
+                    (SELECT m.message FROM conversation_messages m WHERE m.conversation_id = c.id ORDER BY m.id DESC LIMIT 1) AS last_message_preview
+             FROM conversations c
+             LEFT JOIN clients cl ON cl.id = c.client_id
+             ${whereSql}
+             ORDER BY CASE WHEN c.status != 'closed' AND (c.status = 'waiting_staff' OR c.crm_stage = 'handoff_human') THEN 0 ELSE 1 END ASC,
+                      COALESCE(c.last_message_at, c.updated_at, c.created_at) DESC
+             LIMIT 60`
+        ).all();
+        conversations = res.results || [];
+    } catch {
+        const fallback = await db.prepare(
+            `SELECT * FROM conversations ORDER BY last_message_at DESC, created_at DESC LIMIT 60`
+        ).all();
+        conversations = fallback.results || [];
+    }
+
+    const counts = { all: 0, open: 0, handoff: 0, closed: 0 };
+    try {
+        const countRow = (await db.prepare(
+            `SELECT
+                COUNT(*) AS total_all,
+                SUM(CASE WHEN status != 'closed' THEN 1 ELSE 0 END) AS total_open,
+                SUM(CASE WHEN status != 'closed' AND (status = 'waiting_staff' OR crm_stage = 'handoff_human') THEN 1 ELSE 0 END) AS total_handoff,
+                SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) AS total_closed
+             FROM conversations`
+        ).first()) as { total_all?: number; total_open?: number; total_handoff?: number; total_closed?: number } | null;
+        if (countRow) {
+            counts.all = Number(countRow.total_all || 0);
+            counts.open = Number(countRow.total_open || 0);
+            counts.handoff = Number(countRow.total_handoff || 0);
+            counts.closed = Number(countRow.total_closed || 0);
+        }
+    } catch { }
+
+    return { conversations, counts };
+}
+
 adminRoutes.get('/atendimento', async (c) => {
     const user = c.get('user');
     const db = c.env.DB;
@@ -1395,32 +1449,28 @@ adminRoutes.get('/atendimento', async (c) => {
     const statusFilter = c.req.query('status') || 'open';
     const activeId = c.req.query('id');
 
-    let convQuery = `SELECT * FROM conversations WHERE 1=1`;
-    const params: any[] = [];
-
-    if (statusFilter === 'open') {
-        convQuery += ` AND status = 'open'`;
-    } else if (statusFilter === 'closed') {
-        convQuery += ` AND status = 'closed'`;
-    }
-
-    convQuery += ` ORDER BY last_message_at DESC, created_at DESC`;
-
-    const stmt = db.prepare(convQuery);
-    const conversations = (await (params.length ? stmt.bind(...params) : stmt).all()).results || [];
+    const { conversations, counts } = await loadInboxConversations(db, statusFilter);
 
     let activeConversation: any = null;
     let messages: any[] = [];
 
     if (activeId) {
-        activeConversation = await db.prepare(`SELECT * FROM conversations WHERE id = ?`).bind(activeId).first();
+        try {
+            activeConversation = await db.prepare(
+                `SELECT c.*, cl.name AS client_name, cl.email AS client_email, cl.phone AS client_phone
+                 FROM conversations c
+                 LEFT JOIN clients cl ON cl.id = c.client_id
+                 WHERE c.id = ?`
+            ).bind(activeId).first();
+        } catch {
+            activeConversation = await db.prepare(`SELECT * FROM conversations WHERE id = ?`).bind(activeId).first();
+        }
         if (activeConversation) {
             messages = (await db.prepare(
                 `SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY created_at ASC`
             ).bind(activeId).all()).results || [];
         }
     } else if (conversations.length > 0) {
-        // Seleciona a primeira automaticamente
         activeConversation = conversations[0];
         messages = (await db.prepare(
             `SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY created_at ASC`
@@ -1434,10 +1484,34 @@ adminRoutes.get('/atendimento', async (c) => {
             activeConversation={activeConversation}
             messages={messages}
             statusFilter={statusFilter}
+            counts={counts}
             successMessage={successMessage}
             errorMessage={errorMessage}
         />
     );
+});
+
+adminRoutes.get('/atendimento/lista', async (c) => {
+    const db = c.env.DB;
+    const statusFilter = c.req.query('status') || 'open';
+    const { conversations, counts } = await loadInboxConversations(db, statusFilter);
+    return c.json({ ok: true, conversations, counts });
+});
+
+adminRoutes.post('/atendimento/:id/assumir', async (c) => {
+    const db = c.env.DB;
+    const id = c.req.param('id');
+
+    await db.prepare(
+        `UPDATE conversations
+         SET status = 'open',
+             ai_enabled = 0,
+             handoff_at = COALESCE(handoff_at, datetime('now')),
+             updated_at = datetime('now')
+         WHERE id = ?`
+    ).bind(id).run();
+
+    return c.redirect(`/admin/atendimento?id=${id}&success=Atendimento humano assumido com sucesso`);
 });
 
 adminRoutes.post('/atendimento/:id/mensagem', async (c) => {
@@ -1457,9 +1531,14 @@ adminRoutes.post('/atendimento/:id/mensagem', async (c) => {
          VALUES (?, 'staff', ?, ?, 0, datetime('now'), datetime('now'))`
     ).bind(id, user.id, message).run();
 
-    // Atualiza conversa
+    // Atualiza conversa: se estava aguardando humano, assume para status 'open'
     await db.prepare(
-        `UPDATE conversations SET last_message_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`
+        `UPDATE conversations
+         SET status = CASE WHEN status = 'waiting_staff' THEN 'open' ELSE status END,
+             ai_enabled = CASE WHEN status = 'waiting_staff' THEN 0 ELSE ai_enabled END,
+             last_message_at = datetime('now'),
+             updated_at = datetime('now')
+         WHERE id = ?`
     ).bind(id).run();
 
     // Se a conversa for do canal WhatsApp e a sincronização estiver ativa, entrega a resposta humana no WhatsApp
@@ -2707,6 +2786,8 @@ adminRoutes.get('/atendimento/resumo', async (c) => {
     let latestConversationId = 0;
     let latestClientMessageId = 0;
     let latestRequestId = 0;
+    let latestHandoffId = 0;
+    let handoffCount = 0;
     const notifications: any[] = [];
 
     try {
@@ -2719,6 +2800,12 @@ adminRoutes.get('/atendimento/resumo', async (c) => {
         const rRow = await db.prepare(`SELECT MAX(id) as max_id FROM service_requests`).first<{ max_id: number }>();
         latestRequestId = rRow?.max_id ?? 0;
 
+        const hRow = await db.prepare(
+            `SELECT MAX(id) as max_id, COUNT(*) as total FROM conversations WHERE status != 'closed' AND (status = 'waiting_staff' OR crm_stage = 'handoff_human')`
+        ).first<{ max_id: number; total: number }>();
+        latestHandoffId = hRow?.max_id ?? 0;
+        handoffCount = hRow?.total ?? 0;
+
         for (const req of (stats.recentRequests || []).slice(0, 3)) {
             notifications.push({
                 key: `request:${req.id}`,
@@ -2730,10 +2817,11 @@ adminRoutes.get('/atendimento/resumo', async (c) => {
             });
         }
         for (const conv of (stats.recentConversations || []).slice(0, 3)) {
+            const isHandoff = conv.status === 'waiting_staff' || conv.crm_stage === 'handoff_human';
             notifications.push({
                 key: `chat:${conv.id}`,
                 type: 'chat',
-                title: `Chat • ${conv.visitor_name || 'Visitante'}`,
+                title: `${isHandoff ? 'Handoff Humano' : 'Chat'} • ${conv.visitor_name || 'Visitante'}`,
                 subtitle: conv.subject || 'Atendimento aberto',
                 time: String(conv.updated_at || '').slice(11, 16),
                 url: `/admin/atendimento?id=${conv.id}`
@@ -2745,10 +2833,12 @@ adminRoutes.get('/atendimento/resumo', async (c) => {
         ok: true,
         pending_requests: stats.pendingRequests,
         open_chats: stats.openConversations,
+        handoff_count: handoffCount,
         total_notifications: stats.pendingRequests + stats.openConversations,
         latest_conversation_id: latestConversationId,
         latest_client_message_id: latestClientMessageId,
         latest_request_id: latestRequestId,
+        latest_handoff_id: latestHandoffId,
         notifications
     });
 });

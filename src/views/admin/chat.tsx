@@ -7,6 +7,12 @@ interface AdminChatProps {
     activeConversation?: any;
     messages?: any[];
     statusFilter?: string;
+    counts?: {
+        all: number;
+        open: number;
+        handoff: number;
+        closed: number;
+    };
     successMessage?: string | null;
     errorMessage?: string | null;
 }
@@ -21,7 +27,8 @@ const STAGE_LABELS: Record<string, string> = {
     proposal: 'Proposta',
     proposal_ready: 'Proposta Pronta',
     support: 'Suporte',
-    handoff_human: 'Handoff Humano',
+    active_client: 'Cliente Portal',
+    handoff_human: 'Aguardando Humano',
     closed: 'Encerrado'
 };
 
@@ -31,16 +38,35 @@ export const AdminChatView: FC<AdminChatProps> = ({
     activeConversation,
     messages = [],
     statusFilter = 'open',
+    counts = { all: 0, open: 0, handoff: 0, closed: 0 },
     successMessage,
     errorMessage
 }) => {
     const activeName = activeConversation
-        ? activeConversation.visitor_name || activeConversation.visitor_company || 'Visitante Web'
+        ? activeConversation.visitor_name || activeConversation.client_name || activeConversation.visitor_company || `Sessão #${activeConversation.id}`
+        : '';
+    const activeEmail = activeConversation
+        ? activeConversation.visitor_email || activeConversation.client_email || ''
+        : '';
+    const activePhone = activeConversation
+        ? activeConversation.visitor_phone || activeConversation.client_phone || ''
         : '';
     const activeStage = activeConversation
         ? STAGE_LABELS[activeConversation.crm_stage] || activeConversation.crm_stage || 'Novo Lead'
         : '';
     const activeScore = Number(activeConversation?.lead_score || 0);
+    const isActiveClosed = activeConversation?.status === 'closed';
+    const isActiveHandoff = Boolean(
+        activeConversation &&
+        !isActiveClosed &&
+        (activeConversation.status === 'waiting_staff' || activeConversation.crm_stage === 'handoff_human')
+    );
+    const activeChannelLabel =
+        activeConversation?.channel === 'whatsapp'
+            ? 'WhatsApp Oficial'
+            : activeConversation?.channel === 'web_chat'
+            ? 'Portal do Cliente'
+            : 'Chat do Site';
 
     return (
         <AdminLayout
@@ -61,7 +87,7 @@ export const AdminChatView: FC<AdminChatProps> = ({
                                 : 'gtb-ctrl-btn !h-auto !py-1.5'
                         }`}
                     >
-                        Todas
+                        Todas (<span id="gt-chat-count-all">{counts.all}</span>)
                     </a>
                     <a
                         href="/admin/atendimento?status=open"
@@ -71,7 +97,17 @@ export const AdminChatView: FC<AdminChatProps> = ({
                                 : 'gtb-ctrl-btn !h-auto !py-1.5'
                         }`}
                     >
-                        Abertas
+                        Abertas (<span id="gt-chat-count-open">{counts.open}</span>)
+                    </a>
+                    <a
+                        href="/admin/atendimento?status=handoff"
+                        class={`px-3.5 py-1.5 rounded-xl text-xs font-bold no-underline transition ${
+                            statusFilter === 'handoff'
+                                ? 'btn-primary shadow-sm'
+                                : 'gtb-ctrl-btn !h-auto !py-1.5'
+                        }`}
+                    >
+                        Aguardando Humano (<span id="gt-chat-count-handoff">{counts.handoff}</span>)
                     </a>
                     <a
                         href="/admin/atendimento?status=closed"
@@ -81,7 +117,7 @@ export const AdminChatView: FC<AdminChatProps> = ({
                                 : 'gtb-ctrl-btn !h-auto !py-1.5'
                         }`}
                     >
-                        Encerradas
+                        Encerradas (<span id="gt-chat-count-closed">{counts.closed}</span>)
                     </a>
                 </div>
 
@@ -99,7 +135,7 @@ export const AdminChatView: FC<AdminChatProps> = ({
                 <aside class="gtb-chat-sidebar gt-chat-inbox border-r">
                     <div class="px-5 py-3.5 border-b border-white/10 flex items-center justify-between gap-2 shrink-0">
                         <span class="text-[11px] font-extrabold uppercase tracking-wider text-white">
-                            Inbox de Atendimento ({conversations.length})
+                            Inbox de Atendimento (<span id="gt-inbox-count">{conversations.length}</span>)
                         </span>
                         <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#34D399]">
                             <span class="w-2 h-2 rounded-full bg-[#34D399] animate-pulse"></span>
@@ -107,7 +143,12 @@ export const AdminChatView: FC<AdminChatProps> = ({
                         </span>
                     </div>
 
-                    <div class="flex-1 overflow-y-auto divide-y divide-white/5">
+                    <div
+                        id="gt-inbox-list"
+                        data-status-filter={statusFilter}
+                        data-active-id={activeConversation ? String(activeConversation.id) : ''}
+                        class="flex-1 overflow-y-auto divide-y divide-white/5"
+                    >
                         {conversations.length === 0 ? (
                             <div class="gt-empty-state">
                                 Nenhuma conversa nesta visualização.
@@ -115,8 +156,10 @@ export const AdminChatView: FC<AdminChatProps> = ({
                         ) : (
                             conversations.map((c) => {
                                 const isSelected = activeConversation?.id === c.id;
-                                const stageText = STAGE_LABELS[c.crm_stage] || c.crm_stage || 'Novo Lead';
-                                const clientName = c.visitor_name || c.visitor_company || `Sessão #${c.id}`;
+                                const isHandoff = c.status !== 'closed' && (c.status === 'waiting_staff' || c.crm_stage === 'handoff_human');
+                                const stageText = isHandoff ? 'Aguardando Humano' : (STAGE_LABELS[c.crm_stage] || c.crm_stage || 'Novo Lead');
+                                const clientName = c.visitor_name || c.client_name || c.visitor_company || `Sessão #${c.id}`;
+                                const channelLabel = c.channel === 'whatsapp' ? 'WhatsApp' : c.channel === 'web_chat' ? 'Portal' : 'Site';
                                 const timeStr = c.last_message_at
                                     ? new Date(c.last_message_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
                                     : '';
@@ -138,29 +181,15 @@ export const AdminChatView: FC<AdminChatProps> = ({
                                         </div>
 
                                         <div class="text-[11.5px] text-[#8C95AA] truncate mb-2">
-                                            {c.visitor_objective || c.subject || c.visitor_email || 'Atendimento ao vivo'}
+                                            {c.last_message_preview || c.visitor_objective || c.subject || c.visitor_email || 'Atendimento ao vivo'}
                                         </div>
 
                                         <div class="flex items-center justify-between gap-1.5 flex-wrap">
-                                            <div class="flex items-center gap-1.5">
-                                                {c.ai_enabled ? (
-                                                    <span class="px-2 py-0.5 rounded-md bg-[#F2C230]/15 text-[#F2C230] text-[10px] font-extrabold">
-                                                        IA
-                                                    </span>
-                                                ) : (
-                                                    <span class="px-2 py-0.5 rounded-md bg-white/10 text-[#D5DCEB] text-[10px] font-bold">
-                                                        Humano
-                                                    </span>
-                                                )}
-                                                {c.channel === 'whatsapp' ? (
-                                                    <span class="px-2 py-0.5 rounded-md bg-emerald-500/15 text-[#6EE7B7] text-[10px] font-extrabold">
-                                                        WhatsApp
-                                                    </span>
-                                                ) : (
-                                                    <span class="px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-300 text-[10px] font-bold">
-                                                        Site
-                                                    </span>
-                                                )}
+                                            <div class="flex items-center gap-2">
+                                                <span class={`gt-badge ${isHandoff ? 'gt-badge-warning' : c.ai_enabled ? 'gt-badge-success' : 'gt-badge-info'}`}>
+                                                    {isHandoff ? 'Humano Solicitado' : c.ai_enabled ? 'IA' : 'Humano'}
+                                                </span>
+                                                <span class="text-[10.5px] font-semibold text-[#8C95AA]">· {channelLabel}</span>
                                             </div>
                                             <span class="text-[10px] font-bold text-[#8C95AA]">
                                                 {stageText}
@@ -183,52 +212,52 @@ export const AdminChatView: FC<AdminChatProps> = ({
                                     <a href={`/admin/atendimento?status=${statusFilter}`} class="gt-chat-mobile-back">
                                         &larr; Voltar para Conversas
                                     </a>
-                                    <div class="flex items-center gap-2 flex-wrap">
+                                    <div class="flex items-center gap-2.5 flex-wrap">
                                         <h3 class="text-[15px] font-extrabold text-white truncate">
                                             {activeName}
                                         </h3>
-                                        <span class={`px-2 py-0.5 rounded-md text-[10px] font-extrabold ${
-                                            activeConversation.status === 'open'
-                                                ? 'bg-emerald-500/15 text-[#6EE7B7]'
-                                                : 'bg-red-500/15 text-red-300'
+                                        <span class={`gt-badge ${
+                                            isActiveClosed
+                                                ? 'gt-badge-danger'
+                                                : isActiveHandoff
+                                                ? 'gt-badge-warning'
+                                                : 'gt-badge-success'
                                         }`}>
-                                            {activeConversation.status === 'open' ? 'Aberto' : 'Encerrado'}
+                                            {isActiveClosed ? 'Encerrado' : isActiveHandoff ? 'Aguardando Humano' : 'Aberto'}
                                         </span>
-                                        <span class={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                                            activeConversation.channel === 'whatsapp'
-                                                ? 'bg-emerald-500/15 text-[#6EE7B7]'
-                                                : 'bg-sky-500/15 text-sky-300'
-                                        }`}>
-                                            {activeConversation.channel === 'whatsapp' ? 'WhatsApp Oficial' : 'Chat do Site'}
+                                        <span class="text-[11px] font-semibold text-[#8C95AA]">
+                                            · {activeChannelLabel}
                                         </span>
                                     </div>
                                     <div class="text-[11.5px] text-[#8C95AA] mt-0.5 truncate">
-                                        {activeConversation.visitor_phone && <span>{activeConversation.visitor_phone} • </span>}
-                                        {activeConversation.visitor_email && !String(activeConversation.visitor_email).endsWith('.local') && (
-                                            <span>{activeConversation.visitor_email} • </span>
+                                        {activePhone && <span>{activePhone} • </span>}
+                                        {activeEmail && !String(activeEmail).endsWith('.local') && (
+                                            <span>{activeEmail} • </span>
                                         )}
                                         <span>{activeConversation.subject || 'Atendimento Comercial'}</span>
                                     </div>
                                 </div>
 
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <form action={`/admin/atendimento/${activeConversation.id}/toggle-ai`} method="post" class="m-0">
-                                        <button
-                                            type="submit"
-                                            data-loading-text="..."
-                                            class={activeConversation.ai_enabled ? 'gt-btn-petrol gt-btn-xs' : 'gt-btn-outline gt-btn-xs'}
-                                        >
-                                            {activeConversation.ai_enabled ? 'Assumir (Pausar IA)' : 'Reativar IA'}
-                                        </button>
-                                    </form>
+                                    {!isActiveClosed && (
+                                        <form action={`/admin/atendimento/${activeConversation.id}/toggle-ai`} method="post" class="m-0">
+                                            <button
+                                                type="submit"
+                                                data-loading-text="..."
+                                                class={activeConversation.ai_enabled ? 'gt-btn-petrol gt-btn-xs' : 'gt-btn-outline gt-btn-xs'}
+                                            >
+                                                {activeConversation.ai_enabled ? 'Assumir (Pausar IA)' : 'Reativar IA'}
+                                            </button>
+                                        </form>
+                                    )}
 
                                     <form
-                                        action={`/admin/atendimento/${activeConversation.id}/${activeConversation.status === 'open' ? 'fechar' : 'reabrir'}`}
+                                        action={`/admin/atendimento/${activeConversation.id}/${!isActiveClosed ? 'fechar' : 'reabrir'}`}
                                         method="post"
                                         class="m-0"
                                     >
                                         <button type="submit" data-loading-text="..." class="gt-btn-outline gt-btn-xs">
-                                            {activeConversation.status === 'open' ? 'Encerrar' : 'Reabrir'}
+                                            {!isActiveClosed ? 'Encerrar' : 'Reabrir'}
                                         </button>
                                     </form>
 
@@ -236,7 +265,7 @@ export const AdminChatView: FC<AdminChatProps> = ({
                                         action={`/admin/atendimento/${activeConversation.id}/excluir`}
                                         method="post"
                                         class="m-0"
-                                        onsubmit="return confirm('Deseja realmente excluir esta conversa e todo o histórico de mensagens?')"
+                                        data-confirm="Deseja realmente excluir esta conversa e todo o histórico de mensagens?"
                                     >
                                         <button
                                             type="submit"
@@ -255,13 +284,22 @@ export const AdminChatView: FC<AdminChatProps> = ({
                             </div>
 
                             {/* Sub-barra de Inteligência CRM */}
-                            <div class="gtb-ai-bar px-5 py-2 flex flex-wrap items-center gap-2 text-[11px] shrink-0">
-                                <span class="px-2.5 py-0.5 rounded-full bg-[#F2C230]/15 border border-[#F2C230]/35 text-[#F2C230] font-extrabold">
-                                    {activeConversation.ai_enabled ? 'Piloto Automático IA' : 'Atendimento Humano'}
-                                </span>
-                                <span class="px-2.5 py-0.5 rounded-full bg-sky-500/15 border border-sky-400/30 text-sky-300 font-bold">
-                                    {activeStage} · Score {activeScore}/100
-                                </span>
+                            <div class="gtb-ai-bar px-5 py-2 flex flex-wrap items-center justify-between gap-2 text-[11px] shrink-0">
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <span class={`gt-badge ${activeConversation.ai_enabled ? 'gt-badge-success' : 'gt-badge-warning'}`}>
+                                        {activeConversation.ai_enabled ? 'Piloto Automático IA' : 'Atendimento Humano'}
+                                    </span>
+                                    <span class="text-[#8C95AA] font-semibold">
+                                        {activeStage} · Score {activeScore}/100
+                                    </span>
+                                </div>
+                                {isActiveHandoff && (
+                                    <form action={`/admin/atendimento/${activeConversation.id}/assumir`} method="post" class="m-0">
+                                        <button type="submit" data-loading-text="Assumindo..." class="gt-btn-primary gt-btn-xs">
+                                            Assumir Atendimento Humano
+                                        </button>
+                                    </form>
+                                )}
                             </div>
 
                             {/* Mensagens com Rolagem */}
@@ -347,6 +385,85 @@ export const AdminChatView: FC<AdminChatProps> = ({
                     )}
                 </section>
             </div>
+
+            {/* Polling em tempo real da lista do Inbox (sem precisar dar F5) */}
+            <script dangerouslySetInnerHTML={{ __html: `
+                (function () {
+                    var listEl = document.getElementById('gt-inbox-list');
+                    if (!listEl) return;
+                    var statusFilter = listEl.dataset.statusFilter || 'open';
+                    var activeId = listEl.dataset.activeId || '';
+                    var stageLabels = ${JSON.stringify(STAGE_LABELS)};
+
+                    function esc(s) {
+                        return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                    }
+
+                    async function pollInboxList() {
+                        try {
+                            var r = await fetch('/admin/atendimento/lista?status=' + encodeURIComponent(statusFilter), {
+                                headers: { 'Accept': 'application/json' },
+                                credentials: 'same-origin'
+                            });
+                            if (!r.ok) return;
+                            var d = await r.json();
+                            if (!d || !d.ok) return;
+
+                            if (d.counts) {
+                                var cAll = document.getElementById('gt-chat-count-all');
+                                var cOpen = document.getElementById('gt-chat-count-open');
+                                var cHand = document.getElementById('gt-chat-count-handoff');
+                                var cClosed = document.getElementById('gt-chat-count-closed');
+                                if (cAll) cAll.textContent = String(d.counts.all || 0);
+                                if (cOpen) cOpen.textContent = String(d.counts.open || 0);
+                                if (cHand) cHand.textContent = String(d.counts.handoff || 0);
+                                if (cClosed) cClosed.textContent = String(d.counts.closed || 0);
+                            }
+
+                            var items = Array.isArray(d.conversations) ? d.conversations : [];
+                            var inboxCountEl = document.getElementById('gt-inbox-count');
+                            if (inboxCountEl) inboxCountEl.textContent = String(items.length);
+
+                            if (items.length === 0) {
+                                listEl.innerHTML = '<div class="gt-empty-state">Nenhuma conversa nesta visualização.</div>';
+                                return;
+                            }
+
+                            var html = items.map(function (c) {
+                                var isSelected = String(c.id) === String(activeId);
+                                var isHandoff = c.status !== 'closed' && (c.status === 'waiting_staff' || c.crm_stage === 'handoff_human');
+                                var stageText = isHandoff ? 'Aguardando Humano' : (stageLabels[c.crm_stage] || c.crm_stage || 'Novo Lead');
+                                var name = c.visitor_name || c.client_name || c.visitor_company || ('Sessão #' + c.id);
+                                var channelLabel = c.channel === 'whatsapp' ? 'WhatsApp' : c.channel === 'web_chat' ? 'Portal' : 'Site';
+                                var preview = c.last_message_preview || c.visitor_objective || c.subject || c.visitor_email || 'Atendimento ao vivo';
+                                var timeStr = '';
+                                if (c.last_message_at) {
+                                    try {
+                                        timeStr = new Date(c.last_message_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                                    } catch (e) {}
+                                }
+                                var badgeCls = isHandoff ? 'gt-badge-warning' : c.ai_enabled ? 'gt-badge-success' : 'gt-badge-info';
+                                var badgeTxt = isHandoff ? 'Humano Solicitado' : c.ai_enabled ? 'IA' : 'Humano';
+                                return '<a href="/admin/atendimento?id=' + encodeURIComponent(c.id) + '&status=' + encodeURIComponent(statusFilter) + '" class="gtb-chat-item block px-4 py-3.5 no-underline transition ' + (isSelected ? 'is-active' : '') + '">'
+                                    + '<div class="flex items-center justify-between gap-2 mb-1">'
+                                    + '<span class="text-[13px] font-extrabold text-white truncate">' + esc(name) + '</span>'
+                                    + (timeStr ? '<span class="text-[10.5px] text-[#8C95AA] shrink-0 font-semibold">' + esc(timeStr) + '</span>' : '')
+                                    + '</div>'
+                                    + '<div class="text-[11.5px] text-[#8C95AA] truncate mb-2">' + esc(preview) + '</div>'
+                                    + '<div class="flex items-center justify-between gap-1.5 flex-wrap">'
+                                    + '<div class="flex items-center gap-2"><span class="gt-badge ' + badgeCls + '">' + badgeTxt + '</span><span class="text-[10.5px] font-semibold text-[#8C95AA]">· ' + esc(channelLabel) + '</span></div>'
+                                    + '<span class="text-[10px] font-bold text-[#8C95AA]">' + esc(stageText) + '</span>'
+                                    + '</div></a>';
+                            }).join('');
+                            listEl.innerHTML = html;
+                        } catch (e) {
+                        } finally {
+                            setTimeout(pollInboxList, 5000);
+                        }
+                    }
+                    setTimeout(pollInboxList, 5000);
+                })();
+            ` }} />
 
             {activeConversation && (
                 <script dangerouslySetInnerHTML={{ __html: `
