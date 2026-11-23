@@ -102,10 +102,10 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
 
                 <div class="gtb-card !p-4 flex items-center justify-between gap-2">
                     <div>
-                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Recebido / Liquidado</span>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Recebido em Caixa</span>
                         <span class="gt-font-display text-lg sm:text-xl font-extrabold text-white mt-0.5 block">{formatCurrency(metrics.totalReceived)}</span>
                     </div>
-                    <span class="gt-badge gt-badge-success">Pago</span>
+                    <span class="gt-badge gt-badge-success">Recebido</span>
                 </div>
 
                 <div class="gtb-card !p-4 flex items-center justify-between gap-2">
@@ -145,7 +145,7 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                             href="/admin/financeiro?status=paid"
                             class={`gt-btn-xs ${statusFilter === 'paid' ? 'gt-btn-primary' : 'gt-btn-outline'}`}
                         >
-                            Pagos ({paidCount})
+                            Recebidos / Pagos ({paidCount})
                         </a>
                         <a
                             href="/admin/financeiro?status=canceled"
@@ -197,6 +197,10 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                                     const overdue = isOverdueDate(t.due_date, t.status);
                                     const statusMeta = overdue
                                         ? STATUS_LABELS.overdue
+                                        : t.status === 'paid'
+                                        ? { label: isIncome ? 'Recebido' : 'Pago', badgeClass: 'gt-badge-success' }
+                                        : t.status === 'pending'
+                                        ? { label: isIncome ? 'A Receber' : 'A Pagar', badgeClass: 'gt-badge-warning' }
                                         : (STATUS_LABELS[t.status] || { label: t.status || 'Pendente', badgeClass: 'gt-badge-info' });
                                     const isPending = t.status === 'pending';
 
@@ -246,11 +250,16 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                                                 <div class="inline-flex items-center gap-1.5">
                                                     {isPending && (
                                                         <form action={`/admin/financeiro/${t.id}/pagar`} method="post" class="inline-block m-0">
-                                                            <button type="submit" data-loading-text="..." class="gt-btn-petrol gt-btn-xs" title="Marcar como Liquidado">
+                                                            <button
+                                                                type="submit"
+                                                                data-loading-text={isIncome ? 'Recebendo...' : 'Pagando...'}
+                                                                class="gt-btn-petrol gt-btn-xs"
+                                                                title={isIncome ? 'Confirmar recebimento da receita' : 'Confirmar pagamento da despesa'}
+                                                            >
                                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                                                     <polyline points="20 6 9 17 4 12" />
                                                                 </svg>
-                                                                <span>Liquidar</span>
+                                                                <span>{isIncome ? 'Receber' : 'Pagar'}</span>
                                                             </button>
                                                         </form>
                                                     )}

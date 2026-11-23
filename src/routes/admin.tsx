@@ -2519,11 +2519,18 @@ adminRoutes.post('/financeiro/:id/pagar', async (c) => {
     const db = c.env.DB;
     const id = c.req.param('id');
 
+    let txType = 'income';
+    try {
+        const row = await db.prepare(`SELECT type FROM financial_transactions WHERE id = ?`).bind(id).first<{ type?: string }>();
+        if (row?.type) txType = row.type;
+    } catch { }
+
     await db.prepare(
         `UPDATE financial_transactions SET status = 'paid', paid_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`
     ).bind(id).run();
 
-    return c.redirect('/admin/financeiro?success=Fatura liquidada com sucesso');
+    const msg = txType === 'expense' ? 'Despesa marcada como paga com sucesso' : 'Recebimento confirmado em caixa com sucesso';
+    return c.redirect(`/admin/financeiro?success=${encodeURIComponent(msg)}`);
 });
 
 adminRoutes.post('/financeiro/:id/cancelar', async (c) => {
