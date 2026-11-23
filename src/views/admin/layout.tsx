@@ -44,7 +44,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
-                <link rel="stylesheet" href="/css/gt-admin.css?v=59" />
+                <link rel="stylesheet" href="/css/gt-admin.css?v=60" />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
@@ -1036,6 +1036,193 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             document.addEventListener('DOMContentLoaded', scan);
                         } else {
                             scan();
+                        }
+                    })();
+
+                    // --------------------------------------------------------
+                    // CUSTOM SELECT CORPORATIVO PARA MODAIS (GundjaTech UI)
+                    // --------------------------------------------------------
+                    (function initCustomModalSelects() {
+                        function splitLabel(text) {
+                            var s = String(text || '').trim();
+                            var m = s.match(/^(.+?)\s*\(([^()]+)\)$/);
+                            if (m && m[1].length >= 2) {
+                                return { main: m[1].trim(), sub: m[2].trim() };
+                            }
+                            return { main: s, sub: '' };
+                        }
+
+                        function closeAll(except) {
+                            document.querySelectorAll('.gt-csel.is-open').forEach(function (el) {
+                                if (el !== except) el.classList.remove('is-open');
+                            });
+                        }
+
+                        function syncSelectUI(select) {
+                            if (!select || !select._gtCsel) return;
+                            var ui = select._gtCsel;
+                            var opt = select.options[select.selectedIndex];
+                            var val = select.value;
+                            var parsed = splitLabel(opt ? opt.textContent : '');
+                            ui.label.textContent = parsed.main || 'Selecione...';
+                            ui.label.classList.toggle('is-placeholder', !val);
+                            ui.list.querySelectorAll('.gt-csel-opt').forEach(function (btn) {
+                                btn.classList.toggle('is-selected', btn.getAttribute('data-value') === val);
+                            });
+                        }
+
+                        function enhanceSelect(select) {
+                            if (!select || select.dataset.gtCselBound === '1' || select.multiple) return;
+                            select.dataset.gtCselBound = '1';
+
+                            var wrap = document.createElement('div');
+                            wrap.className = 'gt-csel';
+                            select.parentNode.insertBefore(wrap, select);
+                            wrap.appendChild(select);
+                            select.classList.add('gt-csel-native');
+                            select.setAttribute('tabindex', '-1');
+
+                            var trigger = document.createElement('button');
+                            trigger.type = 'button';
+                            trigger.className = 'gt-csel-trigger';
+                            trigger.setAttribute('aria-haspopup', 'listbox');
+                            trigger.setAttribute('aria-expanded', 'false');
+
+                            var label = document.createElement('span');
+                            label.className = 'gt-csel-label';
+                            var chevron = document.createElement('span');
+                            chevron.className = 'gt-csel-chevron';
+                            chevron.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+                            trigger.appendChild(label);
+                            trigger.appendChild(chevron);
+
+                            var menu = document.createElement('div');
+                            menu.className = 'gt-csel-menu';
+                            menu.setAttribute('role', 'listbox');
+
+                            var searchInput = null;
+                            if (select.options.length > 4) {
+                                var sw = document.createElement('div');
+                                sw.className = 'gt-csel-search-wrap';
+                                searchInput = document.createElement('input');
+                                searchInput.type = 'text';
+                                searchInput.className = 'gt-csel-search';
+                                searchInput.placeholder = 'Filtrar opções...';
+                                sw.appendChild(searchInput);
+                                menu.appendChild(sw);
+                            }
+
+                            var list = document.createElement('div');
+                            list.className = 'gt-csel-list';
+
+                            var emptyEl = document.createElement('div');
+                            emptyEl.className = 'gt-csel-empty';
+                            emptyEl.textContent = 'Nenhum resultado encontrado';
+                            emptyEl.style.display = 'none';
+
+                            Array.prototype.forEach.call(select.options, function (opt) {
+                                var btn = document.createElement('button');
+                                btn.type = 'button';
+                                btn.className = 'gt-csel-opt';
+                                btn.setAttribute('role', 'option');
+                                btn.setAttribute('data-value', opt.value);
+                                btn.setAttribute('data-search', String(opt.textContent || '').toLowerCase());
+                                if (opt.disabled) btn.disabled = true;
+
+                                var parts = splitLabel(opt.textContent);
+                                var txt = document.createElement('span');
+                                txt.className = 'gt-csel-opt-text';
+                                var main = document.createElement('span');
+                                main.className = 'gt-csel-opt-main';
+                                main.textContent = parts.main;
+                                txt.appendChild(main);
+                                if (parts.sub) {
+                                    var sub = document.createElement('span');
+                                    sub.className = 'gt-csel-opt-sub';
+                                    sub.textContent = parts.sub;
+                                    txt.appendChild(sub);
+                                }
+                                var chk = document.createElement('span');
+                                chk.className = 'gt-csel-opt-check';
+                                chk.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+                                btn.appendChild(txt);
+                                btn.appendChild(chk);
+
+                                btn.addEventListener('click', function () {
+                                    select.value = opt.value;
+                                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                                    syncSelectUI(select);
+                                    wrap.classList.remove('is-open');
+                                    trigger.setAttribute('aria-expanded', 'false');
+                                });
+                                list.appendChild(btn);
+                            });
+                            list.appendChild(emptyEl);
+                            menu.appendChild(list);
+
+                            wrap.appendChild(trigger);
+                            wrap.appendChild(menu);
+
+                            select._gtCsel = { wrap: wrap, trigger: trigger, label: label, list: list, searchInput: searchInput };
+
+                            // Intercepta atribuição programática select.value = '...'
+                            var desc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+                            if (desc && desc.set && desc.get) {
+                                Object.defineProperty(select, 'value', {
+                                    get: function () { return desc.get.call(this); },
+                                    set: function (v) {
+                                        desc.set.call(this, v);
+                                        syncSelectUI(this);
+                                    },
+                                    configurable: true
+                                });
+                            }
+
+                            trigger.addEventListener('click', function (e) {
+                                e.stopPropagation();
+                                var willOpen = !wrap.classList.contains('is-open');
+                                closeAll(wrap);
+                                wrap.classList.toggle('is-open', willOpen);
+                                trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+                                if (willOpen && searchInput) {
+                                    searchInput.value = '';
+                                    list.querySelectorAll('.gt-csel-opt').forEach(function (b) { b.style.display = ''; });
+                                    emptyEl.style.display = 'none';
+                                    setTimeout(function () { searchInput.focus(); }, 20);
+                                }
+                            });
+
+                            if (searchInput) {
+                                searchInput.addEventListener('click', function (e) { e.stopPropagation(); });
+                                searchInput.addEventListener('input', function () {
+                                    var q = searchInput.value.trim().toLowerCase();
+                                    var visible = 0;
+                                    list.querySelectorAll('.gt-csel-opt').forEach(function (b) {
+                                        var match = !q || (b.getAttribute('data-search') || '').indexOf(q) !== -1;
+                                        b.style.display = match ? '' : 'none';
+                                        if (match) visible++;
+                                    });
+                                    emptyEl.style.display = visible === 0 ? '' : 'none';
+                                });
+                            }
+
+                            select.addEventListener('change', function () { syncSelectUI(select); });
+                            syncSelectUI(select);
+                        }
+
+                        window.GT_SyncCustomSelect = syncSelectUI;
+                        document.addEventListener('click', function () { closeAll(null); });
+                        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(null); });
+
+                        function scanSelects() {
+                            document.querySelectorAll('.gt-modal-card select').forEach(enhanceSelect);
+                        }
+
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', scanSelects);
+                        } else {
+                            scanSelects();
                         }
                     })();
 
