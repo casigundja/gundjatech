@@ -1214,6 +1214,157 @@ adminRoutes.post('/usuarios/:id/status', async (c) => {
     return c.redirect('/admin/usuarios?success=Status do usuário atualizado com sucesso');
 });
 
+adminRoutes.post('/usuarios/:id/editar', async (c) => {
+    const currentUser = c.get('user')!;
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+    const body = await getRequestBody(c);
+
+    if (!id || id <= 0) {
+        return c.redirect('/admin/usuarios?error=Usuário inválido.');
+    }
+
+    const target = await db.prepare(`SELECT * FROM users WHERE id = ?`).bind(id).first<any>();
+    if (!target) {
+        return c.redirect('/admin/usuarios?error=Usuário não encontrado.');
+    }
+
+    const name = String(body.name || '').trim();
+    const email = String(body.email || '').trim().toLowerCase();
+    const phone = String(body.phone || '').trim() || null;
+    const company = String(body.company || '').trim() || null;
+    const allowedRoles = ['superadmin', 'admin', 'manager', 'attendant', 'developer', 'financial', 'client'];
+    const requestedRole = String(body.role || target.role).trim();
+    const nextRole = allowedRoles.includes(requestedRole) ? requestedRole : target.role;
+    const nextActive = body.is_active === '0' || body.is_active === 0 ? 0 : 1;
+    const newPassword = String(body.new_password || '');
+
+    if (!name || !email) {
+        return c.redirect('/admin/usuarios?error=Nome e E-mail são obrigatórios.');
+    }
+
+    if (newPassword && newPassword.length < 8) {
+        return c.redirect('/admin/usuarios?error=A nova senha deve ter no mínimo 8 caracteres.');
+    }
+
+    // Somente Super Admin pode atribuir ou alterar papel de Super Admin
+    if ((nextRole === 'superadmin' || target.role === 'superadmin') && currentUser.role !== 'superadmin' && nextRole !== target.role) {
+        return c.redirect('/admin/usuarios?error=Apenas Super Administradores podem alterar este papel.');
+    }
+
+    // Impede desativar ou rebaixar a própria conta
+    if (id === Number(currentUser.id) && (nextActive === 0 || nextRole !== target.role)) {
+        return c.redirect('/admin/usuarios?error=Não é possível desativar ou alterar o papel da própria conta.');
+    }
+
+    // Impede remover o último Super Admin ativo
+    if (target.role === 'superadmin' && (nextRole !== 'superadmin' || nextActive === 0)) {
+        const superCount = await db.prepare(
+            `SELECT COUNT(*) AS cnt FROM users WHERE role = 'superadmin' AND is_active = 1 AND id != ?`
+        ).bind(id).first<{ cnt: number }>();
+        if (!superCount || Number(superCount.cnt) < 1) {
+            return c.redirect('/admin/usuarios?error=O sistema precisa manter pelo menos um Super Administrador ativo.');
+        }
+    }
+
+    // Verifica duplicidade de e-mail
+    const dup = await db.prepare(`SELECT id FROM users WHERE lower(email) = lower(?) AND id != ?`).bind(email, id).first();
+    if (dup) {
+        return c.redirect('/admin/usuarios?error=Já existe outro usuário cadastrado com este e-mail.');
+    }
+
+    if (newPassword) {
+        const hashed = await hashPassword(newPassword);
+        await db.prepare(
+            `UPDATE users SET name = ?, email = ?, phone = ?, company = ?, role = ?, is_active = ?, password = ?, updated_at = datetime('now') WHERE id = ?`
+        ).bind(name, email, phone, company, nextRole, nextActive, hashed, id).run();
+        await destroyAllUserSessions(c.env, id);
+        return c.redirect('/admin/usuarios?success=Usuário atualizado e nova senha definida com sucesso!');
+    }
+
+    await db.prepare(
+        `UPDATE users SET name = ?, email = ?, phone = ?, company = ?, role = ?, is_active = ?, updated_at = datetime('now') WHERE id = ?`
+    ).bind(name, email, phone, company, nextRole, nextActive, id).run();
+
+    // Revoga sessões se perdeu acesso ou trocou de papel
+    if (nextActive === 0 || nextRole !== target.role) {
+        await destroyAllUserSessions(c.env, id);
+    }
+
+    return c.redirect('/admin/usuarios?success=Dados do usuário atualizados com sucesso!');
+});
+
+adminRoutes.post('/usuarios/:id/revogar-sessoes', async (c) => {
+    const currentUser = c.get('user')!;
+    const id = Number(c.req.param('id'));
+
+    if (!id || id === Number(currentUser.id)) {
+        return c.redirect('/admin/usuarios?error=Use Sair do Painel para encerrar sua própria sessão.');
+    }
+
+    await destroyAllUserSessions(c.env, id);
+    return c.redirect('/admin/usuarios?success=Todas as sessões ativas do usuário foram encerradas.');
+});
+
+adminRoutes.post('/usuarios/:id/reset-link', async (c) => {
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+    const body = await getRequestBody(c);
+    const shouldSendEmail = body.send_email !== false && body.send_email !== '0';
+
+    const target = await db.prepare(`SELECT id, name, email, phone, role FROM users WHERE id = ?`).bind(id).first<any>();
+    if (!target || !target.email) {
+        return c.json({ ok: false, error: 'Usuário não encontrado.' }, 404);
+    }
+
+    const targetEmail = String(target.email).trim().toLowerCase();
+    const displayName = String(target.name || 'Usuário').trim();
+    const tokenBytes = new Uint8Array(24);
+    crypto.getRandomValues(tokenBytes);
+    const token = Array.from(tokenBytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+
+    await db.prepare(`DELETE FROM password_reset_tokens WHERE email = ?`).bind(targetEmail).run();
+    await db.prepare(
+        `INSERT INTO password_reset_tokens (email, token, created_at) VALUES (?, ?, datetime('now'))`
+    ).bind(targetEmail, token).run();
+
+    const baseUrl = (c.env.APP_URL || new URL(c.req.url).origin).replace(/\/+$/, '');
+    const resetUrl = `${baseUrl}/redefinir-senha/${token}?email=${encodeURIComponent(targetEmail)}`;
+
+    let emailSent = false;
+    let emailError: string | null = null;
+    if (shouldSendEmail) {
+        try {
+            const res = await sendPortalInviteEmail(c.env, targetEmail, displayName, resetUrl);
+            emailSent = res.success;
+            emailError = res.error || null;
+        } catch (err: any) {
+            emailError = err?.message || 'Erro ao enviar e-mail';
+        }
+    }
+
+    const whatsappMessage =
+        `Olá, *${displayName}*!\n\n` +
+        `Segue o link seguro para definir ou redefinir sua senha de acesso na *GundjaTech*:\n\n` +
+        `E-mail: ${targetEmail}\n` +
+        `Link de acesso: ${resetUrl}`;
+
+    const phoneDigits = String(target.phone || '').replace(/\D/g, '');
+    const whatsappUrl = phoneDigits
+        ? `https://wa.me/${phoneDigits}?text=${encodeURIComponent(whatsappMessage)}`
+        : `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`;
+
+    return c.json({
+        ok: true,
+        email: targetEmail,
+        reset_url: resetUrl,
+        whatsapp_url: whatsappUrl,
+        whatsapp_message: whatsappMessage,
+        email_sent: emailSent,
+        email_error: emailError,
+    });
+});
+
 adminRoutes.post('/usuarios/:id/excluir', async (c) => {
     const currentUser = c.get('user')!;
     const db = c.env.DB;
