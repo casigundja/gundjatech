@@ -1712,9 +1712,20 @@ adminRoutes.get('/projetos/:id', async (c) => {
         `SELECT * FROM project_stages WHERE project_id = ? ORDER BY sort_order ASC, id ASC`
     ).bind(id).all()).results || [];
 
-    const attachments = (await db.prepare(
-        `SELECT * FROM project_attachments WHERE project_id = ? ORDER BY created_at DESC`
-    ).bind(id).all()).results || [];
+    let attachments: any[] = [];
+    try {
+        attachments = (await db.prepare(
+            `SELECT a.*, u.name AS uploader_name, u.role AS uploader_role
+             FROM project_attachments a
+             LEFT JOIN users u ON u.id = a.user_id
+             WHERE a.project_id = ?
+             ORDER BY a.created_at DESC`
+        ).bind(id).all()).results || [];
+    } catch {
+        attachments = (await db.prepare(
+            `SELECT * FROM project_attachments WHERE project_id = ? ORDER BY created_at DESC`
+        ).bind(id).all()).results || [];
+    }
 
     return c.html(
         <AdminProjectsView
@@ -1736,7 +1747,14 @@ adminRoutes.post('/projetos/:id', async (c) => {
     const body = await getRequestBody(c);
 
     const status = String(body.status || 'planning').trim();
-    const progress = status === 'completed' ? 100 : Math.min(100, Math.max(0, Number(body.progress_percentage) || 0));
+    const STATUS_DEFAULT_PROGRESS: Record<string, number> = {
+        planning: 15,
+        in_progress: 50,
+        reviewing: 85,
+        completed: 100,
+        canceled: 0
+    };
+    const rawProgressStr = String(body.progress_percentage ?? '').trim();
     const startDate = String(body.start_date || '').trim() || null;
     const expectedEndDate = String(body.expected_end_date || '').trim() || null;
 
@@ -1744,12 +1762,25 @@ adminRoutes.post('/projetos/:id', async (c) => {
     let previousProject: any = null;
     try {
         previousProject = await db.prepare(
-            `SELECT p.id, p.client_id, p.title, p.name, p.status, c.name AS client_name, c.company AS client_company, c.email AS client_email
+            `SELECT p.id, p.client_id, p.title, p.name, p.status, p.progress_percentage, c.name AS client_name, c.company AS client_company, c.email AS client_email
              FROM projects p
              LEFT JOIN clients c ON c.id = p.client_id
              WHERE p.id = ?`
         ).bind(id).first<any>();
     } catch { }
+
+    const prevStatus = String(previousProject?.status || '');
+    const prevProgress = Number(previousProject?.progress_percentage ?? 0);
+    const parsedProgress = rawProgressStr === '' ? NaN : Number(rawProgressStr);
+    const statusChanged = Boolean(prevStatus && prevStatus !== status);
+    const progress =
+        status === 'completed'
+            ? 100
+            : status === 'canceled'
+            ? 0
+            : Number.isNaN(parsedProgress) || (statusChanged && parsedProgress === prevProgress)
+            ? (STATUS_DEFAULT_PROGRESS[status] ?? prevProgress)
+            : Math.min(100, Math.max(0, parsedProgress));
 
     await db.prepare(
         `UPDATE projects 

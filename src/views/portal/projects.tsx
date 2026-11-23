@@ -135,25 +135,70 @@ export const PortalProjectsView: FC<PortalProjectsProps> = ({
                         )}
                     </div>
 
-                    <div class="gtb-card !p-5">
-                        <h2 class="text-sm font-extrabold text-white pb-3 mb-4 border-b border-white/5">Arquivos &amp; Entregáveis</h2>
-                        {attachments.length === 0 ? (
-                            <div class="gt-empty-state">Nenhum arquivo disponibilizado ainda.</div>
-                        ) : (
-                            <div class="space-y-2.5">
-                                {attachments.map((att: any) => (
-                                    <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-[#032033]/40 border border-white/10">
-                                        <div class="flex items-center gap-2 min-w-0">
-                                            <svg class="w-4 h-4 text-[#16749A] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                                            <span class="text-xs font-bold text-white truncate">{att.file_name}</span>
-                                        </div>
-                                        <a href={`/portal/projetos/${projectDetail.id}/anexos/${att.id}`} class="gt-btn-outline gt-btn-xs shrink-0">
-                                            Baixar
-                                        </a>
-                                    </div>
-                                ))}
+                    <div class="gtb-card !p-5 flex flex-col justify-between gap-4">
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between gap-2 pb-3 border-b border-white/5">
+                                <h2 class="text-sm font-extrabold text-white">Arquivos &amp; Entregáveis ({attachments.length})</h2>
                             </div>
-                        )}
+                            {attachments.length === 0 ? (
+                                <div class="gtb-surface-box rounded-xl p-5 text-center text-xs text-[#8C95AA]">
+                                    Nenhum arquivo disponibilizado ainda. Você também pode enviar arquivos para a equipe abaixo.
+                                </div>
+                            ) : (
+                                <div class="space-y-2.5">
+                                    {attachments.map((att: any) => {
+                                        const isFromClient = att.uploader_role === 'client' || Number(att.user_id) === Number(currentUser?.id);
+                                        const sizeKb = att.file_size ? (att.file_size < 1024 * 1024 ? `${(att.file_size / 1024).toFixed(1)} KB` : `${(att.file_size / (1024 * 1024)).toFixed(1)} MB`) : '';
+                                        return (
+                                            <div class="gtb-surface-box flex items-center justify-between gap-3 p-3 rounded-xl">
+                                                <div class="flex items-center gap-2.5 min-w-0">
+                                                    <span class="gtb-icon-box !w-8 !h-8 shrink-0" aria-hidden="true">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                                    </span>
+                                                    <div class="min-w-0">
+                                                        <div class="text-xs font-bold text-white truncate">{att.file_name}</div>
+                                                        <div class="text-[10.5px] text-[#8C95AA] flex items-center gap-1.5 flex-wrap">
+                                                            <span>{isFromClient ? 'Enviado por você' : 'Equipe GundjaTech'}</span>
+                                                            {sizeKb && <span>· {sizeKb}</span>}
+                                                            {att.created_at && <span>· {new Date(att.created_at).toLocaleDateString('pt-BR')}</span>}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <a href={`/portal/projetos/${projectDetail.id}/anexos/${att.id}`} class="gt-btn-outline gt-btn-xs shrink-0">
+                                                    Baixar
+                                                </a>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Upload de Anexo pelo Cliente (sincronizado direto com o Admin) */}
+                        <form
+                            action={`/portal/projetos/${projectDetail.id}/anexos`}
+                            method="post"
+                            enctype="multipart/form-data"
+                            class="gtb-surface-box rounded-xl p-4 space-y-3"
+                        >
+                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#16749A]">
+                                Enviar Arquivo para a Equipe (até 15 MB)
+                            </label>
+                            <input
+                                type="file"
+                                name="file"
+                                required
+                                accept=".pdf,.png,.jpg,.jpeg,.webp,.svg,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.txt,.csv"
+                                class="w-full rounded-xl px-3 py-2 text-xs"
+                                style="border: 1px dashed rgba(22, 116, 154, 0.35); cursor: pointer;"
+                            />
+                            <div class="flex items-center justify-between gap-2 flex-wrap">
+                                <span class="text-[10.5px] text-[#8C95AA]">Disponível imediatamente para nossa equipe técnica.</span>
+                                <button type="submit" data-loading-text="Enviando..." class="gt-btn-petrol gt-btn-xs shrink-0">
+                                    Enviar Arquivo
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </PortalLayout>

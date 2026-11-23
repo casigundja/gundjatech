@@ -117,7 +117,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
 
                         <div class="gtb-surface-box rounded-2xl px-5 py-3 text-right shrink-0">
                             <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Progresso Geral</div>
-                            <div class="gt-font-display text-2xl font-extrabold text-[#F2C230] mt-0.5" style="font-variant-numeric: tabular-nums;">{progress}%</div>
+                            <div id="gt-proj-progress-kpi" class="gt-font-display text-2xl font-extrabold text-[#F2C230] mt-0.5" style="font-variant-numeric: tabular-nums;">{progress}%</div>
                         </div>
                     </div>
 
@@ -146,7 +146,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
 
                     {/* Barra de Progresso Visual */}
                     <div class="w-full h-2 rounded-full overflow-hidden" style="background: rgba(140, 149, 170, 0.22);">
-                        <div style={`height: 100%; width: ${progress}%; background: linear-gradient(90deg, #063B5C 0%, #16749A 65%, #F2C230 100%); border-radius: 999px; transition: width 0.3s ease;`} />
+                        <div id="gt-proj-progress-bar" style={`height: 100%; width: ${progress}%; background: linear-gradient(90deg, #063B5C 0%, #16749A 65%, #F2C230 100%); border-radius: 999px; transition: width 0.3s ease;`} />
                     </div>
 
                     {/* Formulário de Atualização de Status & Cronograma */}
@@ -154,7 +154,12 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px;">
                             <div>
                                 <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Status</label>
-                                <select name="status" class="w-full rounded-xl px-3.5 py-2 text-xs">
+                                <select
+                                    id="gt-proj-status-select"
+                                    name="status"
+                                    onchange="var map={planning:15,in_progress:50,reviewing:85,completed:100,canceled:0};var pct=map[this.value];if(pct!==undefined){var inp=document.getElementById('gt-proj-progress-input');if(inp){inp.value=String(pct);inp.dispatchEvent(new Event('input',{bubbles:true}));}var kpi=document.getElementById('gt-proj-progress-kpi');if(kpi)kpi.textContent=pct+'%';var bar=document.getElementById('gt-proj-progress-bar');if(bar)bar.style.width=pct+'%';}"
+                                    class="w-full rounded-xl px-3.5 py-2 text-xs"
+                                >
                                     <option value="planning" selected={projectDetail.status === 'planning'}>Planejamento</option>
                                     <option value="in_progress" selected={projectDetail.status === 'in_progress'}>Em Desenvolvimento</option>
                                     <option value="reviewing" selected={projectDetail.status === 'reviewing'}>Em Homologação</option>
@@ -164,13 +169,15 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                             </div>
 
                             <div>
-                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Progresso (%)</label>
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Progresso (%) · Automático</label>
                                 <input
+                                    id="gt-proj-progress-input"
                                     type="number"
                                     name="progress_percentage"
                                     min="0"
                                     max="100"
                                     value={progress}
+                                    oninput="var v=Math.max(0,Math.min(100,parseInt(this.value||'0',10)||0));var kpi=document.getElementById('gt-proj-progress-kpi');if(kpi)kpi.textContent=v+'%';var bar=document.getElementById('gt-proj-progress-bar');if(bar)bar.style.width=v+'%';"
                                     class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
                                 />
                             </div>
@@ -313,6 +320,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                                     attachments.map((att) => {
                                         const sizeLabel = formatFileSize(att.file_size);
                                         const isPortalVisible = att.is_client_visible !== 0;
+                                        const isFromClient = att.uploader_role === 'client';
                                         return (
                                             <div class="gtb-surface-box rounded-xl p-3 flex items-center justify-between gap-2.5">
                                                 <div class="flex items-center gap-2.5 min-w-0">
@@ -325,7 +333,8 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                                                     <div class="min-w-0">
                                                         <div class="text-xs font-bold text-white truncate">{att.file_name}</div>
                                                         <div class="text-[10.5px] text-[#8C95AA] flex items-center gap-1.5 flex-wrap">
-                                                            <span>{att.created_at ? new Date(att.created_at).toLocaleDateString('pt-BR') : '—'}</span>
+                                                            <span class={isFromClient ? 'font-bold text-[#16749A]' : ''}>{isFromClient ? 'Cliente' : 'Equipe'}</span>
+                                                            <span>· {att.created_at ? new Date(att.created_at).toLocaleDateString('pt-BR') : '—'}</span>
                                                             {sizeLabel && <span>· {sizeLabel}</span>}
                                                             <span>· {isPortalVisible ? 'Portal' : 'Interno'}</span>
                                                         </div>

@@ -89,9 +89,10 @@ portalRoutes.get('/projetos/:id', async (c) => {
         'SELECT * FROM project_stages WHERE project_id = ? ORDER BY sort_order ASC, id ASC'
     ).bind(projectId).all();
 
-    const attachments = await db.prepare(
-        'SELECT * FROM project_attachments WHERE project_id = ? AND is_client_visible = 1'
+    const attRes = await db.prepare(
+        'SELECT * FROM project_attachments WHERE project_id = ? AND is_client_visible = 1 ORDER BY created_at DESC'
     ).bind(projectId).all();
+    const attachments = attRes.results || [];
 
     return c.html(
         <PortalProjectsView
@@ -100,11 +101,65 @@ portalRoutes.get('/projetos/:id', async (c) => {
             projects={[]}
             projectDetail={project}
             stages={stages.results || []}
-            attachments={attachments.results || []}
+            attachments={attachments}
             successMessage={c.req.query('success')}
             errorMessage={c.req.query('error')}
         />
     );
+});
+
+portalRoutes.post('/projetos/:id/anexos', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+    const projectId = Number(c.req.param('id'));
+
+    const project = await db.prepare(
+        'SELECT id FROM projects WHERE id = ? AND client_id = ?'
+    ).bind(projectId, client.id).first();
+
+    if (!project) {
+        return c.text('Projeto não encontrado ou acesso não autorizado.', 404);
+    }
+
+    try {
+        const formData = await c.req.formData();
+        const fileEntry = formData.get('file');
+        if (!fileEntry || typeof fileEntry === 'string' || !('arrayBuffer' in fileEntry)) {
+            return c.redirect(`/portal/projetos/${projectId}?error=Selecione um arquivo válido para enviar.`);
+        }
+
+        const file = fileEntry as File;
+        const maxSize = 15 * 1024 * 1024;
+        if (file.size <= 0 || file.size > maxSize) {
+            return c.redirect(`/portal/projetos/${projectId}?error=Arquivo inválido ou maior que 15 MB.`);
+        }
+
+        const originalName = String(file.name || 'arquivo').trim();
+        const ext = originalName.includes('.') ? originalName.split('.').pop()!.toLowerCase() : '';
+        const allowedExts = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'svg', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'txt', 'csv'];
+        if (ext && !allowedExts.includes(ext)) {
+            return c.redirect(`/portal/projetos/${projectId}?error=Formato de arquivo não permitido (.${ext}).`);
+        }
+
+        const safeBase = originalName.replace(/[^a-zA-Z0-9._-]+/g, '_').slice(0, 100);
+        const storageKey = `private/projects/${projectId}/${Date.now()}_${safeBase}`;
+        const mimeType = file.type || 'application/octet-stream';
+
+        if (c.env?.UPLOADS_BUCKET) {
+            const buf = await file.arrayBuffer();
+            await c.env.UPLOADS_BUCKET.put(storageKey, buf, {
+                httpMetadata: { contentType: mimeType }
+            });
+        }
+
+        await db.prepare(
+            `INSERT INTO project_attachments (project_id, user_id, file_name, file_path, file_size, mime_type, is_client_visible, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, 1, datetime('now'), datetime('now'))`
+        ).bind(projectId, user.id, originalName, storageKey, file.size, mimeType).run();
+
+        return c.redirect(`/portal/projetos/${projectId}?success=Arquivo enviado com sucesso! Nossa equipe já tem acesso.`);
+    } catch (err: any) {
+        return c.redirect(`/portal/projetos/${projectId}?error=${encodeURIComponent(err?.message || 'Erro ao enviar arquivo')}`);
+    }
 });
 
 portalRoutes.get('/projetos/:id/anexos/:attId', async (c) => {
