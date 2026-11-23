@@ -3913,6 +3913,103 @@ html[data-admin-theme="light"] .gt-chat-quick-btn:hover {
     }
 }
 
+/* ==========================================================================
+   GLOBAL EXECUTIVE SOBER PALETTE LAYER (ADMIN + PORTAL — ALL 21 SCREENS)
+   Garante visual corporativo limpo (Paleta 3) sem ícones/números/pílulas neon
+   ========================================================================== */
+
+/* 1. Remove qualquer faixa colorida residual no topo de cards */
+.gtb-kpi-gold::before,
+.gtb-kpi-blue::before,
+.gtb-kpi-petrol::before,
+.gtb-card-accent-top {
+    display: none !important;
+}
+
+/* 2. Uniformiza TODAS as caixas de ícone (KPIs, headers e estados vazios) no Admin e Portal */
+body.gt-admin-boost main :where(
+    .bg-\[\#F2C230\]\/15,
+    .bg-\[\#F2C230\]\/10,
+    .bg-\[\#F2C230\]\/20,
+    .bg-emerald-500\/15,
+    .bg-sky-500\/15,
+    .bg-amber-500\/15,
+    .bg-\[\#16749A\]\/15,
+    .bg-\[\#16749A\]\/10,
+    .bg-\[\#16749A\]\/25
+):not(.gt-btn-primary):not(.gt-btn-petrol):not(.gt-petrol-cta-card *) {
+    background: rgba(22, 116, 154, 0.14) !important;
+    border-color: rgba(231, 240, 245, 0.16) !important;
+    color: #CFE0EC !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost main :where(
+    .bg-\[\#F2C230\]\/15,
+    .bg-\[\#F2C230\]\/10,
+    .bg-\[\#F2C230\]\/20,
+    .bg-emerald-500\/15,
+    .bg-sky-500\/15,
+    .bg-amber-500\/15,
+    .bg-\[\#16749A\]\/15,
+    .bg-\[\#16749A\]\/10,
+    .bg-\[\#16749A\]\/25
+):not(.gt-btn-primary):not(.gt-btn-petrol):not(.gt-petrol-cta-card *) {
+    background: #EDF4F8 !important;
+    border-color: #D4E3ED !important;
+    color: #063B5C !important;
+}
+
+/* 3. Uniformiza TODOS os números grandes de KPI em cards (sem verde-neon ou amarelo nos totais) */
+body.gt-admin-boost main .gtb-card :where(
+    .gt-font-display.text-xl,
+    .gt-font-display.text-lg,
+    .gt-font-display.text-2xl,
+    .text-xl.font-extrabold,
+    .text-2xl.font-extrabold,
+    .text-lg.font-extrabold
+):not(.gt-btn-primary) {
+    color: #FFFFFF !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost main .gtb-card :where(
+    .gt-font-display.text-xl,
+    .gt-font-display.text-lg,
+    .gt-font-display.text-2xl,
+    .text-xl.font-extrabold,
+    .text-2xl.font-extrabold,
+    .text-lg.font-extrabold
+):not(.gt-btn-primary) {
+    color: #063B5C !important;
+}
+
+/* 4. Suaviza textos verde-neon/ciano/amarelo soltos no corpo das páginas */
+html[data-admin-theme="light"] body.gt-admin-boost main :where(.text-\[\#34D399\], .text-\[\#6EE7B7\], .text-emerald-400, .text-emerald-300) {
+    color: #0F5132 !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost main :where(.text-\[\#F2C230\], .text-\[\#E4A318\]):not(.gt-btn-primary):not(.gt-petrol-cta-card *) {
+    color: #063B5C !important;
+}
+
+/* 5. Mantém apenas badges de status sóbrios e limpos */
+html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-success {
+    background: #EDF6F2 !important;
+    color: #0F5132 !important;
+    border-color: #C2DFD1 !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-warning {
+    background: #F4F7FA !important;
+    color: #063B5C !important;
+    border-color: #CFDDE7 !important;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-info {
+    background: #EDF4F8 !important;
+    color: #063B5C !important;
+    border-color: #C8DCE9 !important;
+}
+
 
 
 
