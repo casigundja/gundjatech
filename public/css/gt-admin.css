@@ -4683,7 +4683,7 @@ body.is-light-mode .gt-csel-opt-check {
 }
 
 .gt-dash-scroll-list {
-    max-height: 162px;
+    max-height: 208px;
 }
 
 @media (min-width: 1024px) {
@@ -4706,8 +4706,8 @@ body.is-light-mode .gt-csel-opt-check {
     }
 
     .gt-dash-card-list:has(> details[open]) {
-        height: 230px;
-        max-height: 230px;
+        height: 276px;
+        max-height: 276px;
         overflow: hidden;
     }
 }
