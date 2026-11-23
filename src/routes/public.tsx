@@ -570,8 +570,8 @@ publicRoutes.get('/', async (c) => {
         const liveCards = renderSocialFeedCardsHtml(feed.items);
         if (liveCards) {
             html = html.replace(
-                /<div class="gt-reels-grid">[\s\S]*?<\/div>\s*<div class="gt-reels-social-bar">/,
-                `<div class="gt-reels-grid">\n${liveCards}\n    </div>\n\n    <div class="gt-reels-social-bar">`
+                /<div class="gt-reels-grid">[\s\S]*?<\/div>\s*<!--__GT_REELS_END__-->/,
+                `<div class="gt-reels-grid">\n${liveCards}\n    </div><!--__GT_REELS_END__-->`
             );
         }
     } catch { }
