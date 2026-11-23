@@ -1189,6 +1189,181 @@ async function autoStartProjectFromApprovedRequest(
 }
 
 /**
+ * Exclusão sincronizada do fluxo comercial completo:
+ * Solicitação ↔ Orçamento ↔ Projeto (etapas/anexos) ↔ Faturas em aberto (não pagas).
+ * Preserva faturas já pagas (`status = 'paid'`) para integridade contábil e de recibos.
+ */
+async function deleteLinkedCommercialFlow(
+    db: any,
+    env: any,
+    anchor: { requestId?: number; quotationId?: number; projectId?: number }
+): Promise<{
+    deletedRequests: number;
+    deletedQuotations: number;
+    deletedProjects: number;
+    deletedInvoices: number;
+}> {
+    const requestIds = new Set<number>();
+    const quotationIds = new Set<number>();
+    const projectIds = new Set<number>();
+    const invoiceRefs = new Set<string>();
+    const titles = new Set<string>();
+    let clientId: number | null = null;
+
+    const addTitle = (t: unknown) => {
+        const s = String(t || '').trim();
+        if (s) titles.add(s.toLowerCase());
+    };
+    const addRef = (r: unknown) => {
+        const s = String(r || '').trim();
+        if (s) invoiceRefs.add(s);
+    };
+
+    try {
+        if (anchor.requestId && anchor.requestId > 0) {
+            requestIds.add(anchor.requestId);
+            const req = (await db.prepare(`SELECT * FROM service_requests WHERE id = ?`).bind(anchor.requestId).first()) as any;
+            if (req) {
+                if (req.client_id) clientId = Number(req.client_id);
+                addTitle(req.service_title);
+                addTitle(req.title);
+                addRef(req.protocol);
+                addRef(req.tracking_code);
+            }
+        }
+
+        if (anchor.quotationId && anchor.quotationId > 0) {
+            quotationIds.add(anchor.quotationId);
+            const q = (await db.prepare(`SELECT * FROM quotations WHERE id = ?`).bind(anchor.quotationId).first()) as any;
+            if (q) {
+                if (q.client_id) clientId = Number(q.client_id);
+                if (q.service_request_id) requestIds.add(Number(q.service_request_id));
+                addTitle(q.title);
+                addRef(q.reference_code);
+            }
+        }
+
+        if (anchor.projectId && anchor.projectId > 0) {
+            projectIds.add(anchor.projectId);
+            const p = (await db.prepare(`SELECT * FROM projects WHERE id = ?`).bind(anchor.projectId).first()) as any;
+            if (p) {
+                if (p.client_id) clientId = Number(p.client_id);
+                addTitle(p.title);
+                addTitle(p.name);
+            }
+        }
+
+        // Expande vínculos: solicitações -> orçamentos e vice-versa
+        for (const rId of [...requestIds]) {
+            const req = (await db.prepare(`SELECT * FROM service_requests WHERE id = ?`).bind(rId).first()) as any;
+            if (req) {
+                if (!clientId && req.client_id) clientId = Number(req.client_id);
+                addTitle(req.service_title);
+                addTitle(req.title);
+                addRef(req.protocol);
+                addRef(req.tracking_code);
+            }
+            const qRes = await db.prepare(`SELECT * FROM quotations WHERE service_request_id = ?`).bind(rId).all();
+            for (const q of (qRes?.results || []) as any[]) {
+                quotationIds.add(Number(q.id));
+                if (!clientId && q.client_id) clientId = Number(q.client_id);
+                addTitle(q.title);
+                addRef(q.reference_code);
+            }
+        }
+
+        // Busca solicitações, orçamentos e projetos do mesmo cliente com o mesmo título
+        if (clientId && titles.size > 0) {
+            const reqRes = await db.prepare(`SELECT * FROM service_requests WHERE client_id = ?`).bind(clientId).all();
+            for (const r of (reqRes?.results || []) as any[]) {
+                const t1 = String(r.service_title || '').trim().toLowerCase();
+                const t2 = String(r.title || '').trim().toLowerCase();
+                if ((t1 && titles.has(t1)) || (t2 && titles.has(t2))) {
+                    requestIds.add(Number(r.id));
+                    addRef(r.protocol);
+                    addRef(r.tracking_code);
+                }
+            }
+
+            const qRes = await db.prepare(`SELECT * FROM quotations WHERE client_id = ?`).bind(clientId).all();
+            for (const q of (qRes?.results || []) as any[]) {
+                const qt = String(q.title || '').trim().toLowerCase();
+                if ((q.service_request_id && requestIds.has(Number(q.service_request_id))) || (qt && titles.has(qt))) {
+                    quotationIds.add(Number(q.id));
+                    addRef(q.reference_code);
+                }
+            }
+
+            const pRes = await db.prepare(`SELECT * FROM projects WHERE client_id = ?`).bind(clientId).all();
+            for (const p of (pRes?.results || []) as any[]) {
+                const pt1 = String(p.title || '').trim().toLowerCase();
+                const pt2 = String(p.name || '').trim().toLowerCase();
+                if ((pt1 && titles.has(pt1)) || (pt2 && titles.has(pt2))) {
+                    projectIds.add(Number(p.id));
+                }
+            }
+        }
+    } catch { }
+
+    let deletedInvoices = 0;
+    try {
+        if (clientId && (invoiceRefs.size > 0 || titles.size > 0)) {
+            const txRes = await db.prepare(
+                `SELECT id, invoice_number, description, status FROM financial_transactions WHERE client_id = ? AND status != 'paid'`
+            ).bind(clientId).all();
+            for (const tx of (txRes?.results || []) as any[]) {
+                const inv = String(tx.invoice_number || '').trim();
+                const descLow = String(tx.description || '').toLowerCase();
+                const matchesRef = inv && invoiceRefs.has(inv);
+                const matchesRefInDesc = [...invoiceRefs].some((r) => r && descLow.includes(r.toLowerCase()));
+                const matchesTitle = [...titles].some((t) => t && descLow.includes(t));
+                if (matchesRef || matchesRefInDesc || matchesTitle) {
+                    try { await db.prepare(`DELETE FROM payments WHERE financial_transaction_id = ?`).bind(tx.id).run(); } catch { }
+                    await db.prepare(`DELETE FROM financial_transactions WHERE id = ? AND status != 'paid'`).bind(tx.id).run();
+                    deletedInvoices++;
+                }
+            }
+        }
+    } catch { }
+
+    for (const pId of projectIds) {
+        try {
+            await db.prepare(`DELETE FROM project_stages WHERE project_id = ?`).bind(pId).run();
+            await db.prepare(`DELETE FROM project_attachments WHERE project_id = ?`).bind(pId).run();
+            await db.prepare(`DELETE FROM projects WHERE id = ?`).bind(pId).run();
+        } catch { }
+    }
+
+    for (const qId of quotationIds) {
+        try {
+            await db.prepare(`DELETE FROM quotations WHERE id = ?`).bind(qId).run();
+        } catch { }
+    }
+
+    for (const rId of requestIds) {
+        try {
+            await db.prepare(`DELETE FROM service_request_history WHERE service_request_id = ?`).bind(rId).run();
+            await db.prepare(`DELETE FROM request_status_histories WHERE service_request_id = ?`).bind(rId).run();
+            await db.prepare(`DELETE FROM request_attachments WHERE service_request_id = ?`).bind(rId).run();
+            await db.prepare(`DELETE FROM service_requests WHERE id = ?`).bind(rId).run();
+        } catch { }
+    }
+
+    if (clientId) {
+        try {
+            await autoRevokeIdlePortalUser(db, env, clientId);
+        } catch { }
+    }
+
+    return {
+        deletedRequests: requestIds.size,
+        deletedQuotations: quotationIds.size,
+        deletedProjects: projectIds.size,
+        deletedInvoices
+    };
+}
+
+/**
  * Garante que todo orçamento (inclusive os criados manualmente em "+ Novo Orçamento")
  * esteja vinculado a uma Solicitação (service_requests), mantendo o pipeline comercial unificado.
  */
@@ -1881,13 +2056,10 @@ adminRoutes.post('/solicitacoes/:id/excluir', async (c) => {
     const id = Number(c.req.param('id'));
 
     if (id > 0) {
-        try {
-            await db.prepare(`DELETE FROM service_request_history WHERE service_request_id = ?`).bind(id).run();
-            await db.prepare(`DELETE FROM service_requests WHERE id = ?`).bind(id).run();
-        } catch { }
+        await deleteLinkedCommercialFlow(db, c.env, { requestId: id });
     }
 
-    return c.redirect('/admin/solicitacoes?success=Solicitação excluída com sucesso.');
+    return c.redirect('/admin/solicitacoes?success=Solicitação e vínculos (orçamento, projeto e faturas em aberto) excluídos com sucesso.');
 });
 
 // ==========================================
@@ -2918,14 +3090,10 @@ adminRoutes.post('/projetos/:id/excluir', async (c) => {
     const id = Number(c.req.param('id'));
 
     if (id > 0) {
-        try {
-            await db.prepare(`DELETE FROM project_stages WHERE project_id = ?`).bind(id).run();
-            await db.prepare(`DELETE FROM project_attachments WHERE project_id = ?`).bind(id).run();
-            await db.prepare(`DELETE FROM projects WHERE id = ?`).bind(id).run();
-        } catch { }
+        await deleteLinkedCommercialFlow(db, c.env, { projectId: id });
     }
 
-    return c.redirect('/admin/projetos?success=Projeto excluído com sucesso.');
+    return c.redirect('/admin/projetos?success=Projeto e vínculos (solicitação, orçamento e faturas em aberto) excluídos com sucesso.');
 });
 
 adminRoutes.post('/projetos/:id/etapas', async (c) => {
@@ -3380,6 +3548,7 @@ adminRoutes.post('/financeiro/:id/excluir', async (c) => {
     const id = Number(c.req.param('id'));
 
     if (id > 0) {
+        try { await db.prepare(`DELETE FROM payments WHERE financial_transaction_id = ?`).bind(id).run(); } catch { }
         await db.prepare(`DELETE FROM financial_transactions WHERE id = ?`).bind(id).run();
     }
 
@@ -4160,8 +4329,10 @@ adminRoutes.post('/orcamentos/:id/converter-projeto', async (c) => {
 adminRoutes.post('/orcamentos/:id/excluir', async (c) => {
     const db = c.env.DB;
     const id = Number(c.req.param('id'));
-    await db.prepare('DELETE FROM quotations WHERE id = ?').bind(id).run();
-    return c.redirect('/admin/orcamentos?success=Orçamento excluído com sucesso.');
+    if (id > 0) {
+        await deleteLinkedCommercialFlow(db, c.env, { quotationId: id });
+    }
+    return c.redirect('/admin/orcamentos?success=Orçamento e vínculos (solicitação, projeto e faturas em aberto) excluídos com sucesso.');
 });
 
 adminRoutes.get('/permissoes', (c) => c.redirect('/admin/usuarios'));
