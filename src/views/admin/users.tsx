@@ -323,7 +323,7 @@ export const AdminUsersView: FC<AdminUsersProps> = ({
                             class="gtb-icon-btn !w-8 !h-8 !rounded-lg shrink-0"
                             aria-label="Fechar"
                         >
-                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                     </div>
 
@@ -441,7 +441,7 @@ export const AdminUsersView: FC<AdminUsersProps> = ({
                             class="gtb-icon-btn !w-8 !h-8 !rounded-lg shrink-0"
                             aria-label="Fechar"
                         >
-                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                     </div>
 
@@ -506,7 +506,7 @@ export const AdminUsersView: FC<AdminUsersProps> = ({
                             class="gtb-icon-btn !w-8 !h-8 !rounded-lg shrink-0"
                             aria-label="Fechar"
                         >
-                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                     </div>
 
