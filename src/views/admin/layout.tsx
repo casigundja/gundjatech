@@ -44,7 +44,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
                 <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
-                <link rel="stylesheet" href="/css/gt-admin.css?v=56" />
+                <link rel="stylesheet" href="/css/gt-admin.css?v=57" />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{ __html: `
                     (function () {
@@ -214,7 +214,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 >
                     <div class="flex flex-col min-h-0 flex-1 overflow-x-hidden">
                         {/* Brand Header */}
-                        <div class="gtb-sidebar-brand-row h-[62px] flex items-center justify-between px-4 shrink-0">
+                        <div class="gtb-sidebar-brand-row h-[68px] flex items-center justify-between px-4 shrink-0 border-b border-white/5 mb-1.5">
                             <a href="/admin/dashboard" class="flex items-center gap-2.5 no-underline">
                                 <span class="gtb-brand-badge">
                                     <img src="/img/favicon.svg?v=gt-icon4" alt="GundjaTech" class="w-5 h-5 object-contain" />
