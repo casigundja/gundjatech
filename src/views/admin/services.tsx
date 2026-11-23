@@ -187,17 +187,17 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
 
             {/* 4 KPIs Executivos Compactos */}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div class="gtb-card gtb-kpi-gold !p-4 flex items-center justify-between gap-2">
+                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total de Pacotes</span>
                         <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{services.length}</span>
                     </div>
-                    <span class="px-2 py-0.5 rounded-md bg-white/10 text-[10px] font-bold text-[#D5DCEB]">Catálogo</span>
+                    <span class="text-[11px] font-bold text-[#8C95AA]">Catálogo</span>
                 </div>
-                <div class="gtb-card gtb-kpi-petrol !p-4 flex items-center justify-between gap-2">
+                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Serviços Ativos</span>
-                        <span class="gt-font-display text-xl font-extrabold text-[#34D399] mt-0.5 block">{activeCount}</span>
+                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{activeCount}</span>
                     </div>
                     <span class="gt-badge gt-badge-success">Ativo</span>
                 </div>
@@ -208,54 +208,108 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                     </div>
                     <span class="gt-badge gt-badge-warning">Inativo</span>
                 </div>
-                <div class="gtb-card gtb-kpi-blue !p-4 flex items-center justify-between gap-2">
+                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Ticket Médio Base</span>
-                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-[#F2C230] mt-0.5 block">{formatBRL(avgPrice)}</span>
+                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-white mt-0.5 block">{formatBRL(avgPrice)}</span>
                     </div>
                     <span class="gt-badge gt-badge-info">Média</span>
                 </div>
             </div>
 
-            {/* Tabela de Serviços */}
+            {/* Tabela de Serviços com Filtros Integrados */}
             <div class="gtb-card !p-0 overflow-hidden">
+                <div class="px-5 py-3.5 border-b border-white/10 flex items-center justify-between gap-3 flex-wrap">
+                    <div id="gt-svc-tabs" class="flex items-center gap-1.5 flex-wrap">
+                        <button type="button" data-tab="all" onclick="window.gtFilterServiceTab('all')" class="gt-btn-xs gt-btn-primary">
+                            Todos ({services.length})
+                        </button>
+                        <button type="button" data-tab="active" onclick="window.gtFilterServiceTab('active')" class="gt-btn-xs gt-btn-outline">
+                            Ativos ({activeCount})
+                        </button>
+                        <button type="button" data-tab="inactive" onclick="window.gtFilterServiceTab('inactive')" class="gt-btn-xs gt-btn-outline">
+                            Inativos ({inactiveCount})
+                        </button>
+                    </div>
+
+                    <div class="flex-1 sm:flex-initial">
+                        <input
+                            type="text"
+                            placeholder="Filtrar serviço ou categoria..."
+                            oninput="window.gtFilterServiceSearch(this.value)"
+                            class="rounded-xl px-3.5 py-1.5 text-xs w-full sm:w-64"
+                        />
+                    </div>
+                </div>
+
                 {services.length === 0 ? (
                     <div class="gt-empty-state">Nenhum serviço cadastrado.</div>
                 ) : (
                     <div class="gt-table-wrap">
                         <table class="w-full text-left text-xs">
                             <thead>
-                                <tr class="border-b border-white/10 text-[10.5px] uppercase tracking-wider text-[#8C95AA]">
-                                    <th class="py-3.5 px-5">Serviço / Pacote</th>
-                                    <th class="py-3.5 px-5">Categoria</th>
-                                    <th class="py-3.5 px-5">Preço Base</th>
-                                    <th class="py-3.5 px-5">Status</th>
-                                    <th class="py-3.5 px-5 text-right">Ações</th>
+                                <tr class="border-b border-white/10 text-[10px] uppercase tracking-wider text-[#8C95AA]">
+                                    <th class="py-3 px-5">Serviço / Pacote</th>
+                                    <th class="py-3 px-5">Categoria</th>
+                                    <th class="py-3 px-5">Preço Base</th>
+                                    <th class="py-3 px-5">Status</th>
+                                    <th class="py-3 px-5 text-right">Ações</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-white/5">
                                 {services.map((s: any) => {
                                     const title = s.name || s.title || 'Serviço';
                                     const desc = s.short_description || s.summary || s.slug || '';
+                                    const lowerTitle = String(title).toLowerCase();
+                                    const inferredLabel =
+                                        lowerTitle.includes('tráfego') || lowerTitle.includes('ads')
+                                            ? 'Tráfego Pago'
+                                            : lowerTitle.includes('domínio') || lowerTitle.includes('dns')
+                                            ? 'Domínios & DNS'
+                                            : lowerTitle.includes('e-commerce') || lowerTitle.includes('loja')
+                                            ? 'E-Commerce'
+                                            : lowerTitle.includes('ciber') || lowerTitle.includes('segurança')
+                                            ? 'Cibersegurança'
+                                            : 'Websites & Portais';
                                     const catKey = s.category || 'sites';
-                                    const catLabel = s.category_name || CATEGORY_LABELS[catKey] || 'Geral';
+                                    const catLabel = s.category_name || (s.category ? CATEGORY_LABELS[s.category] : null) || inferredLabel;
                                     const price = Number(s.base_price ?? s.price ?? 0);
+                                    const isActive = Boolean(s.is_active);
+                                    const searchBlob = `${title} ${desc} ${catLabel}`.toLowerCase();
 
                                     return (
-                                        <tr class="hover:bg-white/[0.02] transition">
-                                            <td class="py-3.5 px-5 min-w-[240px]">
-                                                <div class="font-bold text-white text-[13px]">{title}</div>
-                                                {desc && <div class="text-[11px] text-[#8C95AA] mt-0.5 leading-snug">{desc}</div>}
+                                        <tr
+                                            data-svc-row="1"
+                                            data-svc-state={isActive ? 'active' : 'inactive'}
+                                            data-svc-search={searchBlob}
+                                            class="hover:bg-white/[0.02] transition"
+                                        >
+                                            <td class="py-3.5 px-5 min-w-[260px]">
+                                                <div class="flex items-start gap-3">
+                                                    <span class="gtb-icon-box !w-8 !h-8 mt-0.5" aria-hidden="true">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                                                            <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                                                            <line x1="12" y1="22.08" x2="12" y2="12" />
+                                                        </svg>
+                                                    </span>
+                                                    <div class="min-w-0">
+                                                        <div class="font-bold text-white text-[13px] leading-snug">{title}</div>
+                                                        {desc && <div class="text-[11px] text-[#8C95AA] mt-0.5 leading-relaxed max-w-xl">{desc}</div>}
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td class="py-3.5 px-5 whitespace-nowrap">
-                                                <span class="gt-badge gt-badge-info">{catLabel}</span>
-                                            </td>
-                                            <td class="py-3.5 px-5 font-mono font-extrabold text-[#F2C230] whitespace-nowrap">
-                                                {formatBRL(price)}
+                                                <span class="text-xs font-semibold text-[#8C95AA]">{catLabel}</span>
                                             </td>
                                             <td class="py-3.5 px-5 whitespace-nowrap">
-                                                <span class={`gt-badge ${s.is_active ? 'gt-badge-success' : 'gt-badge-warning'}`}>
-                                                    {s.is_active ? 'Ativo' : 'Inativo'}
+                                                <span class="font-extrabold text-[13px] text-white" style="font-variant-numeric: tabular-nums;">
+                                                    {formatBRL(price)}
+                                                </span>
+                                            </td>
+                                            <td class="py-3.5 px-5 whitespace-nowrap">
+                                                <span class={`gt-badge ${isActive ? 'gt-badge-success' : 'gt-badge-warning'}`}>
+                                                    {isActive ? 'Ativo' : 'Inativo'}
                                                 </span>
                                             </td>
                                             <td class="py-3.5 px-5 text-right whitespace-nowrap">
@@ -268,7 +322,7 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                                                         data-svc-category={catKey}
                                                         data-svc-summary={desc}
                                                         data-svc-price={price}
-                                                        data-svc-active={s.is_active ? '1' : '0'}
+                                                        data-svc-active={isActive ? '1' : '0'}
                                                         onclick="window.gtOpenEditService(this)"
                                                     >
                                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -281,9 +335,9 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                                                         <button
                                                             type="submit"
                                                             data-loading-text="..."
-                                                            class={s.is_active ? 'gt-btn-outline gt-btn-xs' : 'gt-btn-petrol gt-btn-xs'}
+                                                            class={isActive ? 'gt-btn-outline gt-btn-xs' : 'gt-btn-petrol gt-btn-xs'}
                                                         >
-                                                            {s.is_active ? 'Desativar' : 'Reativar'}
+                                                            {isActive ? 'Desativar' : 'Reativar'}
                                                         </button>
                                                     </form>
 
@@ -320,18 +374,19 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
             {/* Modal Editar Pacote de Serviço */}
             <div
                 id="modal-editar-servico"
-                style="display: none; position: fixed; inset: 0; z-index: 100; align-items: center; justify-content: center; padding: 16px;"
-                class="bg-black/80 backdrop-blur-xs"
+                class="gt-modal-overlay hidden"
+                onclick="if(event.target===this)this.classList.add('hidden')"
             >
                 <div class="gtb-card gt-modal-card max-w-lg p-6 sm:p-8">
                     <div class="flex items-center justify-between gap-3 mb-5">
                         <h2 class="gt-font-display text-lg font-extrabold text-white">Editar Pacote de Serviço</h2>
                         <button
                             type="button"
-                            onclick="document.getElementById('modal-editar-servico').style.display='none'"
-                            class="text-[#8C95AA] hover:text-white text-xl leading-none cursor-pointer bg-transparent border-0"
+                            onclick="document.getElementById('modal-editar-servico').classList.add('hidden')"
+                            class="gtb-icon-btn !w-8 !h-8 rounded-lg"
+                            aria-label="Fechar"
                         >
-                            &times;
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
 
@@ -372,7 +427,7 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                         <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-white/10">
                             <button
                                 type="button"
-                                onclick="document.getElementById('modal-editar-servico').style.display='none'"
+                                onclick="document.getElementById('modal-editar-servico').classList.add('hidden')"
                                 class="gt-btn-outline gt-btn-sm"
                             >
                                 Cancelar
@@ -388,17 +443,53 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
             <script
                 dangerouslySetInnerHTML={{
                     __html: `
-                        window.gtOpenEditService = function(btn) {
-                            var id = btn.getAttribute('data-svc-id');
-                            document.getElementById('form-editar-servico').action = '/admin/servicos/' + id + '/editar';
-                            document.getElementById('edit-svc-title').value = btn.getAttribute('data-svc-title') || '';
-                            document.getElementById('edit-svc-category').value = btn.getAttribute('data-svc-category') || 'sites';
-                            document.getElementById('edit-svc-summary').value = btn.getAttribute('data-svc-summary') || '';
-                            document.getElementById('edit-svc-price').value = btn.getAttribute('data-svc-price') || '0';
-                            document.getElementById('edit-svc-active').value = btn.getAttribute('data-svc-active') || '1';
-                            if (window.GT_ResetDirtyForm) window.GT_ResetDirtyForm('form-editar-servico');
-                            document.getElementById('modal-editar-servico').style.display = 'flex';
-                        };
+                        (function() {
+                            var currentSvcTab = 'all';
+                            var currentSvcQuery = '';
+
+                            function applySvcFilters() {
+                                document.querySelectorAll('tr[data-svc-row="1"]').forEach(function(row) {
+                                    var st = row.getAttribute('data-svc-state');
+                                    var blob = row.getAttribute('data-svc-search') || '';
+                                    var matchTab = (currentSvcTab === 'all' || st === currentSvcTab);
+                                    var matchQ = (!currentSvcQuery || blob.indexOf(currentSvcQuery) !== -1);
+                                    row.style.display = (matchTab && matchQ) ? '' : 'none';
+                                });
+                            }
+
+                            window.gtFilterServiceTab = function(tab) {
+                                currentSvcTab = tab || 'all';
+                                document.querySelectorAll('#gt-svc-tabs button[data-tab]').forEach(function(btn) {
+                                    var active = btn.getAttribute('data-tab') === currentSvcTab;
+                                    btn.className = 'gt-btn-xs ' + (active ? 'gt-btn-primary' : 'gt-btn-outline');
+                                });
+                                applySvcFilters();
+                            };
+
+                            window.gtFilterServiceSearch = function(val) {
+                                currentSvcQuery = String(val || '').toLowerCase().trim();
+                                applySvcFilters();
+                            };
+
+                            window.gtOpenEditService = function(btn) {
+                                var id = btn.getAttribute('data-svc-id');
+                                document.getElementById('form-editar-servico').action = '/admin/servicos/' + id + '/editar';
+                                document.getElementById('edit-svc-title').value = btn.getAttribute('data-svc-title') || '';
+                                document.getElementById('edit-svc-category').value = btn.getAttribute('data-svc-category') || 'sites';
+                                document.getElementById('edit-svc-summary').value = btn.getAttribute('data-svc-summary') || '';
+                                document.getElementById('edit-svc-price').value = btn.getAttribute('data-svc-price') || '0';
+                                document.getElementById('edit-svc-active').value = btn.getAttribute('data-svc-active') || '1';
+                                if (window.GT_ResetDirtyForm) window.GT_ResetDirtyForm('form-editar-servico');
+                                document.getElementById('modal-editar-servico').classList.remove('hidden');
+                            };
+
+                            document.addEventListener('keydown', function(e) {
+                                if (e.key === 'Escape') {
+                                    var m = document.getElementById('modal-editar-servico');
+                                    if (m) m.classList.add('hidden');
+                                }
+                            });
+                        })();
                     `
                 }}
             />
