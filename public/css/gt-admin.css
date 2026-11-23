@@ -85,67 +85,92 @@ html.gt-sidebar-animating .gtb-sidebar {
     transition: width 0.24s cubic-bezier(0.16, 0.84, 0.3, 1), transform 0.25s ease, background-color 0.2s ease;
 }
 
-@media (min-width: 1024px) {
-    .gtb-sidebar.is-collapsed,
-    html[data-sidebar-collapsed="1"] .gtb-sidebar {
-        width: 76px;
-    }
+.gtb-sidebar.is-collapsed,
+html[data-sidebar-collapsed="1"] .gtb-sidebar {
+    width: 76px;
+}
 
-    .gtb-sidebar.is-collapsed .gtb-brand-word,
-    .gtb-sidebar.is-collapsed .gtb-section-head,
-    .gtb-sidebar.is-collapsed .gtb-promo-card,
-    .gtb-sidebar.is-collapsed .gt-portal-workspace-card,
-    .gtb-sidebar.is-collapsed .gt-portal-footer-user > div,
-    .gtb-sidebar.is-collapsed .gtb-nav-item > div > span,
-    .gtb-sidebar.is-collapsed .gtb-count-circle,
-    html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-brand-word,
-    html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-section-head,
-    html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-promo-card,
-    html[data-sidebar-collapsed="1"] .gtb-sidebar .gt-portal-workspace-card,
-    html[data-sidebar-collapsed="1"] .gtb-sidebar .gt-portal-footer-user > div,
-    html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-nav-item > div > span,
-    html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-count-circle {
-        display: none !important;
-    }
+.gtb-sidebar.is-collapsed .gtb-brand-word,
+.gtb-sidebar.is-collapsed .gtb-section-head,
+.gtb-sidebar.is-collapsed .gtb-promo-card,
+.gtb-sidebar.is-collapsed .gt-portal-workspace-card,
+.gtb-sidebar.is-collapsed .gt-portal-footer-user > div,
+.gtb-sidebar.is-collapsed .gtb-nav-item > div > span,
+.gtb-sidebar.is-collapsed .gtb-count-circle,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-brand-word,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-section-head,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-promo-card,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gt-portal-workspace-card,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gt-portal-footer-user > div,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-nav-item > div > span,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-count-circle {
+    display: none !important;
+}
 
-    .gtb-sidebar.is-collapsed .gtb-sidebar-brand-row,
-    html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-sidebar-brand-row {
-        justify-content: center;
-        padding-left: 0;
-        padding-right: 0;
-    }
+.gtb-sidebar.is-collapsed .gtb-sidebar-brand-row,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-sidebar-brand-row {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
 
-    .gtb-sidebar.is-collapsed nav,
-    html[data-sidebar-collapsed="1"] .gtb-sidebar nav {
-        padding-left: 10px;
-        padding-right: 10px;
-    }
+.gtb-sidebar.is-collapsed nav,
+html[data-sidebar-collapsed="1"] .gtb-sidebar nav {
+    padding-left: 10px;
+    padding-right: 10px;
+}
 
-    .gtb-sidebar.is-collapsed .gtb-nav-item,
-    html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-nav-item {
-        justify-content: center;
-        padding: 11px 0;
-        width: 100%;
-    }
+.gtb-sidebar.is-collapsed .gtb-nav-item,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-nav-item {
+    justify-content: center;
+    padding: 11px 0;
+    width: 100%;
+}
 
-    .gtb-sidebar.is-collapsed .gtb-nav-item > div,
-    html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-nav-item > div {
-        justify-content: center;
-        gap: 0;
-    }
+.gtb-sidebar.is-collapsed .gtb-nav-item > div,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-nav-item > div {
+    justify-content: center;
+    gap: 0;
 }
 
 .gtb-sidebar-collapse-btn,
 #gt-sidebar-collapse-btn,
 #gt-portal-collapse-btn {
-    display: none !important;
+    display: inline-flex !important;
 }
 
-@media (min-width: 1024px) {
-    .gtb-sidebar-collapse-btn,
-    #gt-sidebar-collapse-btn,
-    #gt-portal-collapse-btn {
-        display: inline-flex !important;
+@media (max-width: 1023px) {
+    /* Em mobile (< 1024px), quando a sidebar está recolhida (76px), ajusta o cabeçalho para o logo e o botão X caberem sem apertar */
+    .gtb-sidebar.is-collapsed .gtb-sidebar-brand-row,
+    html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-sidebar-brand-row {
+        justify-content: space-between;
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+        gap: 2px;
+    }
+
+    .gtb-sidebar.is-collapsed .gtb-brand-badge,
+    html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-brand-badge {
+        width: 30px;
+        height: 30px;
+    }
+
+    /* Quando a gaveta lateral mobile está aberta (:not(.-translate-x-full)):
+       1) Oculta o botão hambúrguer da topbar (pois o botão X já está no topo da sidebar aberta)
+       2) Desloca o conteúdo da topbar para a direita da sidebar aberta, impedindo que a sidebar sobreponha o botão "Expandir/Recolher menu" */
+    body:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-mobile-toggle {
+        display: none !important;
+    }
+
+    body:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-topbar {
+        padding-left: calc(min(252px, 84vw) + 10px) !important;
+        transition: padding-left 0.22s ease;
+    }
+
+    html[data-sidebar-collapsed="1"] body:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-topbar,
+    body.gt-sidebar-is-collapsed:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-topbar,
+    body:has(aside.gtb-sidebar.is-collapsed:not(.-translate-x-full)) .gtb-topbar {
+        padding-left: 86px !important;
     }
 }
 
@@ -3368,6 +3393,21 @@ html[data-admin-theme="light"] .gt-confirm-actions {
         height: 100dvh !important;
         max-width: 84vw !important;
     }
+
+    body:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-mobile-toggle {
+        display: none !important;
+    }
+
+    body:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-topbar {
+        padding-left: calc(min(252px, 84vw) + 10px) !important;
+        transition: padding-left 0.22s ease;
+    }
+
+    html[data-sidebar-collapsed="1"] body:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-topbar,
+    body.gt-sidebar-is-collapsed:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-topbar,
+    body:has(aside.gtb-sidebar.is-collapsed:not(.-translate-x-full)) .gtb-topbar {
+        padding-left: 86px !important;
+    }
 }
 
 @media (max-width: 639px) {
@@ -3382,8 +3422,19 @@ html[data-admin-theme="light"] .gt-confirm-actions {
     }
 
     .gtb-topbar {
-        padding: 0 12px !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
         gap: 8px !important;
+    }
+
+    body:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-topbar {
+        padding-left: calc(min(252px, 84vw) + 10px) !important;
+    }
+
+    html[data-sidebar-collapsed="1"] body:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-topbar,
+    body.gt-sidebar-is-collapsed:has(aside.gtb-sidebar:not(.-translate-x-full)) .gtb-topbar,
+    body:has(aside.gtb-sidebar.is-collapsed:not(.-translate-x-full)) .gtb-topbar {
+        padding-left: 86px !important;
     }
 
     .gtb-topbar-left h1 {
