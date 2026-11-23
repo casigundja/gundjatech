@@ -81,47 +81,54 @@ export const AdminChatView: FC<AdminChatProps> = ({
                 <div class="flex flex-wrap items-center gap-2">
                     <a
                         href="/admin/atendimento?status=all"
-                        class={`px-3.5 py-1.5 rounded-xl text-xs font-bold no-underline transition ${
+                        class={`inline-flex items-center px-3.5 py-1.5 rounded-xl text-xs font-bold no-underline transition ${
                             statusFilter === 'all'
                                 ? 'btn-primary shadow-sm'
                                 : 'gtb-ctrl-btn !h-auto !py-1.5'
                         }`}
                     >
-                        Todas (<span id="gt-chat-count-all">{counts.all}</span>)
+                        <span>Todas</span>
+                        <span id="gt-chat-count-all" class="gt-chat-tab-count">{counts.all}</span>
                     </a>
                     <a
                         href="/admin/atendimento?status=open"
-                        class={`px-3.5 py-1.5 rounded-xl text-xs font-bold no-underline transition ${
+                        class={`inline-flex items-center px-3.5 py-1.5 rounded-xl text-xs font-bold no-underline transition ${
                             statusFilter === 'open'
                                 ? 'btn-primary shadow-sm'
                                 : 'gtb-ctrl-btn !h-auto !py-1.5'
                         }`}
                     >
-                        Abertas (<span id="gt-chat-count-open">{counts.open}</span>)
+                        <span>Abertas</span>
+                        <span id="gt-chat-count-open" class="gt-chat-tab-count">{counts.open}</span>
                     </a>
                     <a
                         href="/admin/atendimento?status=handoff"
-                        class={`px-3.5 py-1.5 rounded-xl text-xs font-bold no-underline transition ${
+                        class={`inline-flex items-center px-3.5 py-1.5 rounded-xl text-xs font-bold no-underline transition ${
                             statusFilter === 'handoff'
                                 ? 'btn-primary shadow-sm'
                                 : 'gtb-ctrl-btn !h-auto !py-1.5'
                         }`}
                     >
-                        Aguardando Humano (<span id="gt-chat-count-handoff">{counts.handoff}</span>)
+                        <span>Aguardando Humano</span>
+                        <span id="gt-chat-count-handoff" class="gt-chat-tab-count">{counts.handoff}</span>
                     </a>
                     <a
                         href="/admin/atendimento?status=closed"
-                        class={`px-3.5 py-1.5 rounded-xl text-xs font-bold no-underline transition ${
+                        class={`inline-flex items-center px-3.5 py-1.5 rounded-xl text-xs font-bold no-underline transition ${
                             statusFilter === 'closed'
                                 ? 'btn-primary shadow-sm'
                                 : 'gtb-ctrl-btn !h-auto !py-1.5'
                         }`}
                     >
-                        Encerradas (<span id="gt-chat-count-closed">{counts.closed}</span>)
+                        <span>Encerradas</span>
+                        <span id="gt-chat-count-closed" class="gt-chat-tab-count">{counts.closed}</span>
                     </a>
                 </div>
 
                 <div class="flex items-center gap-2">
+                    <a href="/admin/configuracoes" class="gtb-ctrl-btn">
+                        <span>Canais WhatsApp</span>
+                    </a>
                     <a href="/admin/crm-autonomo" class="gtb-ctrl-btn">
                         <span>Configurar Agente IA</span>
                         <svg class="w-3.5 h-3.5 text-[#F2C230]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
@@ -133,14 +140,25 @@ export const AdminChatView: FC<AdminChatProps> = ({
             <div class="gtb-card !p-0 gt-chat-layout !gap-0" data-has-active={activeConversation ? '1' : '0'}>
                 {/* Coluna Esquerda: Lista de Conversas (Inbox) */}
                 <aside class="gtb-chat-sidebar gt-chat-inbox border-r">
-                    <div class="px-5 py-3.5 border-b border-white/10 flex items-center justify-between gap-2 shrink-0">
-                        <span class="text-[11px] font-extrabold uppercase tracking-wider text-white">
-                            Inbox de Atendimento (<span id="gt-inbox-count">{conversations.length}</span>)
-                        </span>
-                        <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#34D399]">
-                            <span class="w-2 h-2 rounded-full bg-[#34D399] animate-pulse"></span>
-                            Ao vivo
-                        </span>
+                    <div class="px-4 py-3 border-b border-white/10 space-y-2.5 shrink-0">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-white">
+                                Inbox de Atendimento (<span id="gt-inbox-count">{conversations.length}</span>)
+                            </span>
+                            <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#34D399]">
+                                <span class="w-2 h-2 rounded-full bg-[#34D399] animate-pulse"></span>
+                                Ao vivo
+                            </span>
+                        </div>
+                        <div style="position: relative;">
+                            <input
+                                id="gt-inbox-search"
+                                type="search"
+                                placeholder="Buscar cliente, assunto ou canal..."
+                                oninput="var q=this.value.toLowerCase().trim();document.querySelectorAll('#gt-inbox-list .gtb-chat-item').forEach(function(el){el.style.display=!q||el.textContent.toLowerCase().indexOf(q)!==-1?'':'none';});"
+                                class="w-full rounded-xl px-3 py-1.5 text-xs"
+                            />
+                        </div>
                     </div>
 
                     <div
@@ -150,8 +168,16 @@ export const AdminChatView: FC<AdminChatProps> = ({
                         class="flex-1 overflow-y-auto divide-y divide-white/5"
                     >
                         {conversations.length === 0 ? (
-                            <div class="gt-empty-state">
-                                Nenhuma conversa nesta visualização.
+                            <div class="flex flex-col items-center justify-center text-center px-5 py-12">
+                                <span class="gtb-icon-box !w-10 !h-10 !rounded-xl" style="margin-bottom: 12px;" aria-hidden="true">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                    </svg>
+                                </span>
+                                <div class="text-xs font-extrabold text-white" style="margin-bottom: 4px;">Fila limpa por aqui</div>
+                                <p class="text-[11px] text-[#8C95AA]" style="line-height: 1.5; max-width: 210px;">
+                                    Novas conversas do site, WhatsApp e Portal aparecerão automaticamente aqui.
+                                </p>
                             </div>
                         ) : (
                             conversations.map((c) => {
@@ -159,6 +185,7 @@ export const AdminChatView: FC<AdminChatProps> = ({
                                 const isHandoff = c.status !== 'closed' && (c.status === 'waiting_staff' || c.crm_stage === 'handoff_human');
                                 const stageText = isHandoff ? 'Aguardando Humano' : (STAGE_LABELS[c.crm_stage] || c.crm_stage || 'Novo Lead');
                                 const clientName = c.visitor_name || c.client_name || c.visitor_company || `Sessão #${c.id}`;
+                                const initials = String(clientName || 'GT').trim().slice(0, 2).toUpperCase();
                                 const channelLabel = c.channel === 'whatsapp' ? 'WhatsApp' : c.channel === 'web_chat' ? 'Portal' : 'Site';
                                 const timeStr = c.last_message_at
                                     ? new Date(c.last_message_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -167,33 +194,39 @@ export const AdminChatView: FC<AdminChatProps> = ({
                                 return (
                                     <a
                                         href={`/admin/atendimento?id=${c.id}&status=${statusFilter}`}
+                                        style={isHandoff ? 'border-left: 3px solid #F2C230;' : ''}
                                         class={`gtb-chat-item block px-4 py-3.5 no-underline transition ${isSelected ? 'is-active' : ''}`}
                                     >
-                                        <div class="flex items-center justify-between gap-2 mb-1">
-                                            <span class="text-[13px] font-extrabold text-white truncate">
-                                                {clientName}
-                                            </span>
-                                            {timeStr && (
-                                                <span class="text-[10.5px] text-[#8C95AA] shrink-0 font-semibold">
-                                                    {timeStr}
-                                                </span>
-                                            )}
-                                        </div>
+                                        <div class="flex items-start gap-2.5">
+                                            <span class="gt-chat-avatar">{initials}</span>
+                                            <div class="min-w-0 flex-1">
+                                                <div class="flex items-center justify-between gap-2 mb-0.5">
+                                                    <span class="text-[13px] font-extrabold text-white truncate">
+                                                        {clientName}
+                                                    </span>
+                                                    {timeStr && (
+                                                        <span class="text-[10.5px] text-[#8C95AA] shrink-0 font-semibold">
+                                                            {timeStr}
+                                                        </span>
+                                                    )}
+                                                </div>
 
-                                        <div class="text-[11.5px] text-[#8C95AA] truncate mb-2">
-                                            {c.last_message_preview || c.visitor_objective || c.subject || c.visitor_email || 'Atendimento ao vivo'}
-                                        </div>
+                                                <div class="text-[11.5px] text-[#8C95AA] truncate mb-2">
+                                                    {c.last_message_preview || c.visitor_objective || c.subject || c.visitor_email || 'Atendimento ao vivo'}
+                                                </div>
 
-                                        <div class="flex items-center justify-between gap-1.5 flex-wrap">
-                                            <div class="flex items-center gap-2">
-                                                <span class={`gt-badge ${isHandoff ? 'gt-badge-warning' : c.ai_enabled ? 'gt-badge-success' : 'gt-badge-info'}`}>
-                                                    {isHandoff ? 'Humano Solicitado' : c.ai_enabled ? 'IA' : 'Humano'}
-                                                </span>
-                                                <span class="text-[10.5px] font-semibold text-[#8C95AA]">· {channelLabel}</span>
+                                                <div class="flex items-center justify-between gap-1.5 flex-wrap">
+                                                    <div class="flex items-center gap-1.5">
+                                                        <span class={`gt-badge ${isHandoff ? 'gt-badge-warning' : c.ai_enabled ? 'gt-badge-success' : 'gt-badge-info'}`}>
+                                                            {isHandoff ? 'Humano Solicitado' : c.ai_enabled ? 'IA' : 'Humano'}
+                                                        </span>
+                                                        <span class="text-[10.5px] font-semibold text-[#8C95AA]">· {channelLabel}</span>
+                                                    </div>
+                                                    <span class="text-[10px] font-bold text-[#8C95AA]">
+                                                        {stageText}
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <span class="text-[10px] font-bold text-[#8C95AA]">
-                                                {stageText}
-                                            </span>
                                         </div>
                                     </a>
                                 );
@@ -373,14 +406,45 @@ export const AdminChatView: FC<AdminChatProps> = ({
                             </div>
                         </>
                     ) : (
-                        <div class="m-auto text-center px-6 py-12 max-w-md">
-                            <div class="gtb-notif-empty-icon mx-auto mb-4">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
-                            </div>
-                            <h3 class="gt-font-display text-base font-extrabold text-white mb-1.5">Central de Atendimento ao Vivo</h3>
-                            <p class="text-xs text-[#8C95AA] leading-relaxed">
-                                Selecione uma conversa à esquerda para acompanhar o atendimento do site e do WhatsApp em tempo real, pausar a IA ou responder diretamente ao cliente.
+                        <div class="gt-chat-empty-stage">
+                            <span class="gt-crm-empty-icon" aria-hidden="true">
+                                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                                </svg>
+                            </span>
+                            <h3 class="gt-font-display text-base font-extrabold text-white" style="margin: 0 0 6px 0;">
+                                Central de Atendimento Omnichannel
+                            </h3>
+                            <p class="text-xs text-[#8C95AA]" style="max-width: 440px; line-height: 1.6; margin: 0;">
+                                Selecione uma conversa à esquerda para acompanhar em tempo real, assumir um pedido de atendimento humano ou responder direto ao cliente.
                             </p>
+
+                            <div class="gt-chat-channel-grid">
+                                <div class="gt-chat-channel-card">
+                                    <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#16749A]" style="margin-bottom: 4px;">Canal 01 · Site</div>
+                                    <div class="text-xs font-extrabold text-white">Chat ao Vivo</div>
+                                    <p class="text-[11px] text-[#8C95AA]" style="margin-top: 3px; line-height: 1.45;">Visitantes qualificados pela IA ou transferidos para humano.</p>
+                                </div>
+                                <div class="gt-chat-channel-card">
+                                    <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#16749A]" style="margin-bottom: 4px;">Canal 02 · WhatsApp</div>
+                                    <div class="text-xs font-extrabold text-white">WhatsApp Oficial</div>
+                                    <p class="text-[11px] text-[#8C95AA]" style="margin-top: 3px; line-height: 1.45;">Mensagens sincronizadas com resposta manual ou IA.</p>
+                                </div>
+                                <div class="gt-chat-channel-card">
+                                    <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#16749A]" style="margin-bottom: 4px;">Canal 03 · Clientes</div>
+                                    <div class="text-xs font-extrabold text-white">Portal do Cliente</div>
+                                    <p class="text-[11px] text-[#8C95AA]" style="margin-top: 3px; line-height: 1.45;">Chamados e dúvidas enviadas por clientes autenticados.</p>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 22px;">
+                                <a href="/admin/crm-autonomo" class="gt-btn-petrol gt-btn-xs">
+                                    Gerenciar Agente IA
+                                </a>
+                                <a href="/admin/configuracoes" class="gt-btn-outline gt-btn-xs">
+                                    Configurar WhatsApp
+                                </a>
+                            </div>
                         </div>
                     )}
                 </section>
@@ -425,15 +489,19 @@ export const AdminChatView: FC<AdminChatProps> = ({
                             if (inboxCountEl) inboxCountEl.textContent = String(items.length);
 
                             if (items.length === 0) {
-                                listEl.innerHTML = '<div class="gt-empty-state">Nenhuma conversa nesta visualização.</div>';
+                                listEl.innerHTML = '<div class="flex flex-col items-center justify-center text-center px-5 py-12"><span class="gtb-icon-box !w-10 !h-10 !rounded-xl" style="margin-bottom: 12px;" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><div class="text-xs font-extrabold text-white" style="margin-bottom: 4px;">Fila limpa por aqui</div><p class="text-[11px] text-[#8C95AA]" style="line-height: 1.5; max-width: 210px;">Novas conversas do site, WhatsApp e Portal aparecerão automaticamente aqui.</p></div>';
                                 return;
                             }
+
+                            var searchInput = document.getElementById('gt-inbox-search');
+                            var q = searchInput ? String(searchInput.value || '').toLowerCase().trim() : '';
 
                             var html = items.map(function (c) {
                                 var isSelected = String(c.id) === String(activeId);
                                 var isHandoff = c.status !== 'closed' && (c.status === 'waiting_staff' || c.crm_stage === 'handoff_human');
                                 var stageText = isHandoff ? 'Aguardando Humano' : (stageLabels[c.crm_stage] || c.crm_stage || 'Novo Lead');
                                 var name = c.visitor_name || c.client_name || c.visitor_company || ('Sessão #' + c.id);
+                                var initials = String(name || 'GT').trim().slice(0, 2).toUpperCase();
                                 var channelLabel = c.channel === 'whatsapp' ? 'WhatsApp' : c.channel === 'web_chat' ? 'Portal' : 'Site';
                                 var preview = c.last_message_preview || c.visitor_objective || c.subject || c.visitor_email || 'Atendimento ao vivo';
                                 var timeStr = '';
@@ -444,16 +512,19 @@ export const AdminChatView: FC<AdminChatProps> = ({
                                 }
                                 var badgeCls = isHandoff ? 'gt-badge-warning' : c.ai_enabled ? 'gt-badge-success' : 'gt-badge-info';
                                 var badgeTxt = isHandoff ? 'Humano Solicitado' : c.ai_enabled ? 'IA' : 'Humano';
-                                return '<a href="/admin/atendimento?id=' + encodeURIComponent(c.id) + '&status=' + encodeURIComponent(statusFilter) + '" class="gtb-chat-item block px-4 py-3.5 no-underline transition ' + (isSelected ? 'is-active' : '') + '">'
-                                    + '<div class="flex items-center justify-between gap-2 mb-1">'
+                                var matchesSearch = !q || (name + ' ' + preview + ' ' + channelLabel + ' ' + stageText).toLowerCase().indexOf(q) !== -1;
+                                var rowStyle = (isHandoff ? 'border-left: 3px solid #F2C230;' : '') + (matchesSearch ? '' : 'display:none;');
+                                return '<a href="/admin/atendimento?id=' + encodeURIComponent(c.id) + '&status=' + encodeURIComponent(statusFilter) + '" style="' + rowStyle + '" class="gtb-chat-item block px-4 py-3.5 no-underline transition ' + (isSelected ? 'is-active' : '') + '">'
+                                    + '<div class="flex items-start gap-2.5"><span class="gt-chat-avatar">' + esc(initials) + '</span><div class="min-w-0 flex-1">'
+                                    + '<div class="flex items-center justify-between gap-2 mb-0.5">'
                                     + '<span class="text-[13px] font-extrabold text-white truncate">' + esc(name) + '</span>'
                                     + (timeStr ? '<span class="text-[10.5px] text-[#8C95AA] shrink-0 font-semibold">' + esc(timeStr) + '</span>' : '')
                                     + '</div>'
                                     + '<div class="text-[11.5px] text-[#8C95AA] truncate mb-2">' + esc(preview) + '</div>'
                                     + '<div class="flex items-center justify-between gap-1.5 flex-wrap">'
-                                    + '<div class="flex items-center gap-2"><span class="gt-badge ' + badgeCls + '">' + badgeTxt + '</span><span class="text-[10.5px] font-semibold text-[#8C95AA]">· ' + esc(channelLabel) + '</span></div>'
+                                    + '<div class="flex items-center gap-1.5"><span class="gt-badge ' + badgeCls + '">' + badgeTxt + '</span><span class="text-[10.5px] font-semibold text-[#8C95AA]">· ' + esc(channelLabel) + '</span></div>'
                                     + '<span class="text-[10px] font-bold text-[#8C95AA]">' + esc(stageText) + '</span>'
-                                    + '</div></a>';
+                                    + '</div></div></div></a>';
                             }).join('');
                             listEl.innerHTML = html;
                         } catch (e) {
