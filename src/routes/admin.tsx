@@ -406,6 +406,64 @@ adminRoutes.post('/clientes/:id/status', async (c) => {
     return c.redirect(`/admin/clientes?success=${encodeURIComponent(nextStatus === 'active' ? 'Cliente promovido para Ativo!' : 'Movido para Lead.')}`);
 });
 
+adminRoutes.post('/clientes/:id/editar', async (c) => {
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+    const body = await getRequestBody(c);
+
+    if (!id || id <= 0) {
+        return c.redirect('/admin/clientes?error=Cliente inválido');
+    }
+
+    const name = String(body.name || '').trim();
+    const company = String(body.company || '').trim() || null;
+    const email = String(body.email || '').trim().toLowerCase();
+    const phone = String(body.phone || '').trim() || null;
+    const document = String(body.document || '').trim() || null;
+    const segment = String(body.segment || '').trim() || null;
+    const status = String(body.status || 'active').trim() === 'lead' ? 'lead' : 'active';
+
+    if (!name && !company) {
+        return c.redirect('/admin/clientes?error=Informe ao menos o Nome ou a Empresa do cliente');
+    }
+
+    try {
+        const existing = await db.prepare(`SELECT id, user_id, email FROM clients WHERE id = ?`).bind(id).first<any>();
+        if (!existing) {
+            return c.redirect('/admin/clientes?error=Cliente não encontrado');
+        }
+
+        const finalName = name || company || 'Cliente';
+        const finalEmail = email || existing.email || '';
+
+        await db.prepare(
+            `UPDATE clients
+             SET name = ?, company = ?, email = ?, phone = ?, document = ?, segment = ?, status = ?, updated_at = datetime('now')
+             WHERE id = ?`
+        ).bind(finalName, company, finalEmail, phone, document, segment, status, id).run();
+
+        if (existing.user_id && finalEmail && !finalEmail.endsWith('.local')) {
+            const emailTaken = await db.prepare(
+                `SELECT id FROM users WHERE lower(email) = lower(?) AND id != ? LIMIT 1`
+            ).bind(finalEmail, existing.user_id).first<any>();
+
+            if (!emailTaken) {
+                await db.prepare(
+                    `UPDATE users SET name = ?, email = ?, updated_at = datetime('now') WHERE id = ?`
+                ).bind(finalName, finalEmail, existing.user_id).run();
+            } else {
+                await db.prepare(
+                    `UPDATE users SET name = ?, updated_at = datetime('now') WHERE id = ?`
+                ).bind(finalName, existing.user_id).run();
+            }
+        }
+
+        return c.redirect('/admin/clientes?success=Cliente atualizado com sucesso');
+    } catch (err: any) {
+        return c.redirect(`/admin/clientes?error=${encodeURIComponent(err.message || 'Erro ao atualizar cliente')}`);
+    }
+});
+
 adminRoutes.post('/clientes/:id/ativar-portal', async (c) => {
     const db = c.env.DB;
     const id = Number(c.req.param('id'));

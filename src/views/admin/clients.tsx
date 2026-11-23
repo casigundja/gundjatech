@@ -361,6 +361,27 @@ export const AdminClientsView: FC<AdminClientsProps> = ({
                                                         </button>
                                                     </form>
 
+                                                    <button
+                                                        type="button"
+                                                        data-id={String(c.id)}
+                                                        data-name={String(c.name || '')}
+                                                        data-company={String(c.company || '')}
+                                                        data-email={isSyntheticWa ? '' : String(c.email || '')}
+                                                        data-phone={String(c.phone || '')}
+                                                        data-document={String(c.document || '')}
+                                                        data-segment={String(c.segment || '')}
+                                                        data-status={isActive ? 'active' : 'lead'}
+                                                        onclick="window.GT_OpenEditClientModal && window.GT_OpenEditClientModal(this)"
+                                                        class="gt-btn-outline gt-btn-xs"
+                                                        title="Editar cadastro do cliente"
+                                                    >
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path d="M12 20h9" />
+                                                            <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                                                        </svg>
+                                                        <span>Editar</span>
+                                                    </button>
+
                                                     <form
                                                         action={`/admin/clientes/${c.id}/excluir`}
                                                         method="post"
@@ -721,10 +742,111 @@ export const AdminClientsView: FC<AdminClientsProps> = ({
                                     });
                                 });
                             }
+
+                            window.GT_OpenEditClientModal = function(btn) {
+                                var modal = document.getElementById('modal-editar-cliente');
+                                var form = document.getElementById('gt-edit-client-form');
+                                if (!modal || !form || !btn) return;
+                                var id = btn.getAttribute('data-id') || '';
+                                form.setAttribute('action', '/admin/clientes/' + encodeURIComponent(id) + '/editar');
+                                var nameEl = document.getElementById('gt-edit-client-name');
+                                var companyEl = document.getElementById('gt-edit-client-company');
+                                var emailEl = document.getElementById('gt-edit-client-email');
+                                var phoneEl = document.getElementById('gt-edit-client-phone');
+                                var docEl = document.getElementById('gt-edit-client-document');
+                                var segEl = document.getElementById('gt-edit-client-segment');
+                                var statusEl = document.getElementById('gt-edit-client-status');
+                                if (nameEl) nameEl.value = btn.getAttribute('data-name') || '';
+                                if (companyEl) companyEl.value = btn.getAttribute('data-company') || '';
+                                if (emailEl) emailEl.value = btn.getAttribute('data-email') || '';
+                                if (phoneEl) phoneEl.value = btn.getAttribute('data-phone') || '';
+                                if (docEl) docEl.value = btn.getAttribute('data-document') || '';
+                                if (segEl) segEl.value = btn.getAttribute('data-segment') || '';
+                                if (statusEl) statusEl.value = btn.getAttribute('data-status') || 'active';
+                                modal.style.display = 'flex';
+                                if (companyEl) setTimeout(function() { companyEl.focus(); }, 40);
+                            };
                         })();
                     `
                 }}
             />
+
+            {/* Modal Editar Cliente */}
+            <div
+                id="modal-editar-cliente"
+                onclick="if(event.target===this)this.style.display='none'"
+                style="display: none; position: fixed; inset: 0; margin: 0; z-index: 200; align-items: center; justify-content: center; padding: 16px;"
+                class="gt-modal-overlay bg-black/80 backdrop-blur-xs"
+            >
+                <div class="gtb-card gt-modal-card max-w-lg p-5 sm:p-6">
+                    <div class="flex items-center justify-between gap-3 mb-4">
+                        <h2 class="gt-font-display text-lg font-extrabold text-white">Editar Cadastro do Cliente</h2>
+                        <button
+                            type="button"
+                            onclick="document.getElementById('modal-editar-cliente').style.display='none'"
+                            class="text-[#8C95AA] hover:text-white text-xl leading-none cursor-pointer bg-transparent border-0"
+                        >
+                            &times;
+                        </button>
+                    </div>
+
+                    <form id="gt-edit-client-form" action="/admin/clientes/0/editar" method="post" class="space-y-3.5">
+                        <div class="gt-grid-2">
+                            <div>
+                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Empresa / Razão Social</label>
+                                <input id="gt-edit-client-company" type="text" name="company" placeholder="Nome da empresa" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]" />
+                            </div>
+                            <div>
+                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Nome do Contato *</label>
+                                <input id="gt-edit-client-name" type="text" name="name" required placeholder="Responsável" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]" />
+                            </div>
+                        </div>
+
+                        <div class="gt-grid-2">
+                            <div>
+                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">E-mail</label>
+                                <input id="gt-edit-client-email" type="email" name="email" placeholder="contato@empresa.com" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]" />
+                            </div>
+                            <div>
+                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Telefone / WhatsApp</label>
+                                <input id="gt-edit-client-phone" type="text" name="phone" placeholder="+244 / +55 ..." class="w-full rounded-xl px-3.5 py-2.5 text-[13px] font-mono" />
+                            </div>
+                        </div>
+
+                        <div class="gt-grid-2">
+                            <div>
+                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">CPF / CNPJ / NIF</label>
+                                <input id="gt-edit-client-document" type="text" name="document" placeholder="Documento fiscal" class="w-full rounded-xl px-3.5 py-2.5 text-[13px] font-mono" />
+                            </div>
+                            <div>
+                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Segmento</label>
+                                <input id="gt-edit-client-segment" type="text" name="segment" placeholder="Ex: Saúde, Varejo, Contabilidade" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Categoria</label>
+                            <select id="gt-edit-client-status" name="status" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]">
+                                <option value="active">Cliente Ativo</option>
+                                <option value="lead">Lead</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-white/10">
+                            <button
+                                type="button"
+                                onclick="document.getElementById('modal-editar-cliente').style.display='none'"
+                                class="gt-btn-outline gt-btn-sm"
+                            >
+                                Cancelar
+                            </button>
+                            <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm">
+                                Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </AdminLayout>
     );
 };
