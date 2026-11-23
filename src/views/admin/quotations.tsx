@@ -139,6 +139,41 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                             </div>
                         </div>
 
+                        {/* Chips Executivos do Cliente (Mesmo padrão visual de Solicitações) */}
+                        <div class="gt-req-meta-grid" style="flex-shrink: 0;">
+                            <div class="gt-req-meta-chip">
+                                <span class="gt-req-meta-icon" aria-hidden="true">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                </span>
+                                <div class="min-w-0">
+                                    <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Cliente / Empresa</div>
+                                    <div class="text-xs font-bold text-white truncate">{quotationDetail.company || quotationDetail.client_name || 'Não informado'}</div>
+                                </div>
+                            </div>
+
+                            <div class="gt-req-meta-chip">
+                                <span class="gt-req-meta-icon" aria-hidden="true">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                                </span>
+                                <div class="min-w-0">
+                                    <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">E-mail do Portal</div>
+                                    <div class="text-xs font-bold text-white truncate">
+                                        {quotationDetail.client_email && !String(quotationDetail.client_email).endsWith('.local') ? quotationDetail.client_email : 'Aguardando e-mail'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="gt-req-meta-chip">
+                                <span class="gt-req-meta-icon gt-req-meta-icon--gold" aria-hidden="true">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                </span>
+                                <div class="min-w-0">
+                                    <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Validade da Proposta</div>
+                                    <div class="text-xs font-bold text-white truncate">{quotationDetail.expires_at ? String(quotationDetail.expires_at).slice(0, 10) : 'Sem prazo'}</div>
+                                </div>
+                            </div>
+                        </div>
+
                         {quotationDetail.status !== 'rejected' && quotationDetail.status !== 'expired' && (
                             <div class="gt-req-stepper gt-req-stepper--3 gt-no-print" style="padding: 8px 12px; flex-shrink: 0;" role="list" aria-label="Etapas do orçamento">
                                 {quoteSteps.map((step, idx) => {
@@ -239,7 +274,7 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                                     rows={3}
                                     placeholder="Descreva os entregáveis, prazo estimado, forma de pagamento e observações comerciais..."
                                     class="w-full rounded-xl px-3 py-2 text-[12.5px] leading-relaxed"
-                                    style="flex: 1 1 0%; min-height: 64px; resize: none;"
+                                    style="flex: 1 1 0%; min-height: 54px; resize: none;"
                                 >{quotationDetail.notes || ''}</textarea>
                             </div>
 
@@ -259,87 +294,117 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                         </form>
                     </section>
 
-                    {/* Coluna Lateral: Resumo Financeiro & Ações Críticas */}
-                    <aside class="gtb-card !p-4 min-w-0" style="display: flex; flex-direction: column; justify-content: space-between; gap: 10px; height: 100%; max-height: 100%; overflow: hidden;">
-                        <div class="space-y-3" style="flex-shrink: 0;">
-                            <h2 class="gt-font-display text-sm font-extrabold text-white">Resumo Comercial</h2>
+                    {/* Coluna Lateral: Dois Cards Empilhados (Resumo Comercial + Acesso ao Portal / Ações), eliminando o buraco vazio */}
+                    <div class="min-w-0" style="display: flex; flex-direction: column; gap: 14px; height: 100%; max-height: 100%; overflow: hidden;">
+                        <aside class="gtb-card !p-4 min-w-0" style="flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;">
+                            <div class="space-y-2.5">
+                                <div class="pb-2" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                                    <h2 class="gt-font-display text-sm font-extrabold text-white">Resumo Comercial</h2>
+                                    <p class="text-[11px] text-[#8C95AA] mt-0.5">Composição financeira e status de execução.</p>
+                                </div>
 
-                            <div class="gtb-surface-box rounded-xl p-3 space-y-2 text-xs">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-[#8C95AA]">Valor Bruto</span>
-                                    <span class="font-bold text-white">{formatBRL(totalAmt)}</span>
+                                <div class="gtb-surface-box rounded-xl p-3 space-y-2 text-xs">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[#8C95AA]">Valor Bruto</span>
+                                        <span class="font-bold text-white">{formatBRL(totalAmt)}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[#8C95AA]">Desconto Comercial</span>
+                                        <span class="font-bold text-emerald-400">- {formatBRL(discountAmt)}</span>
+                                    </div>
+                                    <div class="pt-2 border-t border-white/10 flex items-center justify-between">
+                                        <span class="font-extrabold text-white">Total Líquido</span>
+                                        <span class="gt-font-display text-base font-extrabold text-[#F2C230]">{formatBRL(finalAmt)}</span>
+                                    </div>
                                 </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-[#8C95AA]">Desconto</span>
-                                    <span class="font-bold text-emerald-400">- {formatBRL(discountAmt)}</span>
-                                </div>
-                                <div class="pt-2 border-t border-white/10 flex items-center justify-between">
-                                    <span class="font-extrabold text-white">Total Líquido</span>
-                                    <span class="gt-font-display text-base font-extrabold text-[#F2C230]">{formatBRL(finalAmt)}</span>
+
+                                <div class="gtb-surface-box rounded-xl p-3 space-y-1.5 text-xs">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Projeto Vinculado</span>
+                                        {linkedProject?.id ? (
+                                            <span class="gt-badge gt-badge-success">Em Execução ({linkedProject.progress_percentage || 50}%)</span>
+                                        ) : (
+                                            <span class="gt-badge gt-badge-warning">Aguardando Aprovação</span>
+                                        )}
+                                    </div>
+                                    {linkedProject?.id ? (
+                                        <a href={`/admin/projetos/${linkedProject.id}`} class="gt-quick-action-btn !py-1.5 !px-2.5 mt-1">
+                                            <span class="flex items-center gap-2 text-xs font-bold">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                                                <span class="truncate">Abrir Projeto #{linkedProject.id}</span>
+                                            </span>
+                                            <span class="gt-quick-action-tag">ABRIR</span>
+                                        </a>
+                                    ) : (
+                                        <p class="text-[11px] text-[#8C95AA]">
+                                            Assim que a proposta for aprovada, o projeto com as 4 etapas padrão é iniciado automaticamente.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
-                            <div class="flex items-center justify-between text-[11px] text-[#8C95AA] px-0.5">
+                            <div class="flex items-center justify-between text-[11px] text-[#8C95AA] pt-2 border-t border-white/10">
                                 <span>Emitido: <strong class="text-white">{quotationDetail.created_at ? new Date(quotationDetail.created_at).toLocaleDateString('pt-BR') : '—'}</strong></span>
                                 <span>Validade: <strong class="text-white">{quotationDetail.expires_at ? String(quotationDetail.expires_at).slice(0, 10) : 'Sem prazo'}</strong></span>
                             </div>
+                        </aside>
 
-                            {/* Card de Governança do Usuário do Portal */}
-                            <div class="gtb-surface-box rounded-xl p-3 space-y-2 text-xs gt-no-print">
-                                <div class="flex items-center justify-between gap-2">
-                                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Acesso ao Portal</span>
-                                    {Number(quotationDetail.portal_user_active) === 1 || quotationDetail.status === 'sent' || quotationDetail.status === 'approved' ? (
-                                        <span class="gt-badge gt-badge-success">Usuário Ativo</span>
-                                    ) : (
-                                        <span class="gt-badge gt-badge-warning">Aguardando Envio</span>
-                                    )}
+                        {/* Segundo Card Lateral: Acesso ao Portal & Ações Rápidas */}
+                        <aside class="gtb-card !p-4 space-y-2.5 min-w-0 gt-no-print" style="flex-shrink: 0;">
+                            <div class="flex items-center justify-between gap-2">
+                                <div>
+                                    <h2 class="gt-font-display text-sm font-extrabold text-white">Portal do Cliente &amp; Ações</h2>
+                                    <p class="text-[11px] text-[#8C95AA] mt-0.5">Entrega do orçamento e governança de acesso.</p>
                                 </div>
-                                <p class="text-[11px] text-[#8C95AA] leading-snug">
-                                    {Number(quotationDetail.portal_user_active) === 1 || quotationDetail.status === 'sent' || quotationDetail.status === 'approved'
-                                        ? 'Login ativo para o cliente visualizar a proposta e acompanhar o projeto no Portal.'
-                                        : 'O login do cliente será criado automaticamente assim que a proposta for enviada (> R$ 0,00).'}
-                                </p>
-                                {quotationDetail.client_id && (quotationDetail.status === 'sent' || quotationDetail.status === 'approved') && (
-                                    <div class="pt-0.5">
-                                        <button
-                                            type="button"
-                                            id="gt-quote-portal-wa-btn"
-                                            onclick={`(function(btn){btn.disabled=true;var orig=btn.innerHTML;btn.textContent='Gerando link seguro...';fetch('/admin/clientes/${quotationDetail.client_id}/ativar-portal',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({send_email:true,promote_active:${quotationDetail.status === 'approved' ? 'true' : 'false'}})}).then(function(r){return r.json();}).then(function(d){btn.disabled=false;btn.innerHTML=orig;if(d&&d.ok&&d.whatsapp_url){window.open(d.whatsapp_url,'_blank');}else{alert((d&&d.error)||'Informe um e-mail válido para o cliente primeiro.');}}).catch(function(){btn.disabled=false;btn.innerHTML=orig;});})(this)`}
-                                            class="gt-btn-petrol gt-btn-sm w-full justify-center"
-                                        >
-                                            <span>Enviar Link do Portal via WhatsApp</span>
-                                        </button>
-                                    </div>
+                                {Number(quotationDetail.portal_user_active) === 1 || quotationDetail.status === 'sent' || quotationDetail.status === 'approved' ? (
+                                    <span class="gt-badge gt-badge-success">Usuário Ativo</span>
+                                ) : (
+                                    <span class="gt-badge gt-badge-warning">Aguardando Envio</span>
                                 )}
                             </div>
-                        </div>
 
-                        <div class="pt-2.5 border-t border-white/10 space-y-2 gt-no-print" style="flex-shrink: 0;">
-                            {quotationDetail.status !== 'rejected' && (
-                                <form action={`/admin/orcamentos/${quotationDetail.id}/status`} method="post" class="m-0">
-                                    <input type="hidden" name="status" value="rejected" />
-                                    <button type="submit" data-loading-text="Atualizando..." class="gt-btn-outline gt-btn-sm w-full justify-center">
-                                        Marcar como Recusado
+                            <div class="space-y-2">
+                                {quotationDetail.client_id && (quotationDetail.status === 'sent' || quotationDetail.status === 'approved') && (
+                                    <button
+                                        type="button"
+                                        id="gt-quote-portal-wa-btn"
+                                        onclick={`(function(btn){btn.disabled=true;var orig=btn.innerHTML;btn.textContent='Gerando link seguro...';fetch('/admin/clientes/${quotationDetail.client_id}/ativar-portal',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({send_email:true,promote_active:${quotationDetail.status === 'approved' ? 'true' : 'false'}})}).then(function(r){return r.json();}).then(function(d){btn.disabled=false;btn.innerHTML=orig;if(d&&d.ok&&d.whatsapp_url){window.open(d.whatsapp_url,'_blank');}else{alert((d&&d.error)||'Informe um e-mail válido para o cliente primeiro.');}}).catch(function(){btn.disabled=false;btn.innerHTML=orig;});})(this)`}
+                                        class="gt-btn-petrol gt-btn-sm w-full justify-center"
+                                    >
+                                        <span>Enviar Link do Portal via WhatsApp</span>
                                     </button>
-                                </form>
-                            )}
-                            <form
-                                action={`/admin/orcamentos/${quotationDetail.id}/excluir`}
-                                method="post"
-                                class="m-0"
-                                onsubmit="return confirm('Deseja realmente excluir este orçamento?')"
-                            >
-                                <button type="submit" data-loading-text="Excluindo..." class="gt-btn-danger-ghost gt-btn-sm w-full">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M3 6h18" />
-                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                                    </svg>
-                                    <span>Excluir Orçamento</span>
-                                </button>
-                            </form>
-                        </div>
-                    </aside>
+                                )}
+
+                                <div class="grid grid-cols-2 gap-2 pt-1">
+                                    {quotationDetail.status !== 'rejected' ? (
+                                        <form action={`/admin/orcamentos/${quotationDetail.id}/status`} method="post" class="m-0">
+                                            <input type="hidden" name="status" value="rejected" />
+                                            <button type="submit" data-loading-text="Atualizando..." class="gt-btn-outline gt-btn-sm w-full justify-center">
+                                                Marcar Recusado
+                                            </button>
+                                        </form>
+                                    ) : (
+                                        <div></div>
+                                    )}
+                                    <form
+                                        action={`/admin/orcamentos/${quotationDetail.id}/excluir`}
+                                        method="post"
+                                        class="m-0"
+                                        onsubmit="return confirm('Deseja realmente excluir este orçamento?')"
+                                    >
+                                        <button type="submit" data-loading-text="Excluindo..." class="gt-btn-danger-ghost gt-btn-sm w-full justify-center">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M3 6h18" />
+                                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                            </svg>
+                                            <span>Excluir</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </aside>
+                    </div>
                 </div>
             </AdminLayout>
         );
