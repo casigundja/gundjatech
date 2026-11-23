@@ -184,7 +184,7 @@ publicRoutes.post('/solicitar-orcamento', rateLimit({ keyPrefix: 'public_quote',
             if (!client) {
                 const clientRes = await c.env.DB.prepare(
                     `INSERT INTO clients (name, email, phone, company, status, is_active, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, 'active', 1, datetime('now'), datetime('now'))`
+                     VALUES (?, ?, ?, ?, 'lead', 1, datetime('now'), datetime('now'))`
                 ).bind(contactName, email, phone, companyName || null).run();
                 clientId = Number(clientRes.meta.last_row_id);
             } else {

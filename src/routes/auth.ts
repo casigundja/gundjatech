@@ -159,6 +159,36 @@ authRoutes.post('/cadastro', rateLimit({ keyPrefix: 'auth_register', maxRequests
         return c.json({ error: 'Email já cadastrado', message: 'Este endereço de e-mail já possui uma conta.' }, 422);
     }
 
+    // Regra de Governança & Segurança:
+    // Impede criação de usuários fantasmas/desnecessários em /cadastro se o e-mail não possuir
+    // um cadastro de cliente com Orçamento Enviado/Aprovado, Projeto Ativo ou Serviço Contínuo.
+    let authorizedClient: { id: number } | null = null;
+    try {
+        if (c.env.DB) {
+            const clientRow = await c.env.DB.prepare(
+                `SELECT c.id
+                 FROM clients c
+                 WHERE lower(c.email) = lower(?)
+                   AND (
+                       EXISTS (SELECT 1 FROM quotations q WHERE q.client_id = c.id AND q.status IN ('sent', 'approved'))
+                       OR EXISTS (SELECT 1 FROM projects p WHERE p.client_id = c.id AND p.status IN ('planning', 'in_progress', 'reviewing'))
+                       OR EXISTS (SELECT 1 FROM domains d WHERE d.client_id = c.id AND d.status = 'active')
+                       OR EXISTS (SELECT 1 FROM advertising_campaigns a WHERE a.client_id = c.id AND a.status = 'active')
+                   )
+                 LIMIT 1`
+            ).bind(email).first<{ id: number }>();
+            authorizedClient = clientRow || null;
+        }
+    } catch {}
+
+    if (!authorizedClient) {
+        const msg = 'O acesso ao Portal do Cliente é liberado automaticamente assim que o seu orçamento oficial for emitido pela nossa equipe. Enquanto sua solicitação estiver em análise inicial, acompanhe pelo protocolo em /acompanhar-solicitacao.';
+        if (c.req.header('accept')?.includes('application/json')) {
+            return c.json({ error: 'Acesso restrito a clientes com orçamento ou projeto ativo', message: msg }, 403);
+        }
+        return c.redirect('/cadastro?error=' + encodeURIComponent(msg));
+    }
+
     const passwordHash = await hashPassword(password);
     const newUser = await createUser(c.env.DB, {
         name,

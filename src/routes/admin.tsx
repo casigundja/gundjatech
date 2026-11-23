@@ -675,6 +675,218 @@ async function ensureClientForRequest(db: any, req: any): Promise<number | null>
     return clientId;
 }
 
+/**
+ * Provisiona ou reativa automaticamente o usuário do Portal do Cliente (role = 'client')
+ * somente a partir da Fase 3 (Orçamento Enviado ao Cliente ou Aprovado).
+ */
+async function autoProvisionPortalUserForClient(
+    db: any,
+    env: any,
+    options: {
+        clientId?: number | null;
+        overrideEmail?: string | null;
+        overridePhone?: string | null;
+        promoteActive?: boolean;
+        sendInviteEmail?: boolean;
+        baseUrl?: string;
+    }
+): Promise<{
+    provisioned: boolean;
+    userId?: number;
+    email?: string;
+    activateUrl?: string;
+    whatsappUrl?: string;
+    needsRealEmail?: boolean;
+}> {
+    const clientId = options.clientId ? Number(options.clientId) : null;
+    if (!clientId || !db) return { provisioned: false };
+
+    let client: any = null;
+    try {
+        client = await db.prepare(`SELECT * FROM clients WHERE id = ?`).bind(clientId).first();
+    } catch { }
+    if (!client) return { provisioned: false };
+
+    const rawEmail = String(options.overrideEmail || client.email || '').trim().toLowerCase();
+    const rawPhone = String(options.overridePhone || client.phone || '').trim();
+    if (!rawEmail || !rawEmail.includes('@') || rawEmail.endsWith('.local')) {
+        return { provisioned: false, needsRealEmail: true };
+    }
+
+    const displayName = String(client.name || client.company || 'Cliente').trim();
+    const nextClientStatus = options.promoteActive ? 'active' : (client.status || 'lead');
+
+    try {
+        await db.prepare(
+            `UPDATE clients SET email = ?, phone = COALESCE(?, phone), status = ?, updated_at = datetime('now') WHERE id = ?`
+        ).bind(rawEmail, rawPhone || null, nextClientStatus, clientId).run();
+    } catch { }
+
+    let existingUser: any = null;
+    try {
+        existingUser = await db.prepare(
+            `SELECT id, email, role, is_active FROM users WHERE id = ? OR lower(email) = lower(?) LIMIT 1`
+        ).bind(client.user_id || 0, rawEmail).first();
+    } catch { }
+
+    let userId = 0;
+    let isNewOrReactivated = false;
+    if (existingUser && existingUser.id) {
+        userId = Number(existingUser.id);
+        if (!existingUser.is_active || Number(existingUser.is_active) === 0) {
+            isNewOrReactivated = true;
+        }
+        try {
+            await db.prepare(
+                `UPDATE users SET is_active = 1, updated_at = datetime('now') WHERE id = ?`
+            ).bind(userId).run();
+        } catch { }
+    } else {
+        isNewOrReactivated = true;
+        try {
+            const randomSecret = `${crypto.randomUUID()}-${crypto.randomUUID()}`;
+            const randomHash = await hashPassword(randomSecret);
+            const ins = await db.prepare(
+                `INSERT INTO users (name, email, phone, role, company, password, is_active, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, 1, datetime('now'), datetime('now'))`
+            ).bind(displayName, rawEmail, rawPhone || null, 'client', client.company || displayName, randomHash).run();
+            userId = Number(ins?.meta?.last_row_id || 0);
+        } catch { }
+    }
+
+    if (userId > 0) {
+        try {
+            await db.prepare(
+                `UPDATE clients SET user_id = ?, updated_at = datetime('now') WHERE id = ?`
+            ).bind(userId, clientId).run();
+        } catch { }
+    }
+
+    const tokenBytes = new Uint8Array(24);
+    crypto.getRandomValues(tokenBytes);
+    const token = Array.from(tokenBytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+
+    try {
+        await db.prepare(`DELETE FROM password_reset_tokens WHERE email = ?`).bind(rawEmail).run();
+        await db.prepare(
+            `INSERT INTO password_reset_tokens (email, token, created_at) VALUES (?, ?, datetime('now'))`
+        ).bind(rawEmail, token).run();
+    } catch { }
+
+    const baseUrl = String(options.baseUrl || env?.APP_URL || 'https://gundjatech.casimirogundja.workers.dev').replace(/\/+$/, '');
+    const activateUrl = `${baseUrl}/redefinir-senha/${token}?email=${encodeURIComponent(rawEmail)}`;
+    const whatsappMessage =
+        `Olá, *${displayName}*! 👋\n\n` +
+        `Seu orçamento e acompanhamento oficial no *Portal do Cliente GundjaTech* já estão disponíveis.\n\n` +
+        `📧 *E-mail:* ${rawEmail}\n` +
+        `🔐 *Link único para definir sua senha e acessar:*\n${activateUrl}`;
+    const phoneDigits = rawPhone.replace(/\D/g, '');
+    const whatsappUrl = phoneDigits
+        ? `https://wa.me/${phoneDigits}?text=${encodeURIComponent(whatsappMessage)}`
+        : `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`;
+
+    if (options.sendInviteEmail !== false && isNewOrReactivated && env) {
+        try {
+            await sendPortalInviteEmail(env, rawEmail, displayName, activateUrl);
+        } catch { }
+    }
+
+    return {
+        provisioned: true,
+        userId: userId || undefined,
+        email: rawEmail,
+        activateUrl,
+        whatsappUrl
+    };
+}
+
+/**
+ * Revoga automaticamente o acesso do usuário do Portal (users.is_active = 0 + encerra sessões)
+ * quando sua solicitação/orçamento/projeto é cancelado ou quando o projeto foi 100% concluído
+ * e todas as faturas já foram liquidadas (paid), DESDE QUE o cliente não possua nenhum outro
+ * serviço ativo (outro projeto em andamento, orçamento aberto, domínio ativo ou campanha ativa).
+ */
+async function autoRevokeIdlePortalUser(
+    db: any,
+    env: any,
+    clientId?: number | null
+): Promise<{ revoked: boolean; userId?: number }> {
+    const cid = clientId ? Number(clientId) : 0;
+    if (!cid || !db) return { revoked: false };
+
+    let client: any = null;
+    try {
+        client = await db.prepare(`SELECT id, user_id, email, status FROM clients WHERE id = ?`).bind(cid).first();
+    } catch { }
+    if (!client) return { revoked: false };
+
+    // Verifica se o cliente ainda possui qualquer vínculo ativo que exija Portal aberto:
+    // 1. Orçamento enviado ou aprovado vinculado a solicitação ainda não concluída/cancelada
+    // 2. Projeto ativo (planning, in_progress, reviewing)
+    // 3. Fatura pendente (A Receber) no financeiro
+    // 4. Domínio ativo ou Campanha de tráfego ativa
+    try {
+        const activeProjs = (await db.prepare(
+            `SELECT id FROM projects WHERE client_id = ? AND status IN ('planning', 'in_progress', 'reviewing')`
+        ).bind(cid).all())?.results || [];
+        if (activeProjs.length > 0) return { revoked: false };
+
+        const activeReqs = (await db.prepare(
+            `SELECT id FROM service_requests WHERE client_id = ? AND status IN ('quotation_sent', 'approved', 'in_progress')`
+        ).bind(cid).all())?.results || [];
+        if (activeReqs.length > 0) return { revoked: false };
+
+        const sentQuotes = (await db.prepare(
+            `SELECT id FROM quotations WHERE client_id = ? AND status = 'sent'`
+        ).bind(cid).all())?.results || [];
+        if (sentQuotes.length > 0) return { revoked: false };
+
+        const pendingInvoices = (await db.prepare(
+            `SELECT id FROM financial_transactions WHERE client_id = ? AND status = 'pending'`
+        ).bind(cid).all())?.results || [];
+        if (pendingInvoices.length > 0) return { revoked: false };
+
+        const activeDomains = (await db.prepare(
+            `SELECT id FROM domains WHERE client_id = ? AND status = 'active'`
+        ).bind(cid).all())?.results || [];
+        if (activeDomains.length > 0) return { revoked: false };
+
+        const activeCampaigns = (await db.prepare(
+            `SELECT id FROM advertising_campaigns WHERE client_id = ? AND status = 'active'`
+        ).bind(cid).all())?.results || [];
+        if (activeCampaigns.length > 0) return { revoked: false };
+    } catch {
+        return { revoked: false };
+    }
+
+    // Não possui nenhum serviço ativo nem pendência financeira: localiza o user role='client' e desativa
+    let targetUser: any = null;
+    try {
+        if (client.user_id) {
+            targetUser = await db.prepare(`SELECT id, role, is_active FROM users WHERE id = ?`).bind(client.user_id).first();
+        }
+        if (!targetUser && client.email) {
+            targetUser = await db.prepare(`SELECT id, role, is_active FROM users WHERE lower(email) = lower(?)`).bind(client.email).first();
+        }
+    } catch { }
+
+    if (!targetUser || !targetUser.id || targetUser.role !== 'client') {
+        return { revoked: false };
+    }
+
+    const uid = Number(targetUser.id);
+    try {
+        await db.prepare(
+            `UPDATE users SET is_active = 0, updated_at = datetime('now') WHERE id = ? AND role = 'client'`
+        ).bind(uid).run();
+        if (env) {
+            await destroyAllUserSessions(env, uid);
+        }
+    } catch { }
+
+    return { revoked: true, userId: uid };
+}
+
 const DEFAULT_PROJECT_STAGES = [
     '1. Levantamento Técnico & Arquitetura',
     '2. Desenvolvimento & Implementação',
@@ -765,6 +977,15 @@ async function autoStartProjectFromApprovedRequest(
     if (clientId) {
         try {
             await db.prepare(`UPDATE clients SET status = 'active', updated_at = datetime('now') WHERE id = ?`).bind(clientId).run();
+        } catch { }
+        try {
+            await autoProvisionPortalUserForClient(db, env, {
+                clientId,
+                overrideEmail: req?.email || null,
+                overridePhone: req?.phone || null,
+                promoteActive: true,
+                sendInviteEmail: true
+            });
         } catch { }
     }
 
@@ -1189,6 +1410,7 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
     });
 
     // Quando marcado como "Orçamento Enviado", garante que o orçamento chegue ao Portal do Cliente
+    // e provisiona automaticamente o usuário do Portal (role = 'client')
     if (newStatus === 'quotation_sent') {
         try {
             const clientId = await ensureClientForRequest(db, current);
@@ -1210,9 +1432,24 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
                         `UPDATE quotations SET status = 'sent', updated_at = datetime('now') WHERE id = ?`
                     ).bind(linkedQuotation.id).run();
                 }
+
+                await autoProvisionPortalUserForClient(db, c.env, {
+                    clientId,
+                    overrideEmail: current.email || null,
+                    overridePhone: current.phone || null,
+                    promoteActive: false,
+                    sendInviteEmail: true,
+                    baseUrl: new URL(c.req.url).origin
+                });
             }
         } catch { }
-        return c.redirect(`/admin/solicitacoes/${id}?success=${encodeURIComponent('Orçamento enviado e disponibilizado no Portal do Cliente para aprovação!')}`);
+        return c.redirect(`/admin/solicitacoes/${id}?success=${encodeURIComponent('Orçamento enviado! Acesso ao Portal do Cliente liberado automaticamente para aprovação.')}`);
+    }
+
+    if (newStatus === 'cancelled') {
+        try {
+            await autoRevokeIdlePortalUser(db, c.env, current.client_id);
+        } catch { }
     }
 
     if (newStatus === 'completed' && prevReqStatus !== 'completed') {
@@ -1317,7 +1554,7 @@ adminRoutes.post('/solicitacoes/:id/cancelar', async (c) => {
     const db = c.env.DB;
     const id = c.req.param('id');
 
-    const current = await db.prepare(`SELECT status FROM service_requests WHERE id = ?`).bind(id).first<{ status: string }>();
+    const current = await db.prepare(`SELECT status, client_id FROM service_requests WHERE id = ?`).bind(id).first<{ status: string; client_id?: number }>();
     if (!current) {
         return c.redirect('/admin/solicitacoes?error=Solicitação não encontrada');
     }
@@ -1334,6 +1571,11 @@ adminRoutes.post('/solicitacoes/:id/cancelar', async (c) => {
         toStatus: 'cancelled',
         notes: 'Solicitação cancelada pela administração',
     });
+
+    // Revoga automaticamente o usuário do Portal caso o cliente não possua nenhum outro serviço ou projeto ativo
+    try {
+        await autoRevokeIdlePortalUser(db, c.env, current.client_id);
+    } catch { }
 
     return c.redirect(`/admin/solicitacoes/${id}?success=Solicitação cancelada`);
 });
@@ -2406,6 +2648,13 @@ adminRoutes.post('/projetos/:id', async (c) => {
         );
     }
 
+    // Se o projeto foi cancelado e o cliente não possui outros serviços ativos, revoga o usuário do Portal
+    if (status === 'canceled' && previousProject?.client_id) {
+        try {
+            await autoRevokeIdlePortalUser(db, c.env, Number(previousProject.client_id));
+        } catch { }
+    }
+
     return c.redirect(`/admin/projetos/${id}?success=Projeto atualizado com sucesso`);
 });
 
@@ -2726,14 +2975,25 @@ adminRoutes.post('/financeiro/:id/pagar', async (c) => {
     const id = c.req.param('id');
 
     let txType = 'income';
+    let txClientId: number | null = null;
     try {
-        const row = await db.prepare(`SELECT type FROM financial_transactions WHERE id = ?`).bind(id).first<{ type?: string }>();
+        const row = await db.prepare(`SELECT type, client_id FROM financial_transactions WHERE id = ?`).bind(id).first<{ type?: string; client_id?: number }>();
         if (row?.type) txType = row.type;
+        if (row?.client_id) txClientId = Number(row.client_id);
     } catch { }
 
     await db.prepare(
         `UPDATE financial_transactions SET status = 'paid', paid_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`
     ).bind(id).run();
+
+    // Encerramento de Ciclo: após quitar a fatura (RECEBIDO), caso o projeto уже esteja concluído
+    // e o cliente não possua nenhum outro projeto em andamento, domínio ativo ou campanha ativa,
+    // encerra automaticamente o login ocioso do Portal (users.is_active = 0)
+    if (txClientId) {
+        try {
+            await autoRevokeIdlePortalUser(db, c.env, txClientId);
+        } catch { }
+    }
 
     const msg = txType === 'expense' ? 'Despesa marcada como paga com sucesso' : 'Recebimento confirmado em caixa com sucesso';
     return c.redirect(`/admin/financeiro?success=${encodeURIComponent(msg)}`);
@@ -2743,9 +3003,21 @@ adminRoutes.post('/financeiro/:id/cancelar', async (c) => {
     const db = c.env.DB;
     const id = c.req.param('id');
 
+    let txClientId: number | null = null;
+    try {
+        const row = await db.prepare(`SELECT client_id FROM financial_transactions WHERE id = ?`).bind(id).first<{ client_id?: number }>();
+        if (row?.client_id) txClientId = Number(row.client_id);
+    } catch { }
+
     await db.prepare(
         `UPDATE financial_transactions SET status = 'canceled', updated_at = datetime('now') WHERE id = ?`
     ).bind(id).run();
+
+    if (txClientId) {
+        try {
+            await autoRevokeIdlePortalUser(db, c.env, txClientId);
+        } catch { }
+    }
 
     return c.redirect('/admin/financeiro?success=Fatura cancelada');
 });
@@ -3077,7 +3349,8 @@ adminRoutes.get('/orcamentos/:id', async (c) => {
     }
 
     const quotationDetail = await db.prepare(
-        `SELECT q.*, cl.name as client_name, cl.company, cl.email as client_email
+        `SELECT q.*, cl.name as client_name, cl.company, cl.email as client_email, cl.phone as client_phone, cl.user_id as client_user_id,
+                (SELECT u.is_active FROM users u WHERE u.id = cl.user_id OR (cl.email IS NOT NULL AND cl.email != '' AND lower(u.email) = lower(cl.email)) LIMIT 1) as portal_user_active
          FROM quotations q
          LEFT JOIN clients cl ON q.client_id = cl.id
          WHERE q.id = ?`
@@ -3135,6 +3408,7 @@ adminRoutes.post('/orcamentos/:id', async (c) => {
     const status = allowedStatuses.includes(statusRaw) ? statusRaw : 'draft';
     const expiresAt = String(body['expires_at'] || '').trim() || null;
     const notes = String(body['notes'] || '').trim() || null;
+    const clientEmailInput = String(body['client_email'] || '').trim().toLowerCase() || null;
 
     if (!title) {
         return c.redirect(`/admin/orcamentos/${id}?error=O título da proposta é obrigatório.`);
@@ -3148,11 +3422,58 @@ adminRoutes.post('/orcamentos/:id', async (c) => {
 
     const prevQuote = await db.prepare(`SELECT * FROM quotations WHERE id = ?`).bind(id).first<any>();
 
+    // Se o administrador informou/atualizou o e-mail real do cliente no orçamento, sincroniza no cadastro do cliente e solicitação
+    if (clientEmailInput && clientEmailInput.includes('@') && !clientEmailInput.endsWith('.local')) {
+        if (prevQuote?.client_id) {
+            try {
+                await db.prepare(`UPDATE clients SET email = ?, updated_at = datetime('now') WHERE id = ?`).bind(clientEmailInput, prevQuote.client_id).run();
+            } catch { }
+        }
+        if (prevQuote?.service_request_id) {
+            try {
+                await db.prepare(`UPDATE service_requests SET email = ?, updated_at = datetime('now') WHERE id = ?`).bind(clientEmailInput, prevQuote.service_request_id).run();
+            } catch { }
+        }
+    }
+
+    // Trava de Segurança & Portal: ao enviar o orçamento ao cliente (sent) ou aprovar (approved),
+    // exige que o cliente possua um e-mail real válido (não .local) para liberar o acesso ao Portal
+    if ((status === 'sent' || status === 'approved') && prevQuote?.client_id) {
+        try {
+            const clRow = (await db.prepare(`SELECT email FROM clients WHERE id = ?`).bind(prevQuote.client_id).first()) as { email?: string } | null;
+            const effectiveEmail = String(clientEmailInput || clRow?.email || '').trim().toLowerCase();
+            if (clRow && (!effectiveEmail || !effectiveEmail.includes('@') || effectiveEmail.endsWith('.local'))) {
+                return c.redirect(
+                    `/admin/orcamentos/${id}?error=${encodeURIComponent('Trava de Portal: Este cliente veio do WhatsApp sem e-mail real cadastrado. Informe o e-mail corporativo/pessoal do cliente no campo "E-mail do Cliente para Acesso ao Portal" antes de enviar o orçamento.')}`
+                );
+            }
+        } catch { }
+    }
+
     await db.prepare(
         `UPDATE quotations
          SET title = ?, total_amount = ?, discount_amount = ?, final_amount = ?, status = ?, expires_at = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`
     ).bind(title, totalAmount, discountAmount, finalAmount, status, expiresAt, notes, id).run();
+
+    // Provisionamento ou Revogação Automática do Usuário do Portal conforme a fase do orçamento
+    if (prevQuote?.client_id) {
+        if (status === 'sent') {
+            try {
+                await autoProvisionPortalUserForClient(db, c.env, {
+                    clientId: Number(prevQuote.client_id),
+                    overrideEmail: clientEmailInput,
+                    promoteActive: false,
+                    sendInviteEmail: true,
+                    baseUrl: new URL(c.req.url).origin
+                });
+            } catch { }
+        } else if (status === 'rejected' || status === 'expired') {
+            try {
+                await autoRevokeIdlePortalUser(db, c.env, Number(prevQuote.client_id));
+            } catch { }
+        }
+    }
 
     const updatedQuote = {
         ...(prevQuote || {}),
@@ -3242,11 +3563,40 @@ adminRoutes.post('/orcamentos/:id/status', async (c) => {
                 `/admin/orcamentos/${id}?error=${encodeURIComponent('Trava Comercial: Defina um valor maior que R$ 0,00 na proposta antes de enviá-la ou aprová-la.')}`
             );
         }
+
+        if (quotation?.client_id) {
+            try {
+                const clRow = (await db.prepare(`SELECT email FROM clients WHERE id = ?`).bind(quotation.client_id).first()) as { email?: string } | null;
+                const effectiveEmail = String(clRow?.email || '').trim().toLowerCase();
+                if (clRow && (!effectiveEmail || !effectiveEmail.includes('@') || effectiveEmail.endsWith('.local'))) {
+                    return c.redirect(
+                        `/admin/orcamentos/${id}?error=${encodeURIComponent('Trava de Portal: Informe o e-mail real do cliente no orçamento antes de enviá-lo para liberar o acesso ao Portal do Cliente.')}`
+                    );
+                }
+            } catch { }
+        }
     }
 
     await db.prepare(
         `UPDATE quotations SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
     ).bind(status, id).run();
+
+    if (quotation?.client_id) {
+        if (status === 'sent') {
+            try {
+                await autoProvisionPortalUserForClient(db, c.env, {
+                    clientId: Number(quotation.client_id),
+                    promoteActive: false,
+                    sendInviteEmail: true,
+                    baseUrl: new URL(c.req.url).origin
+                });
+            } catch { }
+        } else if (status === 'rejected' || status === 'expired') {
+            try {
+                await autoRevokeIdlePortalUser(db, c.env, Number(quotation.client_id));
+            } catch { }
+        }
+    }
 
     // Quando o orçamento é aprovado: cria o Projeto automaticamente e avança a Solicitação para Em Execução!
     if (status === 'approved') {

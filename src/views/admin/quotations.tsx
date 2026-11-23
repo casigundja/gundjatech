@@ -204,8 +204,8 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                                     <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Status da Proposta</label>
                                     <select name="status" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]">
                                         <option value="draft" selected={quotationDetail.status === 'draft'}>Rascunho</option>
-                                        <option value="sent" selected={quotationDetail.status === 'sent'}>Enviado ao Cliente</option>
-                                        <option value="approved" selected={quotationDetail.status === 'approved'}>Aprovado</option>
+                                        <option value="sent" selected={quotationDetail.status === 'sent'}>Enviado ao Cliente (Libera Portal)</option>
+                                        <option value="approved" selected={quotationDetail.status === 'approved'}>Aprovado (Inicia Projeto)</option>
                                         <option value="rejected" selected={quotationDetail.status === 'rejected'}>Recusado</option>
                                         <option value="expired" selected={quotationDetail.status === 'expired'}>Expirado</option>
                                     </select>
@@ -219,6 +219,22 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                                         class="w-full rounded-xl px-3.5 py-2.5 text-[13px]"
                                     />
                                 </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
+                                    E-mail do Cliente para Acesso ao Portal *
+                                </label>
+                                <input
+                                    type="email"
+                                    name="client_email"
+                                    placeholder="cliente@empresa.com (obrigatório ao enviar o orçamento)"
+                                    value={quotationDetail.client_email && !String(quotationDetail.client_email).endsWith('.local') ? quotationDetail.client_email : ''}
+                                    class="w-full rounded-xl px-3.5 py-2.5 text-[13px]"
+                                />
+                                <p class="text-[11px] text-[#8C95AA] mt-1">
+                                    O usuário do Portal do Cliente é criado/ativado automaticamente quando este orçamento é marcado como <strong>Enviado ao Cliente</strong> ou <strong>Aprovado</strong>.
+                                </p>
                             </div>
 
                             <div>
@@ -266,6 +282,35 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                         <div class="text-[11px] text-[#8C95AA] space-y-1">
                             <div>Emitido em: <strong class="text-white">{quotationDetail.created_at ? new Date(quotationDetail.created_at).toLocaleDateString('pt-BR') : '—'}</strong></div>
                             <div>Validade: <strong class="text-white">{quotationDetail.expires_at ? String(quotationDetail.expires_at).slice(0, 10) : 'Sem prazo'}</strong></div>
+                        </div>
+
+                        {/* Card de Governança do Usuário do Portal */}
+                        <div class="gtb-surface-box rounded-xl p-3.5 space-y-2 text-xs gt-no-print">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Acesso ao Portal</span>
+                                {Number(quotationDetail.portal_user_active) === 1 ? (
+                                    <span class="gt-badge gt-badge-success">Usuário Ativo</span>
+                                ) : (
+                                    <span class="gt-badge gt-badge-warning">Aguardando Envio</span>
+                                )}
+                            </div>
+                            <p class="text-[11px] text-[#8C95AA] leading-relaxed">
+                                {Number(quotationDetail.portal_user_active) === 1
+                                    ? 'O cliente já possui login ativo para visualizar e aprovar esta proposta no Portal.'
+                                    : 'O login do cliente será criado automaticamente assim que a proposta for enviada (> R$ 0,00).'}
+                            </p>
+                            {quotationDetail.client_id && (quotationDetail.status === 'sent' || quotationDetail.status === 'approved') && (
+                                <div class="pt-1 space-y-2">
+                                    <button
+                                        type="button"
+                                        id="gt-quote-portal-wa-btn"
+                                        onclick={`(function(btn){btn.disabled=true;var orig=btn.innerHTML;btn.textContent='Gerando link seguro...';fetch('/admin/clientes/${quotationDetail.client_id}/ativar-portal',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({send_email:true,promote_active:${quotationDetail.status === 'approved' ? 'true' : 'false'}})}).then(function(r){return r.json();}).then(function(d){btn.disabled=false;btn.innerHTML=orig;if(d&&d.ok&&d.whatsapp_url){window.open(d.whatsapp_url,'_blank');}else{alert((d&&d.error)||'Informe um e-mail válido para o cliente primeiro.');}}).catch(function(){btn.disabled=false;btn.innerHTML=orig;});})(this)`}
+                                        class="gt-btn-petrol gt-btn-sm w-full justify-center"
+                                    >
+                                        <span>Enviar Link do Portal via WhatsApp</span>
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         <div class="pt-3 border-t border-white/10 space-y-2 gt-no-print">

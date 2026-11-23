@@ -218,12 +218,16 @@ function createAdminMockEnv() {
                                 return (s || null) as unknown as T;
                             }
                             if (q.includes('from users where id =')) {
-                                const u = data.users.find(x => x.id === params[0]);
+                                const u = data.users.find(x => x.id === Number(params[0]) || (params[1] && x.email.toLowerCase() === String(params[1]).toLowerCase()));
                                 return (u || null) as unknown as T;
                             }
                             if (q.includes('from users where lower(email) =')) {
                                 const u = data.users.find(x => x.email.toLowerCase() === String(params[0]).toLowerCase());
                                 return (u || null) as unknown as T;
+                            }
+                            if (q.includes('from clients where id =')) {
+                                const c = data.clients.find(x => x.id === Number(params[0]));
+                                return (c || null) as unknown as T;
                             }
                             if (q.includes('from clients where lower(email) =')) {
                                 const c = data.clients.find(x => x.email.toLowerCase() === String(params[0]).toLowerCase());
@@ -266,6 +270,30 @@ function createAdminMockEnv() {
                         },
                         all: async <T>(): Promise<{ results: T[] }> => {
                             const q = query.toLowerCase();
+                            if (q.includes('from projects where client_id =')) {
+                                const list = data.projects.filter(x => Number(x.client_id) === Number(params[0]) && ['planning', 'in_progress', 'reviewing'].includes(x.status));
+                                return { results: list as unknown as T[] };
+                            }
+                            if (q.includes('from service_requests where client_id =')) {
+                                const list = data.service_requests.filter(x => Number(x.client_id) === Number(params[0]) && ['quotation_sent', 'approved', 'in_progress'].includes(x.status));
+                                return { results: list as unknown as T[] };
+                            }
+                            if (q.includes('from quotations where client_id =')) {
+                                const list = (data.quotations as any[]).filter(x => Number(x.client_id) === Number(params[0]) && x.status === 'sent');
+                                return { results: list as unknown as T[] };
+                            }
+                            if (q.includes('from financial_transactions where client_id =')) {
+                                const list = data.financial_transactions.filter(x => Number(x.client_id) === Number(params[0]) && x.status === 'pending');
+                                return { results: list as unknown as T[] };
+                            }
+                            if (q.includes('from domains where client_id =')) {
+                                const list = data.domains.filter(x => Number(x.client_id) === Number(params[0]) && x.status === 'active');
+                                return { results: list as unknown as T[] };
+                            }
+                            if (q.includes('from advertising_campaigns where client_id =')) {
+                                const list = data.advertising_campaigns.filter(x => Number(x.client_id) === Number(params[0]) && x.status === 'active');
+                                return { results: list as unknown as T[] };
+                            }
                             if (q.includes('from clients')) {
                                 return { results: data.clients as unknown as T[] };
                             }
@@ -533,9 +561,24 @@ function createAdminMockEnv() {
                                 });
                                 return { success: true, meta: { last_row_id: uId } };
                             }
+                            if (q.includes('update users set is_active = 0')) {
+                                const u = data.users.find(x => x.id === Number(params[0]));
+                                if (u) u.is_active = 0;
+                                return { success: true };
+                            }
+                            if (q.includes('update users set is_active = 1')) {
+                                const u = data.users.find(x => x.id === Number(params[0]));
+                                if (u) u.is_active = 1;
+                                return { success: true };
+                            }
                             if (q.includes('update users set is_active =')) {
                                 const u = data.users.find(x => x.id === Number(params[1]));
                                 if (u) u.is_active = Number(params[0]);
+                                return { success: true };
+                            }
+                            if (q.includes('update clients set user_id =')) {
+                                const cl = data.clients.find(x => x.id === Number(params[1])) as any;
+                                if (cl) cl.user_id = Number(params[0]);
                                 return { success: true };
                             }
                             if (q.includes('insert into conversation_messages')) {
@@ -821,6 +864,11 @@ describe('Fase 4 • Módulo 5 & 6: Painel Administrativo Core & Avançado (/adm
         }, env);
         expect(quoteSentRes.status).toBe(302);
         expect(data.service_requests[0].status).toBe('quotation_sent');
+        // Enviar o orçamento provisiona automaticamente o usuário do Portal (role = 'client') para o cliente
+        const portalUser = data.users.find(u => u.email === 'carlos@techcorp.com.br');
+        expect(portalUser).toBeDefined();
+        expect(portalUser?.role).toBe('client');
+        expect(portalUser?.is_active).toBe(1);
 
         // Aprovação do orçamento cria automaticamente o Projeto com as 4 etapas padrão e lança a fatura A RECEBER (pending)
         const initialTxCount = data.financial_transactions.length;
@@ -1198,6 +1246,24 @@ describe('Fase 4 • Módulo 5 & 6: Painel Administrativo Core & Avançado (/adm
         }, env);
         expect(cancelReq.status).toBe(302);
         expect(data.service_requests[0].status).toBe('cancelled');
+
+        // Quando um cliente não possui mais nenhum projeto, orçamento, domínio ou campanha ativa,
+        // o cancelamento da solicitação revoga automaticamente o usuário do Portal (is_active = 0)
+        data.projects.length = 0;
+        data.domains.length = 0;
+        data.advertising_campaigns.length = 0;
+        data.financial_transactions.length = 0;
+        data.quotations.length = 0;
+        data.users.push({ id: 99, name: 'Carlos Oliveira', email: 'carlos@techcorp.com.br', role: 'client', is_active: 1 } as any);
+        (data.clients[0] as any).user_id = 99;
+        data.service_requests[0].status = 'analyzing';
+
+        const cancelIdleReq = await app.request('/admin/solicitacoes/1/cancelar', {
+            method: 'POST',
+            headers: { 'Cookie': adminCookie }
+        }, env);
+        expect(cancelIdleReq.status).toBe(302);
+        expect(data.users.find(u => u.id === 99)?.is_active).toBe(0);
 
         // GET /minha-conta (sem rótulo "Segurança & Senha", padronizado para "Minha Conta")
         const accountRes = await app.request('/minha-conta', {
