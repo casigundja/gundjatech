@@ -386,18 +386,15 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                         </div>
                     </div>
 
-                    {/* Rodapé de ações WhatsApp */}
-                    <div class="pt-3.5 grid grid-cols-2 gap-2.5" style="border-top: 1px solid rgba(22, 116, 154, 0.14);">
-                        <button type="submit" form="gt-settings-form" data-loading-text="Salvando..." class="gt-btn-petrol gt-btn-sm justify-center">
-                            <span>Salvar WhatsApp</span>
-                        </button>
+                    {/* Rodapé de teste rápido WhatsApp */}
+                    <div class="pt-3.5" style="border-top: 1px solid rgba(22, 116, 154, 0.14);">
                         <button
                             type="button"
                             onclick="var f=document.getElementById('gt-test-wa-form');if(f)f.submit();"
-                            class="gt-btn-outline gt-btn-sm justify-center"
+                            class="gt-btn-outline gt-btn-sm w-full justify-center"
                         >
                             <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                            <span>Testar Envio</span>
+                            <span>Testar Envio WhatsApp</span>
                         </button>
                     </div>
                 </aside>
