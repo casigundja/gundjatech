@@ -255,17 +255,21 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                     </div>
 
                     <div id="gt-pay-checkout-body" class="p-6 space-y-4">
-                        {/* Barra de status ao vivo */}
-                        <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#F0F7FA] border border-[#D4E4EE] text-[11px] text-[#063B5C]">
-                            <span class="inline-flex items-center gap-2 font-semibold">
-                                <span class="w-2 h-2 rounded-full bg-[#16749A] animate-pulse"></span>
-                                <span id="gt-pay-live-label">
-                                    {pixGatewayProvider !== 'static'
-                                        ? 'Verificação automática ativa — assim que pagar, esta tela confirma sozinha.'
-                                        : 'Aguardando pagamento — assim que confirmado, esta tela atualiza automaticamente.'}
+                        {/* Barra de status ao vivo (apenas quando gateway automático está ativo, ou orientação clara no PIX estático) */}
+                        {pixGatewayProvider !== 'static' ? (
+                            <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#F0F7FA] border border-[#D4E4EE] text-[11px] text-[#063B5C]">
+                                <span class="inline-flex items-center gap-2 font-semibold">
+                                    <span class="w-2 h-2 rounded-full bg-[#16749A] animate-pulse"></span>
+                                    <span id="gt-pay-live-label">Verificação automática ativa — assim que pagar, esta tela confirma sozinha.</span>
                                 </span>
-                            </span>
-                        </div>
+                            </div>
+                        ) : (
+                            <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] text-[11px] text-[#475569]">
+                                <span id="gt-pay-live-label" class="font-medium">
+                                    Após concluir o pagamento via PIX ou TED, anexe o comprovante abaixo para validação e emissão do recibo.
+                                </span>
+                            </div>
+                        )}
 
                         {/* Abas Segmentadas (Estilo Fintech) */}
                         <div class="gt-pay-seg" role="tablist">
