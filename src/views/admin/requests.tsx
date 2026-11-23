@@ -637,7 +637,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                         <h2 id="gt-edit-request-title" class="gt-font-display text-base font-extrabold text-white">Editar Solicitação</h2>
                                         <span class="gtb-badge-pill">{requestDetail.protocol || `#${requestDetail.id}`}</span>
                                     </div>
-                                    <p class="text-xs text-[#8C95AA] mt-0.5">Atualize título, dados do cliente, valor estimado e descrição da demanda.</p>
+                                    <p class="text-xs text-[#8C95AA] mt-0.5">Atualize título, valor estimado e escopo técnico desta demanda.</p>
                                 </div>
                             </div>
                             <button
@@ -693,66 +693,21 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                 </div>
                             </div>
 
-                            {/* Seção 2: Dados do Cliente */}
-                            <div class="gt-modal-section space-y-3.5">
-                                <div class="gt-modal-section-title">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                    <span>Dados do Cliente</span>
-                                </div>
-
-                                <div class="gt-grid-2">
-                                    <div>
-                                        <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
-                                            Nome do Contato
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="name"
-                                            value={requestDetail.name || ''}
-                                            placeholder="Nome do responsável"
-                                            class="gt-modal-input"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
-                                            Empresa
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="company"
-                                            value={requestDetail.company || ''}
-                                            placeholder="Nome da empresa (opcional)"
-                                            class="gt-modal-input"
-                                        />
+                            {/* Referência do Cliente (Fonte única de verdade em /admin/clientes) */}
+                            <div class="gtb-surface-box rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+                                <div class="min-w-0">
+                                    <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Cliente Vinculado</div>
+                                    <div class="text-xs font-bold text-white truncate mt-0.5">
+                                        {requestDetail.company || requestDetail.name || 'Cliente'}
+                                        {requestDetail.email && !String(requestDetail.email).endsWith('.local') ? ` • ${requestDetail.email}` : ''}
                                     </div>
                                 </div>
-
-                                <div class="gt-grid-2">
-                                    <div>
-                                        <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
-                                            E-mail
-                                        </label>
-                                        <input
-                                            type="email"
-                                            name="email"
-                                            value={requestDetail.email || ''}
-                                            placeholder="cliente@empresa.com"
-                                            class="gt-modal-input"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
-                                            Telefone / WhatsApp
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="phone"
-                                            value={requestDetail.phone || ''}
-                                            placeholder="+55 (11) 99999-9999"
-                                            class="gt-modal-input"
-                                        />
-                                    </div>
-                                </div>
+                                <a
+                                    href={`/admin/clientes?search=${encodeURIComponent(requestDetail.company || requestDetail.name || '')}`}
+                                    class="gt-btn-outline gt-btn-xs shrink-0"
+                                >
+                                    <span>Editar Cadastro em Clientes ↗</span>
+                                </a>
                             </div>
 
                             {/* Seção 3: Descrição da Demanda */}

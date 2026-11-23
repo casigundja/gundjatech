@@ -449,16 +449,29 @@ adminRoutes.post('/clientes/:id/editar', async (c) => {
 
             if (!emailTaken) {
                 await db.prepare(
-                    `UPDATE users SET name = ?, email = ?, updated_at = datetime('now') WHERE id = ?`
-                ).bind(finalName, finalEmail, existing.user_id).run();
+                    `UPDATE users SET name = ?, email = ?, phone = ?, company = ?, updated_at = datetime('now') WHERE id = ?`
+                ).bind(finalName, finalEmail, phone, company, existing.user_id).run();
             } else {
                 await db.prepare(
-                    `UPDATE users SET name = ?, updated_at = datetime('now') WHERE id = ?`
-                ).bind(finalName, existing.user_id).run();
+                    `UPDATE users SET name = ?, phone = ?, company = ?, updated_at = datetime('now') WHERE id = ?`
+                ).bind(finalName, phone, company, existing.user_id).run();
             }
+        } else if (existing.user_id) {
+            await db.prepare(
+                `UPDATE users SET name = ?, phone = ?, company = ?, updated_at = datetime('now') WHERE id = ?`
+            ).bind(finalName, phone, company, existing.user_id).run();
         }
 
-        return c.redirect('/admin/clientes?success=Cliente atualizado com sucesso');
+        // Propaga dados cadastrais para todas as solicitações vinculadas a este cliente
+        try {
+            await db.prepare(
+                `UPDATE service_requests
+                 SET name = ?, company = ?, email = COALESCE(NULLIF(?, ''), email), phone = ?, updated_at = datetime('now')
+                 WHERE client_id = ?`
+            ).bind(finalName, company, finalEmail, phone, id).run();
+        } catch { }
+
+        return c.redirect('/admin/clientes?success=Cliente atualizado e sincronizado em todos os módulos');
     } catch (err: any) {
         return c.redirect(`/admin/clientes?error=${encodeURIComponent(err.message || 'Erro ao atualizar cliente')}`);
     }
@@ -1770,7 +1783,7 @@ adminRoutes.post('/solicitacoes/:id/editar', async (c) => {
 
     await db.prepare(
         `UPDATE service_requests
-         SET title = ?, service_title = ?, name = COALESCE(?, name), company = ?, email = COALESCE(?, email), phone = ?, description = ?, estimated_budget = ?, updated_at = datetime('now')
+         SET title = ?, service_title = ?, name = COALESCE(?, name), company = COALESCE(?, company), email = COALESCE(?, email), phone = COALESCE(?, phone), description = ?, estimated_budget = ?, updated_at = datetime('now')
          WHERE id = ?`
     ).bind(serviceTitle, serviceTitle, name, company, email, phone, description, estimatedBudget, id).run();
 
