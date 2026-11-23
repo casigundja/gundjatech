@@ -2287,9 +2287,15 @@ html[data-admin-theme="light"] .gtb-notif-empty-icon {
     margin-bottom: 24px;
 }
 
-.gt-page-header > div {
+.gt-page-header > div:first-child {
     min-width: 0;
     flex: 1 1 260px;
+}
+
+.gt-page-header > div:not(:first-child) {
+    flex: 0 0 auto;
+    margin-left: auto;
+    justify-content: flex-end;
 }
 
 .gt-filter-bar {
@@ -3034,8 +3040,11 @@ button[data-dirty-locked="1"] {
         margin-bottom: 18px;
     }
 
-    .gt-page-header > div {
+    .gt-page-header > div,
+    .gt-page-header > div:not(:first-child) {
         flex: none;
+        margin-left: 0;
+        justify-content: flex-start;
     }
 
     .gt-page-header h1 {
