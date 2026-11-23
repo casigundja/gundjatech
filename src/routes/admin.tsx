@@ -888,6 +888,120 @@ async function autoStartProjectFromApprovedRequest(
     return { projectId: newProjectId, alreadyExisted: Boolean(existingProjId) };
 }
 
+async function autoRegisterRevenueOnProjectCompletion(
+    db: any,
+    options: {
+        projectId?: number | string | null;
+        clientId?: number | null;
+        projectTitle: string;
+        linkedReq?: any;
+        linkedQuotation?: any;
+    }
+): Promise<{ transactionId?: number; amount: number; created: boolean }> {
+    const clientId = options.clientId
+        ? Number(options.clientId)
+        : options.linkedReq?.client_id
+        ? Number(options.linkedReq.client_id)
+        : null;
+    if (!clientId) {
+        return { amount: 0, created: false };
+    }
+
+    // 1. Localiza orçamento aprovado vinculado à solicitação ou ao cliente/projeto
+    let quotation = options.linkedQuotation || null;
+    if (!quotation && options.linkedReq?.id) {
+        try {
+            quotation = (await db.prepare(
+                `SELECT * FROM quotations WHERE service_request_id = ? ORDER BY id DESC LIMIT 1`
+            ).bind(options.linkedReq.id).first()) as any;
+        } catch { }
+    }
+    if (!quotation && clientId) {
+        try {
+            quotation = (await db.prepare(
+                `SELECT * FROM quotations WHERE client_id = ? AND status = 'approved' ORDER BY id DESC LIMIT 1`
+            ).bind(clientId).first()) as any;
+        } catch { }
+    }
+
+    // Garante que o projeto pertence a um fluxo aprovado
+    const isApprovedFlow =
+        quotation?.status === 'approved' ||
+        options.linkedReq?.status === 'approved' ||
+        options.linkedReq?.status === 'in_progress' ||
+        options.linkedReq?.status === 'completed' ||
+        Boolean(options.projectId);
+
+    if (!isApprovedFlow) {
+        return { amount: 0, created: false };
+    }
+
+    // 2. Calcula valor da receita a partir do orçamento aprovado (ou valor estimado da solicitação)
+    let amount = Number(
+        quotation?.final_amount ??
+        quotation?.total_amount ??
+        options.linkedReq?.estimated_budget ??
+        0
+    );
+    if (Number.isNaN(amount) || amount < 0) {
+        amount = 0;
+    }
+
+    const invoiceRef = String(
+        quotation?.reference_code ||
+        options.linkedReq?.protocol ||
+        (options.projectId ? `PROJ-${options.projectId}` : `REC-${Date.now().toString(36).toUpperCase()}`)
+    ).trim();
+
+    const description = quotation?.reference_code
+        ? `Receita de Projeto Concluído: ${options.projectTitle} (Orçamento ${quotation.reference_code})`
+        : `Receita de Projeto Concluído: ${options.projectTitle}`;
+
+    // 3. Idempotência: verifica se já existe lançamento financeiro para este orçamento/projeto
+    try {
+        const existingTx = (await db.prepare(
+            `SELECT id, status, amount FROM financial_transactions
+             WHERE client_id = ? AND (invoice_number = ? OR lower(description) = lower(?))
+             ORDER BY id DESC LIMIT 1`
+        ).bind(clientId, invoiceRef, description).first()) as { id: number; status: string; amount: number } | null;
+
+        if (existingTx?.id) {
+            if (existingTx.status !== 'paid') {
+                await db.prepare(
+                    `UPDATE financial_transactions
+                     SET status = 'paid',
+                         amount = CASE WHEN ? > 0 THEN ? ELSE amount END,
+                         paid_at = datetime('now'),
+                         updated_at = datetime('now')
+                     WHERE id = ?`
+                ).bind(amount, amount, existingTx.id).run();
+            }
+            return { transactionId: existingTx.id, amount: amount || Number(existingTx.amount || 0), created: false };
+        }
+    } catch { }
+
+    // 4. Insere automaticamente como Receita Liquidada (type = 'income', status = 'paid') em Receita & Caixa
+    const todayDate = new Date().toISOString().slice(0, 10);
+    let newTxId: number | undefined;
+    try {
+        const insTx = await db.prepare(
+            `INSERT INTO financial_transactions (client_id, type, category, description, amount, status, due_date, paid_at, payment_method, invoice_number, created_at, updated_at)
+             VALUES (?, 'income', 'contract', ?, ?, 'paid', ?, datetime('now'), ?, ?, datetime('now'), datetime('now'))`
+        ).bind(clientId, description, amount, todayDate, 'PIX', invoiceRef).run();
+        newTxId = Number(insTx?.meta?.last_row_id || 0) || undefined;
+    } catch {
+        try {
+            const insTx = await db.prepare(
+                `INSERT INTO financial_transactions (client_id, type, category, description, amount, status, due_date, payment_method, invoice_number, created_at, updated_at)
+                 VALUES (?, 'income', 'contract', ?, ?, 'paid', ?, ?, ?, datetime('now'), datetime('now'))`
+            ).bind(clientId, description, amount, todayDate, 'PIX', invoiceRef).run();
+            newTxId = Number(insTx?.meta?.last_row_id || 0) || undefined;
+        } catch { }
+    }
+
+    return { transactionId: newTxId, amount, created: true };
+}
+
 adminRoutes.post('/solicitacoes/:id/gerar-orcamento', async (c) => {
     const user = c.get('user')!;
     const db = c.env.DB;
@@ -1020,6 +1134,8 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
         }
     }
 
+    const prevReqStatus = String(current.status || '');
+
     await db.prepare(
         `UPDATE service_requests SET status = ?, updated_at = datetime('now') WHERE id = ?`
     ).bind(newStatus, id).run();
@@ -1028,7 +1144,7 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
         serviceRequestId: id,
         userId: user.id,
         action: 'status_change',
-        fromStatus: current.status,
+        fromStatus: prevReqStatus,
         toStatus: newStatus,
         notes
     });
@@ -1060,21 +1176,56 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
         return c.redirect(`/admin/solicitacoes/${id}?success=${encodeURIComponent('Orçamento enviado e disponibilizado no Portal do Cliente para aprovação!')}`);
     }
 
-    if (newStatus === 'completed' && current.status !== 'completed' && current.email) {
-        try {
-            const mailRes = await sendProjectCompletedEmail(
-                c.env,
-                String(current.email).trim(),
-                String(current.company || current.name || 'Cliente').trim(),
-                {
-                    title: String(current.service_title || current.title || 'Projeto GundjaTech')
+    if (newStatus === 'completed' && prevReqStatus !== 'completed') {
+        const projTitle = String(current.service_title || current.title || 'Projeto GundjaTech').trim();
+        const clientId = await ensureClientForRequest(db, current);
+
+        // Sincroniza o Projeto vinculado para Concluído (100%)
+        let linkedProjectId: number | undefined;
+        if (clientId && projTitle) {
+            try {
+                const projRow = (await db.prepare(
+                    `SELECT id, status FROM projects
+                     WHERE client_id = ? AND (lower(title) = lower(?) OR lower(name) = lower(?))
+                     ORDER BY id DESC LIMIT 1`
+                ).bind(clientId, projTitle, projTitle).first()) as { id: number; status: string } | null;
+                if (projRow?.id) {
+                    linkedProjectId = projRow.id;
+                    if (projRow.status !== 'completed') {
+                        await db.prepare(
+                            `UPDATE projects SET status = 'completed', progress_percentage = 100, updated_at = datetime('now') WHERE id = ?`
+                        ).bind(projRow.id).run();
+                    }
                 }
-            );
-            if (!mailRes.success) {
-                return c.redirect(`/admin/solicitacoes/${id}?error=${encodeURIComponent('Status concluído, mas o e-mail não pôde ser entregue (Resend em modo teste só envia para gundjatech@gmail.com até verificar um domínio próprio).')}`);
-            }
-            return c.redirect(`/admin/solicitacoes/${id}?success=${encodeURIComponent('Status concluído e cliente notificado por e-mail!')}`);
-        } catch { }
+            } catch { }
+        }
+
+        // Lança automaticamente a receita do orçamento aprovado em Receita & Caixa (/admin/financeiro)
+        await autoRegisterRevenueOnProjectCompletion(db, {
+            projectId: linkedProjectId,
+            clientId,
+            projectTitle: projTitle,
+            linkedReq: { ...current, client_id: clientId, status: 'completed' },
+            linkedQuotation
+        });
+
+        if (current.email && !String(current.email).endsWith('.local')) {
+            try {
+                await sendProjectCompletedEmail(
+                    c.env,
+                    String(current.email).trim(),
+                    String(current.company || current.name || 'Cliente').trim(),
+                    {
+                        id: linkedProjectId,
+                        title: projTitle
+                    }
+                );
+            } catch { }
+        }
+
+        return c.redirect(
+            `/admin/solicitacoes/${id}?success=${encodeURIComponent('Projeto concluído! Receita lançada automaticamente em Receita & Caixa.')}`
+        );
     }
 
     return c.redirect(`/admin/solicitacoes/${id}?success=Status atualizado com sucesso`);
@@ -2021,29 +2172,31 @@ adminRoutes.post('/projetos/:id', async (c) => {
     ).bind(status, progress, startDate, expectedEndDate, id).run();
 
     // Sincroniza Projeto -> Solicitação vinculada quando entra em execução ou é concluído
-    if (previousProject && previousProject.client_id && previousProject.status !== status && (status === 'in_progress' || status === 'completed')) {
+    let linkedReqForCompletion: any = null;
+    const projTitle = String(previousProject?.title || previousProject?.name || 'Projeto GundjaTech').trim();
+    if (previousProject && previousProject.client_id && prevStatus !== status && (status === 'in_progress' || status === 'completed')) {
         try {
-            const projTitle = String(previousProject.title || previousProject.name || '').trim();
             if (projTitle) {
-                const linkedReq = await db.prepare(
-                    `SELECT id, status FROM service_requests
+                linkedReqForCompletion = await db.prepare(
+                    `SELECT id, status, protocol, estimated_budget, client_id FROM service_requests
                      WHERE client_id = ? AND (lower(service_title) = lower(?) OR lower(title) = lower(?))
                      ORDER BY id DESC LIMIT 1`
-                ).bind(previousProject.client_id, projTitle, projTitle).first<{ id: number; status: string }>();
+                ).bind(previousProject.client_id, projTitle, projTitle).first<any>();
 
-                if (linkedReq && linkedReq.status !== status) {
+                if (linkedReqForCompletion && linkedReqForCompletion.status !== status) {
+                    const prevLinkedReqSt = String(linkedReqForCompletion.status || '');
                     await db.prepare(
                         `UPDATE service_requests SET status = ?, updated_at = datetime('now') WHERE id = ?`
-                    ).bind(status, linkedReq.id).run();
+                    ).bind(status, linkedReqForCompletion.id).run();
 
                     await recordRequestTimeline(db, {
-                        serviceRequestId: linkedReq.id,
+                        serviceRequestId: linkedReqForCompletion.id,
                         userId: user.id,
                         action: status === 'completed' ? 'project_completed' : 'project_in_progress',
-                        fromStatus: linkedReq.status,
+                        fromStatus: prevLinkedReqSt,
                         toStatus: status,
                         notes: status === 'completed'
-                            ? `Projeto #${id} concluído e entregue pela equipe GundjaTech`
+                            ? `Projeto #${id} concluído e entregue — Receita lançada automaticamente em Receita & Caixa`
                             : `Projeto #${id} iniciado — em execução pela equipe GundjaTech`,
                     });
                 }
@@ -2051,24 +2204,34 @@ adminRoutes.post('/projetos/:id', async (c) => {
         } catch { }
     }
 
+    // Quando o projeto é concluído, lança automaticamente a receita do orçamento aprovado em Receita & Caixa (/admin/financeiro)
+    if (status === 'completed' && prevStatus !== 'completed') {
+        await autoRegisterRevenueOnProjectCompletion(db, {
+            projectId: id,
+            clientId: previousProject?.client_id ? Number(previousProject.client_id) : null,
+            projectTitle: projTitle,
+            linkedReq: linkedReqForCompletion
+        });
+    }
+
     // Se acabou de ser marcado como concluído, notifica o cliente por e-mail
-    if (status === 'completed' && previousProject && previousProject.status !== 'completed' && previousProject.client_email) {
-        let emailResult: { success: boolean; error?: string } = { success: false };
-        try {
-            emailResult = await sendProjectCompletedEmail(
-                c.env,
-                String(previousProject.client_email).trim(),
-                String(previousProject.client_company || previousProject.client_name || 'Cliente').trim(),
-                {
-                    id: Number(id),
-                    title: String(previousProject.title || previousProject.name || 'Projeto GundjaTech')
-                }
-            );
-        } catch { }
-        const msg = emailResult.success
-            ? 'Projeto concluído, solicitação sincronizada e cliente notificado por e-mail!'
-            : `Projeto concluído e solicitação sincronizada! (Aviso de e-mail: ${emailResult.error || 'não enviado'})`;
-        return c.redirect(`/admin/projetos/${id}?success=${encodeURIComponent(msg)}`);
+    if (status === 'completed' && previousProject && prevStatus !== 'completed') {
+        if (previousProject.client_email && !String(previousProject.client_email).endsWith('.local')) {
+            try {
+                await sendProjectCompletedEmail(
+                    c.env,
+                    String(previousProject.client_email).trim(),
+                    String(previousProject.client_company || previousProject.client_name || 'Cliente').trim(),
+                    {
+                        id: Number(id),
+                        title: projTitle
+                    }
+                );
+            } catch { }
+        }
+        return c.redirect(
+            `/admin/projetos/${id}?success=${encodeURIComponent('Projeto concluído! Solicitação finalizada e receita lançada automaticamente em Receita & Caixa.')}`
+        );
     }
 
     return c.redirect(`/admin/projetos/${id}?success=Projeto atualizado com sucesso`);

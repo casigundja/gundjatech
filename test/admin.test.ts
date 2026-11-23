@@ -437,7 +437,7 @@ function createAdminMockEnv() {
                                     category: 'contract',
                                     description: params[1],
                                     amount: Number(params[2]),
-                                    status: 'pending',
+                                    status: q.includes("'paid'") ? 'paid' : 'pending',
                                     due_date: params[3],
                                     payment_method: params[4],
                                     invoice_number: params[5],
@@ -814,6 +814,23 @@ describe('Fase 4 • Módulo 5 & 6: Painel Administrativo Core & Avançado (/adm
         expect(approveRes.headers.get('Location')).toContain('success=');
         expect(data.service_requests[0].status).toBe('in_progress');
         expect(data.projects.length).toBe(2);
+
+        // Conclusão do projeto lança automaticamente a receita liquidada em Receita & Caixa
+        const initialTxCount = data.financial_transactions.length;
+        const completeRes = await app.request('/admin/solicitacoes/1/status', {
+            method: 'POST',
+            headers: {
+                'Cookie': adminCookie,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'status=completed&notes=Projeto+entregue+e+homologado'
+        }, env);
+        expect(completeRes.status).toBe(302);
+        expect(data.service_requests[0].status).toBe('completed');
+        expect(data.financial_transactions.length).toBe(initialTxCount + 1);
+        const autoRevenueTx = data.financial_transactions[data.financial_transactions.length - 1];
+        expect(autoRevenueTx.type).toBe('income');
+        expect(autoRevenueTx.status).toBe('paid');
     });
 
     it('6. Catálogo de serviços: cadastro de pacote e toggle de status', async () => {
