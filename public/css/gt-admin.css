@@ -3991,14 +3991,16 @@ html[data-admin-theme="light"] body.gt-admin-boost main :where(.text-\[\#F2C230\
     color: #063B5C !important;
 }
 
-/* 5. Status limpos: apenas a escrita nítida, sem fundo, borda ou sombreamento em volta */
+/* 5. Status e rótulos limpos: apenas a escrita nítida, sem fundo, borda ou sombreamento em volta (Admin + Portal) */
 body.gt-admin-boost .gt-badge,
 body.gt-admin-boost .gt-badge-success,
 body.gt-admin-boost .gt-badge-warning,
 body.gt-admin-boost .gt-badge-info,
 body.gt-admin-boost .gt-badge-danger,
 body.gt-admin-boost .gt-req-pill-neutral,
-body.gt-admin-boost .gtb-badge-pill {
+body.gt-admin-boost .gtb-badge-pill,
+body.gt-admin-boost .gtb-growth-pill,
+body.gt-admin-boost main span:where(.px-2.py-0\.5, .px-2\.5.py-0\.5, .px-2\.5.py-1) {
     background: transparent !important;
     border: 0 !important;
     box-shadow: none !important;
