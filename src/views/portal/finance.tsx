@@ -213,14 +213,14 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
 
                         <div class="flex items-end justify-between gap-4 mt-3">
                             <div class="min-w-0 flex-1">
-                                <h2 id="gt-pay-title" class="gt-font-display text-[15px] font-extrabold text-white truncate">Pagar Fatura</h2>
-                                <div class="text-[11.5px] text-[#CFE0EB] mt-0.5">
-                                    Vencimento: <strong id="gt-pay-due" class="text-white font-semibold">—</strong>
+                                <h2 id="gt-pay-title" class="gt-font-display text-[15px] font-extrabold truncate">Pagar Fatura</h2>
+                                <div class="gt-checkout-sub text-[11.5px] mt-0.5">
+                                    Vencimento: <strong id="gt-pay-due" class="font-semibold">—</strong>
                                 </div>
                             </div>
                             <div class="text-right shrink-0">
-                                <div class="text-[9.5px] font-bold uppercase tracking-wider text-[#CFE0EB]">Total a pagar</div>
-                                <div id="gt-pay-amount" class="gt-font-display text-xl font-extrabold text-white leading-none mt-0.5 tabular-nums">R$ 0,00</div>
+                                <div class="gt-checkout-sub text-[9.5px] font-bold uppercase tracking-wider">Total a pagar</div>
+                                <div id="gt-pay-amount" class="gt-checkout-amount gt-font-display text-xl font-extrabold leading-none mt-0.5 tabular-nums">R$ 0,00</div>
                             </div>
                         </div>
                     </div>

@@ -4730,7 +4730,17 @@ body.is-light-mode .gt-csel-opt-check {
     background: linear-gradient(135deg, #063B5C 0%, #0B4D75 100%);
     padding: 20px 24px 18px;
     border-bottom: 3px solid #F2C230;
-    color: #FFFFFF;
+    color: #FFFFFF !important;
+}
+
+.gt-checkout-head h2,
+.gt-checkout-head strong,
+.gt-checkout-head .gt-checkout-amount {
+    color: #FFFFFF !important;
+}
+
+.gt-checkout-head .gt-checkout-sub {
+    color: #CFE0EB !important;
 }
 
 .gt-checkout-head * {
@@ -4743,6 +4753,11 @@ body.is-light-mode .gt-csel-opt-check {
     display: flex;
     flex-direction: column;
     gap: 16px;
+}
+
+.gt-checkout-body.hidden,
+.gt-checkout-footer.hidden {
+    display: none !important;
 }
 
 .gt-checkout-panel {
