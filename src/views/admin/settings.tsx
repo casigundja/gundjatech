@@ -77,8 +77,8 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                 </div>
             </div>
 
-            {/* Main 2-column balanced grid (7fr / 5fr) */}
-            <form id="gt-settings-form" action="/admin/configuracoes" method="post" data-dirty-guard="1" class="gt-crm-grid">
+            {/* Main 2-column balanced grid (independent heights) */}
+            <form id="gt-settings-form" action="/admin/configuracoes" method="post" data-dirty-guard="1" class="gt-crm-grid items-start" style="align-items: start;">
                 {/* Coluna Esquerda: Identidade & Canais Corporativos */}
                 <section class="gtb-card !p-5 flex flex-col justify-between gap-5 min-w-0">
                     <div class="space-y-5">
@@ -156,7 +156,7 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                         </div>
 
                         {/* Subseção recolhível: Dados Bancários & PIX (Nu Empresas) */}
-                        <details class="gtb-surface-box rounded-xl p-3.5">
+                        <details class="gt-acc gtb-surface-box rounded-xl p-3.5">
                             <summary class="cursor-pointer flex items-center justify-between gap-3">
                                 <div class="min-w-0">
                                     <div class="text-xs font-extrabold text-white">Dados Bancários &amp; PIX (Recebimentos no Portal)</div>
@@ -164,7 +164,7 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                                         PIX <span class="font-mono">{settings.payment_pix_key || '43.209.289/0001-66'}</span> • Ag {settings.payment_bank_agency || '0001'} / Cc {settings.payment_bank_account || '16395420-4'}
                                     </div>
                                 </div>
-                                <span class="text-[10.5px] font-extrabold text-[#F2C230] shrink-0">EXPANDIR ▾</span>
+                                <span class="text-[10.5px] font-extrabold text-[#F2C230] shrink-0"><span class="gt-acc-open">EXPANDIR ▾</span><span class="gt-acc-close">RECOLHER ▴</span></span>
                             </summary>
 
                             <div class="mt-3.5 pt-3.5 space-y-3.5 border-t border-white/10">
@@ -243,7 +243,7 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                         </details>
 
                         {/* Subseção recolhível: Números de WhatsApp */}
-                        <details class="gtb-surface-box rounded-xl p-3.5">
+                        <details class="gt-acc gtb-surface-box rounded-xl p-3.5">
                             <summary class="cursor-pointer flex items-center justify-between gap-3">
                                 <div class="min-w-0">
                                     <div class="text-xs font-extrabold text-white">Números de Atendimento WhatsApp</div>
@@ -251,7 +251,7 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                                         Oficial: <span class="font-mono">{settings.company_whatsapp || 'Não definido'}</span> • Diretor: <span class="font-mono">{settings.whatsapp_director_phone || 'Não definido'}</span>
                                     </div>
                                 </div>
-                                <span class="text-[10.5px] font-extrabold text-[#F2C230] shrink-0">EXPANDIR ▾</span>
+                                <span class="text-[10.5px] font-extrabold text-[#F2C230] shrink-0"><span class="gt-acc-open">EXPANDIR ▾</span><span class="gt-acc-close">RECOLHER ▴</span></span>
                             </summary>
 
                             <div class="mt-3.5 pt-3.5 border-t border-white/10 gt-grid-2 !gap-3.5">
@@ -348,7 +348,7 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                         )}
 
                         {/* Credenciais Técnicas & Webhook recolhíveis */}
-                        <details class="gtb-surface-box rounded-xl p-3.5">
+                        <details class="gt-acc gtb-surface-box rounded-xl p-3.5">
                             <summary class="cursor-pointer flex items-center justify-between gap-3">
                                 <div class="min-w-0">
                                     <div class="text-xs font-extrabold text-white">Credenciais Técnicas &amp; Webhook</div>
@@ -356,7 +356,7 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                                         {isMeta ? 'Meta Cloud API' : isEvolution ? 'Evolution API v2' : 'Z-API Omni'} • {whatsappConfigured ? 'Credenciais salvas ✓' : 'Aguardando configuração'}
                                     </div>
                                 </div>
-                                <span class="text-[10.5px] font-extrabold text-[#F2C230] shrink-0">EXPANDIR ▾</span>
+                                <span class="text-[10.5px] font-extrabold text-[#F2C230] shrink-0"><span class="gt-acc-open">EXPANDIR ▾</span><span class="gt-acc-close">RECOLHER ▴</span></span>
                             </summary>
 
                             <div class="mt-3.5 pt-3.5 space-y-3.5 border-t border-white/10">
@@ -553,7 +553,7 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                         </button>
                     </div>
 
-                    <details class="gtb-surface-box rounded-xl p-3.5">
+                    <details class="gt-acc gtb-surface-box rounded-xl p-3.5">
                         <summary class="cursor-pointer flex items-center justify-between gap-3">
                             <div class="min-w-0">
                                 <div class="text-xs font-extrabold text-white">Credenciais da Meta Graph API (Instagram &amp; Facebook)</div>
@@ -561,7 +561,7 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                                     {settings.meta_ig_account_id ? `IG ${settings.meta_ig_account_id}` : 'IG não configurado'} • {settings.meta_social_access_token ? 'Token permanente salvo ✓' : 'Token pendente'}
                                 </div>
                             </div>
-                            <span class="text-[10.5px] font-extrabold text-[#F2C230] shrink-0">EXPANDIR ▾</span>
+                            <span class="text-[10.5px] font-extrabold text-[#F2C230] shrink-0"><span class="gt-acc-open">EXPANDIR ▾</span><span class="gt-acc-close">RECOLHER ▴</span></span>
                         </summary>
                         <div class="mt-3.5 pt-3.5 border-t border-white/10 grid grid-cols-1 md:grid-cols-3 gap-3.5">
                             <div>
@@ -603,10 +603,10 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                     </details>
 
                     {/* Curadoria Manual Opcional (Fallback imediato para fixar até 4 Reels) */}
-                    <details class="gtb-surface-box rounded-xl p-3.5">
+                    <details class="gt-acc gtb-surface-box rounded-xl p-3.5">
                         <summary class="cursor-pointer text-xs font-bold text-white flex items-center justify-between gap-2">
                             <span>Curadoria Manual de Reels (opcional — substitui a vitrine padrão enquanto o token Meta não estiver ativo)</span>
-                            <span class="text-[10.5px] font-extrabold text-[#F2C230]">EXPANDIR ▾</span>
+                            <span class="text-[10.5px] font-extrabold text-[#F2C230] shrink-0"><span class="gt-acc-open">EXPANDIR ▾</span><span class="gt-acc-close">RECOLHER ▴</span></span>
                         </summary>
                         <div class="mt-3.5 space-y-3">
                             {[1, 2, 3, 4].map((idx) => {

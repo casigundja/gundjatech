@@ -4632,6 +4632,23 @@ body.is-light-mode .gt-csel-opt-check {
     color: #063B5C;
 }
 
+/* Acordeões dinâmicos: EXPANDIR ▾ <-> RECOLHER ▴ */
+.gt-acc > summary {
+    list-style: none;
+}
+.gt-acc > summary::-webkit-details-marker {
+    display: none;
+}
+.gt-acc .gt-acc-close {
+    display: none;
+}
+.gt-acc[open] > summary .gt-acc-open {
+    display: none;
+}
+.gt-acc[open] > summary .gt-acc-close {
+    display: inline;
+}
+
 
 
 
