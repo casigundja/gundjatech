@@ -200,6 +200,7 @@ export const BaseLayout: FC<PropsWithChildren<LayoutProps>> = ({
                                     <li><a href="/cases/klasse">KLASSE Gestão Escolar</a></li>
                                     <li><a href="/cases/instituto-paraiso-do-saber">Instituto Paraíso do Saber</a></li>
                                     <li><a href="/cases/cotech-contabilidade">Cotech Contabilidade</a></li>
+                                    <li><a href="/cases/laurinita-distribuidora">Laurinita Distribuidora</a></li>
                                     <li><a href="/portfolio">Ver Todos os Cases</a></li>
                                 </ul>
                             </div>

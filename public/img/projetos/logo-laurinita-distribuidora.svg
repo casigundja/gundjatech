@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 132" width="480" height="132" fill="none">
+  <!-- Official Laurinita Distribuidora Circular Emblem -->
+  <g transform="translate(8, 6)">
+    <circle cx="60" cy="60" r="56.5" fill="#ffffff"/>
+    <circle cx="60" cy="60" r="55" stroke="#095696" stroke-width="5.5"/>
+    <path d="M 22 33 A 47 47 0 0 1 98 33" stroke="#80c31c" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M 26 90 A 47 47 0 0 0 94 90" stroke="#80c31c" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M 17 40 H 26 V 74 H 43 V 82 H 17 Z" fill="#80c31c"/>
+    <path d="M 29 40 H 37 L 45 55 L 53 40 H 61 V 61 H 70 V 67 H 61 V 79 H 53 V 54 L 45 68 L 37 54 V 71 H 29 Z" fill="#095696"/>
+    <path d="M 70 64 C 65 55 66 42 76 40 C 81 39 84 43 85.5 46 C 87 43 90 39 95 40 C 103 42 103 55 94 65" stroke="#095696" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 79 54 L 75.5 60.5 C 74 63.5 75.5 66.5 78.5 68 C 81.5 69.5 84.5 68 86 65 L 89.5 58.5" stroke="#80c31c" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="80.2" cy="53.8" r="2.1" fill="#80c31c"/>
+    <circle cx="88.3" cy="57.8" r="2.1" fill="#80c31c"/>
+    <path d="M 78.5 68 C 77 74 80 80 85.5 78.5 C 89.5 77 92.5 70 94 65" stroke="#80c31c" stroke-width="5.8" stroke-linecap="round"/>
+  </g>
+  <!-- High-Contrast White Wordmark (matches Paraíso do Saber & Cotech case cards) -->
+  <text x="148" y="69" fill="#FFFFFF" font-family="'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif" font-size="40" font-weight="800" letter-spacing="1.2">LAURINITA</text>
+  <text x="150" y="99" fill="#E7F0F5" font-family="'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif" font-size="16" font-weight="600" letter-spacing="2.4">DISTRIBUIDORA HOSPITALAR</text>
+</svg>

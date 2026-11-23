@@ -606,7 +606,8 @@ publicRoutes.get('/cases', (c) => c.html(renderPublicBladePage('portfolio', c.ge
 const caseMap: Record<string, string> = {
     'klasse': 'case-klasse',
     'instituto-paraiso-do-saber': 'case-instituto-paraiso-do-saber',
-    'cotech-contabilidade': 'case-cotech-contabilidade'
+    'cotech-contabilidade': 'case-cotech-contabilidade',
+    'laurinita-distribuidora': 'case-laurinita-distribuidora'
 };
 
 publicRoutes.get('/cases/:slug', (c) => {
@@ -699,7 +700,8 @@ publicRoutes.get('/sitemap.xml', (c) => {
         'https://gundjatech.com/operacao',
         'https://gundjatech.com/cases/klasse',
         'https://gundjatech.com/cases/instituto-paraiso-do-saber',
-        'https://gundjatech.com/cases/cotech-contabilidade'
+        'https://gundjatech.com/cases/cotech-contabilidade',
+        'https://gundjatech.com/cases/laurinita-distribuidora'
     ];
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
