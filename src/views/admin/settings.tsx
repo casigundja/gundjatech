@@ -32,6 +32,12 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
     const isZapi = activeProvider === 'zapi_omni' || activeProvider === 'zapi';
     const isEvolution = activeProvider === 'evolution';
     const isMeta = activeProvider === 'meta';
+    const socialMetaConfigured = Boolean(settings.meta_social_access_token && (settings.meta_ig_account_id || settings.meta_fb_page_id));
+    let manualReelsParsed: Array<{ permalink?: string; imageUrl?: string; caption?: string }> = [];
+    try {
+        const parsed = JSON.parse(settings.social_manual_reels_json || '[]');
+        if (Array.isArray(parsed)) manualReelsParsed = parsed;
+    } catch { }
 
     const wa1Active = whatsappSyncEnabled;
     const wa1AiEffective = whatsappSyncEnabled && whatsappAiEnabled;
@@ -407,10 +413,136 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                         </button>
                     </div>
                 </aside>
+
+                {/* Seção Full-Width: Sincronização Instagram Reels & Facebook em Tempo Real */}
+                <section class="gtb-card !p-5 space-y-4 min-w-0" style="grid-column: 1 / -1;">
+                    <div class="flex flex-wrap items-start justify-between gap-3 pb-3.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                        <div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <h2 class="gt-font-display text-sm sm:text-base font-extrabold text-white">
+                                    Sincronização em Tempo Real • Instagram Reels &amp; Facebook
+                                </h2>
+                                <span class={`gt-badge ${socialMetaConfigured ? 'gt-badge-success' : manualReelsParsed.length > 0 ? 'gt-badge-info' : 'gt-badge-warning'}`}>
+                                    {socialMetaConfigured ? '● Meta API Ativa' : manualReelsParsed.length > 0 ? `● ${manualReelsParsed.length} Reels Manuais` : '● Vitrine Padrão'}
+                                </span>
+                            </div>
+                            <p class="text-xs text-[#8C95AA] mt-1">
+                                Conecte sua conta profissional da Meta para exibir automaticamente os últimos 4 Reels e posts na seção <strong>Acompanhe a GundjaTech</strong> da Home (cache automático de 15 min no Edge).
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            onclick="var f=document.getElementById('gt-sync-social-form');if(f)f.submit();"
+                            class="gt-btn-outline gt-btn-sm shrink-0"
+                        >
+                            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                                <path d="M3 3v5h5" />
+                                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                                <path d="M16 16h5v5" />
+                            </svg>
+                            <span>Sincronizar Agora</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                        <div>
+                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Instagram Business Account ID</label>
+                            <input
+                                type="text"
+                                name="meta_ig_account_id"
+                                value={settings.meta_ig_account_id || ''}
+                                placeholder="Ex: 17841400000000000"
+                                class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                            />
+                            <p class="text-[10.5px] text-[#8C95AA] mt-1">ID da conta @gundjatech no Meta Business Suite.</p>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Facebook Page ID (Opcional)</label>
+                            <input
+                                type="text"
+                                name="meta_fb_page_id"
+                                value={settings.meta_fb_page_id || ''}
+                                placeholder="Ex: 100089000000000"
+                                class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                            />
+                            <p class="text-[10.5px] text-[#8C95AA] mt-1">Complementa os cards com posts da Página do Facebook.</p>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Meta Graph Access Token</label>
+                            <input
+                                type="password"
+                                name="meta_social_access_token"
+                                autocomplete="new-password"
+                                readonly
+                                onfocus="this.removeAttribute('readonly');"
+                                placeholder={settings.meta_social_access_token ? 'Token configurado (deixe vazio para manter)' : 'EAA... (System User Token)'}
+                                class="w-full rounded-xl px-3.5 py-2 text-xs font-mono"
+                            />
+                            <p class="text-[10.5px] text-[#8C95AA] mt-1">Permissões: <span class="font-mono">instagram_basic</span>, <span class="font-mono">pages_show_list</span>.</p>
+                        </div>
+                    </div>
+
+                    {/* Curadoria Manual Opcional (Fallback imediato para fixar até 4 Reels) */}
+                    <details class="gtb-surface-box rounded-xl p-3.5">
+                        <summary class="cursor-pointer text-xs font-bold text-white flex items-center justify-between gap-2">
+                            <span>Curadoria Manual de Reels (opcional — substitui a vitrine padrão enquanto o token Meta não estiver ativo)</span>
+                            <span class="text-[10.5px] font-extrabold text-[#F2C230]">EXPANDIR ▾</span>
+                        </summary>
+                        <div class="mt-3.5 space-y-3">
+                            {[1, 2, 3, 4].map((idx) => {
+                                const item = manualReelsParsed[idx - 1] || {};
+                                return (
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-2.5 border-t border-white/5">
+                                        <div>
+                                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Reel #{idx} · Link do Instagram/Facebook</label>
+                                            <input
+                                                type="url"
+                                                name={`social_reel_url_${idx}`}
+                                                value={item.permalink || ''}
+                                                placeholder="https://www.instagram.com/reel/..."
+                                                class="w-full rounded-xl px-3 py-2 text-xs font-mono"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">URL da Capa (Imagem)</label>
+                                            <input
+                                                type="url"
+                                                name={`social_reel_cover_${idx}`}
+                                                value={item.imageUrl || ''}
+                                                placeholder="https://... (opcional)"
+                                                class="w-full rounded-xl px-3 py-2 text-xs font-mono"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Legenda / Título Curto</label>
+                                            <input
+                                                type="text"
+                                                name={`social_reel_caption_${idx}`}
+                                                value={item.caption || ''}
+                                                placeholder="Ex: Bastidores do lançamento..."
+                                                class="w-full rounded-xl px-3 py-2 text-xs"
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </details>
+
+                    <div class="flex items-center justify-end gap-3 pt-1">
+                        <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7"/></svg>
+                            <span>Salvar Integração de Redes</span>
+                        </button>
+                    </div>
+                </section>
             </form>
 
-            {/* Form auxiliar isolado para testar envio WhatsApp sem disparar dirty-guard */}
+            {/* Forms auxiliares isolados para testes/sincronização sem disparar dirty-guard */}
             <form id="gt-test-wa-form" action="/admin/configuracoes/testar-whatsapp" method="post" class="hidden"></form>
+            <form id="gt-sync-social-form" action="/admin/configuracoes/sincronizar-redes" method="post" class="hidden"></form>
 
             <script dangerouslySetInnerHTML={{ __html: `
                 window.GT_SyncWaStatus = function () {

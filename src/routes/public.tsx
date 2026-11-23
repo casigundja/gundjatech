@@ -4,6 +4,7 @@ import { renderPublicBladePage, renderPublicLayoutShell } from '../views/public-
 import { getRequestBody } from '../lib/request';
 import { sendQuoteConfirmationEmail, sendNewLeadStaffNotification } from '../lib/email';
 import { rateLimit } from '../middleware/security';
+import { getSocialFeed, renderSocialFeedCardsHtml } from '../services/social-feed';
 
 export const publicRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -562,7 +563,20 @@ publicRoutes.post('/api/whatsapp', async (c) => {
 // ----------------------------------------------------
 // TODAS AS 19 PÁGINAS PÚBLICAS REAIS DO BLADE (Idênticas ao Render)
 // ----------------------------------------------------
-publicRoutes.get('/', (c) => c.html(renderPublicBladePage('home', c.get('user'))));
+publicRoutes.get('/', async (c) => {
+    let html = renderPublicBladePage('home', c.get('user'));
+    try {
+        const feed = await getSocialFeed(c.env);
+        const liveCards = renderSocialFeedCardsHtml(feed.items);
+        if (liveCards) {
+            html = html.replace(
+                /<div class="gt-reels-grid">[\s\S]*?<\/div>\s*<div class="gt-reels-social-bar">/,
+                `<div class="gt-reels-grid">\n${liveCards}\n    </div>\n\n    <div class="gt-reels-social-bar">`
+            );
+        }
+    } catch { }
+    return c.html(html);
+});
 publicRoutes.get('/sobre', (c) => c.html(renderPublicBladePage('about', c.get('user'))));
 publicRoutes.get('/sobre-nos', (c) => c.html(renderPublicBladePage('about', c.get('user'))));
 publicRoutes.get('/servicos', (c) => c.html(renderPublicBladePage('services', c.get('user'))));

@@ -17,6 +17,7 @@ import { AdminUsersView } from '../views/admin/users';
 import { AdminSettingsView } from '../views/admin/settings';
 import { AdminQuotationsView } from '../views/admin/quotations';
 import { sendWhatsAppTextMessage } from '../services/whatsapp';
+import { getSocialFeed, clearSocialFeedCache } from '../services/social-feed';
 import { AdminChatView } from '../views/admin/chat';
 import { AdminProjectsView } from '../views/admin/projects';
 import { AdminFinanceView } from '../views/admin/finance';
@@ -4347,11 +4348,34 @@ adminRoutes.post('/configuracoes', async (c) => {
         ['whatsapp_zapi_client_token', String(body.whatsapp_zapi_client_token || '').trim()],
         ['whatsapp_evolution_url', String(body.whatsapp_evolution_url || '').trim()],
         ['whatsapp_evolution_instance', String(body.whatsapp_evolution_instance || '').trim()],
-        ['whatsapp_evolution_api_key', String(body.whatsapp_evolution_api_key || '').trim()]
+        ['whatsapp_evolution_api_key', String(body.whatsapp_evolution_api_key || '').trim()],
+        ['meta_social_access_token', String(body.meta_social_access_token || '').trim()]
     ];
     for (const [k, v] of optionalSecrets) {
         if (v) pairs.push([k, v, 'integrations']);
     }
+
+    // Redes Sociais: Instagram & Facebook Sync + Curadoria Manual
+    pairs.push(
+        ['meta_ig_account_id', String(body.meta_ig_account_id || '').trim(), 'social'],
+        ['meta_fb_page_id', String(body.meta_fb_page_id || '').trim(), 'social']
+    );
+
+    const manualReels: Array<{ permalink: string; imageUrl: string; caption: string; platform: string }> = [];
+    for (let i = 1; i <= 4; i++) {
+        const link = String(body[`social_reel_url_${i}`] || '').trim();
+        const cover = String(body[`social_reel_cover_${i}`] || '').trim();
+        const caption = String(body[`social_reel_caption_${i}`] || '').trim();
+        if (link && link.startsWith('http')) {
+            manualReels.push({
+                permalink: link,
+                imageUrl: cover,
+                caption: caption || 'Conteúdo oficial da GundjaTech',
+                platform: link.includes('facebook.com') ? 'facebook' : 'instagram'
+            });
+        }
+    }
+    pairs.push(['social_manual_reels_json', JSON.stringify(manualReels), 'social']);
 
     try {
         for (const [key, value, groupName] of pairs) {
@@ -4363,7 +4387,20 @@ adminRoutes.post('/configuracoes', async (c) => {
         }
     } catch { }
 
-    return c.redirect('/admin/configuracoes?success=Configurações gerais salvas com sucesso');
+    await clearSocialFeedCache(c.env);
+
+    return c.redirect('/admin/configuracoes?success=Configurações gerais e redes sociais salvas com sucesso');
+});
+
+adminRoutes.post('/configuracoes/sincronizar-redes', async (c) => {
+    const feed = await getSocialFeed(c.env, { forceRefresh: true });
+    if (feed.source === 'meta_api' && feed.items.length > 0) {
+        return c.redirect(`/admin/configuracoes?success=${encodeURIComponent(`${feed.items.length} publicação(ões)/Reels sincronizados em tempo real via Meta Graph API!`)}`);
+    }
+    if (feed.source === 'manual' && feed.items.length > 0) {
+        return c.redirect(`/admin/configuracoes?success=${encodeURIComponent(`Cache atualizado com ${feed.items.length} Reels em destaque (modo manual).`)}`);
+    }
+    return c.redirect(`/admin/configuracoes?error=${encodeURIComponent(feed.error || 'Configure o Instagram Business Account ID + Meta Access Token ou adicione links manuais antes de sincronizar.')}`);
 });
 
 adminRoutes.post('/configuracoes/testar-whatsapp', async (c) => {
