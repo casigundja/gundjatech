@@ -119,80 +119,100 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                 </div>
 
                 <div class="gt-grid-detail" style="height: calc(100vh - 176px); max-height: calc(100vh - 176px); align-items: stretch; overflow: hidden;">
-                    {/* Coluna Principal: Formulário de Edição */}
+                    {/* Coluna Principal: Proposta Comercial (Sem duplicações e com ritmo visual executivo) */}
                     <section class="gtb-card !p-4 min-w-0" style="display: flex; flex-direction: column; gap: 10px; height: 100%; max-height: 100%; overflow: hidden;">
-                        <div class="flex items-start justify-between gap-3 flex-wrap pb-2.5 border-b border-white/10" style="flex-shrink: 0;">
-                            <div class="min-w-0">
-                                <div class="flex items-center gap-2 flex-wrap mb-1">
+                        {/* Cabeçalho Limpo (Sem subtítulo repetido) */}
+                        <div class="space-y-2.5 pb-2.5" style="flex-shrink: 0; border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                            <div class="flex items-center justify-between gap-3 flex-wrap">
+                                <div class="flex items-center gap-2 flex-wrap">
                                     <span class="gt-req-pill-neutral font-mono">{quotationDetail.reference_code}</span>
                                     <span class={`gt-badge ${meta.badgeClass}`}>{meta.label}</span>
+                                    {linkedRequest?.protocol && (
+                                        <a href={`/admin/solicitacoes/${linkedRequest.id}`} class="gt-req-pill-neutral font-mono no-underline hover:underline">
+                                            Solicitação {linkedRequest.protocol}
+                                        </a>
+                                    )}
                                 </div>
-                                <h1 class="gt-font-display text-base sm:text-lg font-extrabold text-white leading-tight truncate">{quotationDetail.title}</h1>
-                                <p class="text-[11.5px] text-[#8C95AA] mt-0.5 truncate">
-                                    Cliente: <strong class="text-white">{quotationDetail.company || quotationDetail.client_name || 'Cliente'}</strong>
-                                    {quotationDetail.client_email && !String(quotationDetail.client_email).endsWith('.local') ? ` (${quotationDetail.client_email})` : ''}
-                                </p>
-                            </div>
-                            <div class="text-right shrink-0">
-                                <div class="text-[10px] font-bold uppercase tracking-wider text-[#8C95AA]">Valor Final</div>
-                                <div class="gt-font-display text-xl sm:text-2xl font-extrabold text-[#F2C230] leading-tight">{formatBRL(finalAmt)}</div>
-                            </div>
-                        </div>
-
-                        {/* Chips Executivos do Cliente (Mesmo padrão visual de Solicitações) */}
-                        <div class="gt-req-meta-grid" style="flex-shrink: 0;">
-                            <div class="gt-req-meta-chip">
-                                <span class="gt-req-meta-icon" aria-hidden="true">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                <span class="text-[11px] font-semibold text-[#8C95AA]">
+                                    Emitida em {quotationDetail.created_at ? new Date(quotationDetail.created_at).toLocaleDateString('pt-BR') : '—'}
                                 </span>
-                                <div class="min-w-0">
-                                    <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Cliente / Empresa</div>
-                                    <div class="text-xs font-bold text-white truncate">{quotationDetail.company || quotationDetail.client_name || 'Não informado'}</div>
+                            </div>
+
+                            <div class="flex items-center justify-between gap-4 flex-wrap">
+                                <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white leading-tight truncate">
+                                    {quotationDetail.title}
+                                </h1>
+                                <div class="flex items-baseline gap-2 shrink-0">
+                                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total Líquido</span>
+                                    <span class="gt-font-display text-xl sm:text-2xl font-extrabold text-[#F2C230] leading-none">{formatBRL(finalAmt)}</span>
                                 </div>
                             </div>
 
-                            <div class="gt-req-meta-chip">
-                                <span class="gt-req-meta-icon" aria-hidden="true">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                                </span>
-                                <div class="min-w-0">
-                                    <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">E-mail do Portal</div>
-                                    <div class="text-xs font-bold text-white truncate">
-                                        {quotationDetail.client_email && !String(quotationDetail.client_email).endsWith('.local') ? quotationDetail.client_email : 'Aguardando e-mail'}
+                            {/* 3 Chips Executivos sem repetição */}
+                            <div class="gt-req-meta-grid">
+                                <div class="gt-req-meta-chip">
+                                    <span class="gt-req-meta-icon" aria-hidden="true">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    </span>
+                                    <div class="min-w-0">
+                                        <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Cliente / Empresa</div>
+                                        <div class="text-xs font-bold text-white truncate">{quotationDetail.company || quotationDetail.client_name || 'Não informado'}</div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div class="gt-req-meta-chip">
-                                <span class="gt-req-meta-icon gt-req-meta-icon--gold" aria-hidden="true">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                </span>
-                                <div class="min-w-0">
-                                    <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Validade da Proposta</div>
-                                    <div class="text-xs font-bold text-white truncate">{quotationDetail.expires_at ? String(quotationDetail.expires_at).slice(0, 10) : 'Sem prazo'}</div>
+                                <div class="gt-req-meta-chip">
+                                    <span class="gt-req-meta-icon" aria-hidden="true">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                                    </span>
+                                    <div class="min-w-0">
+                                        <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">E-mail do Portal</div>
+                                        <div class="text-xs font-bold text-white truncate">
+                                            {quotationDetail.client_email && !String(quotationDetail.client_email).endsWith('.local') ? quotationDetail.client_email : 'Aguardando e-mail'}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="gt-req-meta-chip">
+                                    <span class="gt-req-meta-icon gt-req-meta-icon--gold" aria-hidden="true">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                                    </span>
+                                    <div class="min-w-0">
+                                        <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Execução / Projeto</div>
+                                        <div class="text-xs font-extrabold text-white truncate">
+                                            {linkedProject?.id ? `Projeto #${linkedProject.id} (${linkedProject.progress_percentage || 50}%)` : 'Aguardando Aprovação'}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         {quotationDetail.status !== 'rejected' && quotationDetail.status !== 'expired' && (
-                            <div class="gt-req-stepper gt-req-stepper--3 gt-no-print" style="padding: 8px 12px; flex-shrink: 0;" role="list" aria-label="Etapas do orçamento">
-                                {quoteSteps.map((step, idx) => {
-                                    const isDoneAll = quotationDetail.status === 'approved';
-                                    const isDone = isDoneAll || (currQuoteIdx >= 0 && idx < currQuoteIdx);
-                                    const isActive = !isDoneAll && idx === currQuoteIdx;
-                                    return (
-                                        <div class={`gt-req-step ${isDone ? 'is-done' : ''} ${isActive ? 'is-active' : ''}`} role="listitem">
-                                            <span class="gt-req-step-dot" aria-hidden="true">
-                                                {isDone ? (
-                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                                ) : (
-                                                    idx + 1
-                                                )}
-                                            </span>
-                                            <span class="gt-req-step-label">{step.label}</span>
-                                        </div>
-                                    );
-                                })}
+                            <div style="flex-shrink: 0;">
+                                <div class="flex items-center justify-between gap-2 mb-1">
+                                    <h2 class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Esteira de Aprovação</h2>
+                                    <span class="text-[10px] font-bold text-[#8C95AA]">
+                                        Fase {Math.max(1, currQuoteIdx + 1)} de {quoteSteps.length}
+                                    </span>
+                                </div>
+                                <div class="gt-req-stepper gt-req-stepper--3 gt-no-print" style="padding: 8px 12px;" role="list" aria-label="Etapas do orçamento">
+                                    {quoteSteps.map((step, idx) => {
+                                        const isDoneAll = quotationDetail.status === 'approved';
+                                        const isDone = isDoneAll || (currQuoteIdx >= 0 && idx < currQuoteIdx);
+                                        const isActive = !isDoneAll && idx === currQuoteIdx;
+                                        return (
+                                            <div class={`gt-req-step ${isDone ? 'is-done' : ''} ${isActive ? 'is-active' : ''}`} role="listitem">
+                                                <span class="gt-req-step-dot" aria-hidden="true">
+                                                    {isDone ? (
+                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                    ) : (
+                                                        idx + 1
+                                                    )}
+                                                </span>
+                                                <span class="gt-req-step-label">{step.label}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         )}
 
@@ -268,7 +288,7 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                             </div>
 
                             <div style="flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column;">
-                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1" style="flex-shrink: 0;">Escopo, Entregáveis &amp; Condições Comerciais</label>
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1" style="flex-shrink: 0;">Escopo Técnico, Entregáveis &amp; Condições Comerciais</label>
                                 <textarea
                                     name="notes"
                                     rows={3}
@@ -280,7 +300,7 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
 
                             <div class="flex items-center justify-between gap-3 pt-1 flex-wrap gt-no-print" style="flex-shrink: 0;">
                                 <span class="text-[11px] text-[#8C95AA]">
-                                    O login do Portal do Cliente é ativado automaticamente ao enviar ou aprovar a proposta.
+                                    Alterações sincronizadas automaticamente com o Portal do Cliente e Receita &amp; Caixa.
                                 </span>
                                 <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -288,120 +308,130 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                                         <polyline points="17 21 17 13 7 13 7 21" />
                                         <polyline points="7 3 7 8 15 8" />
                                     </svg>
-                                    <span>Salvar Alterações</span>
+                                    <span>Salvar Proposta</span>
                                 </button>
                             </div>
                         </form>
                     </section>
 
-                    {/* Coluna Lateral: Dois Cards Empilhados (Resumo Comercial + Acesso ao Portal / Ações), eliminando o buraco vazio */}
+                    {/* Coluna Lateral: 2 Cards proporcionais sem buracos vazios */}
                     <div class="min-w-0" style="display: flex; flex-direction: column; gap: 14px; height: 100%; max-height: 100%; overflow: hidden;">
-                        <aside class="gtb-card !p-4 min-w-0" style="flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;">
-                            <div class="space-y-2.5">
-                                <div class="pb-2" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
-                                    <h2 class="gt-font-display text-sm font-extrabold text-white">Resumo Comercial</h2>
-                                    <p class="text-[11px] text-[#8C95AA] mt-0.5">Composição financeira e status de execução.</p>
-                                </div>
+                        {/* Card 1: Resumo Comercial & Vínculos (tamanho natural, sem esticar buraco vazio) */}
+                        <aside class="gtb-card !p-4 space-y-3 min-w-0" style="flex-shrink: 0;">
+                            <div class="pb-2" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                                <h2 class="gt-font-display text-sm font-extrabold text-white">Resumo Financeiro</h2>
+                                <p class="text-[11px] text-[#8C95AA] mt-0.5">Memória de cálculo e rastreabilidade do contrato.</p>
+                            </div>
 
-                                <div class="gtb-surface-box rounded-xl p-3 space-y-2 text-xs">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-[#8C95AA]">Valor Bruto</span>
-                                        <span class="font-bold text-white">{formatBRL(totalAmt)}</span>
-                                    </div>
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-[#8C95AA]">Desconto Comercial</span>
-                                        <span class="font-bold text-emerald-400">- {formatBRL(discountAmt)}</span>
-                                    </div>
-                                    <div class="pt-2 border-t border-white/10 flex items-center justify-between">
-                                        <span class="font-extrabold text-white">Total Líquido</span>
-                                        <span class="gt-font-display text-base font-extrabold text-[#F2C230]">{formatBRL(finalAmt)}</span>
-                                    </div>
+                            <div class="gtb-surface-box rounded-xl p-3 space-y-2 text-xs">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[#8C95AA]">Valor Bruto</span>
+                                    <span class="font-bold text-white">{formatBRL(totalAmt)}</span>
                                 </div>
-
-                                <div class="gtb-surface-box rounded-xl p-3 space-y-1.5 text-xs">
-                                    <div class="flex items-center justify-between gap-2">
-                                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Projeto Vinculado</span>
-                                        {linkedProject?.id ? (
-                                            <span class="gt-badge gt-badge-success">Em Execução ({linkedProject.progress_percentage || 50}%)</span>
-                                        ) : (
-                                            <span class="gt-badge gt-badge-warning">Aguardando Aprovação</span>
-                                        )}
-                                    </div>
-                                    {linkedProject?.id ? (
-                                        <a href={`/admin/projetos/${linkedProject.id}`} class="gt-quick-action-btn !py-1.5 !px-2.5 mt-1">
-                                            <span class="flex items-center gap-2 text-xs font-bold">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
-                                                <span class="truncate">Abrir Projeto #{linkedProject.id}</span>
-                                            </span>
-                                            <span class="gt-quick-action-tag">ABRIR</span>
-                                        </a>
-                                    ) : (
-                                        <p class="text-[11px] text-[#8C95AA]">
-                                            Assim que a proposta for aprovada, o projeto com as 4 etapas padrão é iniciado automaticamente.
-                                        </p>
-                                    )}
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[#8C95AA]">Desconto Comercial</span>
+                                    <span class="font-bold text-emerald-400">- {formatBRL(discountAmt)}</span>
+                                </div>
+                                <div class="pt-2 border-t border-white/10 flex items-center justify-between">
+                                    <span class="font-extrabold text-white">Investimento Final</span>
+                                    <span class="gt-font-display text-base font-extrabold text-[#F2C230]">{formatBRL(finalAmt)}</span>
                                 </div>
                             </div>
 
-                            <div class="flex items-center justify-between text-[11px] text-[#8C95AA] pt-2 border-t border-white/10">
-                                <span>Emitido: <strong class="text-white">{quotationDetail.created_at ? new Date(quotationDetail.created_at).toLocaleDateString('pt-BR') : '—'}</strong></span>
-                                <span>Validade: <strong class="text-white">{quotationDetail.expires_at ? String(quotationDetail.expires_at).slice(0, 10) : 'Sem prazo'}</strong></span>
+                            <div class="space-y-1.5">
+                                {linkedRequest?.id && (
+                                    <a href={`/admin/solicitacoes/${linkedRequest.id}`} class="gt-quick-action-btn !py-2 !px-3">
+                                        <span class="flex items-center gap-2 text-xs font-bold">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                            <span class="truncate">Solicitação {linkedRequest.protocol}</span>
+                                        </span>
+                                        <span class="gt-quick-action-tag">PIPELINE</span>
+                                    </a>
+                                )}
+
+                                {linkedProject?.id && (
+                                    <a href={`/admin/projetos/${linkedProject.id}`} class="gt-quick-action-btn !py-2 !px-3">
+                                        <span class="flex items-center gap-2 text-xs font-bold">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                                            <span class="truncate">Projeto em Execução ({linkedProject.progress_percentage || 50}%)</span>
+                                        </span>
+                                        <span class="gt-quick-action-tag">PROJETO</span>
+                                    </a>
+                                )}
                             </div>
                         </aside>
 
-                        {/* Segundo Card Lateral: Acesso ao Portal & Ações Rápidas */}
-                        <aside class="gtb-card !p-4 space-y-2.5 min-w-0 gt-no-print" style="flex-shrink: 0;">
-                            <div class="flex items-center justify-between gap-2">
-                                <div>
-                                    <h2 class="gt-font-display text-sm font-extrabold text-white">Portal do Cliente &amp; Ações</h2>
-                                    <p class="text-[11px] text-[#8C95AA] mt-0.5">Entrega do orçamento e governança de acesso.</p>
+                        {/* Card 2: Portal do Cliente & Ações Rápidas (ocupa o restante com lista padronizada gt-quick-action-btn) */}
+                        <aside class="gtb-card !p-4 min-w-0 gt-no-print" style="flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;">
+                            <div class="space-y-2.5">
+                                <div class="flex items-center justify-between gap-2 pb-2" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                                    <div>
+                                        <h2 class="gt-font-display text-sm font-extrabold text-white">Portal do Cliente &amp; Ações</h2>
+                                        <p class="text-[11px] text-[#8C95AA] mt-0.5">Entrega multicanal e controle de acesso.</p>
+                                    </div>
+                                    {Number(quotationDetail.portal_user_active) === 1 || quotationDetail.status === 'sent' || quotationDetail.status === 'approved' ? (
+                                        <span class="gt-badge gt-badge-success">Portal Ativo</span>
+                                    ) : (
+                                        <span class="gt-badge gt-badge-warning">Em Rascunho</span>
+                                    )}
                                 </div>
-                                {Number(quotationDetail.portal_user_active) === 1 || quotationDetail.status === 'sent' || quotationDetail.status === 'approved' ? (
-                                    <span class="gt-badge gt-badge-success">Usuário Ativo</span>
-                                ) : (
-                                    <span class="gt-badge gt-badge-warning">Aguardando Envio</span>
-                                )}
-                            </div>
 
-                            <div class="space-y-2">
-                                {quotationDetail.client_id && (quotationDetail.status === 'sent' || quotationDetail.status === 'approved') && (
+                                <div class="space-y-2">
+                                    {quotationDetail.client_id && (quotationDetail.status === 'sent' || quotationDetail.status === 'approved') && (
+                                        <button
+                                            type="button"
+                                            id="gt-quote-portal-wa-btn"
+                                            onclick={`(function(btn){btn.disabled=true;var orig=btn.innerHTML;btn.textContent='Gerando link seguro...';fetch('/admin/clientes/${quotationDetail.client_id}/ativar-portal',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({send_email:true,promote_active:${quotationDetail.status === 'approved' ? 'true' : 'false'}})}).then(function(r){return r.json();}).then(function(d){btn.disabled=false;btn.innerHTML=orig;if(d&&d.ok&&d.whatsapp_url){window.open(d.whatsapp_url,'_blank');}else{alert((d&&d.error)||'Informe um e-mail válido para o cliente primeiro.');}}).catch(function(){btn.disabled=false;btn.innerHTML=orig;});})(this)`}
+                                            class="gt-quick-action-btn !py-2 !px-3"
+                                        >
+                                            <span class="flex items-center gap-2.5 text-xs font-bold">
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                                                <span>Enviar Acesso do Portal no WhatsApp</span>
+                                            </span>
+                                            <span class="gt-quick-action-tag">WHATSAPP</span>
+                                        </button>
+                                    )}
+
                                     <button
                                         type="button"
-                                        id="gt-quote-portal-wa-btn"
-                                        onclick={`(function(btn){btn.disabled=true;var orig=btn.innerHTML;btn.textContent='Gerando link seguro...';fetch('/admin/clientes/${quotationDetail.client_id}/ativar-portal',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({send_email:true,promote_active:${quotationDetail.status === 'approved' ? 'true' : 'false'}})}).then(function(r){return r.json();}).then(function(d){btn.disabled=false;btn.innerHTML=orig;if(d&&d.ok&&d.whatsapp_url){window.open(d.whatsapp_url,'_blank');}else{alert((d&&d.error)||'Informe um e-mail válido para o cliente primeiro.');}}).catch(function(){btn.disabled=false;btn.innerHTML=orig;});})(this)`}
-                                        class="gt-btn-petrol gt-btn-sm w-full justify-center"
+                                        onclick="window.print()"
+                                        class="gt-quick-action-btn !py-2 !px-3"
                                     >
-                                        <span>Enviar Link do Portal via WhatsApp</span>
+                                        <span class="flex items-center gap-2.5 text-xs font-bold">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+                                            <span>Exportar Proposta Comercial (PDF)</span>
+                                        </span>
+                                        <span class="gt-quick-action-tag">PDF</span>
                                     </button>
-                                )}
+                                </div>
+                            </div>
 
-                                <div class="grid grid-cols-2 gap-2 pt-1">
-                                    {quotationDetail.status !== 'rejected' ? (
-                                        <form action={`/admin/orcamentos/${quotationDetail.id}/status`} method="post" class="m-0">
-                                            <input type="hidden" name="status" value="rejected" />
-                                            <button type="submit" data-loading-text="Atualizando..." class="gt-btn-outline gt-btn-sm w-full justify-center">
-                                                Marcar Recusado
-                                            </button>
-                                        </form>
-                                    ) : (
-                                        <div></div>
-                                    )}
-                                    <form
-                                        action={`/admin/orcamentos/${quotationDetail.id}/excluir`}
-                                        method="post"
-                                        class="m-0"
-                                        onsubmit="return confirm('Deseja realmente excluir este orçamento?')"
-                                    >
-                                        <button type="submit" data-loading-text="Excluindo..." class="gt-btn-danger-ghost gt-btn-sm w-full justify-center">
-                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M3 6h18" />
-                                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                                            </svg>
-                                            <span>Excluir</span>
+                            <div class="grid grid-cols-2 gap-2 pt-2.5 border-t border-white/10">
+                                {quotationDetail.status !== 'rejected' ? (
+                                    <form action={`/admin/orcamentos/${quotationDetail.id}/status`} method="post" class="m-0">
+                                        <input type="hidden" name="status" value="rejected" />
+                                        <button type="submit" data-loading-text="Atualizando..." class="gt-btn-outline gt-btn-sm w-full justify-center">
+                                            Marcar Recusado
                                         </button>
                                     </form>
-                                </div>
+                                ) : (
+                                    <div></div>
+                                )}
+                                <form
+                                    action={`/admin/orcamentos/${quotationDetail.id}/excluir`}
+                                    method="post"
+                                    class="m-0"
+                                    onsubmit="return confirm('Deseja realmente excluir este orçamento?')"
+                                >
+                                    <button type="submit" data-loading-text="Excluindo..." class="gt-btn-danger-ghost gt-btn-sm w-full justify-center">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 6h18" />
+                                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                        </svg>
+                                        <span>Excluir</span>
+                                    </button>
+                                </form>
                             </div>
                         </aside>
                     </div>
