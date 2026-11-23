@@ -69,6 +69,15 @@ export const PortalQuotationsView: FC<PortalQuotationsProps> = ({
                         )}
                     </div>
 
+                    {quotationDetail.notes && (
+                        <div class="mb-6">
+                            <h2 class="text-xs font-extrabold uppercase tracking-wider text-[#8C95AA] mb-2">Escopo Técnico, Entregáveis &amp; Condições Comerciais</h2>
+                            <div class="gt-req-briefing text-xs text-white leading-relaxed whitespace-pre-wrap">
+                                {quotationDetail.notes}
+                            </div>
+                        </div>
+                    )}
+
                     <h2 class="text-sm font-extrabold text-white mb-3">Itens &amp; Serviços Contemplados</h2>
                     <div class="gt-table-wrap mb-6">
                         <table>

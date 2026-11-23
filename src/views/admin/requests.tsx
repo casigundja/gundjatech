@@ -6,6 +6,8 @@ interface AdminRequestsProps {
     requests: any[];
     requestDetail?: any;
     history?: any[];
+    linkedQuotation?: any;
+    linkedProject?: any;
     statusFilter?: string;
     search?: string;
     successMessage?: string | null;
@@ -96,6 +98,8 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
     requests = [],
     requestDetail,
     history = [],
+    linkedQuotation = null,
+    linkedProject = null,
     statusFilter = '',
     search = '',
     successMessage,
@@ -106,10 +110,20 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
     // ----------------------------------------------------
     if (requestDetail) {
         const meta = STATUS_META[requestDetail.status] || { label: requestDetail.status || 'Novo', badgeClass: 'gt-badge-warning', dotClass: '' };
-        const isConvertedToProject = history.some((h: any) => h.action === 'converted_to_project');
-        const canConvert = !isConvertedToProject && requestDetail.status !== 'cancelled' && requestDetail.status !== 'completed';
+        const hasQuotation = Boolean(linkedQuotation?.id);
+        const isQuotationApproved =
+            linkedQuotation?.status === 'approved' ||
+            requestDetail.status === 'approved' ||
+            requestDetail.status === 'in_progress' ||
+            requestDetail.status === 'completed';
+        const isConvertedToProject =
+            Boolean(linkedProject?.id) ||
+            history.some((h: any) => h.action === 'converted_to_project') ||
+            requestDetail.status === 'in_progress' ||
+            requestDetail.status === 'completed';
         const currentStepIndex = PIPELINE_STEPS.findIndex((s) => s.key === requestDetail.status);
-        const formattedBudget = formatCurrencyBrl(requestDetail.estimated_budget);
+        const quoteFinalValue = hasQuotation ? Number(linkedQuotation.final_amount ?? linkedQuotation.total_amount ?? 0) : null;
+        const formattedBudget = formatCurrencyBrl(quoteFinalValue || requestDetail.estimated_budget);
         const structuredDesc = parseStructuredDescription(requestDetail.description || requestDetail.briefing);
         const phoneDigits = String(requestDetail.phone || '').replace(/\D/g, '');
         const whatsappUrl = phoneDigits ? `https://wa.me/${phoneDigits}` : null;
@@ -133,25 +147,60 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                     </a>
 
                     <div class="gt-detail-toolbar-actions">
-                        {canConvert ? (
+                        {isConvertedToProject ? (
+                            <a href={linkedProject?.id ? `/admin/projetos/${linkedProject.id}` : '/admin/projetos'} class="gt-btn-petrol gt-btn-sm">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                    <path d="m9 11 3 3L22 4" />
+                                </svg>
+                                <span>Abrir Projeto em Execução</span>
+                            </a>
+                        ) : requestDetail.status !== 'cancelled' && !hasQuotation ? (
+                            <form action={`/admin/solicitacoes/${requestDetail.id}/gerar-orcamento`} method="post" class="m-0">
+                                <button type="submit" data-loading-text="Gerando..." class="gt-btn-primary gt-btn-sm">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                        <polyline points="14 2 14 8 20 8" />
+                                        <line x1="12" y1="18" x2="12" y2="12" />
+                                        <line x1="9" y1="15" x2="15" y2="15" />
+                                    </svg>
+                                    <span>Elaborar Orçamento</span>
+                                </button>
+                            </form>
+                        ) : requestDetail.status !== 'cancelled' && hasQuotation && (linkedQuotation.status === 'draft' || linkedQuotation.status === 'rejected') ? (
+                            <a href={`/admin/orcamentos/${linkedQuotation.id}`} class="gt-btn-primary gt-btn-sm">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m22 2-7 20-4-9-9-4Z" />
+                                    <path d="M22 2 11 13" />
+                                </svg>
+                                <span>Finalizar &amp; Enviar Orçamento</span>
+                            </a>
+                        ) : requestDetail.status !== 'cancelled' && hasQuotation && linkedQuotation.status === 'sent' ? (
+                            <>
+                                <a href={`/admin/orcamentos/${linkedQuotation.id}`} class="gt-btn-outline gt-btn-sm">
+                                    <span>Ver Orçamento ({linkedQuotation.reference_code})</span>
+                                </a>
+                                <form action={`/admin/orcamentos/${linkedQuotation.id}/status`} method="post" class="m-0">
+                                    <input type="hidden" name="status" value="approved" />
+                                    <button type="submit" data-loading-text="Aprovando..." class="gt-btn-primary gt-btn-sm">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                        <span>Aprovar &amp; Iniciar Projeto</span>
+                                    </button>
+                                </form>
+                            </>
+                        ) : isQuotationApproved && !isConvertedToProject ? (
                             <form action={`/admin/solicitacoes/${requestDetail.id}/converter`} method="post" class="m-0">
-                                <button type="submit" data-loading-text="Convertendo..." class="gt-btn-primary gt-btn-sm">
+                                <button type="submit" data-loading-text="Iniciando..." class="gt-btn-primary gt-btn-sm">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
                                         <path d="M12 10v6" />
                                         <path d="M9 13h6" />
                                     </svg>
-                                    <span>Converter em Projeto</span>
+                                    <span>Iniciar Projeto</span>
                                 </button>
                             </form>
-                        ) : isConvertedToProject ? (
-                            <a href="/admin/projetos" class="gt-btn-petrol gt-btn-sm">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <path d="m9 11 3 3L22 4" />
-                                </svg>
-                                <span>Ver em Projetos</span>
-                            </a>
                         ) : null}
 
                         <button
@@ -303,6 +352,49 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                             </div>
                         )}
 
+                        {/* Card de Governança: Orçamento Obrigatório -> Aprovação -> Projeto */}
+                        <div class="gtb-surface-box rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-3 flex-wrap">
+                            {hasQuotation ? (
+                                <>
+                                    <div class="flex items-center gap-2.5 flex-wrap min-w-0">
+                                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Orçamento Vinculado:</span>
+                                        <a href={`/admin/orcamentos/${linkedQuotation.id}`} class="font-mono text-xs font-extrabold text-[#F2C230] hover:underline no-underline">
+                                            {linkedQuotation.reference_code}
+                                        </a>
+                                        <span class={`gt-badge ${linkedQuotation.status === 'approved' ? 'gt-badge-success' : linkedQuotation.status === 'sent' ? 'gt-badge-info' : linkedQuotation.status === 'rejected' ? 'gt-badge-danger' : 'gt-badge-warning'}`}>
+                                            {linkedQuotation.status === 'approved' ? 'Aprovado' : linkedQuotation.status === 'sent' ? 'Enviado ao Cliente' : linkedQuotation.status === 'rejected' ? 'Revisão Solicitada' : 'Rascunho'}
+                                        </span>
+                                        <span class="text-xs font-extrabold text-white">
+                                            {formatCurrencyBrl(linkedQuotation.final_amount ?? linkedQuotation.total_amount) || 'R$ 0,00'}
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <a href={`/admin/orcamentos/${linkedQuotation.id}`} class="text-xs font-extrabold text-[#16749A] hover:underline no-underline">
+                                            Editar Proposta →
+                                        </a>
+                                        {isConvertedToProject && (
+                                            <a href={linkedProject?.id ? `/admin/projetos/${linkedProject.id}` : '/admin/projetos'} class="text-xs font-extrabold text-[#10B981] hover:underline no-underline ml-2">
+                                                Ver Projeto →
+                                            </a>
+                                        )}
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div class="text-xs text-[#8C95AA]">
+                                        <strong class="text-white">Fluxo Obrigatório:</strong> Nenhum orçamento emitido ainda. Elabore e aprove o orçamento para liberar a execução do projeto.
+                                    </div>
+                                    {requestDetail.status !== 'cancelled' && (
+                                        <form action={`/admin/solicitacoes/${requestDetail.id}/gerar-orcamento`} method="post" class="m-0">
+                                            <button type="submit" class="text-xs font-extrabold text-[#F2C230] hover:underline bg-transparent border-0 cursor-pointer p-0">
+                                                + Elaborar Orçamento Agora →
+                                            </button>
+                                        </form>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
                         {/* Descrição da Demanda */}
                         <div>
                             <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-2">Descrição da Demanda</h2>
@@ -430,14 +522,25 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                 <div>
                                     <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Novo Status</label>
                                     <select name="status" class="w-full rounded-xl px-3.5 py-2.5 text-xs">
-                                        <option value="new" selected={requestDetail.status === 'new'}>Novo / Recebido</option>
-                                        <option value="analyzing" selected={requestDetail.status === 'analyzing'}>Em Análise Técnica</option>
-                                        <option value="quotation_sent" selected={requestDetail.status === 'quotation_sent'}>Orçamento Enviado</option>
-                                        <option value="approved" selected={requestDetail.status === 'approved'}>Aprovado pelo Cliente</option>
-                                        <option value="in_progress" selected={requestDetail.status === 'in_progress'}>Em Execução</option>
-                                        <option value="completed" selected={requestDetail.status === 'completed'}>Concluído / Entregue</option>
+                                        <option value="new" selected={requestDetail.status === 'new'}>1. Novo / Recebido</option>
+                                        <option value="analyzing" selected={requestDetail.status === 'analyzing'}>2. Em Análise Técnica</option>
+                                        <option value="quotation_sent" selected={requestDetail.status === 'quotation_sent'}>3. Orçamento Enviado ao Cliente</option>
+                                        <option value="approved" selected={requestDetail.status === 'approved'} disabled={!hasQuotation && !isQuotationApproved}>
+                                            4. Aprovado (Inicia Projeto Automaticamente){!hasQuotation && !isQuotationApproved ? ' — Requer Orçamento' : ''}
+                                        </option>
+                                        <option value="in_progress" selected={requestDetail.status === 'in_progress'} disabled={!isQuotationApproved}>
+                                            5. Em Execução{!isQuotationApproved ? ' — Requer Orçamento Aprovado' : ''}
+                                        </option>
+                                        <option value="completed" selected={requestDetail.status === 'completed'} disabled={!isQuotationApproved}>
+                                            6. Concluído / Entregue{!isQuotationApproved ? ' — Requer Orçamento Aprovado' : ''}
+                                        </option>
                                         <option value="cancelled" selected={requestDetail.status === 'cancelled'}>Cancelado</option>
                                     </select>
+                                    {!isQuotationApproved && (
+                                        <p class="text-[10.5px] text-[#8C95AA] mt-1.5">
+                                            A execução só é liberada após o orçamento ser emitido e aprovado.
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div style="flex: 1 1 auto; display: flex; flex-direction: column;">

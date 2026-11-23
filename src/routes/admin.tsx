@@ -669,7 +669,7 @@ adminRoutes.get('/solicitacoes/:id', async (c) => {
 
     const requestDetail = await db.prepare(
         `SELECT * FROM service_requests WHERE id = ?`
-    ).bind(id).first();
+    ).bind(id).first<any>();
 
     if (!requestDetail) {
         return c.redirect('/admin/solicitacoes?error=Solicitação não encontrada');
@@ -683,16 +683,270 @@ adminRoutes.get('/solicitacoes/:id', async (c) => {
          ORDER BY h.created_at DESC`
     ).bind(id).all()).results || [];
 
+    let linkedQuotation: any = null;
+    try {
+        linkedQuotation = await db.prepare(
+            `SELECT * FROM quotations WHERE service_request_id = ? ORDER BY id DESC LIMIT 1`
+        ).bind(id).first();
+    } catch { }
+
+    let linkedProject: any = null;
+    try {
+        const reqTitle = String(requestDetail.service_title || requestDetail.title || '').trim();
+        if (requestDetail.client_id && reqTitle) {
+            linkedProject = await db.prepare(
+                `SELECT id, title, name, status, progress_percentage FROM projects
+                 WHERE client_id = ? AND (lower(title) = lower(?) OR lower(name) = lower(?))
+                 ORDER BY id DESC LIMIT 1`
+            ).bind(requestDetail.client_id, reqTitle, reqTitle).first();
+        }
+    } catch { }
+
     return c.html(
         <AdminRequestsView
             currentUser={user}
             requests={[]}
             requestDetail={requestDetail}
             history={history}
+            linkedQuotation={linkedQuotation}
+            linkedProject={linkedProject}
             successMessage={successMessage}
             errorMessage={errorMessage}
         />
     );
+});
+
+async function ensureClientForRequest(db: any, req: any): Promise<number | null> {
+    let clientId = req.client_id ? Number(req.client_id) : null;
+    if (clientId) return clientId;
+
+    const email = String(req.email || '').trim();
+    if (email) {
+        try {
+            const existingClient = (await db.prepare(`SELECT id FROM clients WHERE lower(email) = lower(?)`).bind(email).first()) as { id: number } | null;
+            if (existingClient?.id) {
+                clientId = Number(existingClient.id);
+            }
+        } catch { }
+    }
+
+    if (!clientId) {
+        try {
+            const insClient = await db.prepare(
+                `INSERT INTO clients (name, company, email, phone, status, is_active, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, 'lead', 1, datetime('now'), datetime('now'))`
+            ).bind(
+                req.name || req.company || 'Cliente',
+                req.company || null,
+                email || `lead-${req.id || Date.now()}@gundjatech.local`,
+                req.phone || null
+            ).run();
+            clientId = Number(insClient.meta?.last_row_id || 0) || null;
+        } catch { }
+    }
+
+    if (clientId && req.id) {
+        try {
+            await db.prepare(`UPDATE service_requests SET client_id = ? WHERE id = ?`).bind(clientId, req.id).run();
+        } catch { }
+    }
+
+    return clientId;
+}
+
+async function autoStartProjectFromApprovedRequest(
+    db: any,
+    env: any,
+    userId: number | null,
+    options: {
+        request?: any;
+        quotation?: any;
+        approvalNote?: string;
+    }
+): Promise<{ projectId?: number; alreadyExisted: boolean }> {
+    const req = options.request || null;
+    const quotation = options.quotation || null;
+
+    let clientId: number | null = quotation?.client_id ? Number(quotation.client_id) : (req ? await ensureClientForRequest(db, req) : null);
+
+    if (clientId) {
+        try {
+            await db.prepare(`UPDATE clients SET status = 'active', updated_at = datetime('now') WHERE id = ?`).bind(clientId).run();
+        } catch { }
+    }
+
+    const projectName = String(
+        quotation?.title ||
+        req?.service_title ||
+        req?.title ||
+        `Projeto • ${req?.company || req?.name || quotation?.reference_code || 'Cliente'}`
+    ).trim();
+
+    // Verifica se já existe projeto criado para evitar duplicidade
+    let existingProjId: number | undefined;
+    if (req?.id) {
+        try {
+            const alreadyConverted = (await db.prepare(
+                `SELECT id FROM service_request_history WHERE service_request_id = ? AND action = 'converted_to_project' LIMIT 1`
+            ).bind(req.id).first()) as { id: number } | null;
+            if (alreadyConverted && clientId) {
+                const foundProj = (await db.prepare(
+                    `SELECT id FROM projects WHERE client_id = ? ORDER BY id DESC LIMIT 1`
+                ).bind(clientId).first()) as { id: number } | null;
+                existingProjId = foundProj?.id;
+                if (alreadyConverted) {
+                    await db.prepare(
+                        `UPDATE service_requests SET status = 'in_progress', client_id = COALESCE(client_id, ?), updated_at = datetime('now') WHERE id = ?`
+                    ).bind(clientId, req.id).run();
+                    return { projectId: existingProjId, alreadyExisted: true };
+                }
+            }
+        } catch { }
+    }
+
+    if (clientId && projectName) {
+        try {
+            const existingByName = (await db.prepare(
+                `SELECT id FROM projects WHERE client_id = ? AND (lower(title) = lower(?) OR lower(name) = lower(?)) LIMIT 1`
+            ).bind(clientId, projectName, projectName).first()) as { id: number } | null;
+            if (existingByName?.id) {
+                existingProjId = Number(existingByName.id);
+            }
+        } catch { }
+    }
+
+    let newProjectId = existingProjId;
+    if (!newProjectId) {
+        const baseSlug = projectName
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '')
+            .slice(0, 48) || 'projeto';
+        const projectSlug = `${baseSlug}-${Date.now().toString(36)}`;
+        const quoteRef = quotation?.reference_code ? `Orçamento aprovado: ${quotation.reference_code}` : '';
+        const rawDesc = String(quotation?.notes || req?.briefing || req?.description || 'Projeto iniciado após aprovação de orçamento').trim();
+        const projectDesc = quoteRef ? `${quoteRef} • ${rawDesc}` : rawDesc;
+
+        try {
+            const insProj = await db.prepare(
+                `INSERT INTO projects (client_id, name, title, slug, description, status, priority, progress_percentage, start_date, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, 'in_progress', 'high', 50, date('now'), datetime('now'), datetime('now'))`
+            ).bind(clientId || 1, projectName, projectName, projectSlug, projectDesc).run();
+            newProjectId = Number(insProj.meta?.last_row_id || 0) || undefined;
+        } catch { }
+    }
+
+    if (req?.id) {
+        const prevStatus = String(req.status || 'quotation_sent');
+        await db.prepare(
+            `UPDATE service_requests SET status = 'in_progress', client_id = COALESCE(client_id, ?), updated_at = datetime('now') WHERE id = ?`
+        ).bind(clientId, req.id).run();
+
+        if (prevStatus !== 'approved' && prevStatus !== 'in_progress') {
+            await recordRequestTimeline(db, {
+                serviceRequestId: req.id,
+                userId,
+                action: 'quotation_approved',
+                fromStatus: prevStatus,
+                toStatus: 'approved',
+                notes: options.approvalNote || (quotation?.reference_code ? `Orçamento ${quotation.reference_code} aprovado` : 'Orçamento aprovado')
+            });
+        }
+
+        await recordRequestTimeline(db, {
+            serviceRequestId: req.id,
+            userId,
+            action: 'converted_to_project',
+            fromStatus: 'approved',
+            toStatus: 'in_progress',
+            notes: `Projeto${newProjectId ? ` #${newProjectId}` : ''} criado e iniciado automaticamente após aprovação do orçamento`
+        });
+    }
+
+    // Dispara e-mail de início de projeto sem bloquear o fluxo
+    try {
+        let recipientEmail = String(req?.email || '').trim();
+        let recipientName = String(req?.company || req?.name || 'Cliente').trim();
+        if (!recipientEmail && clientId) {
+            const clientRow = (await db.prepare(`SELECT name, company, email FROM clients WHERE id = ?`).bind(clientId).first()) as any;
+            if (clientRow?.email) {
+                recipientEmail = String(clientRow.email).trim();
+                recipientName = String(clientRow.company || clientRow.name || recipientName).trim();
+            }
+        }
+        if (recipientEmail && !recipientEmail.endsWith('.local')) {
+            await sendProjectStartedEmail(env, recipientEmail, recipientName, {
+                id: newProjectId,
+                title: projectName,
+                protocol: req?.protocol || quotation?.reference_code || null
+            });
+        }
+    } catch { }
+
+    return { projectId: newProjectId, alreadyExisted: Boolean(existingProjId) };
+}
+
+adminRoutes.post('/solicitacoes/:id/gerar-orcamento', async (c) => {
+    const user = c.get('user')!;
+    const db = c.env.DB;
+    const id = c.req.param('id');
+
+    const req = await db.prepare(`SELECT * FROM service_requests WHERE id = ?`).bind(id).first<any>();
+    if (!req) {
+        return c.redirect('/admin/solicitacoes?error=Solicitação não encontrada');
+    }
+
+    // Se já existe orçamento vinculado a esta solicitação, abre para edição
+    try {
+        const existingQuote = await db.prepare(
+            `SELECT id FROM quotations WHERE service_request_id = ? ORDER BY id DESC LIMIT 1`
+        ).bind(id).first<{ id: number }>();
+        if (existingQuote?.id) {
+            return c.redirect(`/admin/orcamentos/${existingQuote.id}?success=${encodeURIComponent('Orçamento vinculado carregado para revisão e envio.')}`);
+        }
+    } catch { }
+
+    const clientId = await ensureClientForRequest(db, req);
+    if (!clientId) {
+        return c.redirect(`/admin/solicitacoes/${id}?error=${encodeURIComponent('Não foi possível vincular o cliente para gerar o orçamento.')}`);
+    }
+
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const refCode = `ORC-${dateStr}-${rand}`;
+    const amount = Math.max(0, Number(req.estimated_budget || 0));
+    const qTitle = String(req.service_title || req.title || `Proposta • ${req.protocol || id}`).trim();
+    const qNotes = String(req.description || req.briefing || '').trim() || null;
+    const defaultExpiry = new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10);
+
+    const insQuote = await db.prepare(
+        `INSERT INTO quotations (reference_code, client_id, service_request_id, title, total_amount, discount_amount, final_amount, status, expires_at, notes, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, 0, ?, 'draft', ?, ?, datetime('now'), datetime('now'))`
+    ).bind(refCode, clientId, id, qTitle, amount, amount, defaultExpiry, qNotes).run();
+    const newQuoteId = Number(insQuote.meta?.last_row_id || 0);
+
+    if (req.status === 'new') {
+        await db.prepare(
+            `UPDATE service_requests SET status = 'analyzing', updated_at = datetime('now') WHERE id = ?`
+        ).bind(id).run();
+
+        await recordRequestTimeline(db, {
+            serviceRequestId: id,
+            userId: user.id,
+            action: 'status_change',
+            fromStatus: 'new',
+            toStatus: 'analyzing',
+            notes: `Em análise técnica — orçamento ${refCode} iniciado pela administração`
+        });
+    }
+
+    if (newQuoteId > 0) {
+        return c.redirect(`/admin/orcamentos/${newQuoteId}?success=${encodeURIComponent(`Orçamento ${refCode} criado! Defina valores, validade e envie ao cliente.`)}`);
+    }
+
+    return c.redirect(`/admin/orcamentos?success=${encodeURIComponent(`Orçamento ${refCode} criado com sucesso!`)}`);
 });
 
 adminRoutes.post('/solicitacoes/:id/status', async (c) => {
@@ -708,7 +962,7 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
         return c.redirect(`/admin/solicitacoes/${id}?error=Status inválido`);
     }
 
-    const current = await db.prepare(`SELECT id, status, client_id, name, company, email, phone, title, service_title, description, estimated_budget, protocol FROM service_requests WHERE id = ?`).bind(id).first<any>();
+    const current = await db.prepare(`SELECT id, status, client_id, name, company, email, phone, title, service_title, description, briefing, estimated_budget, protocol FROM service_requests WHERE id = ?`).bind(id).first<any>();
     if (!current) {
         return c.redirect('/admin/solicitacoes?error=Solicitação não encontrada');
     }
@@ -716,6 +970,54 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
     // Impede registro duplicado na linha do tempo quando não houve alteração real de status nem comentário
     if (current.status === newStatus && !notes) {
         return c.redirect(`/admin/solicitacoes/${id}?error=${encodeURIComponent('Nenhuma alteração detectada para salvar.')}`);
+    }
+
+    // Busca orçamento vinculado à solicitação
+    let linkedQuotation: any = null;
+    try {
+        linkedQuotation = await db.prepare(
+            `SELECT * FROM quotations WHERE service_request_id = ? ORDER BY id DESC LIMIT 1`
+        ).bind(id).first<any>();
+    } catch { }
+
+    // REGRA OBRIGATÓRIA: Toda solicitação deve passar por um orçamento aprovado antes de iniciar execução ou concluir
+    if (newStatus === 'approved' || newStatus === 'in_progress' || newStatus === 'completed') {
+        const isAlreadyApprovedOrRunning = current.status === 'approved' || current.status === 'in_progress' || current.status === 'completed';
+
+        if (!linkedQuotation && !isAlreadyApprovedOrRunning) {
+            return c.redirect(
+                `/admin/solicitacoes/${id}?error=${encodeURIComponent('Toda solicitação deve passar primeiramente por um orçamento. Clique em "Elaborar Orçamento" e envie a proposta antes de aprovar ou iniciar o trabalho.')}`
+            );
+        }
+
+        if ((newStatus === 'in_progress' || newStatus === 'completed') && !isAlreadyApprovedOrRunning && linkedQuotation?.status !== 'approved') {
+            return c.redirect(
+                `/admin/solicitacoes/${id}?error=${encodeURIComponent('Só é possível iniciar ou concluir o trabalho depois que o orçamento estiver Aprovado.')}`
+            );
+        }
+
+        // Quando o orçamento é aprovado (ou a solicitação é marcada como Aprovada com orçamento emitido),
+        // aprova o orçamento e já inicia o Projeto automaticamente movendo para Em Execução!
+        if (newStatus === 'approved' || (newStatus === 'in_progress' && linkedQuotation?.status === 'approved' && current.status !== 'in_progress')) {
+            if (linkedQuotation && linkedQuotation.status !== 'approved') {
+                try {
+                    await db.prepare(
+                        `UPDATE quotations SET status = 'approved', updated_at = datetime('now') WHERE id = ?`
+                    ).bind(linkedQuotation.id).run();
+                    linkedQuotation.status = 'approved';
+                } catch { }
+            }
+
+            await autoStartProjectFromApprovedRequest(db, c.env, user.id, {
+                request: current,
+                quotation: linkedQuotation,
+                approvalNote: notes || (linkedQuotation?.reference_code ? `Orçamento ${linkedQuotation.reference_code} aprovado — início automático do projeto` : 'Orçamento aprovado — início automático do projeto')
+            });
+
+            return c.redirect(
+                `/admin/solicitacoes/${id}?success=${encodeURIComponent('Orçamento aprovado! O Projeto foi criado automaticamente e a solicitação entrou em Execução.')}`
+            );
+        }
     }
 
     await db.prepare(
@@ -734,29 +1036,9 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
     // Quando marcado como "Orçamento Enviado", garante que o orçamento chegue ao Portal do Cliente
     if (newStatus === 'quotation_sent') {
         try {
-            let clientId = current.client_id;
-            if (!clientId && current.email) {
-                const existingClient = await db.prepare(`SELECT id FROM clients WHERE lower(email) = lower(?)`).bind(current.email).first<{ id: number }>();
-                if (existingClient) {
-                    clientId = existingClient.id;
-                } else {
-                    const insClient = await db.prepare(
-                        `INSERT INTO clients (name, company, email, phone, status, is_active, created_at, updated_at)
-                         VALUES (?, ?, ?, ?, 'lead', 1, datetime('now'), datetime('now'))`
-                    ).bind(current.name || 'Cliente', current.company || null, current.email, current.phone || null).run();
-                    clientId = Number(insClient.meta?.last_row_id || 0) || null;
-                }
-                if (clientId) {
-                    await db.prepare(`UPDATE service_requests SET client_id = ? WHERE id = ?`).bind(clientId, id).run();
-                }
-            }
-
+            const clientId = await ensureClientForRequest(db, current);
             if (clientId) {
-                const existingQuote = await db.prepare(
-                    `SELECT id, status FROM quotations WHERE service_request_id = ? ORDER BY id DESC LIMIT 1`
-                ).bind(id).first<{ id: number; status: string }>();
-
-                if (!existingQuote) {
+                if (!linkedQuotation) {
                     const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
                     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
                     const refCode = `ORC-${dateStr}-${rand}`;
@@ -768,10 +1050,10 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
                         `INSERT INTO quotations (reference_code, client_id, service_request_id, title, total_amount, discount_amount, final_amount, status, notes, created_at, updated_at)
                          VALUES (?, ?, ?, ?, ?, 0, ?, 'sent', ?, datetime('now'), datetime('now'))`
                     ).bind(refCode, clientId, id, qTitle, amount, amount, qNotes).run();
-                } else if (existingQuote.status === 'draft') {
+                } else if (linkedQuotation.status === 'draft' || linkedQuotation.status === 'rejected') {
                     await db.prepare(
                         `UPDATE quotations SET status = 'sent', updated_at = datetime('now') WHERE id = ?`
-                    ).bind(existingQuote.id).run();
+                    ).bind(linkedQuotation.id).run();
                 }
             }
         } catch { }
@@ -886,78 +1168,28 @@ adminRoutes.post('/solicitacoes/:id/converter', async (c) => {
         }
     } catch { }
 
-    // Garante que existe cliente associado
-    let clientId = req.client_id;
-    if (!clientId) {
-        const existingClient = await db.prepare(`SELECT id FROM clients WHERE lower(email) = lower(?)`).bind(req.email).first<{ id: number }>();
-        if (existingClient) {
-            clientId = existingClient.id;
-        } else {
-            const insClient = await db.prepare(
-                `INSERT INTO clients (name, company, email, phone, status, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, 'active', datetime('now'), datetime('now'))`
-            ).bind(req.name, req.company, req.email, req.phone).run();
-            clientId = insClient.meta.last_row_id;
-        }
-    }
-
-    // Cria o projeto (preenchendo title, name e slug obrigatórios no D1)
-    const projectName = String(req.service_title || req.title || `Projeto • ${req.company || req.name || 'Cliente'}`).trim();
-    const projectDesc = String(req.briefing || req.description || 'Projeto iniciado via solicitação web').trim();
-    const baseSlug = projectName
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
-        .slice(0, 48) || 'projeto';
-    const projectSlug = `${baseSlug}-${Date.now().toString(36)}`;
-
-    const insProj = await db.prepare(
-        `INSERT INTO projects (client_id, name, title, slug, description, status, priority, progress_percentage, start_date, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, 'planning', 'high', 0, date('now'), datetime('now'), datetime('now'))`
-    ).bind(clientId, projectName, projectName, projectSlug, projectDesc).run();
-    const newProjectId = Number(insProj.meta?.last_row_id || 0) || undefined;
-
-    // Atualiza solicitação para approved
-    await db.prepare(
-        `UPDATE service_requests SET status = 'approved', client_id = ?, updated_at = datetime('now') WHERE id = ?`
-    ).bind(clientId, id).run();
-
-    // Histórico (sincronizado entre Admin e Portal do Cliente)
-    await recordRequestTimeline(db, {
-        serviceRequestId: id,
-        userId: user.id,
-        action: 'converted_to_project',
-        fromStatus: req.status,
-        toStatus: 'approved',
-        notes: 'Convertido em Projeto pela administração'
-    });
-
-    // Notifica o cliente por e-mail sobre o início do projeto
+    // REGRA OBRIGATÓRIA: Verifica se o orçamento vinculado está aprovado antes de permitir criar o projeto
+    let linkedQuotation: any = null;
     try {
-        let recipientEmail = String(req.email || '').trim();
-        let recipientName = String(req.company || req.name || 'Cliente').trim();
-        if (!recipientEmail && clientId) {
-            const clientRow = await db.prepare(`SELECT name, company, email FROM clients WHERE id = ?`).bind(clientId).first<any>();
-            if (clientRow?.email) {
-                recipientEmail = String(clientRow.email).trim();
-                recipientName = String(clientRow.company || clientRow.name || recipientName).trim();
-            }
-        }
-        if (recipientEmail) {
-            const mailRes = await sendProjectStartedEmail(c.env, recipientEmail, recipientName, {
-                id: newProjectId,
-                title: projectName,
-                protocol: req.protocol || null
-            });
-            if (!mailRes.success) {
-                return c.redirect(`/admin/solicitacoes/${id}?error=${encodeURIComponent('Convertido em Projeto, mas o Resend bloqueou envio externo (sem domínio verificado, só entrega para gundjatech@gmail.com).')}`);
-            }
-        }
+        linkedQuotation = await db.prepare(
+            `SELECT * FROM quotations WHERE service_request_id = ? ORDER BY id DESC LIMIT 1`
+        ).bind(id).first<any>();
     } catch { }
 
-    return c.redirect(`/admin/solicitacoes/${id}?success=Solicitação convertida em Projeto com sucesso! Cliente notificado por e-mail.`);
+    const isApproved = req.status === 'approved' || req.status === 'in_progress' || linkedQuotation?.status === 'approved';
+    if (!isApproved) {
+        return c.redirect(
+            `/admin/solicitacoes/${id}?error=${encodeURIComponent('Só é possível iniciar o projeto depois que o orçamento da solicitação for aprovado.')}`
+        );
+    }
+
+    await autoStartProjectFromApprovedRequest(db, c.env, user.id, {
+        request: req,
+        quotation: linkedQuotation,
+        approvalNote: 'Convertido em Projeto após aprovação de orçamento'
+    });
+
+    return c.redirect(`/admin/solicitacoes/${id}?success=${encodeURIComponent('Projeto criado e solicitação movida para Em Execução com sucesso!')}`);
 });
 
 adminRoutes.post('/solicitacoes/:id/excluir', async (c) => {
@@ -2473,16 +2705,39 @@ adminRoutes.get('/orcamentos/:id', async (c) => {
          FROM quotations q
          LEFT JOIN clients cl ON q.client_id = cl.id
          WHERE q.id = ?`
-    ).bind(id).first();
+    ).bind(id).first<any>();
 
     if (!quotationDetail) {
         return c.redirect('/admin/orcamentos?error=Orçamento não encontrado.');
     }
 
+    let linkedRequest: any = null;
+    if (quotationDetail.service_request_id) {
+        try {
+            linkedRequest = await db.prepare(
+                `SELECT id, protocol, service_title, title, status FROM service_requests WHERE id = ?`
+            ).bind(quotationDetail.service_request_id).first();
+        } catch { }
+    }
+
+    let linkedProject: any = null;
+    try {
+        const qTitle = String(quotationDetail.title || linkedRequest?.service_title || linkedRequest?.title || '').trim();
+        if (quotationDetail.client_id && qTitle) {
+            linkedProject = await db.prepare(
+                `SELECT id, title, name, status, progress_percentage FROM projects
+                 WHERE client_id = ? AND (lower(title) = lower(?) OR lower(name) = lower(?))
+                 ORDER BY id DESC LIMIT 1`
+            ).bind(quotationDetail.client_id, qTitle, qTitle).first();
+        }
+    } catch { }
+
     return c.html(
         <AdminQuotationsView
             currentUser={user}
             quotationDetail={quotationDetail}
+            linkedRequest={linkedRequest}
+            linkedProject={linkedProject}
             successMessage={successMessage}
             errorMessage={errorMessage}
         />
@@ -2490,6 +2745,7 @@ adminRoutes.get('/orcamentos/:id', async (c) => {
 });
 
 adminRoutes.post('/orcamentos/:id', async (c) => {
+    const user = c.get('user')!;
     const db = c.env.DB;
     const id = Number(c.req.param('id'));
     const body = await c.req.parseBody();
@@ -2508,11 +2764,70 @@ adminRoutes.post('/orcamentos/:id', async (c) => {
         return c.redirect(`/admin/orcamentos/${id}?error=O título da proposta é obrigatório.`);
     }
 
+    const prevQuote = await db.prepare(`SELECT * FROM quotations WHERE id = ?`).bind(id).first<any>();
+
     await db.prepare(
         `UPDATE quotations
          SET title = ?, total_amount = ?, discount_amount = ?, final_amount = ?, status = ?, expires_at = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`
     ).bind(title, totalAmount, discountAmount, finalAmount, status, expiresAt, notes, id).run();
+
+    const updatedQuote = {
+        ...(prevQuote || {}),
+        id,
+        title,
+        total_amount: totalAmount,
+        discount_amount: discountAmount,
+        final_amount: finalAmount,
+        status,
+        expires_at: expiresAt,
+        notes
+    };
+
+    // Sincroniza solicitação vinculada quando o status do orçamento muda pelo formulário de edição
+    if (updatedQuote.service_request_id) {
+        try {
+            const reqRow = await db.prepare(`SELECT * FROM service_requests WHERE id = ?`).bind(updatedQuote.service_request_id).first<any>();
+            if (reqRow) {
+                if (status === 'approved') {
+                    await autoStartProjectFromApprovedRequest(db, c.env, user.id, {
+                        request: reqRow,
+                        quotation: updatedQuote,
+                        approvalNote: `Orçamento ${updatedQuote.reference_code || `#${id}`} aprovado — projeto iniciado automaticamente`
+                    });
+                    return c.redirect(`/admin/orcamentos/${id}?success=${encodeURIComponent('Proposta aprovada! Projeto criado automaticamente e solicitação movida para Em Execução.')}`);
+                } else if (status === 'sent' && reqRow.status !== 'quotation_sent' && reqRow.status !== 'approved' && reqRow.status !== 'in_progress') {
+                    await db.prepare(`UPDATE service_requests SET status = 'quotation_sent', estimated_budget = ?, updated_at = datetime('now') WHERE id = ?`).bind(finalAmount, reqRow.id).run();
+                    await recordRequestTimeline(db, {
+                        serviceRequestId: reqRow.id,
+                        userId: user.id,
+                        action: 'quotation_sent',
+                        fromStatus: reqRow.status,
+                        toStatus: 'quotation_sent',
+                        notes: `Orçamento ${updatedQuote.reference_code || `#${id}`} (${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(finalAmount)}) enviado ao cliente`
+                    });
+                } else if (status === 'rejected' && reqRow.status !== 'analyzing') {
+                    await db.prepare(`UPDATE service_requests SET status = 'analyzing', updated_at = datetime('now') WHERE id = ?`).bind(reqRow.id).run();
+                    await recordRequestTimeline(db, {
+                        serviceRequestId: reqRow.id,
+                        userId: user.id,
+                        action: 'quotation_rejected',
+                        fromStatus: reqRow.status,
+                        toStatus: 'analyzing',
+                        notes: `Orçamento ${updatedQuote.reference_code || `#${id}`} recusado — retornou para análise`
+                    });
+                } else {
+                    await db.prepare(`UPDATE service_requests SET estimated_budget = ?, updated_at = datetime('now') WHERE id = ?`).bind(finalAmount, reqRow.id).run();
+                }
+            }
+        } catch { }
+    } else if (status === 'approved' && prevQuote?.status !== 'approved') {
+        await autoStartProjectFromApprovedRequest(db, c.env, user.id, {
+            quotation: updatedQuote,
+            approvalNote: `Orçamento ${updatedQuote.reference_code || `#${id}`} aprovado`
+        });
+        return c.redirect(`/admin/orcamentos/${id}?success=${encodeURIComponent('Proposta aprovada e Projeto criado automaticamente!')}`);
+    }
 
     return c.redirect(`/admin/orcamentos/${id}?success=Proposta atualizada com sucesso!`);
 });
@@ -2529,17 +2844,39 @@ adminRoutes.post('/orcamentos/:id/status', async (c) => {
         return c.redirect(`/admin/orcamentos/${id}?error=Status inválido.`);
     }
 
-    const quotation = await db.prepare('SELECT id, reference_code, service_request_id, status FROM quotations WHERE id = ?').bind(id).first<any>();
+    const quotation = await db.prepare('SELECT * FROM quotations WHERE id = ?').bind(id).first<any>();
 
     await db.prepare(
         `UPDATE quotations SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
     ).bind(status, id).run();
 
+    const referer = c.req.header('referer') || '';
+    const backUrl = referer.includes(`/admin/solicitacoes/`) && quotation?.service_request_id
+        ? `/admin/solicitacoes/${quotation.service_request_id}`
+        : referer.includes(`/admin/orcamentos/${id}`)
+        ? `/admin/orcamentos/${id}`
+        : '/admin/orcamentos';
+
+    // Quando o orçamento é aprovado: cria o Projeto automaticamente e avança a Solicitação para Em Execução!
+    if (status === 'approved') {
+        let reqRow: any = null;
+        if (quotation?.service_request_id) {
+            try {
+                reqRow = await db.prepare('SELECT * FROM service_requests WHERE id = ?').bind(quotation.service_request_id).first<any>();
+            } catch { }
+        }
+        await autoStartProjectFromApprovedRequest(db, c.env, user.id, {
+            request: reqRow,
+            quotation: { ...(quotation || {}), id, status: 'approved' },
+            approvalNote: `Orçamento ${quotation?.reference_code || `#${id}`} aprovado pela administração`
+        });
+        return c.redirect(`${backUrl}?success=${encodeURIComponent('Orçamento aprovado! O Projeto foi criado e iniciado automaticamente.')}`);
+    }
+
     // Sincroniza Orçamento -> Solicitação vinculada e linha do tempo unificada
     if (quotation?.service_request_id) {
         const mappedReqStatus: Record<string, { status: string; note: string }> = {
             sent: { status: 'quotation_sent', note: `Orçamento ${quotation.reference_code || `#${id}`} enviado ao cliente` },
-            approved: { status: 'approved', note: `Orçamento ${quotation.reference_code || `#${id}`} marcado como aprovado pela administração` },
             rejected: { status: 'analyzing', note: `Orçamento ${quotation.reference_code || `#${id}`} recusado — retornou para análise` },
         };
         const sync = mappedReqStatus[status];
@@ -2572,8 +2909,6 @@ adminRoutes.post('/orcamentos/:id/status', async (c) => {
         expired: 'Expirado'
     };
 
-    const referer = c.req.header('referer') || '';
-    const backUrl = referer.includes(`/admin/orcamentos/${id}`) ? `/admin/orcamentos/${id}` : '/admin/orcamentos';
     return c.redirect(`${backUrl}?success=Status atualizado para ${encodeURIComponent(labels[status] || status)}!`);
 });
 
@@ -2587,70 +2922,24 @@ adminRoutes.post('/orcamentos/:id/converter-projeto', async (c) => {
         return c.redirect('/admin/orcamentos?error=Orçamento não encontrado.');
     }
 
-    const projectName = String(quotation.title || `Projeto #${quotation.reference_code || id}`).trim();
-    const baseSlug = projectName
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 48) || 'projeto';
-    const projectSlug = `${baseSlug}-${Date.now().toString(36)}`;
-    const description = quotation.notes
-        ? `Originado do orçamento ${quotation.reference_code} (Valor: R$ ${Number(quotation.final_amount || quotation.total_amount || 0).toFixed(2)}).\n\n${quotation.notes}`
-        : `Projeto originado do orçamento ${quotation.reference_code}.`;
+    if (quotation.status !== 'approved') {
+        return c.redirect(`/admin/orcamentos/${id}?error=${encodeURIComponent('Só é possível iniciar o projeto após a aprovação do orçamento.')}`);
+    }
 
-    const insProj = await db.prepare(
-        `INSERT INTO projects (client_id, name, title, slug, description, status, priority, progress_percentage, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, 'planning', 'high', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
-    ).bind(quotation.client_id, projectName, projectName, projectSlug, description).run();
-    const newProjectId = Number(insProj.meta?.last_row_id || 0) || undefined;
-
-    await db.prepare(
-        `UPDATE quotations SET status = 'approved', updated_at = CURRENT_TIMESTAMP WHERE id = ?`
-    ).bind(id).run();
-
-    // Sincroniza a solicitação vinculada ao orçamento e registra na linha do tempo unificada
+    let reqRow: any = null;
     if (quotation.service_request_id) {
         try {
-            const reqRow = await db.prepare('SELECT id, status FROM service_requests WHERE id = ?').bind(quotation.service_request_id).first<{ id: number; status: string }>();
-            if (reqRow) {
-                await db.prepare(
-                    `UPDATE service_requests SET status = 'in_progress', updated_at = datetime('now') WHERE id = ?`
-                ).bind(reqRow.id).run();
-
-                await recordRequestTimeline(db, {
-                    serviceRequestId: reqRow.id,
-                    userId: user.id,
-                    action: 'converted_to_project',
-                    fromStatus: reqRow.status,
-                    toStatus: 'in_progress',
-                    notes: `Orçamento ${quotation.reference_code || `#${id}`} convertido em Projeto #${newProjectId || ''} pela administração`,
-                });
-            }
+            reqRow = await db.prepare('SELECT * FROM service_requests WHERE id = ?').bind(quotation.service_request_id).first<any>();
         } catch { }
     }
 
-    // Notifica o cliente por e-mail sobre o início do projeto
-    try {
-        if (quotation.client_id) {
-            const clientRow = await db.prepare(`SELECT name, company, email FROM clients WHERE id = ?`).bind(quotation.client_id).first<any>();
-            if (clientRow?.email) {
-                await sendProjectStartedEmail(
-                    c.env,
-                    String(clientRow.email).trim(),
-                    String(clientRow.company || clientRow.name || 'Cliente').trim(),
-                    {
-                        id: newProjectId,
-                        title: projectName,
-                        protocol: quotation.reference_code || null
-                    }
-                );
-            }
-        }
-    } catch { }
+    await autoStartProjectFromApprovedRequest(db, c.env, user.id, {
+        request: reqRow,
+        quotation,
+        approvalNote: `Orçamento ${quotation.reference_code || `#${id}`} convertido em Projeto pela administração`
+    });
 
-    return c.redirect('/admin/projetos?success=Orçamento aprovado e convertido em Projeto com sucesso! Cliente notificado por e-mail.');
+    return c.redirect('/admin/projetos?success=Projeto iniciado com sucesso a partir do orçamento aprovado!');
 });
 
 adminRoutes.post('/orcamentos/:id/excluir', async (c) => {

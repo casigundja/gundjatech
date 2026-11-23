@@ -6,6 +6,7 @@ interface PortalRequestsProps {
     clientName?: string;
     requests?: any[];
     requestDetail?: any;
+    linkedQuotation?: any;
     services?: any[];
     history?: any[];
     attachments?: any[];
@@ -77,6 +78,7 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
     clientName,
     requests = [],
     requestDetail,
+    linkedQuotation = null,
     services = [],
     history = [],
     isCreate = false,
@@ -322,6 +324,34 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                                         </div>
                                     );
                                 })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Orçamento Vinculado (Transparência e Aprovação pelo Cliente) */}
+                    {linkedQuotation && (
+                        <div class="gtb-surface-box rounded-xl p-4 flex items-center justify-between gap-3 flex-wrap">
+                            <div class="flex items-center gap-3 flex-wrap min-w-0">
+                                <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Proposta Comercial:</span>
+                                <a href={`/portal/orcamentos/${linkedQuotation.id}`} class="font-mono text-xs font-extrabold text-[#F2C230] hover:underline no-underline">
+                                    {linkedQuotation.reference_code}
+                                </a>
+                                <span class="text-xs font-extrabold text-white">
+                                    R$ {Number(linkedQuotation.final_amount ?? linkedQuotation.total_amount ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                                <span class={`gt-badge ${linkedQuotation.status === 'approved' ? 'gt-badge-success' : linkedQuotation.status === 'rejected' ? 'gt-badge-danger' : 'gt-badge-warning'}`}>
+                                    {linkedQuotation.status === 'approved' ? 'Aprovado • Projeto em Execução' : linkedQuotation.status === 'rejected' ? 'Em Revisão' : 'Aguardando Sua Aprovação'}
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-2.5 flex-wrap">
+                                <a href={`/portal/orcamentos/${linkedQuotation.id}`} class="gt-btn-outline gt-btn-xs">
+                                    Ver Detalhes do Orçamento →
+                                </a>
+                                {linkedQuotation.status === 'approved' && (
+                                    <a href="/portal/projetos" class="gt-btn-primary gt-btn-xs">
+                                        Acompanhar Projeto em Execução →
+                                    </a>
+                                )}
                             </div>
                         </div>
                     )}

@@ -233,6 +233,14 @@ function createAdminMockEnv() {
                                 const r = data.service_requests.find(x => x.id === Number(params[0]));
                                 return (r || null) as unknown as T;
                             }
+                            if (q.includes('from quotations where service_request_id =')) {
+                                const quo = (data.quotations as any[]).find(x => Number(x.service_request_id) === Number(params[0]));
+                                return (quo || null) as unknown as T;
+                            }
+                            if (q.includes('from quotations') && q.includes('where q.id =') || q.includes('from quotations where id =')) {
+                                const quo = (data.quotations as any[]).find(x => Number(x.id) === Number(params[0]));
+                                return (quo || null) as unknown as T;
+                            }
                             if (q.includes('from projects') && q.includes('where p.id =')) {
                                 const p = data.projects.find(x => x.id === Number(params[0]));
                                 if (!p) return null;
@@ -333,9 +341,37 @@ function createAdminMockEnv() {
                                 if (req) req.status = 'cancelled';
                                 return { success: true };
                             }
+                            if (q.includes("update service_requests set status = 'in_progress'")) {
+                                const req = data.service_requests.find(x => x.id === Number(params[1] ?? params[0]));
+                                if (req) req.status = 'in_progress';
+                                return { success: true };
+                            }
                             if (q.includes('update service_requests set status =')) {
                                 const req = data.service_requests.find(x => x.id === Number(params[1]));
                                 if (req) req.status = params[0];
+                                return { success: true };
+                            }
+                            if (q.includes('insert into quotations')) {
+                                const qId = data.quotations.length + 1;
+                                (data.quotations as any[]).push({
+                                    id: qId,
+                                    reference_code: params[0],
+                                    client_id: Number(params[1]),
+                                    service_request_id: Number(params[2]),
+                                    title: params[3],
+                                    total_amount: Number(params[4] || 0),
+                                    final_amount: Number(params[5] || 0),
+                                    status: query.toLowerCase().includes("'sent'") ? 'sent' : 'draft',
+                                    created_at: new Date().toISOString()
+                                });
+                                return { success: true, meta: { last_row_id: qId } };
+                            }
+                            if (q.includes('update quotations set status =')) {
+                                const targetId = Number(params[params.length - 1]);
+                                const quo = (data.quotations as any[]).find(x => Number(x.id) === targetId);
+                                if (quo) {
+                                    quo.status = q.includes("'approved'") ? 'approved' : q.includes("'sent'") ? 'sent' : params[0];
+                                }
                                 return { success: true };
                             }
                             if (q.includes('insert into service_request_history')) {
@@ -717,7 +753,7 @@ describe('Fase 4 • Módulo 5 & 6: Painel Administrativo Core & Avançado (/adm
         expect(data.clients.some(c => c.email === 'contato@parceiro.com')).toBe(true);
     });
 
-    it('5. Pipeline de solicitações: detalhe, atualização de status e conversão em projeto', async () => {
+    it('5. Pipeline de solicitações: exige orçamento antes de iniciar e cria projeto automaticamente ao aprovar orçamento', async () => {
         const { env, data } = createAdminMockEnv();
         const adminCookie = await makeSignedCookie('sess_admin_1');
 
@@ -729,8 +765,9 @@ describe('Fase 4 • Módulo 5 & 6: Painel Administrativo Core & Avançado (/adm
         expect(detailRes.status).toBe(200);
         const detailHtml = await detailRes.text();
         expect(detailHtml).toContain('GNDJ-20261121-0001');
+        expect(detailHtml).toContain('Elaborar Orçamento');
 
-        // POST Atualização de Status
+        // POST Atualização de Status para Em Análise
         const statusRes = await app.request('/admin/solicitacoes/1/status', {
             method: 'POST',
             headers: {
@@ -743,13 +780,39 @@ describe('Fase 4 • Módulo 5 & 6: Painel Administrativo Core & Avançado (/adm
         expect(data.service_requests[0].status).toBe('analyzing');
         expect(data.service_request_history.length).toBeGreaterThan(0);
 
-        // POST Conversão em Projeto
-        const convertRes = await app.request('/admin/solicitacoes/1/converter', {
+        // Tentativa de converter em projeto ANTES de aprovar orçamento deve ser bloqueada
+        const prematureConvertRes = await app.request('/admin/solicitacoes/1/converter', {
             method: 'POST',
             headers: { 'Cookie': adminCookie }
         }, env);
-        expect(convertRes.status).toBe(302);
-        expect(convertRes.headers.get('Location')).toContain('success=');
+        expect(prematureConvertRes.status).toBe(302);
+        expect(prematureConvertRes.headers.get('Location')).toContain('error=');
+        expect(data.projects.length).toBe(1);
+
+        // Elabora / envia o orçamento da solicitação
+        const quoteSentRes = await app.request('/admin/solicitacoes/1/status', {
+            method: 'POST',
+            headers: {
+                'Cookie': adminCookie,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'status=quotation_sent&notes=Proposta+comercial+enviada'
+        }, env);
+        expect(quoteSentRes.status).toBe(302);
+        expect(data.service_requests[0].status).toBe('quotation_sent');
+
+        // Aprovação do orçamento cria automaticamente o Projeto e move a solicitação para Em Execução (in_progress)
+        const approveRes = await app.request('/admin/solicitacoes/1/status', {
+            method: 'POST',
+            headers: {
+                'Cookie': adminCookie,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'status=approved&notes=Orçamento+aprovado+pelo+cliente'
+        }, env);
+        expect(approveRes.status).toBe(302);
+        expect(approveRes.headers.get('Location')).toContain('success=');
+        expect(data.service_requests[0].status).toBe('in_progress');
         expect(data.projects.length).toBe(2);
     });
 

@@ -265,10 +265,34 @@ portalRoutes.post('/orcamentos/:id/aprovar', async (c) => {
         'UPDATE quotations SET status = "approved", updated_at = datetime("now") WHERE id = ?'
     ).bind(quoteId).run();
 
-    // Se estiver associado a uma service_request, atualiza a solicitação e sincroniza ambas as timelines
+    // Cria automaticamente o Projeto em Execução (50%) se ainda não existir para este cliente/título
+    const projectName = String(quote.title || `Projeto • ${quote.reference_code || quoteId}`).trim();
+    const baseSlug = projectName
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+        .slice(0, 48) || 'projeto';
+    const projectSlug = `${baseSlug}-${Date.now().toString(36)}`;
+    const projectDesc = quote.notes
+        ? `Orçamento aprovado: ${quote.reference_code} • ${quote.notes}`
+        : `Projeto iniciado automaticamente após aprovação do orçamento ${quote.reference_code}.`;
+
+    let createdProjectId: number | undefined;
+    try {
+        await db.prepare(`UPDATE clients SET status = 'active', updated_at = datetime('now') WHERE id = ?`).bind(client.id).run();
+        const insProj = await db.prepare(
+            `INSERT INTO projects (client_id, name, title, slug, description, status, priority, progress_percentage, start_date, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, 'in_progress', 'high', 50, date('now'), datetime('now'), datetime('now'))`
+        ).bind(client.id, projectName, projectName, projectSlug, projectDesc).run();
+        createdProjectId = Number(insProj?.meta?.last_row_id || 0) || undefined;
+    } catch {}
+
+    // Se estiver associado a uma service_request, avança automaticamente para Em Execução (in_progress) e sincroniza ambas as timelines
     if (quote.service_request_id) {
         await db.prepare(
-            'UPDATE service_requests SET status = "approved", updated_at = datetime("now") WHERE id = ?'
+            'UPDATE service_requests SET status = "in_progress", updated_at = datetime("now") WHERE id = ?'
         ).bind(quote.service_request_id).run();
 
         await recordRequestTimeline(db, {
@@ -277,7 +301,16 @@ portalRoutes.post('/orcamentos/:id/aprovar', async (c) => {
             action: 'client_approved',
             fromStatus: 'quotation_sent',
             toStatus: 'approved',
-            notes: 'Orçamento aprovado pelo cliente via Portal do Cliente'
+            notes: `Orçamento ${quote.reference_code || `#${quoteId}`} aprovado pelo cliente via Portal do Cliente`
+        });
+
+        await recordRequestTimeline(db, {
+            serviceRequestId: quote.service_request_id,
+            userId: user.id,
+            action: 'converted_to_project',
+            fromStatus: 'approved',
+            toStatus: 'in_progress',
+            notes: `Projeto${createdProjectId ? ` #${createdProjectId}` : ''} criado e iniciado automaticamente após aprovação do orçamento`
         });
     }
 
@@ -289,7 +322,7 @@ portalRoutes.post('/orcamentos/:id/aprovar', async (c) => {
         ).bind(user.id, quoteId, JSON.stringify({ reference: quote.reference_code })).run();
     } catch {}
 
-    return c.redirect('/portal/orcamentos?success=Or%C3%A7amento+aprovado+com+sucesso!+Nossa+equipe+iniciar%C3%A1+o+projeto.');
+    return c.redirect('/portal/orcamentos?success=Or%C3%A7amento+aprovado+com+sucesso!+Seu+projeto+j%C3%A1+foi+iniciado+automaticamente.');
 });
 
 portalRoutes.post('/orcamentos/:id/recusar', async (c) => {
@@ -433,12 +466,20 @@ portalRoutes.get('/solicitacoes/:id', async (c) => {
         'SELECT * FROM request_status_histories WHERE service_request_id = ? ORDER BY created_at DESC'
     ).bind(reqId).all();
 
+    let linkedQuotation: any = null;
+    try {
+        linkedQuotation = await db.prepare(
+            'SELECT * FROM quotations WHERE service_request_id = ? AND status != "draft" ORDER BY id DESC LIMIT 1'
+        ).bind(reqId).first();
+    } catch {}
+
     return c.html(
         <PortalRequestsView
             currentUser={user}
             clientName={client.company || client.name}
             requestDetail={request}
             history={history.results || []}
+            linkedQuotation={linkedQuotation}
             successMessage={c.req.query('success')}
             errorMessage={c.req.query('error')}
         />
@@ -457,15 +498,41 @@ portalRoutes.post('/solicitacoes/:id/aprovar', async (c) => {
         return c.redirect(`/portal/solicitacoes/${reqId}?error=Solicita%C3%A7%C3%A3o+n%C3%A3o+est%C3%A1+aguardando+aprova%C3%A7%C3%A3o.`);
     }
 
-    await db.prepare(
-        'UPDATE service_requests SET status = "approved", updated_at = datetime("now") WHERE id = ?'
-    ).bind(reqId).run();
-
+    let linkedQuote: any = null;
     try {
+        linkedQuote = await db.prepare(
+            'SELECT * FROM quotations WHERE service_request_id = ? ORDER BY id DESC LIMIT 1'
+        ).bind(reqId).first();
         await db.prepare(
             'UPDATE quotations SET status = "approved", updated_at = datetime("now") WHERE service_request_id = ? AND status = "sent"'
         ).bind(reqId).run();
     } catch {}
+
+    // Cria automaticamente o Projeto em Execução (50%) e move a solicitação para Em Execução (in_progress)
+    const projectName = String(linkedQuote?.title || request.service_title || request.title || `Projeto • ${request.protocol || reqId}`).trim();
+    const baseSlug = projectName
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+        .slice(0, 48) || 'projeto';
+    const projectSlug = `${baseSlug}-${Date.now().toString(36)}`;
+    const projectDesc = String(linkedQuote?.notes || request.description || 'Projeto iniciado após aprovação de orçamento pelo Portal do Cliente').trim();
+
+    let createdProjectId: number | undefined;
+    try {
+        await db.prepare(`UPDATE clients SET status = 'active', updated_at = datetime('now') WHERE id = ?`).bind(client.id).run();
+        const insProj = await db.prepare(
+            `INSERT INTO projects (client_id, name, title, slug, description, status, priority, progress_percentage, start_date, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, 'in_progress', 'high', 50, date('now'), datetime('now'), datetime('now'))`
+        ).bind(client.id, projectName, projectName, projectSlug, projectDesc).run();
+        createdProjectId = Number(insProj?.meta?.last_row_id || 0) || undefined;
+    } catch {}
+
+    await db.prepare(
+        'UPDATE service_requests SET status = "in_progress", updated_at = datetime("now") WHERE id = ?'
+    ).bind(reqId).run();
 
     await recordRequestTimeline(db, {
         serviceRequestId: reqId,
@@ -476,7 +543,16 @@ portalRoutes.post('/solicitacoes/:id/aprovar', async (c) => {
         notes: 'Orçamento aprovado pelo cliente via Portal do Cliente!',
     });
 
-    return c.redirect(`/portal/solicitacoes/${reqId}?success=Or%C3%A7amento+aprovado+com+sucesso!+Status+atualizado+para+Aprovado+pelo+Cliente.`);
+    await recordRequestTimeline(db, {
+        serviceRequestId: reqId,
+        userId: user.id,
+        action: 'converted_to_project',
+        fromStatus: 'approved',
+        toStatus: 'in_progress',
+        notes: `Projeto${createdProjectId ? ` #${createdProjectId}` : ''} criado e iniciado automaticamente após aprovação do orçamento`,
+    });
+
+    return c.redirect(`/portal/solicitacoes/${reqId}?success=Or%C3%A7amento+aprovado+com+sucesso!+Seu+projeto+j%C3%A1+entrou+em+execu%C3%A7%C3%A3o.`);
 });
 
 portalRoutes.post('/solicitacoes/:id/recusar', async (c) => {
