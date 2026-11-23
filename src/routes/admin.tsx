@@ -82,12 +82,6 @@ adminRoutes.get('/relatorio/exportar', async (c) => {
     const period = Number(c.req.query('period') || 30);
     const stats = await getAdminDashboardStats(db, period);
 
-    let servicesList: any[] = [];
-    try {
-        const sRes = await db.prepare(`SELECT title, slug, category, price, is_active FROM services ORDER BY order_position ASC, id ASC`).all();
-        servicesList = sRes.results || [];
-    } catch { }
-
     const fmtBRL = (val: number) =>
         new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(val || 0));
     const esc = (s: any) =>
@@ -101,7 +95,7 @@ adminRoutes.get('/relatorio/exportar', async (c) => {
     const emitterName = user?.name || 'Diretoria GundjaTech';
 
     const statusPt: Record<string, string> = {
-        new: 'Novo',
+        new: 'Recebido',
         analyzing: 'Em Análise',
         quotation_sent: 'Orçamento Enviado',
         approved: 'Aprovado',
@@ -110,72 +104,51 @@ adminRoutes.get('/relatorio/exportar', async (c) => {
         cancelled: 'Cancelado'
     };
 
-    const catPt: Record<string, string> = {
-        sites: 'Websites & Portais',
-        ecommerce: 'E-commerce B2B/B2C',
-        software: 'Software & SaaS',
-        infra: 'Infra & Cloudflare'
-    };
-
     const recentRequests = Array.isArray(stats.recentRequests) ? stats.recentRequests : [];
     const recentClients = Array.isArray(stats.recentClients) ? stats.recentClients : [];
 
     const kpiRows = [
         {
-            area: 'Financeiro & Caixa',
-            metric: 'Receita Recebida (Liquidada)',
-            value: fmtBRL(stats.monthlyRevenue),
-            status: 'Caixa Confirmado',
-            note: `Total liquidado nos últimos ${period} dias`,
-            highlight: true
+            category: 'Financeiro',
+            metric: 'Receita Recebida em Caixa',
+            context: `Últimos ${period} dias`,
+            value: fmtBRL(stats.monthlyRevenue)
         },
         {
-            area: 'Financeiro & Caixa',
-            metric: 'Faturas a Receber (Pendente)',
-            value: fmtBRL(stats.pendingReceivables),
-            status: stats.pendingReceivables > 0 ? 'Aguardando Baixa' : 'Sem Pendências',
-            note: 'Cobranças emitidas aguardando liquidação',
-            highlight: false
+            category: 'Financeiro',
+            metric: 'Contas a Receber (Pendente)',
+            context: 'Contratos aprovados em aberto',
+            value: fmtBRL(stats.pendingReceivables)
         },
         {
-            area: 'Comercial & Propostas',
-            metric: 'Orçamentos & Propostas Emitidas',
-            value: `${stats.totalQuotations} proposta(s)`,
-            status: `${stats.approvedQuotations} Aprovada(s)`,
-            note: `Em aberto: ${fmtBRL(stats.openQuotationsValue || 0)}`,
-            highlight: false
+            category: 'Comercial',
+            metric: 'Orçamentos Aprovados',
+            context: `${stats.totalQuotations} proposta(s) emitida(s)`,
+            value: `${stats.approvedQuotations}`
         },
         {
-            area: 'Carteira de Clientes',
-            metric: 'Total de Clientes & Leads',
-            value: `${stats.totalClients} registro(s)`,
-            status: `${stats.activeClients} Ativo(s)`,
-            note: `${stats.leadClients} lead(s) em qualificação comercial`,
-            highlight: false
+            category: 'Comercial',
+            metric: 'Propostas em Negociação',
+            context: 'Aguardando aprovação do cliente',
+            value: fmtBRL(stats.openQuotationsValue || 0)
         },
         {
-            area: 'Pipeline de Entrada',
-            metric: 'Solicitações Comerciais & Briefings',
-            value: `${stats.totalRequests} solicitação(ões)`,
-            status: `${stats.pendingRequests} Pendente(s)`,
-            note: 'Demandas recebidas pelo site e canais digitais',
-            highlight: false
+            category: 'Engenharia',
+            metric: 'Projetos em Execução',
+            context: `${stats.totalProjects} projeto(s) na carteira`,
+            value: `${stats.activeProjects}`
         },
         {
-            area: 'Operação & Engenharia',
-            metric: 'Projetos Técnicos em Execução',
-            value: `${stats.activeProjects} projeto(s)`,
-            status: `${stats.totalProjects} no Histórico`,
-            note: 'Planejamento, desenvolvimento e homologação',
-            highlight: false
+            category: 'Pipeline',
+            metric: 'Solicitações Recebidas',
+            context: `${stats.pendingRequests} aguardando triagem`,
+            value: `${stats.totalRequests}`
         },
         {
-            area: 'Atendimento & CRM IA',
-            metric: 'Conversas Ativas (Site & WhatsApp)',
-            value: `${stats.openConversations} conversa(s)`,
-            status: 'Monitoramento Ativo',
-            note: 'Central de Atendimento e Agente Autônomo IA',
-            highlight: false
+            category: 'Clientes',
+            metric: 'Clientes Ativos',
+            context: `${stats.leadClients} lead(s) cadastrado(s)`,
+            value: `${stats.activeClients}`
         }
     ];
 
@@ -198,171 +171,119 @@ adminRoutes.get('/relatorio/exportar', async (c) => {
 </xml>
 <![endif]-->
 <style>
-  body, table { font-family: 'Segoe UI', Calibri, Arial, sans-serif; font-size: 10.5pt; color: #063B5C; }
+  body, table { font-family: 'Segoe UI', Calibri, Arial, sans-serif; font-size: 10pt; color: #1E293B; }
   table { border-collapse: collapse; table-layout: fixed; }
-  td, th { padding: 9px 14px; vertical-align: middle; white-space: nowrap; mso-number-format: "\\@"; }
-  .banner-top { background-color: #063B5C; color: #FFFFFF; font-size: 15pt; font-weight: bold; border-top: 2px solid #063B5C; border-left: 2px solid #063B5C; border-right: 2px solid #063B5C; }
-  .banner-sub { background-color: #063B5C; color: #E7F0F5; font-size: 10pt; border-bottom: 3px solid #F2C230; border-left: 2px solid #063B5C; border-right: 2px solid #063B5C; }
-  .gold-text { color: #F2C230; font-weight: bold; }
-  .sec-head { background-color: #16749A; color: #FFFFFF; font-size: 11pt; font-weight: bold; text-transform: uppercase; border: 1px solid #063B5C; }
-  .tbl-head { background-color: #063B5C; color: #F2C230; font-size: 9.5pt; font-weight: bold; text-transform: uppercase; border: 1px solid #16749A; }
-  .cell-even { background-color: #FFFFFF; color: #063B5C; border: 1px solid #C8DBE6; }
-  .cell-odd { background-color: #E7F0F5; color: #063B5C; border: 1px solid #C8DBE6; }
-  .cell-area { font-weight: bold; color: #16749A; }
-  .cell-metric { font-weight: bold; color: #063B5C; }
-  .cell-val { font-weight: bold; color: #063B5C; text-align: right; }
-  .cell-gold { font-weight: bold; color: #063B5C; background-color: #FEF7DC; text-align: right; border: 1px solid #F2C230; }
-  .cell-green { font-weight: bold; color: #065F46; background-color: #D1FAE5; text-align: center; border: 1px solid #A7F3D0; }
-  .cell-badge { font-weight: bold; color: #063B5C; background-color: #E7F0F5; text-align: center; border: 1px solid #C8DBE6; }
-  .cell-empty { background-color: #FFFFFF; color: #5C768D; font-style: italic; text-align: center; border: 1px solid #C8DBE6; }
-  .footer-bar { background-color: #063B5C; color: #F2C230; font-size: 9.5pt; font-weight: bold; text-align: center; border-top: 2px solid #F2C230; }
+  td, th { padding: 8px 12px; vertical-align: middle; white-space: nowrap; mso-number-format: "\\@"; }
+  .doc-title { background-color: #063B5C; color: #FFFFFF; font-size: 13pt; font-weight: bold; border: 1px solid #063B5C; }
+  .doc-meta { background-color: #F8FAFC; color: #475569; font-size: 9.5pt; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1; border-bottom: 1.5px solid #063B5C; }
+  .sec-title { background-color: #FFFFFF; color: #063B5C; font-size: 10.5pt; font-weight: bold; border-bottom: 1.5px solid #063B5C; padding-top: 14px; padding-bottom: 6px; }
+  .tbl-head { background-color: #F1F5F9; color: #063B5C; font-size: 9pt; font-weight: bold; text-transform: uppercase; border-top: 1px solid #CBD5E1; border-bottom: 1px solid #94A3B8; border-left: 1px solid #E2E8F0; border-right: 1px solid #E2E8F0; }
+  .cell { background-color: #FFFFFF; color: #1E293B; border: 1px solid #E2E8F0; }
+  .cell-muted { background-color: #FFFFFF; color: #475569; border: 1px solid #E2E8F0; }
+  .cell-strong { background-color: #FFFFFF; color: #0F172A; font-weight: bold; border: 1px solid #E2E8F0; }
+  .cell-num { background-color: #FFFFFF; color: #063B5C; font-weight: bold; text-align: right; border: 1px solid #E2E8F0; }
+  .cell-empty { background-color: #FFFFFF; color: #64748B; font-style: italic; text-align: center; border: 1px solid #E2E8F0; }
+  .doc-footer { background-color: #F8FAFC; color: #64748B; font-size: 8.5pt; text-align: left; border-top: 1px solid #CBD5E1; }
 </style>
 </head>
 <body>
 <table>
-  <col width="220" style="mso-width-source:userset;width:165pt;">
-  <col width="310" style="mso-width-source:userset;width:232pt;">
-  <col width="190" style="mso-width-source:userset;width:142pt;">
-  <col width="190" style="mso-width-source:userset;width:142pt;">
-  <col width="310" style="mso-width-source:userset;width:232pt;">
+  <col width="160" style="mso-width-source:userset;width:120pt;">
+  <col width="320" style="mso-width-source:userset;width:240pt;">
+  <col width="260" style="mso-width-source:userset;width:195pt;">
+  <col width="180" style="mso-width-source:userset;width:135pt;">
 
-  <!-- CABEÇALHO INSTITUCIONAL GUNDJATECH (PALETA 3) -->
-  <tr height="44" style="mso-height-source:userset;height:33pt;">
-    <td colspan="5" class="banner-top">
-      GUNDJA<span class="gold-text">TECH</span> &bull; RELATÓRIO EXECUTIVO DE GESTÃO &amp; PERFORMANCE
+  <!-- CABEÇALHO CORPORATIVO SÓBRIO -->
+  <tr height="38" style="mso-height-source:userset;height:28.5pt;">
+    <td colspan="4" class="doc-title">
+      GUNDJATECH &mdash; RELATÓRIO EXECUTIVO DE GESTÃO
     </td>
   </tr>
-  <tr height="30" style="mso-height-source:userset;height:22.5pt;">
-    <td colspan="5" class="banner-sub">
-      Período analisado: <b>Últimos ${period} dias</b> &nbsp;&bull;&nbsp; Emitido em: <b>${esc(emittedAt)} (BRT)</b> &nbsp;&bull;&nbsp; Responsável: <b>${esc(emitterName)}</b>
+  <tr height="26" style="mso-height-source:userset;height:19.5pt;">
+    <td colspan="4" class="doc-meta">
+      Período: <b>Últimos ${period} dias</b> &nbsp;|&nbsp; Emissão: <b>${esc(emittedAt)}</b> &nbsp;|&nbsp; Emitido por: <b>${esc(emitterName)}</b>
     </td>
   </tr>
-  <tr height="16"><td colspan="5"></td></tr>
 
-  <!-- SEÇÃO 1: INDICADORES EXECUTIVOS (KPIs) — 5 Colunas Independentes sem mesclagem -->
+  <!-- SEÇÃO 1: INDICADORES EXECUTIVOS -->
   <tr height="34" style="mso-height-source:userset;height:25.5pt;">
-    <td colspan="5" class="sec-head">1. Resumo Executivo &amp; Indicadores-Chave (KPIs)</td>
+    <td colspan="4" class="sec-title">1. Resumo Financeiro e Operacional</td>
   </tr>
-  <tr height="30" style="mso-height-source:userset;height:22.5pt;">
-    <th class="tbl-head" align="left">Área / Módulo</th>
-    <th class="tbl-head" align="left">Indicador Operacional</th>
-    <th class="tbl-head" align="right">Resultado Atual</th>
-    <th class="tbl-head" align="center">Status</th>
-    <th class="tbl-head" align="left">Detalhamento / Contexto</th>
+  <tr height="26" style="mso-height-source:userset;height:19.5pt;">
+    <th class="tbl-head" align="left">Área</th>
+    <th class="tbl-head" align="left">Indicador</th>
+    <th class="tbl-head" align="left">Referência</th>
+    <th class="tbl-head" align="right">Resultado</th>
   </tr>
   ${kpiRows
-            .map((row, idx) => {
-                const base = idx % 2 === 0 ? 'cell-even' : 'cell-odd';
-                const valCls = row.highlight ? 'cell-gold' : `${base} cell-val`;
-                return `<tr height="30" style="mso-height-source:userset;height:22.5pt;">
-    <td class="${base} cell-area">${esc(row.area)}</td>
-    <td class="${base} cell-metric">${esc(row.metric)}</td>
-    <td class="${valCls}">${esc(row.value)}</td>
-    <td class="cell-badge">${esc(row.status)}</td>
-    <td class="${base}">${esc(row.note)}</td>
-  </tr>`;
-            })
+            .map(
+                (row) => `<tr height="26" style="mso-height-source:userset;height:19.5pt;">
+    <td class="cell-muted">${esc(row.category)}</td>
+    <td class="cell-strong">${esc(row.metric)}</td>
+    <td class="cell-muted">${esc(row.context)}</td>
+    <td class="cell-num">${esc(row.value)}</td>
+  </tr>`
+            )
             .join('\n  ')}
 
-  <tr height="18"><td colspan="5"></td></tr>
-
-  <!-- SEÇÃO 2: CATÁLOGO DE PACOTES & SOLUÇÕES DIGITAIS -->
+  <!-- SEÇÃO 2: SOLICITAÇÕES & PIPELINE -->
   <tr height="34" style="mso-height-source:userset;height:25.5pt;">
-    <td colspan="5" class="sec-head">2. Catálogo Ativo de Pacotes &amp; Soluções Digitais (${servicesList.length})</td>
+    <td colspan="4" class="sec-title">2. Solicitações e Pipeline Comercial (${recentRequests.length})</td>
   </tr>
-  <tr height="30" style="mso-height-source:userset;height:22.5pt;">
-    <th class="tbl-head" align="left">Categoria</th>
-    <th class="tbl-head" align="left">Pacote / Solução Digital</th>
-    <th class="tbl-head" align="right">Preço Base (R$)</th>
-    <th class="tbl-head" align="center">Disponibilidade</th>
-    <th class="tbl-head" align="left">Identificador (Slug)</th>
-  </tr>
-  ${servicesList.length === 0
-            ? `<tr height="32" style="mso-height-source:userset;height:24pt;"><td colspan="5" class="cell-empty">Nenhum pacote de serviço cadastrado.</td></tr>`
-            : servicesList
-                .map((s: any, idx: number) => {
-                    const base = idx % 2 === 0 ? 'cell-even' : 'cell-odd';
-                    const catLabel = catPt[s.category] || s.category || 'Websites & Portais';
-                    const stCls = s.is_active ? 'cell-green' : 'cell-badge';
-                    return `<tr height="30" style="mso-height-source:userset;height:22.5pt;">
-    <td class="${base} cell-area">${esc(catLabel)}</td>
-    <td class="${base} cell-metric">${esc(s.title)}</td>
-    <td class="${base} cell-val">${esc(fmtBRL(s.price || 0))}</td>
-    <td class="${stCls}">${s.is_active ? 'Ativo no Site' : 'Inativo'}</td>
-    <td class="${base}">${esc(s.slug || '—')}</td>
-  </tr>`;
-                })
-                .join('\n  ')
-        }
-
-  <tr height="18"><td colspan="5"></td></tr>
-
-  <!-- SEÇÃO 3: ÚLTIMAS SOLICITAÇÕES DE CLIENTES -->
-  <tr height="34" style="mso-height-source:userset;height:25.5pt;">
-    <td colspan="5" class="sec-head">3. Últimas Solicitações &amp; Pipeline de Entrada (${recentRequests.length})</td>
-  </tr>
-  <tr height="30" style="mso-height-source:userset;height:22.5pt;">
+  <tr height="26" style="mso-height-source:userset;height:19.5pt;">
     <th class="tbl-head" align="left">Protocolo</th>
-    <th class="tbl-head" align="left">Demanda / Serviço Solicitado</th>
+    <th class="tbl-head" align="left">Demanda</th>
     <th class="tbl-head" align="left">Cliente / Empresa</th>
-    <th class="tbl-head" align="center">Status</th>
-    <th class="tbl-head" align="center">Data de Registro</th>
+    <th class="tbl-head" align="right">Status / Data</th>
   </tr>
   ${recentRequests.length === 0
-            ? `<tr height="32" style="mso-height-source:userset;height:24pt;"><td colspan="5" class="cell-empty">Nenhuma solicitação registrada no período atual.</td></tr>`
+            ? `<tr height="28" style="mso-height-source:userset;height:21pt;"><td colspan="4" class="cell-empty">Nenhuma solicitação registrada no período.</td></tr>`
             : recentRequests
-                .map((r: any, idx: number) => {
-                    const base = idx % 2 === 0 ? 'cell-even' : 'cell-odd';
-                    const st = statusPt[r.status] || r.status || 'Novo';
+                .map((r: any) => {
+                    const st = statusPt[r.status] || r.status || 'Recebido';
                     const dt = r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : '—';
-                    return `<tr height="30" style="mso-height-source:userset;height:22.5pt;">
-    <td class="${base} cell-area">${esc(r.protocol)}</td>
-    <td class="${base} cell-metric">${esc(r.service_title || r.title || 'Solicitação Digital')}</td>
-    <td class="${base}">${esc(r.company || r.name || 'Cliente')}</td>
-    <td class="cell-badge">${esc(st)}</td>
-    <td class="${base}" align="center">${esc(dt)}</td>
+                    return `<tr height="26" style="mso-height-source:userset;height:19.5pt;">
+    <td class="cell-muted">${esc(r.protocol)}</td>
+    <td class="cell-strong">${esc(r.service_title || r.title || 'Solicitação Digital')}</td>
+    <td class="cell">${esc(r.company || r.name || 'Cliente')}</td>
+    <td class="cell-num">${esc(st)} (${esc(dt)})</td>
   </tr>`;
                 })
                 .join('\n  ')
         }
 
-  <tr height="18"><td colspan="5"></td></tr>
-
-  <!-- SEÇÃO 4: DIRETÓRIO DE CLIENTES & LEADS -->
+  <!-- SEÇÃO 3: CARTEIRA DE CLIENTES -->
   <tr height="34" style="mso-height-source:userset;height:25.5pt;">
-    <td colspan="5" class="sec-head">4. Diretório Recente de Clientes &amp; Leads (${recentClients.length})</td>
+    <td colspan="4" class="sec-title">3. Carteira de Clientes e Leads (${recentClients.length})</td>
   </tr>
-  <tr height="30" style="mso-height-source:userset;height:22.5pt;">
-    <th class="tbl-head" align="left">Empresa / Nome</th>
-    <th class="tbl-head" align="left">E-mail / Canal de Origem</th>
-    <th class="tbl-head" align="left">Telefone / WhatsApp</th>
-    <th class="tbl-head" align="center">Categoria</th>
-    <th class="tbl-head" align="center">Data de Cadastro</th>
+  <tr height="26" style="mso-height-source:userset;height:19.5pt;">
+    <th class="tbl-head" align="left">Situação</th>
+    <th class="tbl-head" align="left">Cliente / Empresa</th>
+    <th class="tbl-head" align="left">Contato</th>
+    <th class="tbl-head" align="right">Telefone / Data</th>
   </tr>
   ${recentClients.length === 0
-            ? `<tr height="32" style="mso-height-source:userset;height:24pt;"><td colspan="5" class="cell-empty">Nenhum cliente ou lead cadastrado no momento.</td></tr>`
+            ? `<tr height="28" style="mso-height-source:userset;height:21pt;"><td colspan="4" class="cell-empty">Nenhum cliente cadastrado no período.</td></tr>`
             : recentClients
-                .map((cl: any, idx: number) => {
-                    const base = idx % 2 === 0 ? 'cell-even' : 'cell-odd';
+                .map((cl: any) => {
                     const isWa = String(cl.email || '').endsWith('.local');
-                    const catLabel = cl.status === 'active' ? 'Cliente Ativo' : isWa ? 'Lead WhatsApp' : 'Lead Site';
-                    const catClass = cl.status === 'active' ? 'cell-green' : 'cell-badge';
+                    const catLabel = cl.status === 'active' ? 'Cliente Ativo' : 'Lead';
                     const dt = cl.created_at ? new Date(cl.created_at).toLocaleDateString('pt-BR') : '—';
-                    return `<tr height="30" style="mso-height-source:userset;height:22.5pt;">
-    <td class="${base} cell-metric">${esc(cl.company || cl.name || 'Cliente')}</td>
-    <td class="${base}">${isWa ? 'WhatsApp Direto' : esc(cl.email || '—')}</td>
-    <td class="${base}">${esc(cl.phone || '—')}</td>
-    <td class="${catClass}">${esc(catLabel)}</td>
-    <td class="${base}" align="center">${esc(dt)}</td>
+                    const phoneStr = cl.phone ? `${cl.phone} (${dt})` : dt;
+                    return `<tr height="26" style="mso-height-source:userset;height:19.5pt;">
+    <td class="cell-muted">${esc(catLabel)}</td>
+    <td class="cell-strong">${esc(cl.company || cl.name || 'Cliente')}</td>
+    <td class="cell">${isWa ? 'Canal WhatsApp' : esc(cl.email || '—')}</td>
+    <td class="cell-num">${esc(phoneStr)}</td>
   </tr>`;
                 })
                 .join('\n  ')
         }
 
-  <tr height="18"><td colspan="5"></td></tr>
-  <tr height="32" style="mso-height-source:userset;height:24pt;">
-    <td colspan="5" class="footer-bar">
-      GUNDJATECH &bull; ENGENHARIA DIGITAL, SISTEMAS WEB, CIBERSEGURANÇA E OPERAÇÃO CONTÍNUA &bull; gundjatech.com
+  <tr height="14"><td colspan="4"></td></tr>
+  <tr height="24" style="mso-height-source:userset;height:18pt;">
+    <td colspan="4" class="doc-footer">
+      GundjaTech &bull; Documento de uso interno e confidencial
     </td>
   </tr>
 </table>
