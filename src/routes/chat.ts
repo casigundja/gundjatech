@@ -80,22 +80,26 @@ chatRoutes.post('/start', rateLimit({ keyPrefix: 'chat_start', maxRequests: 15, 
                 clientId = client.id;
             }
 
-            // 2. Cria solicitação de atendimento vinculada
-            await c.env.DB.prepare(
-                `INSERT INTO service_requests (protocol, tracking_code, client_id, name, email, phone, title, service_title, description, status, internal_notes, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, datetime('now'), datetime('now'))`
-            ).bind(
-                protocol,
-                protocol,
-                clientId,
-                nome,
-                email,
-                telefone || null,
-                assunto || `Chat do Site • ${nome}`,
-                assunto || `Chat do Site • ${nome}`,
-                mensagem,
-                `Canal: Chat Online | Tema: ${tema}`
-            ).run();
+            // 2. Cria solicitação de atendimento vinculada (isolado para não bloquear criação da conversa)
+            try {
+                await c.env.DB.prepare(
+                    `INSERT INTO service_requests (protocol, tracking_code, client_id, name, email, phone, title, service_title, description, status, internal_notes, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, datetime('now'), datetime('now'))`
+                ).bind(
+                    protocol,
+                    protocol,
+                    clientId,
+                    nome,
+                    email,
+                    telefone || null,
+                    assunto || `Chat do Site • ${nome}`,
+                    assunto || `Chat do Site • ${nome}`,
+                    mensagem,
+                    `Canal: Chat Online | Tema: ${tema}`
+                ).run();
+            } catch (reqErr) {
+                console.warn('Falha não-bloqueante ao vincular service_request ao chat:', reqErr);
+            }
 
             // 3. Cria conversa de chat
             const convRes = await c.env.DB.prepare(

@@ -11,6 +11,7 @@ interface AdminCrmProps {
     conversations: any[];
     settings: Record<string, string>;
     hasApiKey?: boolean;
+    whatsappSyncEnabled?: boolean;
     stats: {
         activeAutopilotCount: number;
         qualifyingCount: number;
@@ -37,6 +38,7 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
     conversations = [],
     settings = {},
     hasApiKey = false,
+    whatsappSyncEnabled = true,
     stats,
     successMessage,
     errorMessage
@@ -119,9 +121,9 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                 </a>
             </div>
 
-            {/* ROW 2: PIPELINE TABLE (7 cols) + AI CONFIG PANEL (5 cols) */}
-            <div class="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
-                <section class="xl:col-span-7 gtb-card !p-5 space-y-5">
+            {/* ROW 2: PIPELINE TABLE (7fr) + AI CONFIG PANEL (5fr) */}
+            <div class="gt-crm-grid">
+                <section class="gtb-card !p-5 space-y-5">
                     <div class="flex items-start justify-between gap-3 flex-wrap pb-4 border-b border-white/10">
                         <div>
                             <h2 class="gt-font-display text-sm sm:text-base font-extrabold text-white">Pipeline de Qualificação Autônoma</h2>
@@ -131,6 +133,20 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                             Abrir Chat ao Vivo →
                         </a>
                     </div>
+
+                    {!whatsappSyncEnabled && (
+                        <div class="gtb-surface-box rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+                            <div class="min-w-0">
+                                <div class="text-xs font-bold text-white">Sincronização do WhatsApp está pausada</div>
+                                <p class="text-[11px] text-[#8C95AA] mt-0.5">
+                                    Mensagens recebidas pelo WhatsApp não entram neste pipeline enquanto a sincronização estiver desativada nas configurações.
+                                </p>
+                            </div>
+                            <a href="/admin/configuracoes" class="gt-btn-outline gt-btn-xs shrink-0">
+                                Ativar em Configurações →
+                            </a>
+                        </div>
+                    )}
 
                     {conversations.length === 0 ? (
                         <div class="space-y-5 py-3">
@@ -147,7 +163,7 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                             </div>
 
                             {/* Mini fluxo de 3 etapas do que o agente faz */}
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-white/10">
+                            <div class="gt-crm-steps-grid pt-3 border-t border-white/10">
                                 <div class="gtb-surface-box rounded-xl p-3.5">
                                     <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#16749A] mb-1">01 · Captação</div>
                                     <div class="text-xs font-bold text-white">Atendimento 24/7</div>
@@ -181,15 +197,25 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                                     {conversations.map((conv: any) => {
                                         const score = Number(conv.lead_score || 0);
                                         const stageLabel = STAGE_LABELS[conv.crm_stage] || conv.crm_stage || 'Qualificação';
+                                        const displayName = conv.visitor_name || conv.client_name || 'Visitante';
+                                        const displayEmail = conv.visitor_email || conv.client_email || '';
+                                        const displayPhone = conv.visitor_phone || conv.client_phone || '';
+                                        const channelLabel =
+                                            conv.channel === 'whatsapp'
+                                                ? 'WhatsApp'
+                                                : conv.channel === 'web_chat'
+                                                ? 'Portal'
+                                                : 'Site';
+                                        const msgCount = Number(conv.message_count || 0);
                                         return (
                                             <tr class="hover:bg-white/[0.02]">
                                                 <td class="py-3 px-3 align-middle">
-                                                    <div class="font-bold text-white">{conv.visitor_name || 'Visitante'}</div>
-                                                    {conv.visitor_email && !String(conv.visitor_email).endsWith('.local') && (
-                                                        <div class="text-[11px] text-[#8C95AA]">{conv.visitor_email}</div>
+                                                    <div class="font-bold text-white">{displayName}</div>
+                                                    {displayEmail && !String(displayEmail).endsWith('.local') && (
+                                                        <div class="text-[11px] text-[#8C95AA]">{displayEmail}</div>
                                                     )}
-                                                    {conv.visitor_phone && (
-                                                        <div class="text-[11px] text-[#8C95AA] font-semibold mt-0.5" style="font-variant-numeric: tabular-nums;">{conv.visitor_phone}</div>
+                                                    {displayPhone && (
+                                                        <div class="text-[11px] text-[#8C95AA] font-semibold mt-0.5" style="font-variant-numeric: tabular-nums;">{displayPhone}</div>
                                                     )}
                                                 </td>
                                                 <td class="py-3 px-3 align-middle whitespace-nowrap">
@@ -201,9 +227,9 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                                                 <td class="py-3 px-3 align-middle max-w-xs">
                                                     <div class="flex items-center gap-2 flex-wrap mb-0.5">
                                                         <span class="gt-badge gt-badge-info">{stageLabel}</span>
-                                                        <span class="text-[10.5px] font-semibold text-[#8C95AA]">· {conv.channel === 'whatsapp' ? 'WhatsApp' : 'Site'}</span>
+                                                        <span class="text-[10.5px] font-semibold text-[#8C95AA]">· {channelLabel}{msgCount > 0 ? ` (${msgCount} msg)` : ''}</span>
                                                     </div>
-                                                    <p class="text-[11.5px] text-[#8C95AA] leading-snug truncate max-w-[220px]">{conv.subject || 'Atendimento Web'}</p>
+                                                    <p class="text-[11.5px] text-[#8C95AA] leading-snug truncate max-w-[220px]">{conv.last_message_preview || conv.subject || 'Atendimento Web'}</p>
                                                 </td>
                                                 <td class="py-3 px-3 align-middle whitespace-nowrap">
                                                     <span class={`gt-badge ${conv.ai_enabled && conv.status !== 'closed' ? 'gt-badge-success' : 'gt-badge-info'}`}>
@@ -253,7 +279,7 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                 </section>
 
                 {/* AI Configuration Panel (Clean Executive Card) */}
-                <aside class="xl:col-span-5 gtb-card !p-5 space-y-4">
+                <aside class="gtb-card !p-5 space-y-4">
                     <div class="flex items-center gap-3 pb-4 border-b border-white/10">
                         <span class="gtb-icon-box !w-9 !h-9">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>

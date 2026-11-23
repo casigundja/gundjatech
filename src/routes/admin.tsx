@@ -2455,20 +2455,41 @@ adminRoutes.get('/crm-autonomo', async (c) => {
     let conversations: any[] = [];
     let settingsMap: Record<string, string> = {};
     let aiQuotationsCount = 0;
+    let whatsappSyncEnabled = true;
 
     try {
         const convRes = await db.prepare(
-            `SELECT * FROM conversations ORDER BY updated_at DESC LIMIT 30`
+            `SELECT c.*,
+                    cl.name AS client_name,
+                    cl.email AS client_email,
+                    cl.phone AS client_phone,
+                    (SELECT COUNT(*) FROM conversation_messages m WHERE m.conversation_id = c.id) AS message_count,
+                    (SELECT m.message FROM conversation_messages m WHERE m.conversation_id = c.id ORDER BY m.id DESC LIMIT 1) AS last_message_preview
+             FROM conversations c
+             LEFT JOIN clients cl ON cl.id = c.client_id
+             ORDER BY COALESCE(c.last_message_at, c.updated_at, c.created_at) DESC
+             LIMIT 30`
         ).all();
         conversations = convRes.results || [];
-    } catch { }
+    } catch {
+        try {
+            const convRes = await db.prepare(
+                `SELECT * FROM conversations ORDER BY updated_at DESC LIMIT 30`
+            ).all();
+            conversations = convRes.results || [];
+        } catch { }
+    }
 
     try {
         const setRes = await db.prepare(
-            `SELECT key, value FROM system_settings WHERE group_name = 'crm_ai'`
+            `SELECT key, value FROM system_settings WHERE group_name = 'crm_ai' OR key = 'whatsapp_sync_enabled'`
         ).all<{ key: string; value: string }>();
         for (const row of setRes.results || []) {
-            settingsMap[row.key] = row.value || '';
+            if (row.key === 'whatsapp_sync_enabled') {
+                whatsappSyncEnabled = row.value !== '0';
+            } else {
+                settingsMap[row.key] = row.value || '';
+            }
         }
     } catch { }
 
@@ -2493,6 +2514,7 @@ adminRoutes.get('/crm-autonomo', async (c) => {
             conversations={conversations}
             settings={safeSettings}
             hasApiKey={hasApiKey}
+            whatsappSyncEnabled={whatsappSyncEnabled}
             stats={{
                 activeAutopilotCount,
                 qualifyingCount,
