@@ -3991,23 +3991,51 @@ html[data-admin-theme="light"] body.gt-admin-boost main :where(.text-\[\#F2C230\
     color: #063B5C !important;
 }
 
-/* 5. Mantém apenas badges de status sóbrios e limpos */
+/* 5. Status limpos: apenas a escrita nítida, sem fundo, borda ou sombreamento em volta */
+body.gt-admin-boost .gt-badge,
+body.gt-admin-boost .gt-badge-success,
+body.gt-admin-boost .gt-badge-warning,
+body.gt-admin-boost .gt-badge-info,
+body.gt-admin-boost .gt-badge-danger,
+body.gt-admin-boost .gt-req-pill-neutral,
+body.gt-admin-boost .gtb-badge-pill {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+}
+
+body.gt-admin-boost .gt-badge-success {
+    color: #6EE7B7 !important;
+}
+
+body.gt-admin-boost .gt-badge-warning {
+    color: #F2C230 !important;
+}
+
+body.gt-admin-boost .gt-badge-info,
+body.gt-admin-boost .gt-req-pill-neutral {
+    color: #A9C2D4 !important;
+}
+
+body.gt-admin-boost .gt-badge-danger {
+    color: #FCA5A5 !important;
+}
+
 html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-success {
-    background: #EDF6F2 !important;
     color: #0F5132 !important;
-    border-color: #C2DFD1 !important;
 }
 
-html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-warning {
-    background: #F4F7FA !important;
+html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-warning,
+html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-info,
+html[data-admin-theme="light"] body.gt-admin-boost .gt-req-pill-neutral,
+html[data-admin-theme="light"] body.gt-admin-boost .gtb-badge-pill {
     color: #063B5C !important;
-    border-color: #CFDDE7 !important;
 }
 
-html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-info {
-    background: #EDF4F8 !important;
-    color: #063B5C !important;
-    border-color: #C8DCE9 !important;
+html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-danger {
+    color: #991B1B !important;
 }
 
 
