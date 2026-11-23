@@ -448,3 +448,314 @@ video::-webkit-media-controls,video::-webkit-media-controls-panel,video::-webkit
   .topo-acesso svg{width:18px;height:18px;color:#FFFFFF}
   .pg-home .topo-fixo:not(.rolou) .topo-acesso svg,.pg-claro .topo-fixo:not(.rolou) .topo-acesso svg{color:#0B0E1A}
 }
+
+/* ==========================================================================
+   ACOMPANHE A GUNDJATECH — REELS SHOWCASE (Paleta 3: #063B5C / #16749A / #F2C230)
+   ========================================================================== */
+.gt-reels {
+  background: #FFFFFF;
+  padding: 88px 0 96px;
+  border-top: 1px solid #E7F0F5;
+}
+.gt-reels-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 36px;
+}
+.gt-reels-head h2 {
+  font-size: clamp(1.9rem, 3.4vw, 2.75rem);
+  font-weight: 800;
+  color: #063B5C;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.gt-reels-head h2 em {
+  font-style: italic;
+  font-weight: 800;
+  color: #16749A;
+}
+.gt-reels-handle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #063B5C;
+  text-decoration: none;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #F2C230;
+  transition: color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+.gt-reels-handle svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
+}
+.gt-reels-handle:hover {
+  color: #16749A;
+  border-bottom-color: #063B5C;
+}
+.gt-reels-handle:hover svg {
+  transform: translateX(4px);
+}
+.gt-reels-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+.gt-reel-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  aspect-ratio: 9 / 13.5;
+  border-radius: 20px;
+  overflow: hidden;
+  padding: 20px 18px 18px;
+  text-decoration: none;
+  color: #FFFFFF;
+  background: #063B5C;
+  box-shadow: 0 18px 40px -22px rgba(6, 59, 92, 0.45);
+  transition: transform 0.35s cubic-bezier(0.16, 0.84, 0.3, 1), box-shadow 0.35s ease;
+  isolation: isolate;
+}
+.gt-reel-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 28px 52px -20px rgba(6, 59, 92, 0.58);
+}
+.gt-reel-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1.2px);
+  background-size: 18px 18px;
+  opacity: 0.28;
+  pointer-events: none;
+}
+.gt-reel-card--1 {
+  background:
+    radial-gradient(85% 65% at 15% 15%, rgba(242, 194, 48, 0.22) 0%, transparent 65%),
+    radial-gradient(90% 80% at 85% 90%, rgba(22, 116, 154, 0.85) 0%, transparent 70%),
+    linear-gradient(155deg, #E7F0F5 0%, #B8D5E4 46%, #0E5678 100%);
+  color: #063B5C;
+}
+.gt-reel-card--2 {
+  background:
+    radial-gradient(80% 70% at 85% 18%, rgba(242, 194, 48, 0.26) 0%, transparent 62%),
+    linear-gradient(160deg, #063B5C 0%, #0D4F73 52%, #042235 100%);
+}
+.gt-reel-card--3 {
+  background:
+    radial-gradient(90% 60% at 50% 95%, rgba(22, 116, 154, 0.72) 0%, transparent 72%),
+    radial-gradient(60% 45% at 80% 15%, rgba(242, 194, 48, 0.24) 0%, transparent 65%),
+    linear-gradient(165deg, #0A2E47 0%, #063B5C 55%, #041A29 100%);
+}
+.gt-reel-card--4 {
+  background:
+    radial-gradient(80% 55% at 50% 82%, rgba(242, 194, 48, 0.34) 0%, transparent 65%),
+    linear-gradient(160deg, #0B4A6B 0%, #063B5C 58%, #041D2E 100%);
+}
+.gt-reel-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  position: relative;
+  z-index: 2;
+}
+.gt-reel-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.gt-reel-brand img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+.gt-reel-domain {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.8;
+}
+.gt-reel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(6, 59, 92, 0.55);
+  color: #F2C230;
+  border: 1px solid rgba(242, 194, 48, 0.4);
+  backdrop-filter: blur(8px);
+}
+.gt-reel-body {
+  position: relative;
+  z-index: 2;
+  margin: auto 0;
+  padding: 12px 0;
+}
+.gt-reel-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gt-reel-stat-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  line-height: 0.92;
+}
+.gt-reel-stat-row b {
+  font-size: clamp(2.5rem, 4.2vw, 3.55rem);
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  color: #063B5C;
+  text-shadow: 0 6px 24px rgba(22, 116, 154, 0.35);
+}
+.gt-reel-stat-row span {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #063B5C;
+}
+.gt-reel-kicker {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #F2C230;
+  margin-bottom: 10px;
+  display: block;
+}
+.gt-reel-title {
+  font-size: clamp(1.3rem, 2vw, 1.65rem);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  color: #FFFFFF;
+}
+.gt-reel-title em {
+  font-style: normal;
+  color: #F2C230;
+}
+.gt-reel-sub {
+  margin-top: 10px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: rgba(231, 240, 245, 0.85);
+}
+.gt-reel-big3 {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.gt-reel-big3 strong {
+  font-size: clamp(3.6rem, 5.5vw, 4.8rem);
+  font-weight: 900;
+  line-height: 0.85;
+  color: #F2C230;
+  letter-spacing: -0.05em;
+}
+.gt-reel-big3 span {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: #FFFFFF;
+}
+.gt-reel-foot {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.88);
+}
+.gt-reel-card--1 .gt-reel-foot {
+  border-top-color: rgba(6, 59, 92, 0.16);
+  color: #FFFFFF;
+}
+.gt-reel-play {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #F2C230;
+  color: #063B5C;
+  flex-shrink: 0;
+  box-shadow: 0 8px 18px rgba(242, 194, 48, 0.35);
+  transition: transform 0.25s ease;
+}
+.gt-reel-card:hover .gt-reel-play {
+  transform: scale(1.1);
+}
+.gt-reels-social-bar {
+  margin-top: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.gt-reels-social-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid #D5E4EE;
+  background: #F7FAFC;
+  color: #063B5C;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.gt-reels-social-pill:hover {
+  border-color: #F2C230;
+  background: #063B5C;
+  color: #FFFFFF;
+}
+.gt-reels-social-pill svg {
+  width: 15px;
+  height: 15px;
+}
+@media (max-width: 1024px) {
+  .gt-reels-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .gt-reels {
+    padding: 64px 0 72px;
+  }
+  .gt-reels-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .gt-reel-card {
+    padding: 14px 13px;
+    border-radius: 16px;
+  }
+  .gt-reel-title {
+    font-size: 1.05rem;
+  }
+  .gt-reel-sub {
+    font-size: 11px;
+  }
+}
