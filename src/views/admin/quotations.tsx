@@ -70,11 +70,6 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                         <span>{linkedRequest?.protocol ? `Voltar para Solicitação ${linkedRequest.protocol}` : 'Voltar para Orçamentos'}</span>
                     </a>
                     <div class="gt-detail-toolbar-actions">
-                        {linkedRequest?.id && (
-                            <a href={`/admin/solicitacoes/${linkedRequest.id}`} class="gt-btn-outline gt-btn-sm">
-                                <span>Solicitação {linkedRequest.protocol}</span>
-                            </a>
-                        )}
                         <button type="button" onclick="window.print()" class="gt-btn-outline gt-btn-sm">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="6 9 6 2 18 2 18 9" />
