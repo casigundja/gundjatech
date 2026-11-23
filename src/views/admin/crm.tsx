@@ -12,6 +12,14 @@ interface AdminCrmProps {
     settings: Record<string, string>;
     hasApiKey?: boolean;
     whatsappSyncEnabled?: boolean;
+    channelControls?: {
+        siteChatAiEnabled: boolean;
+        whatsappSyncEnabled: boolean;
+        whatsappAiEnabled: boolean;
+        whatsappDirectorEnabled: boolean;
+        officialWhatsappPhone: string;
+        directorWhatsappPhone: string;
+    };
     stats: {
         activeAutopilotCount: number;
         qualifyingCount: number;
@@ -39,6 +47,14 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
     settings = {},
     hasApiKey = false,
     whatsappSyncEnabled = true,
+    channelControls = {
+        siteChatAiEnabled: true,
+        whatsappSyncEnabled: true,
+        whatsappAiEnabled: true,
+        whatsappDirectorEnabled: true,
+        officialWhatsappPhone: '',
+        directorWhatsappPhone: ''
+    },
     stats,
     successMessage,
     errorMessage
@@ -112,13 +128,102 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                     <span class="gt-badge gt-badge-success">Gerados</span>
                 </a>
 
-                <a href="/admin/atendimento?status=open" class="gtb-card !p-4 flex items-center justify-between gap-2 no-underline cursor-pointer hover:-translate-y-0.5 transition">
+                <a href="/admin/atendimento?status=handoff" class="gtb-card !p-4 flex items-center justify-between gap-2 no-underline cursor-pointer hover:-translate-y-0.5 transition">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Transferidos Humano</span>
                         <span class="gt-font-display text-xl font-extrabold text-[#F2C230] mt-0.5 block">{stats.handoffCount}</span>
                     </div>
                     <span class="gt-badge gt-badge-warning">Handoff</span>
                 </a>
+            </div>
+
+            {/* ROW 1B: CONTROLE INDEPENDENTE DOS 3 CANAIS (SITE IA · WHATSAPP 1 · WHATSAPP 2 DIRETOR) */}
+            <div class="gt-crm-steps-grid">
+                {/* Canal 1: Chat do Site */}
+                <div class="gtb-card !p-4 flex flex-col justify-between gap-3">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#16749A]">Canal 01 · Site</span>
+                            <h3 class="text-xs font-extrabold text-white mt-0.5">Chat Autônomo do Site</h3>
+                            <p class="text-[11px] text-[#8C95AA] mt-0.5">Widget do site conectado ao CRM e Inbox.</p>
+                        </div>
+                        <span class={`gt-badge shrink-0 ${channelControls.siteChatAiEnabled && aiEnabled ? 'gt-badge-success' : 'gt-badge-danger'}`}>
+                            {channelControls.siteChatAiEnabled && aiEnabled ? 'IA Ativa' : 'Pausado'}
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between gap-2 pt-2 border-t border-white/10">
+                        <span class="text-[10.5px] text-[#8C95AA]">Resposta IA no site</span>
+                        <form action="/admin/canais/toggle" method="post" class="m-0">
+                            <input type="hidden" name="channel" value="site_chat_ai_enabled" />
+                            <input type="hidden" name="enabled" value={channelControls.siteChatAiEnabled ? '0' : '1'} />
+                            <input type="hidden" name="return_to" value="/admin/crm-autonomo" />
+                            <button type="submit" data-loading-text="..." class="gt-btn-outline gt-btn-xs">
+                                {channelControls.siteChatAiEnabled ? 'Pausar IA' : 'Ativar IA'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                {/* Canal 2: WhatsApp 1 (Oficial / CRM IA) */}
+                <div class="gtb-card !p-4 flex flex-col justify-between gap-3">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#16749A]">Canal 02 · WhatsApp 1</span>
+                            <h3 class="text-xs font-extrabold text-white mt-0.5">Oficial / Atendimento CRM IA</h3>
+                            <p class="text-[11px] text-[#8C95AA] mt-0.5 font-mono truncate">
+                                {channelControls.officialWhatsappPhone || 'Número oficial (Configurações)'}
+                            </p>
+                        </div>
+                        <span class={`gt-badge shrink-0 ${channelControls.whatsappSyncEnabled ? 'gt-badge-success' : 'gt-badge-danger'}`}>
+                            {channelControls.whatsappSyncEnabled ? (channelControls.whatsappAiEnabled ? 'Ativo + IA' : 'Só Inbox') : 'Pausado'}
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between gap-1.5 flex-wrap pt-2 border-t border-white/10">
+                        <form action="/admin/canais/toggle" method="post" class="m-0">
+                            <input type="hidden" name="channel" value="whatsapp_sync_enabled" />
+                            <input type="hidden" name="enabled" value={channelControls.whatsappSyncEnabled ? '0' : '1'} />
+                            <input type="hidden" name="return_to" value="/admin/crm-autonomo" />
+                            <button type="submit" data-loading-text="..." class={channelControls.whatsappSyncEnabled ? 'gt-btn-outline gt-btn-xs' : 'gt-btn-petrol gt-btn-xs'}>
+                                {channelControls.whatsappSyncEnabled ? 'Pausar Canal' : 'Ativar Canal'}
+                            </button>
+                        </form>
+                        <form action="/admin/canais/toggle" method="post" class="m-0">
+                            <input type="hidden" name="channel" value="whatsapp_ai_enabled" />
+                            <input type="hidden" name="enabled" value={channelControls.whatsappAiEnabled ? '0' : '1'} />
+                            <input type="hidden" name="return_to" value="/admin/crm-autonomo" />
+                            <button type="submit" data-loading-text="..." class="gt-btn-outline gt-btn-xs">
+                                {channelControls.whatsappAiEnabled ? 'Pausar IA' : 'Ativar IA'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                {/* Canal 3: WhatsApp 2 (Diretor / Humano) */}
+                <div class="gtb-card !p-4 flex flex-col justify-between gap-3">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#16749A]">Canal 03 · WhatsApp 2</span>
+                            <h3 class="text-xs font-extrabold text-white mt-0.5">Direto com o Diretor (Handoff)</h3>
+                            <p class="text-[11px] text-[#8C95AA] mt-0.5 font-mono truncate">
+                                {channelControls.directorWhatsappPhone || 'Número do diretor (Configurações)'}
+                            </p>
+                        </div>
+                        <span class={`gt-badge shrink-0 ${channelControls.whatsappDirectorEnabled ? 'gt-badge-success' : 'gt-badge-danger'}`}>
+                            {channelControls.whatsappDirectorEnabled ? 'Recebendo' : 'Pausado'}
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between gap-2 pt-2 border-t border-white/10">
+                        <span class="text-[10.5px] text-[#8C95AA]">Alertas &amp; ponte humano</span>
+                        <form action="/admin/canais/toggle" method="post" class="m-0">
+                            <input type="hidden" name="channel" value="whatsapp_director_enabled" />
+                            <input type="hidden" name="enabled" value={channelControls.whatsappDirectorEnabled ? '0' : '1'} />
+                            <input type="hidden" name="return_to" value="/admin/crm-autonomo" />
+                            <button type="submit" data-loading-text="..." class={channelControls.whatsappDirectorEnabled ? 'gt-btn-outline gt-btn-xs' : 'gt-btn-petrol gt-btn-xs'}>
+                                {channelControls.whatsappDirectorEnabled ? 'Pausar Diretor' : 'Ativar Diretor'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
 
             {/* ROW 2: PIPELINE TABLE (7fr) + AI CONFIG PANEL (5fr) */}

@@ -36,6 +36,8 @@ function getBrazilPhoneVariants(digits: string): string[] {
 interface ResolvedWhatsAppConfig {
     provider: WhatsAppProvider;
     syncEnabled: boolean;
+    whatsappAiEnabled: boolean;
+    directorEnabled: boolean;
     directorPhone: string;
     // Meta Cloud API
     metaAccessToken: string;
@@ -55,6 +57,8 @@ async function resolveWhatsAppConfig(env: Env): Promise<ResolvedWhatsAppConfig> 
     const cfg: ResolvedWhatsAppConfig = {
         provider: 'meta',
         syncEnabled: true,
+        whatsappAiEnabled: true,
+        directorEnabled: true,
         directorPhone: '',
         metaAccessToken: (env.WHATSAPP_ACCESS_TOKEN || '').trim(),
         metaPhoneNumberId: (env.WHATSAPP_PHONE_NUMBER_ID || '').trim(),
@@ -73,6 +77,8 @@ async function resolveWhatsAppConfig(env: Env): Promise<ResolvedWhatsAppConfig> 
                 `SELECT key, value FROM system_settings WHERE key IN (
                     'whatsapp_provider',
                     'whatsapp_sync_enabled',
+                    'whatsapp_ai_enabled',
+                    'whatsapp_director_enabled',
                     'whatsapp_director_phone',
                     'whatsapp_access_token',
                     'whatsapp_phone_number_id',
@@ -89,6 +95,14 @@ async function resolveWhatsAppConfig(env: Env): Promise<ResolvedWhatsAppConfig> 
                 const val = String(row.value || '').trim();
                 if (row.key === 'whatsapp_sync_enabled') {
                     cfg.syncEnabled = val !== '0';
+                    continue;
+                }
+                if (row.key === 'whatsapp_ai_enabled') {
+                    cfg.whatsappAiEnabled = val !== '0';
+                    continue;
+                }
+                if (row.key === 'whatsapp_director_enabled') {
+                    cfg.directorEnabled = val !== '0';
                     continue;
                 }
                 if (!val) continue;
@@ -350,16 +364,21 @@ export async function sendDirectorWhatsAppAlert(
         message: string;
         originUrl?: string;
         isFollowUp?: boolean;
+        sourceChannel?: 'website_chat' | 'whatsapp';
     }
 ): Promise<WhatsAppSendResult> {
     const cfg = await resolveWhatsAppConfig(env);
+    if (!cfg.directorEnabled) {
+        return { ok: false, provider: cfg.provider, error: 'Recebimento no WhatsApp 2 (Diretor) está pausado nas configurações.' };
+    }
     if (!cfg.directorPhone) {
         return { ok: false, provider: cfg.provider, error: 'WhatsApp do Diretor não configurado em /admin/configuracoes.' };
     }
 
+    const originLabel = params.sourceChannel === 'whatsapp' ? 'WhatsApp Oficial' : 'Chat do Site';
     const header = params.isFollowUp
-        ? '💬 *Nova mensagem (Atendimento Humano — Site)*'
-        : '🔔 *Solicitação de Atendimento Humano — Chat do Site*';
+        ? `💬 *Nova mensagem (Atendimento Humano — ${originLabel})*`
+        : `🔔 *Solicitação de Atendimento Humano — ${originLabel}*`;
 
     const lines = [
         header,

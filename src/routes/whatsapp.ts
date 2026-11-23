@@ -6,9 +6,20 @@ import {
     markWhatsAppMessageRead,
     normalizeWhatsAppPhone,
     sameWhatsAppPhone,
+    sendDirectorWhatsAppAlert,
     sendWhatsAppTextMessage,
     type WhatsAppProvider
 } from '../services/whatsapp';
+
+function isWhatsAppHumanHandoffRequest(text: string): boolean {
+    const normalized = String(text || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    return /(falar com (um |o |a )?(humano|atendente|pessoa|alguem|diretor|consultor|especialista|gerente|vendedor)|atendimento humano|transferir para humano|suporte humano|quero (um )?humano|quero falar com (uma )?pessoa|chamar (um )?(humano|atendente|diretor))/.test(
+        normalized
+    );
+}
 
 export const whatsappRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -246,17 +257,25 @@ whatsappRoutes.post('/', async (c) => {
         } catch {}
     }
 
-    // Carrega status da sincronização WhatsApp e número do Diretor em /admin/configuracoes
+    // Carrega status dos canais WhatsApp 1 (Oficial/IA) e WhatsApp 2 (Diretor) em /admin/configuracoes
     let syncPaused = false;
+    let whatsappAiEnabled = true;
+    let directorEnabled = true;
     let directorPhone = '';
     if (c.env?.DB) {
         try {
             const cfgRows = await c.env.DB.prepare(
-                `SELECT key, value FROM system_settings WHERE key IN ('whatsapp_sync_enabled', 'whatsapp_director_phone')`
+                `SELECT key, value FROM system_settings WHERE key IN ('whatsapp_sync_enabled', 'whatsapp_ai_enabled', 'whatsapp_director_enabled', 'whatsapp_director_phone')`
             ).all<{ key: string; value: string }>();
             for (const row of cfgRows.results || []) {
                 if (row.key === 'whatsapp_sync_enabled' && row.value === '0') {
                     syncPaused = true;
+                }
+                if (row.key === 'whatsapp_ai_enabled' && row.value === '0') {
+                    whatsappAiEnabled = false;
+                }
+                if (row.key === 'whatsapp_director_enabled' && row.value === '0') {
+                    directorEnabled = false;
                 }
                 if (row.key === 'whatsapp_director_phone' && row.value) {
                     directorPhone = normalizeWhatsAppPhone(row.value);
@@ -293,8 +312,8 @@ whatsappRoutes.post('/', async (c) => {
             } catch {}
         }
 
-        // Ponte Bidirecional: Se quem respondeu no WhatsApp é o Diretor, injeta a resposta direto no Chat do Site!
-        if (directorPhone && sameWhatsAppPhone(fromPhone, directorPhone) && c.env?.DB) {
+        // Ponte Bidirecional: Se WhatsApp 2 (Diretor) estiver ativo e quem respondeu é o Diretor, injeta a resposta no atendimento!
+        if (directorEnabled && directorPhone && sameWhatsAppPhone(fromPhone, directorPhone) && c.env?.DB) {
             let targetConvId = 0;
             let cleanReplyText = text.trim();
 
@@ -435,9 +454,52 @@ whatsappRoutes.post('/', async (c) => {
             await markWhatsAppMessageRead(c.env, messageId);
         }
 
-        // 4. Se Piloto Automático IA estiver ativo, gera resposta e envia ao WhatsApp
+        // 4. Handoff Humano unificado (WhatsApp 1 -> Inbox Aguardando Humano + WhatsApp 2 Diretor) ou Piloto Automático IA
         let replied = false;
-        if (globalAiEnabled && conversationAiEnabled && conversationId) {
+        const originUrl = new URL(c.req.url).origin;
+        const wantsHuman = isWhatsAppHumanHandoffRequest(text);
+
+        if (wantsHuman && conversationId) {
+            const handoffMsg = directorEnabled && directorPhone
+                ? 'Perfeito! Já transferi o seu atendimento para nossa equipe humana e notifiquei nosso diretor. Em instantes você será atendido por aqui.'
+                : 'Perfeito! Já transferi o seu atendimento para a fila humana no nosso painel. Um especialista da GundjaTech dará continuidade em breve.';
+
+            try {
+                if (c.env?.DB) {
+                    await c.env.DB.prepare(
+                        `UPDATE conversations
+                         SET ai_enabled = 0,
+                             crm_stage = 'handoff_human',
+                             status = 'waiting_staff',
+                             handoff_at = COALESCE(handoff_at, datetime('now')),
+                             updated_at = datetime('now')
+                         WHERE id = ?`
+                    ).bind(conversationId).run();
+
+                    await c.env.DB.prepare(
+                        `INSERT INTO conversation_messages (conversation_id, sender_type, message, is_ai, created_at, updated_at)
+                         VALUES (?, 'agent', ?, 1, datetime('now'), datetime('now'))`
+                    ).bind(conversationId, handoffMsg).run();
+                }
+            } catch {}
+
+            const sendRes = await sendWhatsAppTextMessage(c.env, fromPhone, handoffMsg, provider);
+            replied = sendRes.ok;
+
+            if (directorEnabled) {
+                try {
+                    await sendDirectorWhatsAppAlert(c.env, {
+                        conversationId,
+                        visitorName: contactName,
+                        visitorPhone: fromPhone,
+                        serviceTopic: `WhatsApp Oficial • ${contactName}`,
+                        message: text,
+                        originUrl,
+                        sourceChannel: 'whatsapp'
+                    });
+                } catch {}
+            }
+        } else if (globalAiEnabled && whatsappAiEnabled && conversationAiEnabled && conversationId) {
             const agent = new AutonomousCrmAgent(c.env);
             const aiReply = await agent.handleIncomingMessage(conversationId, text, contactName);
             if (aiReply?.message) {
@@ -459,6 +521,19 @@ whatsappRoutes.post('/', async (c) => {
                         );
                     } catch {}
                 }
+            }
+            if (aiReply?.handoff && directorEnabled) {
+                try {
+                    await sendDirectorWhatsAppAlert(c.env, {
+                        conversationId,
+                        visitorName: contactName,
+                        visitorPhone: fromPhone,
+                        serviceTopic: `WhatsApp Oficial • ${contactName}`,
+                        message: text,
+                        originUrl,
+                        sourceChannel: 'whatsapp'
+                    });
+                } catch {}
             }
         }
 

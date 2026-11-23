@@ -2534,7 +2534,12 @@ adminRoutes.get('/crm-autonomo', async (c) => {
     let conversations: any[] = [];
     let settingsMap: Record<string, string> = {};
     let aiQuotationsCount = 0;
+    let siteChatAiEnabled = true;
     let whatsappSyncEnabled = true;
+    let whatsappAiEnabled = true;
+    let whatsappDirectorEnabled = true;
+    let officialWhatsappPhone = '';
+    let directorWhatsappPhone = '';
 
     try {
         const convRes = await db.prepare(
@@ -2561,11 +2566,23 @@ adminRoutes.get('/crm-autonomo', async (c) => {
 
     try {
         const setRes = await db.prepare(
-            `SELECT key, value FROM system_settings WHERE group_name = 'crm_ai' OR key = 'whatsapp_sync_enabled'`
+            `SELECT key, value FROM system_settings
+             WHERE group_name = 'crm_ai'
+                OR key IN ('site_chat_ai_enabled', 'whatsapp_sync_enabled', 'whatsapp_ai_enabled', 'whatsapp_director_enabled', 'company_whatsapp', 'whatsapp_director_phone')`
         ).all<{ key: string; value: string }>();
         for (const row of setRes.results || []) {
-            if (row.key === 'whatsapp_sync_enabled') {
+            if (row.key === 'site_chat_ai_enabled') {
+                siteChatAiEnabled = row.value !== '0';
+            } else if (row.key === 'whatsapp_sync_enabled') {
                 whatsappSyncEnabled = row.value !== '0';
+            } else if (row.key === 'whatsapp_ai_enabled') {
+                whatsappAiEnabled = row.value !== '0';
+            } else if (row.key === 'whatsapp_director_enabled') {
+                whatsappDirectorEnabled = row.value !== '0';
+            } else if (row.key === 'company_whatsapp') {
+                officialWhatsappPhone = row.value || '';
+            } else if (row.key === 'whatsapp_director_phone') {
+                directorWhatsappPhone = row.value || '';
             } else {
                 settingsMap[row.key] = row.value || '';
             }
@@ -2594,6 +2611,14 @@ adminRoutes.get('/crm-autonomo', async (c) => {
             settings={safeSettings}
             hasApiKey={hasApiKey}
             whatsappSyncEnabled={whatsappSyncEnabled}
+            channelControls={{
+                siteChatAiEnabled,
+                whatsappSyncEnabled,
+                whatsappAiEnabled,
+                whatsappDirectorEnabled,
+                officialWhatsappPhone,
+                directorWhatsappPhone
+            }}
             stats={{
                 activeAutopilotCount,
                 qualifyingCount,
@@ -2604,6 +2629,39 @@ adminRoutes.get('/crm-autonomo', async (c) => {
             errorMessage={errorMessage}
         />
     );
+});
+
+adminRoutes.post('/canais/toggle', async (c) => {
+    const db = c.env.DB;
+    const body = await getRequestBody(c);
+    const channel = String(body.channel || '').trim();
+    const enabled = String(body.enabled || '') === '1' ? '1' : '0';
+    const returnTo = String(body.return_to || '/admin/crm-autonomo').startsWith('/admin/')
+        ? String(body.return_to)
+        : '/admin/crm-autonomo';
+
+    const allowedChannels: Record<string, { group: string; label: string }> = {
+        site_chat_ai_enabled: { group: 'crm_ai', label: 'IA do Chat do Site' },
+        whatsapp_sync_enabled: { group: 'integrations', label: 'Recebimento WhatsApp 1 (Oficial)' },
+        whatsapp_ai_enabled: { group: 'integrations', label: 'IA no WhatsApp 1 (Oficial)' },
+        whatsapp_director_enabled: { group: 'integrations', label: 'Alertas e Ponte WhatsApp 2 (Diretor)' }
+    };
+
+    const meta = allowedChannels[channel];
+    if (!meta) {
+        return c.redirect(`${returnTo}?error=Canal inválido`);
+    }
+
+    try {
+        await db.prepare(
+            `INSERT INTO system_settings (key, value, type, group_name, created_at, updated_at)
+             VALUES (?, ?, 'string', ?, datetime('now'), datetime('now'))
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`
+        ).bind(channel, enabled, meta.group).run();
+    } catch { }
+
+    const statusTxt = enabled === '1' ? 'ativado' : 'pausado';
+    return c.redirect(`${returnTo}?success=${encodeURIComponent(`${meta.label} ${statusTxt} com sucesso`)}`);
 });
 
 adminRoutes.post('/crm-autonomo/configuracoes', async (c) => {
@@ -2667,6 +2725,8 @@ adminRoutes.get('/configuracoes', async (c) => {
 
     const activeProvider = settingsMap.whatsapp_provider || 'zapi_omni';
     const whatsappSyncEnabled = settingsMap.whatsapp_sync_enabled !== '0';
+    const whatsappAiEnabled = settingsMap.whatsapp_ai_enabled !== '0';
+    const whatsappDirectorEnabled = settingsMap.whatsapp_director_enabled !== '0';
     const whatsappConfigured =
         activeProvider === 'zapi' || activeProvider === 'zapi_omni'
             ? Boolean(settingsMap.whatsapp_zapi_instance_id && settingsMap.whatsapp_zapi_token)
@@ -2702,6 +2762,8 @@ adminRoutes.get('/configuracoes', async (c) => {
             settings={settingsMap}
             whatsappConfigured={whatsappConfigured}
             whatsappSyncEnabled={whatsappSyncEnabled}
+            whatsappAiEnabled={whatsappAiEnabled}
+            whatsappDirectorEnabled={whatsappDirectorEnabled}
             whatsappLastError={whatsappLastError}
             webhookUrl={`${origin}/api/webhooks/whatsapp`}
             verifyToken={c.env.WHATSAPP_VERIFY_TOKEN || 'gundjatech_wa_verify_2026'}
@@ -2724,7 +2786,9 @@ adminRoutes.post('/configuracoes', async (c) => {
         ['company_whatsapp', String(body.company_whatsapp || '').trim(), 'general'],
         ['whatsapp_director_phone', String(body.whatsapp_director_phone || '').replace(/\D+/g, ''), 'integrations'],
         ['company_address', String(body.company_address || '').trim(), 'general'],
-        ['whatsapp_sync_enabled', body.whatsapp_sync_enabled ? '1' : '0', 'integrations']
+        ['whatsapp_sync_enabled', body.whatsapp_sync_enabled ? '1' : '0', 'integrations'],
+        ['whatsapp_ai_enabled', body.whatsapp_ai_enabled ? '1' : '0', 'integrations'],
+        ['whatsapp_director_enabled', body.whatsapp_director_enabled ? '1' : '0', 'integrations']
     ];
 
     const provider = String(body.whatsapp_provider || '').trim();

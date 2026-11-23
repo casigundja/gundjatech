@@ -6,6 +6,8 @@ interface AdminSettingsProps {
     settings: Record<string, string>;
     whatsappConfigured: boolean;
     whatsappSyncEnabled?: boolean;
+    whatsappAiEnabled?: boolean;
+    whatsappDirectorEnabled?: boolean;
     whatsappLastError?: string | null;
     webhookUrl: string;
     verifyToken: string;
@@ -18,6 +20,8 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
     settings = {},
     whatsappConfigured,
     whatsappSyncEnabled = true,
+    whatsappAiEnabled = true,
+    whatsappDirectorEnabled = true,
     whatsappLastError = null,
     webhookUrl,
     verifyToken,
@@ -173,15 +177,15 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                         </span>
                     </div>
 
-                    {/* Switch Liga/Desliga Sincronização WhatsApp */}
-                    <div class="gtb-surface-box rounded-xl overflow-hidden">
-                        <label class="flex items-center justify-between gap-3 px-3.5 py-3 cursor-pointer hover:bg-white/[0.03] transition">
+                    {/* Controles Independentes: WhatsApp 1 (Oficial/IA) e WhatsApp 2 (Diretor) */}
+                    <div class="gtb-surface-box rounded-xl divide-y divide-white/10 overflow-hidden">
+                        <label class="flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer hover:bg-white/[0.03] transition">
                             <div class="min-w-0">
-                                <div class="text-xs font-bold text-white leading-tight">Sincronização WhatsApp Ativa</div>
+                                <div class="text-xs font-bold text-white leading-tight">WhatsApp 1 · Recebimento &amp; Envio</div>
                                 <div class="text-[10.5px] text-[#8C95AA] mt-0.5">
                                     {whatsappSyncEnabled
-                                        ? 'Ativa — clique para pausar imediatamente recebimento e envios no WhatsApp'
-                                        : 'Pausada — clique para reativar imediatamente a sincronização com o WhatsApp'}
+                                        ? 'Ativo — recebe mensagens diretas no número oficial'
+                                        : 'Pausado — webhook do WhatsApp 1 ignorado'}
                                 </div>
                             </div>
                             <input
@@ -189,8 +193,43 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                                 name="whatsapp_sync_enabled"
                                 value="1"
                                 checked={whatsappSyncEnabled}
-                                onchange="this.form.submit()"
-                                class="gt-switch"
+                                class="gt-switch shrink-0"
+                            />
+                        </label>
+
+                        <label class="flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer hover:bg-white/[0.03] transition">
+                            <div class="min-w-0">
+                                <div class="text-xs font-bold text-white leading-tight">WhatsApp 1 · Resposta Automática IA</div>
+                                <div class="text-[10.5px] text-[#8C95AA] mt-0.5">
+                                    {whatsappAiEnabled
+                                        ? 'Ativa — CRM IA responde e qualifica no WhatsApp 1'
+                                        : 'Pausada — mensagens entram no Inbox para humano'}
+                                </div>
+                            </div>
+                            <input
+                                type="checkbox"
+                                name="whatsapp_ai_enabled"
+                                value="1"
+                                checked={whatsappAiEnabled}
+                                class="gt-switch shrink-0"
+                            />
+                        </label>
+
+                        <label class="flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer hover:bg-white/[0.03] transition">
+                            <div class="min-w-0">
+                                <div class="text-xs font-bold text-white leading-tight">WhatsApp 2 · Alertas &amp; Ponte do Diretor</div>
+                                <div class="text-[10.5px] text-[#8C95AA] mt-0.5">
+                                    {whatsappDirectorEnabled
+                                        ? 'Ativo — recebe handoff humano do Site e WhatsApp 1'
+                                        : 'Pausado — handoffs ficam apenas na fila do Inbox'}
+                                </div>
+                            </div>
+                            <input
+                                type="checkbox"
+                                name="whatsapp_director_enabled"
+                                value="1"
+                                checked={whatsappDirectorEnabled}
+                                class="gt-switch shrink-0"
                             />
                         </label>
                     </div>

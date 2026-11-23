@@ -183,4 +183,84 @@ describe('Integração Meta WhatsApp Cloud API & CRM Autônomo', () => {
             expect.objectContaining({ method: 'POST' })
         );
     });
+
+    it('deve salvar no Inbox sem resposta da IA quando whatsapp_ai_enabled estiver pausado', async () => {
+        const fetchMock = vi.spyOn(globalThis, 'fetch');
+        const mockEnv = {
+            DB: {
+                prepare: (sql: string) => ({
+                    bind: () => ({
+                        first: async () => null,
+                        all: async () => ({ results: [] }),
+                        run: async () => ({ meta: { last_row_id: 88 } })
+                    }),
+                    first: async () => null,
+                    all: async () => ({
+                        results: sql.includes('whatsapp_ai_enabled')
+                            ? [
+                                { key: 'whatsapp_sync_enabled', value: '1' },
+                                { key: 'whatsapp_ai_enabled', value: '0' },
+                                { key: 'whatsapp_director_enabled', value: '1' }
+                            ]
+                            : []
+                    }),
+                    run: async () => ({ meta: { last_row_id: 88 } })
+                })
+            }
+        } as any;
+
+        const zapiPayload = {
+            instanceId: 'INST123',
+            messageId: 'ZAPI-MSG-NOAI-1',
+            phone: '5519953248420',
+            fromMe: false,
+            isGroup: false,
+            senderName: 'Cliente WhatsApp',
+            text: { message: 'Oi, gostaria de informações' }
+        };
+
+        const res = await app.request(
+            '/api/webhooks/whatsapp',
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(zapiPayload)
+            },
+            mockEnv
+        );
+
+        expect(res.status).toBe(200);
+        const data = (await res.json()) as { ok: boolean; processed: Array<{ conversationId?: number; replied: boolean }> };
+        expect(data.ok).toBe(true);
+        expect(data.processed).toHaveLength(1);
+        expect(data.processed[0].conversationId).toBe(88);
+        expect(data.processed[0].replied).toBe(false);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('deve respeitar pausa independente do WhatsApp 2 (Diretor) em sendDirectorWhatsAppAlert', async () => {
+        const { sendDirectorWhatsAppAlert } = await import('../src/services/whatsapp');
+        const mockEnv = {
+            DB: {
+                prepare: () => ({
+                    all: async () => ({
+                        results: [
+                            { key: 'whatsapp_director_enabled', value: '0' },
+                            { key: 'whatsapp_director_phone', value: '5519953248420' }
+                        ]
+                    })
+                })
+            }
+        } as any;
+
+        const res = await sendDirectorWhatsAppAlert(mockEnv, {
+            conversationId: 99,
+            visitorName: 'Lead Teste',
+            message: 'Quero falar com humano',
+            sourceChannel: 'whatsapp'
+        });
+
+        expect(res.ok).toBe(false);
+        expect(res.error).toContain('pausado');
+    });
 });

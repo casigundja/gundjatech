@@ -56,11 +56,13 @@ chatRoutes.post('/start', rateLimit({ keyPrefix: 'chat_start', maxRequests: 15, 
     try {
         if (c.env?.DB) {
             try {
-                const aiCfg = await c.env.DB.prepare(
-                    `SELECT value FROM system_settings WHERE key = 'crm_ai_enabled'`
-                ).first<{ value: string }>();
-                if (aiCfg && aiCfg.value === '0') {
-                    globalAiEnabled = false;
+                const aiRows = await c.env.DB.prepare(
+                    `SELECT key, value FROM system_settings WHERE key IN ('crm_ai_enabled', 'site_chat_ai_enabled')`
+                ).all<{ key: string; value: string }>();
+                for (const row of aiRows.results || []) {
+                    if ((row.key === 'crm_ai_enabled' || row.key === 'site_chat_ai_enabled') && row.value === '0') {
+                        globalAiEnabled = false;
+                    }
                 }
             } catch {}
 
@@ -245,11 +247,13 @@ chatRoutes.post('/message', async (c) => {
             }>();
 
             try {
-                const aiCfg = await c.env.DB.prepare(
-                    `SELECT value FROM system_settings WHERE key = 'crm_ai_enabled'`
-                ).first<{ value: string }>();
-                if (aiCfg && aiCfg.value === '0') {
-                    globalAiEnabled = false;
+                const aiRows = await c.env.DB.prepare(
+                    `SELECT key, value FROM system_settings WHERE key IN ('crm_ai_enabled', 'site_chat_ai_enabled')`
+                ).all<{ key: string; value: string }>();
+                for (const row of aiRows.results || []) {
+                    if ((row.key === 'crm_ai_enabled' || row.key === 'site_chat_ai_enabled') && row.value === '0') {
+                        globalAiEnabled = false;
+                    }
                 }
             } catch {}
         }
