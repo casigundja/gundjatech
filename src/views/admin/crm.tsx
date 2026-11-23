@@ -235,22 +235,41 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                     </div>
 
                     {conversations.length === 0 ? (
-                        <div class="flex-1 flex flex-col items-center justify-center text-center px-6 py-10">
-                            <span class="gtb-icon-box !w-12 !h-12 !rounded-2xl mb-3" aria-hidden="true">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <div class="gt-crm-empty-frame">
+                            <span class="gt-crm-empty-icon" aria-hidden="true">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M13 10V3L4 14h7v7l9-11h-7z" />
                                 </svg>
                             </span>
-                            <h3 class="gt-font-display text-sm font-extrabold text-white">Aguardando novos atendimentos da IA</h3>
-                            <p class="text-xs text-[#8C95AA] mt-1.5 max-w-sm leading-relaxed">
-                                Assim que um visitante iniciar conversa no site ou no WhatsApp, o lead aparece aqui com pontuação em tempo real.
+                            <h3 class="gt-font-display text-sm sm:text-base font-extrabold text-white" style="margin: 0 0 6px 0;">
+                                Nenhum lead em qualificação no momento
+                            </h3>
+                            <p class="text-xs text-[#8C95AA]" style="max-width: 420px; line-height: 1.6; margin: 0 0 20px 0;">
+                                Assim que um visitante iniciar conversa no site ou no WhatsApp, a IA conduz o atendimento e exibe o lead com pontuação aqui em tempo real.
                             </p>
-                            <div class="flex items-center justify-center gap-2 flex-wrap mt-5 text-[11px] font-bold text-[#8C95AA]">
-                                <span class="gtb-surface-box rounded-lg px-2.5 py-1">01 · Captação 24/7</span>
-                                <span>→</span>
-                                <span class="gtb-surface-box rounded-lg px-2.5 py-1">02 · Score &amp; Escopo</span>
-                                <span>→</span>
-                                <span class="gtb-surface-box rounded-lg px-2.5 py-1">03 · Pré-Orçamento</span>
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
+                                <span class="gt-crm-step-pill">
+                                    <span class="gt-crm-step-num">1</span>
+                                    <span>Captação 24/7</span>
+                                </span>
+                                <span class="text-xs text-[#8C95AA]" aria-hidden="true">→</span>
+                                <span class="gt-crm-step-pill">
+                                    <span class="gt-crm-step-num">2</span>
+                                    <span>Score &amp; Escopo</span>
+                                </span>
+                                <span class="text-xs text-[#8C95AA]" aria-hidden="true">→</span>
+                                <span class="gt-crm-step-pill">
+                                    <span class="gt-crm-step-num">3</span>
+                                    <span>Pré-Orçamento</span>
+                                </span>
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 22px;">
+                                <a href="/admin/atendimento" class="gt-btn-petrol gt-btn-xs">
+                                    Abrir Inbox ao Vivo
+                                </a>
+                                <a href="/admin/configuracoes" class="gt-btn-outline gt-btn-xs">
+                                    Configurar Canais
+                                </a>
                             </div>
                         </div>
                     ) : (
