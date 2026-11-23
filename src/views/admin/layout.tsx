@@ -986,7 +986,12 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             var current = serializeFormState(form);
                             var isDirty = current !== initial;
                             form.dataset.gtDirty = isDirty ? '1' : '0';
-                            var submits = form.querySelectorAll('button[type="submit"]');
+                            var submits = Array.prototype.slice.call(form.querySelectorAll('button[type="submit"]'));
+                            if (form.id) {
+                                document.querySelectorAll('button[type="submit"][form="' + form.id + '"]').forEach(function (extBtn) {
+                                    if (submits.indexOf(extBtn) === -1) submits.push(extBtn);
+                                });
+                            }
                             for (var i = 0; i < submits.length; i++) {
                                 var b = submits[i];
                                 b.disabled = !isDirty;

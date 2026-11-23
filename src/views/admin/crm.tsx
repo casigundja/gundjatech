@@ -103,123 +103,118 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
             </div>
 
             {/* ROW 1: 4 AUTONOMOUS CRM KPI CARDS (Padronizados Compactos) */}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <a href="/admin/atendimento?status=open" class="gtb-card gtb-kpi-gold !p-4 flex items-center justify-between gap-2 no-underline cursor-pointer hover:-translate-y-0.5 transition">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <a href="/admin/atendimento?status=open" class="gtb-card gtb-kpi-gold !py-3 !px-4 flex items-center justify-between gap-2 no-underline cursor-pointer hover:-translate-y-0.5 transition">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Piloto Automático</span>
-                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{stats.activeAutopilotCount}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-white mt-0.5 block">{stats.activeAutopilotCount}</span>
                     </div>
                     <span class="gt-badge gt-badge-warning">IA Ativa</span>
                 </a>
 
-                <a href="/admin/atendimento?status=open" class="gtb-card gtb-kpi-blue !p-4 flex items-center justify-between gap-2 no-underline cursor-pointer hover:-translate-y-0.5 transition">
+                <a href="/admin/atendimento?status=open" class="gtb-card gtb-kpi-blue !py-3 !px-4 flex items-center justify-between gap-2 no-underline cursor-pointer hover:-translate-y-0.5 transition">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Em Qualificação</span>
-                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{stats.qualifyingCount}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-white mt-0.5 block">{stats.qualifyingCount}</span>
                     </div>
                     <span class="gt-badge gt-badge-info">Escopo</span>
                 </a>
 
-                <a href="/admin/orcamentos" class="gtb-card gtb-kpi-petrol !p-4 flex items-center justify-between gap-2 no-underline cursor-pointer hover:-translate-y-0.5 transition">
+                <a href="/admin/orcamentos" class="gtb-card gtb-kpi-petrol !py-3 !px-4 flex items-center justify-between gap-2 no-underline cursor-pointer hover:-translate-y-0.5 transition">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Pré-Orçamentos IA</span>
-                        <span class="gt-font-display text-xl font-extrabold text-[#34D399] mt-0.5 block">{stats.aiQuotationsCount}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-[#34D399] mt-0.5 block">{stats.aiQuotationsCount}</span>
                     </div>
                     <span class="gt-badge gt-badge-success">Gerados</span>
                 </a>
 
-                <a href="/admin/atendimento?status=handoff" class="gtb-card !p-4 flex items-center justify-between gap-2 no-underline cursor-pointer hover:-translate-y-0.5 transition">
+                <a href="/admin/atendimento?status=handoff" class="gtb-card !py-3 !px-4 flex items-center justify-between gap-2 no-underline cursor-pointer hover:-translate-y-0.5 transition">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Transferidos Humano</span>
-                        <span class="gt-font-display text-xl font-extrabold text-[#F2C230] mt-0.5 block">{stats.handoffCount}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-[#F2C230] mt-0.5 block">{stats.handoffCount}</span>
                     </div>
                     <span class="gt-badge gt-badge-warning">Handoff</span>
                 </a>
             </div>
 
-            {/* ROW 1B: CONTROLE INDEPENDENTE DOS 3 CANAIS (SITE IA · WHATSAPP 1 · WHATSAPP 2 DIRETOR) */}
-            <div class="gt-crm-steps-grid">
-                {/* Canal 1: Chat do Site */}
-                <div class="gtb-card !p-4 flex flex-col justify-between gap-3">
-                    <div class="flex items-start justify-between gap-2">
+            {/* ROW 1B: BARRA COMPACTA DE CONTROLE INDEPENDENTE DOS 3 CANAIS */}
+            <div class="gtb-card !p-3">
+                <div class="gt-crm-steps-grid">
+                    {/* Canal 1: Chat do Site */}
+                    <div class="gtb-surface-box rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2">
                         <div class="min-w-0">
-                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#16749A]">Canal 01 · Site</span>
-                            <h3 class="text-xs font-extrabold text-white mt-0.5">Chat Autônomo do Site</h3>
-                            <p class="text-[11px] text-[#8C95AA] mt-0.5">Widget do site conectado ao CRM e Inbox.</p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-extrabold text-white">Chat do Site</span>
+                                <span class={`gt-badge ${channelControls.siteChatAiEnabled && aiEnabled ? 'gt-badge-success' : 'gt-badge-danger'}`}>
+                                    {channelControls.siteChatAiEnabled && aiEnabled ? 'IA Ativa' : 'Pausado'}
+                                </span>
+                            </div>
+                            <div class="text-[10.5px] text-[#8C95AA] truncate">Widget comercial + Inbox</div>
                         </div>
-                        <span class={`gt-badge shrink-0 ${channelControls.siteChatAiEnabled && aiEnabled ? 'gt-badge-success' : 'gt-badge-danger'}`}>
-                            {channelControls.siteChatAiEnabled && aiEnabled ? 'IA Ativa' : 'Pausado'}
-                        </span>
-                    </div>
-                    <div class="flex items-center justify-between gap-2 pt-2 border-t border-white/10">
-                        <span class="text-[10.5px] text-[#8C95AA]">Resposta IA no site</span>
-                        <form action="/admin/canais/toggle" method="post" class="m-0">
+                        <form action="/admin/canais/toggle" method="post" class="m-0 shrink-0">
                             <input type="hidden" name="channel" value="site_chat_ai_enabled" />
                             <input type="hidden" name="enabled" value={channelControls.siteChatAiEnabled ? '0' : '1'} />
                             <input type="hidden" name="return_to" value="/admin/crm-autonomo" />
                             <button type="submit" data-loading-text="..." class="gt-btn-outline gt-btn-xs">
-                                {channelControls.siteChatAiEnabled ? 'Pausar IA' : 'Ativar IA'}
+                                {channelControls.siteChatAiEnabled ? 'Pausar' : 'Ativar'}
                             </button>
                         </form>
                     </div>
-                </div>
 
-                {/* Canal 2: WhatsApp 1 (Oficial / CRM IA) */}
-                <div class="gtb-card !p-4 flex flex-col justify-between gap-3">
-                    <div class="flex items-start justify-between gap-2">
+                    {/* Canal 2: WhatsApp 1 (Oficial / CRM IA) */}
+                    <div class="gtb-surface-box rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2">
                         <div class="min-w-0">
-                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#16749A]">Canal 02 · WhatsApp 1</span>
-                            <h3 class="text-xs font-extrabold text-white mt-0.5">Oficial / Atendimento CRM IA</h3>
-                            <p class="text-[11px] text-[#8C95AA] mt-0.5 font-mono truncate">
-                                {channelControls.officialWhatsappPhone || 'Número oficial (Configurações)'}
-                            </p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-extrabold text-white">WhatsApp 1 · IA</span>
+                                <span class={`gt-badge ${channelControls.whatsappSyncEnabled ? 'gt-badge-success' : 'gt-badge-danger'}`}>
+                                    {channelControls.whatsappSyncEnabled ? (channelControls.whatsappAiEnabled ? 'Ativo' : 'Só Inbox') : 'Pausado'}
+                                </span>
+                            </div>
+                            <div class="text-[10.5px] text-[#8C95AA] font-mono truncate">
+                                {channelControls.officialWhatsappPhone || 'Definir em Configurações'}
+                            </div>
                         </div>
-                        <span class={`gt-badge shrink-0 ${channelControls.whatsappSyncEnabled ? 'gt-badge-success' : 'gt-badge-danger'}`}>
-                            {channelControls.whatsappSyncEnabled ? (channelControls.whatsappAiEnabled ? 'Ativo + IA' : 'Só Inbox') : 'Pausado'}
-                        </span>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <form action="/admin/canais/toggle" method="post" class="m-0">
+                                <input type="hidden" name="channel" value="whatsapp_sync_enabled" />
+                                <input type="hidden" name="enabled" value={channelControls.whatsappSyncEnabled ? '0' : '1'} />
+                                <input type="hidden" name="return_to" value="/admin/crm-autonomo" />
+                                <button type="submit" data-loading-text="..." class={channelControls.whatsappSyncEnabled ? 'gt-btn-outline gt-btn-xs' : 'gt-btn-petrol gt-btn-xs'}>
+                                    {channelControls.whatsappSyncEnabled ? 'Pausar' : 'Ativar'}
+                                </button>
+                            </form>
+                            {channelControls.whatsappSyncEnabled && (
+                                <form action="/admin/canais/toggle" method="post" class="m-0">
+                                    <input type="hidden" name="channel" value="whatsapp_ai_enabled" />
+                                    <input type="hidden" name="enabled" value={channelControls.whatsappAiEnabled ? '0' : '1'} />
+                                    <input type="hidden" name="return_to" value="/admin/crm-autonomo" />
+                                    <button type="submit" data-loading-text="..." class="gt-btn-outline gt-btn-xs" title="Pausar ou ativar resposta automática da IA no WhatsApp 1">
+                                        {channelControls.whatsappAiEnabled ? 'IA: On' : 'IA: Off'}
+                                    </button>
+                                </form>
+                            )}
+                        </div>
                     </div>
-                    <div class="flex items-center justify-between gap-1.5 flex-wrap pt-2 border-t border-white/10">
-                        <form action="/admin/canais/toggle" method="post" class="m-0">
-                            <input type="hidden" name="channel" value="whatsapp_sync_enabled" />
-                            <input type="hidden" name="enabled" value={channelControls.whatsappSyncEnabled ? '0' : '1'} />
-                            <input type="hidden" name="return_to" value="/admin/crm-autonomo" />
-                            <button type="submit" data-loading-text="..." class={channelControls.whatsappSyncEnabled ? 'gt-btn-outline gt-btn-xs' : 'gt-btn-petrol gt-btn-xs'}>
-                                {channelControls.whatsappSyncEnabled ? 'Pausar Canal' : 'Ativar Canal'}
-                            </button>
-                        </form>
-                        <form action="/admin/canais/toggle" method="post" class="m-0">
-                            <input type="hidden" name="channel" value="whatsapp_ai_enabled" />
-                            <input type="hidden" name="enabled" value={channelControls.whatsappAiEnabled ? '0' : '1'} />
-                            <input type="hidden" name="return_to" value="/admin/crm-autonomo" />
-                            <button type="submit" data-loading-text="..." class="gt-btn-outline gt-btn-xs">
-                                {channelControls.whatsappAiEnabled ? 'Pausar IA' : 'Ativar IA'}
-                            </button>
-                        </form>
-                    </div>
-                </div>
 
-                {/* Canal 3: WhatsApp 2 (Diretor / Humano) */}
-                <div class="gtb-card !p-4 flex flex-col justify-between gap-3">
-                    <div class="flex items-start justify-between gap-2">
+                    {/* Canal 3: WhatsApp 2 (Diretor / Humano) */}
+                    <div class="gtb-surface-box rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2">
                         <div class="min-w-0">
-                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#16749A]">Canal 03 · WhatsApp 2</span>
-                            <h3 class="text-xs font-extrabold text-white mt-0.5">Direto com o Diretor (Handoff)</h3>
-                            <p class="text-[11px] text-[#8C95AA] mt-0.5 font-mono truncate">
-                                {channelControls.directorWhatsappPhone || 'Número do diretor (Configurações)'}
-                            </p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-extrabold text-white">WhatsApp 2 · Diretor</span>
+                                <span class={`gt-badge ${channelControls.whatsappDirectorEnabled ? 'gt-badge-success' : 'gt-badge-danger'}`}>
+                                    {channelControls.whatsappDirectorEnabled ? 'Recebendo' : 'Pausado'}
+                                </span>
+                            </div>
+                            <div class="text-[10.5px] text-[#8C95AA] font-mono truncate">
+                                {channelControls.directorWhatsappPhone || 'Definir em Configurações'}
+                            </div>
                         </div>
-                        <span class={`gt-badge shrink-0 ${channelControls.whatsappDirectorEnabled ? 'gt-badge-success' : 'gt-badge-danger'}`}>
-                            {channelControls.whatsappDirectorEnabled ? 'Recebendo' : 'Pausado'}
-                        </span>
-                    </div>
-                    <div class="flex items-center justify-between gap-2 pt-2 border-t border-white/10">
-                        <span class="text-[10.5px] text-[#8C95AA]">Alertas &amp; ponte humano</span>
-                        <form action="/admin/canais/toggle" method="post" class="m-0">
+                        <form action="/admin/canais/toggle" method="post" class="m-0 shrink-0">
                             <input type="hidden" name="channel" value="whatsapp_director_enabled" />
                             <input type="hidden" name="enabled" value={channelControls.whatsappDirectorEnabled ? '0' : '1'} />
                             <input type="hidden" name="return_to" value="/admin/crm-autonomo" />
                             <button type="submit" data-loading-text="..." class={channelControls.whatsappDirectorEnabled ? 'gt-btn-outline gt-btn-xs' : 'gt-btn-petrol gt-btn-xs'}>
-                                {channelControls.whatsappDirectorEnabled ? 'Pausar Diretor' : 'Ativar Diretor'}
+                                {channelControls.whatsappDirectorEnabled ? 'Pausar' : 'Ativar'}
                             </button>
                         </form>
                     </div>
@@ -228,62 +223,31 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
 
             {/* ROW 2: PIPELINE TABLE (7fr) + AI CONFIG PANEL (5fr) */}
             <div class="gt-crm-grid">
-                <section class="gtb-card !p-5 space-y-5">
-                    <div class="flex items-start justify-between gap-3 flex-wrap pb-4 border-b border-white/10">
+                <section class="gtb-card !p-4 space-y-4">
+                    <div class="flex items-center justify-between gap-3 flex-wrap pb-3 border-b border-white/10">
                         <div>
-                            <h2 class="gt-font-display text-sm sm:text-base font-extrabold text-white">Pipeline de Qualificação Autônoma</h2>
-                            <p class="text-xs text-[#8C95AA] mt-0.5">O agente conversa com cada visitante, extrai escopo/prazo/orçamento, atualiza o CRM e gera rascunhos de orçamento.</p>
+                            <h2 class="gt-font-display text-sm sm:text-[15px] font-extrabold text-white">Pipeline de Qualificação Autônoma</h2>
+                            <p class="text-[11.5px] text-[#8C95AA] mt-0.5">Visitantes do site e WhatsApp qualificados pela IA com pontuação e rascunho de proposta.</p>
                         </div>
-                        <a href="/admin/atendimento" class="gt-btn-outline gt-btn-xs shrink-0">
-                            Abrir Chat ao Vivo →
-                        </a>
                     </div>
 
-                    {!whatsappSyncEnabled && (
-                        <div class="gtb-surface-box rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
-                            <div class="min-w-0">
-                                <div class="text-xs font-bold text-white">Sincronização do WhatsApp está pausada</div>
-                                <p class="text-[11px] text-[#8C95AA] mt-0.5">
-                                    Mensagens recebidas pelo WhatsApp não entram neste pipeline enquanto a sincronização estiver desativada nas configurações.
-                                </p>
-                            </div>
-                            <a href="/admin/configuracoes" class="gt-btn-outline gt-btn-xs shrink-0">
-                                Ativar em Configurações →
-                            </a>
-                        </div>
-                    )}
-
                     {conversations.length === 0 ? (
-                        <div class="space-y-5 py-3">
-                            <div class="flex flex-col items-center text-center px-4 py-5">
-                                <span class="gtb-icon-box !w-12 !h-12 !rounded-2xl mb-3" aria-hidden="true">
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                    </svg>
-                                </span>
-                                <h3 class="gt-font-display text-sm font-extrabold text-white">Aguardando novos atendimentos da IA</h3>
-                                <p class="text-xs text-[#8C95AA] mt-1 max-w-md leading-relaxed">
-                                    Assim que um visitante iniciar uma conversa no site ou no WhatsApp, a IA assume a qualificação e exibe o lead com pontuação aqui em tempo real.
-                                </p>
-                            </div>
-
-                            {/* Mini fluxo de 3 etapas do que o agente faz */}
-                            <div class="gt-crm-steps-grid pt-3 border-t border-white/10">
-                                <div class="gtb-surface-box rounded-xl p-3.5">
-                                    <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#16749A] mb-1">01 · Captação</div>
-                                    <div class="text-xs font-bold text-white">Atendimento 24/7</div>
-                                    <p class="text-[11px] text-[#8C95AA] mt-0.5 leading-snug">Responde dúvidas comerciais no chat do site e no WhatsApp.</p>
-                                </div>
-                                <div class="gtb-surface-box rounded-xl p-3.5">
-                                    <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#16749A] mb-1">02 · Qualificação</div>
-                                    <div class="text-xs font-bold text-white">Score &amp; Escopo</div>
-                                    <p class="text-[11px] text-[#8C95AA] mt-0.5 leading-snug">Extrai orçamento, prazo e necessidade, pontuando o lead (0–100).</p>
-                                </div>
-                                <div class="gtb-surface-box rounded-xl p-3.5">
-                                    <div class="text-[10px] font-extrabold uppercase tracking-wider text-[#16749A] mb-1">03 · Conversão</div>
-                                    <div class="text-xs font-bold text-white">Pré-Orçamento</div>
-                                    <p class="text-[11px] text-[#8C95AA] mt-0.5 leading-snug">Gera automaticamente rascunho de proposta para sua revisão.</p>
-                                </div>
+                        <div class="flex flex-col items-center text-center px-4 py-7">
+                            <span class="gtb-icon-box !w-10 !h-10 !rounded-xl mb-2.5" aria-hidden="true">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                            </span>
+                            <h3 class="gt-font-display text-sm font-extrabold text-white">Aguardando novos atendimentos da IA</h3>
+                            <p class="text-xs text-[#8C95AA] mt-1 max-w-md leading-relaxed">
+                                Assim que um visitante iniciar conversa no site ou no WhatsApp, o lead aparece aqui com pontuação em tempo real.
+                            </p>
+                            <div class="flex items-center justify-center gap-2 flex-wrap mt-3 text-[10.5px] font-bold text-[#8C95AA]">
+                                <span>01 · Captação 24/7</span>
+                                <span>→</span>
+                                <span>02 · Score &amp; Escopo</span>
+                                <span>→</span>
+                                <span>03 · Pré-Orçamento</span>
                             </div>
                         </div>
                     ) : (
@@ -383,37 +347,37 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                     )}
                 </section>
 
-                {/* AI Configuration Panel (Clean Executive Card) */}
-                <aside class="gtb-card !p-5 space-y-4">
-                    <div class="flex items-center gap-3 pb-4 border-b border-white/10">
-                        <span class="gtb-icon-box !w-9 !h-9">
+                {/* AI Configuration Panel (Clean Compact Executive Card) */}
+                <aside class="gtb-card !p-4 space-y-3">
+                    <div class="flex items-center gap-2.5 pb-3 border-b border-white/10">
+                        <span class="gtb-icon-box !w-8 !h-8">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                         </span>
                         <div class="min-w-0 flex-1">
                             <div class="flex items-center justify-between gap-2">
-                                <h2 class="gt-font-display text-sm sm:text-[15px] font-extrabold text-white leading-tight">Agente IA</h2>
+                                <h2 class="gt-font-display text-sm font-extrabold text-white leading-tight">Agente IA</h2>
                                 <span class={`gt-badge ${aiEnabled ? 'gt-badge-success' : 'gt-badge-danger'}`}>
                                     {aiEnabled ? '● Online' : '● Pausado'}
                                 </span>
                             </div>
-                            <p class="text-[11px] text-[#8C95AA] truncate mt-0.5">
-                                Gemini + Cloudflare Workers AI (Site &amp; WhatsApp)
+                            <p class="text-[11px] text-[#8C95AA] truncate">
+                                Gemini + Workers AI (Site &amp; WhatsApp)
                             </p>
                         </div>
                     </div>
 
-                    <form id="gt-crm-config-form" action="/admin/crm-autonomo/configuracoes" method="post" data-dirty-guard="1" class="space-y-3.5 text-xs">
-                        {/* Switches limpos */}
+                    <form id="gt-crm-config-form" action="/admin/crm-autonomo/configuracoes" method="post" data-dirty-guard="1" class="space-y-3 text-xs">
+                        {/* Switches compactos */}
                         <div class="gtb-surface-box rounded-xl divide-y divide-white/10 overflow-hidden">
-                            <label class="flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer">
+                            <label class="flex items-center justify-between gap-3 px-3 py-2 cursor-pointer">
                                 <div class="min-w-0">
-                                    <div class="text-xs font-bold text-white leading-tight">Piloto Automático Ativo</div>
-                                    <div class="text-[10.5px] text-[#8C95AA]">Responder leads no chat e WhatsApp</div>
+                                    <div class="text-xs font-bold text-white leading-tight">Piloto Automático Global</div>
+                                    <div class="text-[10.5px] text-[#8C95AA]">Chave geral de respostas automáticas</div>
                                 </div>
                                 <input type="checkbox" name="crm_ai_enabled" value="1" checked={aiEnabled} class="gt-switch shrink-0" />
                             </label>
 
-                            <label class="flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer">
+                            <label class="flex items-center justify-between gap-3 px-3 py-2 cursor-pointer">
                                 <div class="min-w-0">
                                     <div class="text-xs font-bold text-white leading-tight">Auto-gerar Pré-Orçamento</div>
                                     <div class="text-[10.5px] text-[#8C95AA]">Criar rascunho ao qualificar lead</div>
@@ -423,20 +387,20 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                         </div>
 
                         {/* Linha 1: Nome + Motor */}
-                        <div class="gt-grid-2 !gap-3">
+                        <div class="gt-grid-2 !gap-2.5">
                             <div>
-                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Nome do Assistente</label>
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Nome do Assistente</label>
                                 <input
                                     type="text"
                                     name="crm_ai_agent_name"
                                     value={agentName}
-                                    class="w-full rounded-xl px-3 py-2 text-xs"
+                                    class="w-full rounded-xl px-3 py-1.5 text-xs"
                                 />
                             </div>
 
                             <div>
-                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Motor de IA</label>
-                                <select name="crm_ai_provider" class="w-full rounded-xl px-3 py-2 text-xs">
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Motor de IA</label>
+                                <select name="crm_ai_provider" class="w-full rounded-xl px-3 py-1.5 text-xs">
                                     <option value="auto" selected={provider === 'auto'}>Automático (Gemini + Edge)</option>
                                     <option value="gemini" selected={provider === 'gemini'}>Google Gemini (Primário)</option>
                                     <option value="workers_ai" selected={provider === 'workers_ai'}>Workers AI (Edge Nativo)</option>
@@ -446,78 +410,80 @@ export const AdminCrmView: FC<AdminCrmProps> = ({
                             </div>
                         </div>
 
-                        {/* Linha 2: Modelo LLM */}
-                        <div>
-                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Modelo LLM</label>
-                            <input
-                                type="text"
-                                name="crm_ai_model"
-                                value={model}
-                                placeholder="gemini-2.5-flash"
-                                class="w-full rounded-xl px-3 py-2 text-xs font-mono"
-                            />
-                        </div>
-
-                        {/* Linha 3: Chave API full-width com ícone olho dentro do campo */}
-                        <div>
-                            <div class="flex items-center justify-between gap-2 mb-1.5">
-                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Chave API</label>
-                                {hasApiKey && (
-                                    <span class="gt-badge gt-badge-success text-[10px]">✓ Chave configurada</span>
-                                )}
-                            </div>
-                            <div style="position: relative; display: flex; align-items: center;">
+                        {/* Linha 2: Modelo LLM + Chave API lado a lado */}
+                        <div class="gt-grid-2 !gap-2.5">
+                            <div>
+                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Modelo LLM</label>
                                 <input
-                                    id="gt-crm-api-key"
-                                    type="password"
-                                    name="crm_ai_api_key"
-                                    autocomplete="off"
-                                    placeholder={hasApiKey ? '•••••••••••• (deixe vazio para manter)' : 'AIza... / sk-...'}
-                                    style="padding-left: 12px; padding-right: 38px;"
-                                    class="w-full rounded-xl py-2 text-xs font-mono"
+                                    type="text"
+                                    name="crm_ai_model"
+                                    value={model}
+                                    placeholder="gemini-2.5-flash"
+                                    class="w-full rounded-xl px-3 py-1.5 text-xs font-mono"
                                 />
-                                <button
-                                    type="button"
-                                    aria-label="Mostrar ou ocultar chave"
-                                    onclick="var i=document.getElementById('gt-crm-api-key');if(i){i.type=i.type==='password'?'text':'password';}"
-                                    style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: transparent; border: 0; padding: 4px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: #7898AE;"
-                                >
-                                    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                </button>
+                            </div>
+
+                            <div>
+                                <div class="flex items-center justify-between gap-1 mb-1">
+                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Chave API</label>
+                                    {hasApiKey && (
+                                        <span class="gt-badge gt-badge-success text-[9.5px]">✓ Salva</span>
+                                    )}
+                                </div>
+                                <div style="position: relative; display: flex; align-items: center;">
+                                    <input
+                                        id="gt-crm-api-key"
+                                        type="password"
+                                        name="crm_ai_api_key"
+                                        autocomplete="off"
+                                        placeholder={hasApiKey ? '••••••••' : 'AIza... / sk-...'}
+                                        style="padding-left: 10px; padding-right: 34px;"
+                                        class="w-full rounded-xl py-1.5 text-xs font-mono"
+                                    />
+                                    <button
+                                        type="button"
+                                        aria-label="Mostrar ou ocultar chave"
+                                        onclick="var i=document.getElementById('gt-crm-api-key');if(i){i.type=i.type==='password'?'text':'password';}"
+                                        style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: transparent; border: 0; padding: 3px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: #7898AE;"
+                                    >
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Diretrizes Comerciais &amp; Tom de Voz</label>
+                            <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Diretrizes Comerciais &amp; Tom de Voz</label>
                             <textarea
                                 name="crm_ai_system_prompt"
-                                rows={3}
-                                class="w-full rounded-xl px-3 py-2 text-xs leading-relaxed"
+                                rows={2}
+                                class="w-full rounded-xl px-3 py-1.5 text-xs leading-relaxed"
                             >{systemPrompt}</textarea>
                         </div>
-
-                        <div class="pt-3 border-t border-white/10 flex items-center gap-2.5">
-                            <button
-                                type="submit"
-                                data-loading-text="Salvando..."
-                                class="gt-btn-primary gt-btn-sm flex-1 justify-center"
-                            >
-                                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7"/></svg>
-                                <span>Salvar Configurações</span>
-                            </button>
-                        </div>
                     </form>
 
-                    <form action="/admin/crm-autonomo/testar" method="post" class="m-0">
+                    {/* Rodapé de ações lado a lado (Salvar + Testar IA) */}
+                    <div class="pt-2.5 border-t border-white/10 grid grid-cols-2 gap-2.5">
                         <button
                             type="submit"
-                            data-loading-text="Testando IA..."
-                            class="gt-btn-outline gt-btn-sm w-full justify-center"
+                            form="gt-crm-config-form"
+                            data-loading-text="Salvando..."
+                            class="gt-btn-primary gt-btn-sm justify-center"
                         >
-                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                            <span>Testar Conexão com a IA</span>
+                            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7"/></svg>
+                            <span>Salvar</span>
                         </button>
-                    </form>
+                        <form action="/admin/crm-autonomo/testar" method="post" class="m-0">
+                            <button
+                                type="submit"
+                                data-loading-text="Testando..."
+                                class="gt-btn-outline gt-btn-sm w-full justify-center"
+                            >
+                                <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                <span>Testar IA</span>
+                            </button>
+                        </form>
+                    </div>
                 </aside>
             </div>
         </AdminLayout>
