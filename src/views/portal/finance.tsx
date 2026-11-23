@@ -185,45 +185,48 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                 </div>
             )}
 
-            {/* Modal de Pagamento Executivo — PIX + TED Nu Empresas + Comprovante + Confirmação em Tempo Real */}
+            {/* Modal de Pagamento Executivo — PIX + TED Nu Empresas + Confirmação em Tempo Real */}
             <div
                 id="modal-pagar-fatura"
                 data-pix-provider={pixGatewayProvider}
                 onclick="if(event.target===this){window.GT_ClosePayModal&&window.GT_ClosePayModal();}"
                 style="display: none; position: fixed; inset: 0; margin: 0; z-index: 200; align-items: center; justify-content: center; padding: 16px;"
-                class="gt-modal-overlay bg-[#063B5C]/65 backdrop-blur-xs"
+                class="gt-modal-overlay bg-[#041E30]/70 backdrop-blur-xs"
             >
-                <div class="gtb-card gt-modal-card max-w-xl !p-0 overflow-hidden">
-                    {/* Cabeçalho Executivo */}
-                    <div class="px-6 py-4 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-start justify-between gap-4">
-                        <div class="min-w-0 flex-1">
-                            <div class="inline-flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wider text-[#64748B]">
-                                <svg class="w-3.5 h-3.5 text-[#16749A]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                                <span>Checkout Financeiro • GundjaTech</span>
-                            </div>
-                            <h2 id="gt-pay-title" class="gt-font-display text-[15px] font-extrabold text-[#063B5C] mt-1 truncate">Pagar Fatura</h2>
-                            <div class="text-[11.5px] text-[#64748B] mt-0.5">
-                                Vencimento em <strong id="gt-pay-due" class="text-[#063B5C] font-semibold">—</strong>
-                            </div>
-                        </div>
-                        <div class="flex items-start gap-3 shrink-0">
-                            <div class="text-right">
-                                <div class="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">Valor Total</div>
-                                <div id="gt-pay-amount" class="gt-font-display text-lg font-extrabold text-[#063B5C] leading-tight tabular-nums">R$ 0,00</div>
+                <div class="gt-checkout-dialog">
+                    {/* Cabeçalho Corporativo GundjaTech (Flush edge-to-edge) */}
+                    <div class="gt-checkout-head">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#CFE0EB]">
+                                <svg class="w-3.5 h-3.5 text-[#F2C230]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                                <span>Checkout Seguro • GundjaTech</span>
                             </div>
                             <button
                                 type="button"
                                 onclick="window.GT_ClosePayModal && window.GT_ClosePayModal()"
-                                class="w-7 h-7 rounded-lg flex items-center justify-center text-[#64748B] hover:text-[#063B5C] hover:bg-[#E7F0F5] text-lg leading-none cursor-pointer bg-transparent border-0 transition-colors"
+                                style="width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,0.1);color:#FFFFFF;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;"
                                 aria-label="Fechar"
                             >
                                 &times;
                             </button>
                         </div>
+
+                        <div class="flex items-end justify-between gap-4 mt-3">
+                            <div class="min-w-0 flex-1">
+                                <h2 id="gt-pay-title" class="gt-font-display text-[15px] font-extrabold text-white truncate">Pagar Fatura</h2>
+                                <div class="text-[11.5px] text-[#CFE0EB] mt-0.5">
+                                    Vencimento: <strong id="gt-pay-due" class="text-white font-semibold">—</strong>
+                                </div>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <div class="text-[9.5px] font-bold uppercase tracking-wider text-[#CFE0EB]">Total a pagar</div>
+                                <div id="gt-pay-amount" class="gt-font-display text-xl font-extrabold text-white leading-none mt-0.5 tabular-nums">R$ 0,00</div>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Estado de Sucesso em Tempo Real (Padrão Executivo / Banking) */}
-                    <div id="gt-pay-confirmed-view" class="hidden p-6 space-y-5">
+                    <div id="gt-pay-confirmed-view" class="hidden gt-checkout-body">
                         <div class="flex items-start gap-3.5">
                             <div
                                 style="width: 44px; height: 44px; border-radius: 12px; background: #ECFDF5; border: 1px solid #A7F3D0; color: #059669; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"
@@ -231,96 +234,59 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                                 <svg style="width: 22px; height: 22px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7" /></svg>
                             </div>
                             <div class="min-w-0">
-                                <div class="text-[10.5px] font-bold uppercase tracking-wider text-[#059669]">Liquidação Confirmada</div>
+                                <div class="text-[10px] font-bold uppercase tracking-wider text-[#059669]">Liquidação Confirmada</div>
                                 <h3 class="gt-font-display text-base font-extrabold text-[#063B5C] mt-0.5">Pagamento confirmado</h3>
                                 <p class="text-xs text-[#64748B] mt-1 leading-relaxed">
-                                    O recebimento foi validado automaticamente. O recibo oficial já está disponível e as notificações foram disparadas.
+                                    Recebimento validado automaticamente. O recibo oficial já está disponível e as notificações foram enviadas.
                                 </p>
                             </div>
                         </div>
 
-                        <div class="rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] p-4 space-y-2.5 text-xs">
-                            <div class="flex items-center justify-between gap-2 pb-2 border-b border-[#E2E8F0]">
+                        <div class="gt-checkout-panel">
+                            <div class="gt-checkout-row">
                                 <span class="text-[#64748B]">Situação</span>
-                                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; background: #ECFDF5; border: 1px solid #A7F3D0; color: #047857; font-size: 11px; font-weight: 700;">
-                                    Quitado
-                                </span>
+                                <span style="display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; background: #ECFDF5; border: 1px solid #A7F3D0; color: #047857; font-size: 11px; font-weight: 700;">Quitado</span>
                             </div>
-                            <div class="flex items-center justify-between gap-2 pb-2 border-b border-[#E2E8F0]">
+                            <div class="gt-checkout-row">
                                 <span class="text-[#64748B]">Valor liquidado</span>
                                 <strong id="gt-pay-ok-amount" class="font-mono text-[#063B5C] font-extrabold">—</strong>
                             </div>
-                            <div class="flex items-center justify-between gap-2 pb-2 border-b border-[#E2E8F0]">
+                            <div class="gt-checkout-row">
                                 <span class="text-[#64748B]">Método</span>
                                 <strong class="text-[#063B5C] font-semibold">PIX Instantâneo</strong>
                             </div>
-                            <div class="flex items-center justify-between gap-2 pb-2 border-b border-[#E2E8F0]">
+                            <div class="gt-checkout-row">
                                 <span class="text-[#64748B]">Referência</span>
                                 <strong id="gt-pay-ok-txid" class="font-mono text-[#16749A] font-semibold">—</strong>
                             </div>
-                            <div class="flex items-center justify-between gap-2">
+                            <div class="gt-checkout-row">
                                 <span class="text-[#64748B]">Confirmado em</span>
                                 <strong id="gt-pay-ok-date" class="font-mono text-[#063B5C] font-semibold">—</strong>
                             </div>
                         </div>
 
-                        <div class="flex items-center justify-between gap-3 pt-3 border-t border-[#E2E8F0]">
+                        <div class="gt-checkout-footer">
                             <span class="text-[10.5px] text-[#64748B] hidden sm:inline">Art. 319 e 320 • Código Civil</span>
                             <div class="flex items-center gap-2.5 ml-auto">
-                                <button
-                                    type="button"
-                                    onclick="window.location.reload()"
-                                    class="gt-btn-outline gt-btn-sm"
-                                >
+                                <button type="button" onclick="window.location.reload()" class="gt-btn-outline gt-btn-sm">
                                     Concluir
                                 </button>
-                                <a
-                                    id="gt-pay-receipt-link"
-                                    href="#"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="gt-btn-primary gt-btn-sm no-underline"
-                                >
+                                <a id="gt-pay-receipt-link" href="#" target="_blank" rel="noopener noreferrer" class="gt-btn-primary gt-btn-sm no-underline">
                                     Baixar Recibo (PDF)
                                 </a>
                             </div>
                         </div>
                     </div>
 
-                    <div id="gt-pay-checkout-body" class="p-6 space-y-4">
-                        {/* Barra de status ao vivo (apenas quando gateway automático está ativo, ou orientação clara no PIX estático) */}
-                        {pixGatewayProvider !== 'static' ? (
-                            <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#F0F7FA] border border-[#D4E4EE] text-[11px] text-[#063B5C]">
-                                <span class="inline-flex items-center gap-2 font-semibold">
-                                    <span class="w-2 h-2 rounded-full bg-[#16749A] animate-pulse"></span>
-                                    <span id="gt-pay-live-label">Verificação automática ativa — assim que pagar, esta tela confirma sozinha.</span>
-                                </span>
-                            </div>
-                        ) : (
-                            <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] text-[11px] text-[#475569]">
-                                <span id="gt-pay-live-label" class="font-medium">
-                                    Após concluir o pagamento via PIX ou TED, anexe o comprovante abaixo para validação e emissão do recibo.
-                                </span>
-                            </div>
-                        )}
-
-                        {/* Abas Segmentadas (Estilo Fintech) */}
+                    {/* Corpo Principal do Checkout */}
+                    <div id="gt-pay-checkout-body" class="gt-checkout-body">
+                        {/* Abas Segmentadas */}
                         <div class="gt-pay-seg" role="tablist">
-                            <button
-                                type="button"
-                                id="gt-pay-tab-pix"
-                                onclick="window.GT_SwitchPayTab('pix')"
-                                class="gt-pay-seg-btn is-active"
-                            >
+                            <button type="button" id="gt-pay-tab-pix" onclick="window.GT_SwitchPayTab('pix')" class="gt-pay-seg-btn is-active">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
                                 <span>PIX (QR Code)</span>
                             </button>
-                            <button
-                                type="button"
-                                id="gt-pay-tab-ted"
-                                onclick="window.GT_SwitchPayTab('ted')"
-                                class="gt-pay-seg-btn"
-                            >
+                            <button type="button" id="gt-pay-tab-ted" onclick="window.GT_SwitchPayTab('ted')" class="gt-pay-seg-btn">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                                 <span>Transferência / TED</span>
                             </button>
@@ -328,25 +294,33 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
 
                         {/* Conteúdo Aba PIX */}
                         <div id="gt-pay-pane-pix" class="space-y-4">
-                            <div class="rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] p-4 flex flex-col sm:flex-row items-center gap-4">
-                                <div class="bg-white p-2.5 rounded-xl border border-[#E2E8F0] shrink-0">
+                            <div class="gt-checkout-panel flex flex-col sm:flex-row items-center gap-4">
+                                <div class="gt-checkout-qr-wrap">
                                     <img id="gt-pay-qr" src="" alt="QR Code PIX GundjaTech" width="152" height="152" class="block w-[152px] h-[152px] object-contain" />
                                 </div>
-                                <div class="min-w-0 flex-1 space-y-2 text-xs">
-                                    <div class="font-bold text-[#063B5C] text-[13px]">Escaneie o QR Code pelo app do banco</div>
-                                    <p class="text-[11.5px] text-[#64748B] leading-relaxed">
-                                        O valor e os dados oficiais de recebimento já estão preenchidos no padrão Banco Central.
-                                    </p>
-                                    <div class="pt-2 border-t border-[#E2E8F0] space-y-1 text-[11px]">
-                                        <div class="flex items-center justify-between gap-2">
+                                <div class="min-w-0 flex-1 space-y-2.5 text-xs">
+                                    {pixGatewayProvider !== 'static' && (
+                                        <div class="gt-checkout-live">
+                                            <span style="width:7px;height:7px;border-radius:999px;background:#16749A;display:inline-block;" class="animate-pulse"></span>
+                                            <span>Confirmação automática ativa</span>
+                                        </div>
+                                    )}
+                                    <div>
+                                        <div class="font-bold text-[#063B5C] text-[13px]">Escaneie no app do seu banco</div>
+                                        <p class="text-[11.5px] text-[#64748B] mt-0.5 leading-relaxed">
+                                            Valor e recebedor já preenchidos no padrão Banco Central.
+                                        </p>
+                                    </div>
+                                    <div class="pt-1">
+                                        <div class="gt-checkout-row">
                                             <span class="text-[#64748B]">Beneficiário</span>
                                             <strong class="text-[#063B5C] font-semibold">{bankSettings.pixHolder}</strong>
                                         </div>
-                                        <div class="flex items-center justify-between gap-2">
-                                            <span class="text-[#64748B]">Chave CNPJ</span>
-                                            <strong class="font-mono text-[#063B5C] font-semibold">{bankSettings.pixKey}</strong>
+                                        <div class="gt-checkout-row">
+                                            <span class="text-[#64748B]">CNPJ</span>
+                                            <strong class="font-mono text-[#063B5C] font-semibold">{bankSettings.bankCnpj}</strong>
                                         </div>
-                                        <div class="flex items-center justify-between gap-2">
+                                        <div class="gt-checkout-row">
                                             <span class="text-[#64748B]">Referência</span>
                                             <strong id="gt-pay-txid" class="font-mono text-[#16749A] font-semibold">—</strong>
                                         </div>
@@ -355,15 +329,9 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                             </div>
 
                             <div>
-                                <label class="block text-[10.5px] font-bold uppercase tracking-wider text-[#64748B] mb-1.5">PIX Copia e Cola</label>
+                                <label class="block text-[10px] font-bold uppercase tracking-wider text-[#64748B] mb-1.5">PIX Copia e Cola</label>
                                 <div class="flex items-center gap-2">
-                                    <input
-                                        id="gt-pay-pix-code"
-                                        type="text"
-                                        readonly
-                                        value=""
-                                        class="w-full rounded-xl px-3 py-2 text-[11.5px] font-mono !bg-[#F8FAFC] !border-[#CBD5E1] !text-[#063B5C]"
-                                    />
+                                    <input id="gt-pay-pix-code" type="text" readonly value="" class="gt-checkout-input" />
                                     <button
                                         type="button"
                                         id="gt-pay-copy-pix"
@@ -378,36 +346,42 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
 
                         {/* Conteúdo Aba TED */}
                         <div id="gt-pay-pane-ted" class="hidden">
-                            <div class="rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] p-4 space-y-2.5 text-xs">
-                                <div class="flex items-center justify-between gap-2 pb-2 border-b border-[#E2E8F0]">
+                            <div class="gt-checkout-panel">
+                                <div class="gt-checkout-row">
                                     <span class="text-[#64748B]">Instituição</span>
                                     <strong class="text-[#063B5C] font-semibold text-right">{bankSettings.bankName}</strong>
                                 </div>
-                                <div class="flex items-center justify-between gap-2 pb-2 border-b border-[#E2E8F0]">
+                                <div class="gt-checkout-row">
                                     <span class="text-[#64748B]">Agência</span>
                                     <strong class="font-mono text-[#063B5C] font-semibold">{bankSettings.bankAgency}</strong>
                                 </div>
-                                <div class="flex items-center justify-between gap-2 pb-2 border-b border-[#E2E8F0]">
+                                <div class="gt-checkout-row">
                                     <span class="text-[#64748B]">Conta Corrente</span>
                                     <strong class="font-mono text-[#063B5C] font-semibold">{bankSettings.bankAccount}</strong>
                                 </div>
-                                <div class="flex items-center justify-between gap-2 pb-2 border-b border-[#E2E8F0]">
+                                <div class="gt-checkout-row">
                                     <span class="text-[#64748B]">CNPJ</span>
                                     <strong class="font-mono text-[#063B5C] font-semibold">{bankSettings.bankCnpj}</strong>
                                 </div>
-                                <div class="flex items-center justify-between gap-2">
+                                <div class="gt-checkout-row">
                                     <span class="text-[#64748B]">Favorecido</span>
                                     <strong class="text-[#063B5C] font-semibold">{bankSettings.pixHolder}</strong>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Upload de Comprovante (Dropzone Executivo) */}
-                        <form id="gt-pay-receipt-form" action="/portal/financeiro/0/comprovante" method="post" enctype="multipart/form-data" class="pt-4 border-t border-[#E2E8F0] space-y-4">
+                        {/* Upload de Comprovante (exibido na aba TED ou no modo PIX estático; limpo no PIX automático) */}
+                        <form
+                            id="gt-pay-receipt-form"
+                            action="/portal/financeiro/0/comprovante"
+                            method="post"
+                            enctype="multipart/form-data"
+                            class={pixGatewayProvider !== 'static' ? 'hidden space-y-3.5' : 'space-y-3.5'}
+                        >
                             <input type="hidden" id="gt-pay-method-input" name="payment_method" value="PIX" />
                             <div>
-                                <div class="text-[10.5px] font-bold uppercase tracking-wider text-[#64748B] mb-1.5">
-                                    Comprovante de pagamento {pixGatewayProvider !== 'static' ? '(opcional para TED)' : ''}
+                                <div class="text-[10px] font-bold uppercase tracking-wider text-[#64748B] mb-1.5">
+                                    Comprovante de pagamento
                                 </div>
                                 <label id="gt-pay-dropzone" class="gt-pay-dropzone">
                                     <input
@@ -431,14 +405,10 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                                     <span class="text-[11px] font-bold text-[#16749A] shrink-0">Selecionar</span>
                                 </label>
                             </div>
-                            <div class="flex items-center justify-between gap-3 pt-1">
+                            <div class="gt-checkout-footer">
                                 <span class="text-[10.5px] text-[#64748B] hidden sm:inline">Dados protegidos • Padrão BCB</span>
                                 <div class="flex items-center gap-2.5 ml-auto">
-                                    <button
-                                        type="button"
-                                        onclick="window.GT_ClosePayModal && window.GT_ClosePayModal()"
-                                        class="gt-btn-outline gt-btn-sm"
-                                    >
+                                    <button type="button" onclick="window.GT_ClosePayModal && window.GT_ClosePayModal()" class="gt-btn-outline gt-btn-sm">
                                         Fechar
                                     </button>
                                     <button type="submit" data-loading-text="Enviando..." class="gt-btn-primary gt-btn-sm">
@@ -447,6 +417,14 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                                 </div>
                             </div>
                         </form>
+
+                        {/* Rodapé compacto quando no modo PIX Automático (sem formulário de comprovante poluindo a tela) */}
+                        <div id="gt-pay-auto-footer" class={pixGatewayProvider !== 'static' ? 'gt-checkout-footer' : 'hidden gt-checkout-footer'}>
+                            <span class="text-[10.5px] text-[#64748B]">Baixa automática em segundos • Padrão BCB</span>
+                            <button type="button" onclick="window.GT_ClosePayModal && window.GT_ClosePayModal()" class="gt-btn-outline gt-btn-sm">
+                                Fechar
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -528,16 +506,23 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                 };
 
                 window.GT_SwitchPayTab = function (tab) {
+                    var modal = document.getElementById('modal-pagar-fatura');
+                    var provider = (modal && modal.getAttribute('data-pix-provider')) || 'static';
                     var pixPane = document.getElementById('gt-pay-pane-pix');
                     var tedPane = document.getElementById('gt-pay-pane-ted');
                     var pixTab = document.getElementById('gt-pay-tab-pix');
                     var tedTab = document.getElementById('gt-pay-tab-ted');
+                    var receiptForm = document.getElementById('gt-pay-receipt-form');
+                    var autoFooter = document.getElementById('gt-pay-auto-footer');
                     var methodInp = document.getElementById('gt-pay-method-input');
                     var isPix = tab !== 'ted';
+                    var hideReceipt = isPix && provider !== 'static';
                     if (pixPane) pixPane.classList.toggle('hidden', !isPix);
                     if (tedPane) tedPane.classList.toggle('hidden', isPix);
                     if (pixTab) pixTab.classList.toggle('is-active', isPix);
                     if (tedTab) tedTab.classList.toggle('is-active', !isPix);
+                    if (receiptForm) receiptForm.classList.toggle('hidden', hideReceipt);
+                    if (autoFooter) autoFooter.classList.toggle('hidden', !hideReceipt);
                     if (methodInp) methodInp.value = isPix ? 'PIX' : 'Transferência / TED';
                 };
 
