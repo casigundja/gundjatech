@@ -107,7 +107,7 @@ export const PortalProjectsView: FC<PortalProjectsProps> = ({
                         {stages.length === 0 ? (
                             <div class="gt-empty-state">Nenhuma etapa detalhada no momento.</div>
                         ) : (
-                            <div class="gt-activity-feed">
+                            <div class="gt-activity-feed" style="max-height: 300px; overflow-y: auto; padding-right: 4px;">
                                 {stages.map((st: any) => {
                                     const isDone = st.status === 'completed';
                                     return (
@@ -145,7 +145,7 @@ export const PortalProjectsView: FC<PortalProjectsProps> = ({
                                     Nenhum arquivo disponibilizado ainda. Você também pode enviar arquivos para a equipe abaixo.
                                 </div>
                             ) : (
-                                <div class="space-y-2.5">
+                                <div class="space-y-2.5" style="max-height: 270px; overflow-y: auto; padding-right: 4px;">
                                     {attachments.map((att: any) => {
                                         const isFromClient = att.uploader_role === 'client' || Number(att.user_id) === Number(currentUser?.id);
                                         const sizeKb = att.file_size ? (att.file_size < 1024 * 1024 ? `${(att.file_size / 1024).toFixed(1)} KB` : `${(att.file_size / (1024 * 1024)).toFixed(1)} MB`) : '';

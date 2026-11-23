@@ -227,7 +227,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                                 <span class="gt-badge gt-badge-info">{completedStages}/{stages.length} concluídas</span>
                             </div>
 
-                            <div class="space-y-2.5">
+                            <div class="space-y-2.5" style="max-height: 270px; overflow-y: auto; padding-right: 4px;">
                                 {stages.length === 0 ? (
                                     <div class="gtb-surface-box rounded-xl p-6 text-center text-xs text-[#8C95AA]">
                                         Nenhuma etapa cadastrada ainda. Adicione o primeiro marco abaixo.
@@ -311,7 +311,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                                 </div>
                             </div>
 
-                            <div class="space-y-2.5">
+                            <div class="space-y-2.5" style="max-height: 270px; overflow-y: auto; padding-right: 4px;">
                                 {attachments.length === 0 ? (
                                     <div class="gtb-surface-box rounded-xl p-6 text-center text-xs text-[#8C95AA]">
                                         Nenhum documento ou anexo vinculado ainda. Use o formulário abaixo para enviar.
