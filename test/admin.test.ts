@@ -867,7 +867,7 @@ describe('Fase 4 • Módulo 5 & 6: Painel Administrativo Core & Avançado (/adm
         expect(data.service_requests[0].status).toBe('completed');
         const autoRevenueTx = data.financial_transactions[data.financial_transactions.length - 1];
         expect(autoRevenueTx.type).toBe('income');
-        expect(autoRevenueTx.status).toBe('paid');
+        expect(autoRevenueTx.status).toBe('pending');
     });
 
     it('6. Catálogo de serviços: cadastro de pacote e toggle de status', async () => {

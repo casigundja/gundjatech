@@ -969,38 +969,29 @@ async function autoRegisterRevenueOnProjectCompletion(
         ).bind(clientId, invoiceRef, description).first()) as { id: number; status: string; amount: number } | null;
 
         if (existingTx?.id) {
-            if (existingTx.status !== 'paid') {
+            if (amount > 0 && Number(existingTx.amount || 0) !== amount) {
                 await db.prepare(
                     `UPDATE financial_transactions
-                     SET status = 'paid',
-                         amount = CASE WHEN ? > 0 THEN ? ELSE amount END,
-                         paid_at = datetime('now'),
+                     SET amount = ?,
                          updated_at = datetime('now')
                      WHERE id = ?`
-                ).bind(amount, amount, existingTx.id).run();
+                ).bind(amount, existingTx.id).run();
             }
             return { transactionId: existingTx.id, amount: amount || Number(existingTx.amount || 0), created: false };
         }
     } catch { }
 
-    // 4. Insere automaticamente como Receita Liquidada (type = 'income', status = 'paid') em Receita & Caixa
-    const todayDate = new Date().toISOString().slice(0, 10);
+    // 4. Insere automaticamente como Receita A RECEBER (type = 'income', status = 'pending') em Receita & Caixa
+    // Permanece como A Receber até a confirmação manual do recebimento (botão "✓ Receber")
+    const dueDate = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
     let newTxId: number | undefined;
     try {
         const insTx = await db.prepare(
-            `INSERT INTO financial_transactions (client_id, type, category, description, amount, status, due_date, paid_at, payment_method, invoice_number, created_at, updated_at)
-             VALUES (?, 'income', 'contract', ?, ?, 'paid', ?, datetime('now'), ?, ?, datetime('now'), datetime('now'))`
-        ).bind(clientId, description, amount, todayDate, 'PIX', invoiceRef).run();
+            `INSERT INTO financial_transactions (client_id, type, category, description, amount, status, due_date, payment_method, invoice_number, created_at, updated_at)
+             VALUES (?, 'income', 'contract', ?, ?, 'pending', ?, ?, ?, datetime('now'), datetime('now'))`
+        ).bind(clientId, description, amount, dueDate, 'PIX', invoiceRef).run();
         newTxId = Number(insTx?.meta?.last_row_id || 0) || undefined;
-    } catch {
-        try {
-            const insTx = await db.prepare(
-                `INSERT INTO financial_transactions (client_id, type, category, description, amount, status, due_date, payment_method, invoice_number, created_at, updated_at)
-                 VALUES (?, 'income', 'contract', ?, ?, 'paid', ?, ?, ?, datetime('now'), datetime('now'))`
-            ).bind(clientId, description, amount, todayDate, 'PIX', invoiceRef).run();
-            newTxId = Number(insTx?.meta?.last_row_id || 0) || undefined;
-        } catch { }
-    }
+    } catch { }
 
     return { transactionId: newTxId, amount, created: true };
 }
