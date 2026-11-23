@@ -1,5 +1,6 @@
 import type { FC, PropsWithChildren } from 'hono/jsx';
 import { hasPermission } from '../../lib/rbac';
+import { resolveToastMeta } from '../../lib/toast';
 import type { UserRole } from '../../types/env';
 
 interface AdminLayoutProps {
@@ -518,40 +519,44 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                     </header>
 
                     {/* Flash Toast Notifications (Auto-dismiss 5s) */}
-                    {(successMessage || errorMessage) && (
-                        <div id="gt-flash-toast-stack" class="gt-flash-toast-stack" role="status" aria-live="polite">
-                            {successMessage && (
-                                <div class="gt-flash-toast gt-flash-toast--success" data-auto-dismiss="5000">
-                                    <span class="gt-flash-toast__icon" aria-hidden="true">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                    </span>
-                                    <div class="gt-flash-toast__content">
-                                        <div class="gt-flash-toast__title">Operação concluída</div>
-                                        <div class="gt-flash-toast__msg">{successMessage}</div>
+                    {(successMessage || errorMessage) && (() => {
+                        const okMeta = successMessage ? resolveToastMeta(successMessage, false) : null;
+                        const errMeta = errorMessage ? resolveToastMeta(errorMessage, true) : null;
+                        return (
+                            <div id="gt-flash-toast-stack" class="gt-flash-toast-stack" role="status" aria-live="polite">
+                                {successMessage && okMeta && (
+                                    <div class="gt-flash-toast gt-flash-toast--success" data-auto-dismiss="5000">
+                                        <span class="gt-flash-toast__icon" aria-hidden="true">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d={okMeta.iconPath}/></svg>
+                                        </span>
+                                        <div class="gt-flash-toast__content">
+                                            <div class="gt-flash-toast__title">{okMeta.title}</div>
+                                            <div class="gt-flash-toast__msg">{successMessage}</div>
+                                        </div>
+                                        <button type="button" class="gt-flash-toast__close" aria-label="Fechar notificação" onclick="var t=this.closest('.gt-flash-toast');if(t){t.classList.add('is-leaving');setTimeout(function(){t.remove();},250);}">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                        <span class="gt-flash-toast__bar"></span>
                                     </div>
-                                    <button type="button" class="gt-flash-toast__close" aria-label="Fechar notificação" onclick="var t=this.closest('.gt-flash-toast');if(t){t.classList.add('is-leaving');setTimeout(function(){t.remove();},250);}">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                    </button>
-                                    <span class="gt-flash-toast__bar"></span>
-                                </div>
-                            )}
-                            {errorMessage && (
-                                <div class="gt-flash-toast gt-flash-toast--error" data-auto-dismiss="6500">
-                                    <span class="gt-flash-toast__icon" aria-hidden="true">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-                                    </span>
-                                    <div class="gt-flash-toast__content">
-                                        <div class="gt-flash-toast__title">Atenção</div>
-                                        <div class="gt-flash-toast__msg">{errorMessage}</div>
+                                )}
+                                {errorMessage && errMeta && (
+                                    <div class="gt-flash-toast gt-flash-toast--error" data-auto-dismiss="6500">
+                                        <span class="gt-flash-toast__icon" aria-hidden="true">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d={errMeta.iconPath}/></svg>
+                                        </span>
+                                        <div class="gt-flash-toast__content">
+                                            <div class="gt-flash-toast__title">{errMeta.title}</div>
+                                            <div class="gt-flash-toast__msg">{errorMessage}</div>
+                                        </div>
+                                        <button type="button" class="gt-flash-toast__close" aria-label="Fechar notificação" onclick="var t=this.closest('.gt-flash-toast');if(t){t.classList.add('is-leaving');setTimeout(function(){t.remove();},250);}">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                        <span class="gt-flash-toast__bar" style="animation-duration: 6.5s;"></span>
                                     </div>
-                                    <button type="button" class="gt-flash-toast__close" aria-label="Fechar notificação" onclick="var t=this.closest('.gt-flash-toast');if(t){t.classList.add('is-leaving');setTimeout(function(){t.remove();},250);}">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                    </button>
-                                    <span class="gt-flash-toast__bar" style="animation-duration: 6.5s;"></span>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                                )}
+                            </div>
+                        );
+                    })()}
 
                     {/* Live Real-Time Toast Notification Stack (Sound + Visual Alert) */}
                     <div id="gt-live-toast-stack" class="fixed bottom-5 right-5 z-[100] w-80 max-w-[calc(100vw-2rem)] space-y-2.5 pointer-events-none"></div>

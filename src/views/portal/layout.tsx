@@ -1,4 +1,5 @@
 import type { FC, PropsWithChildren } from 'hono/jsx';
+import { resolveToastMeta } from '../../lib/toast';
 
 interface PortalLayoutProps {
     title?: string;
@@ -306,40 +307,44 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                     </header>
 
                     {/* Flash Toasts */}
-                    {(successMessage || errorMessage) && (
-                        <div id="gt-flash-toast-stack" class="gt-toast-stack" role="status" aria-live="polite">
-                            {successMessage && (
-                                <div class="gt-flash-toast gt-flash-toast-success" data-auto-dismiss="5000">
-                                    <div class="gt-flash-toast-icon">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    {(successMessage || errorMessage) && (() => {
+                        const okMeta = successMessage ? resolveToastMeta(successMessage, false) : null;
+                        const errMeta = errorMessage ? resolveToastMeta(errorMessage, true) : null;
+                        return (
+                            <div id="gt-flash-toast-stack" class="gt-toast-stack" role="status" aria-live="polite">
+                                {successMessage && okMeta && (
+                                    <div class="gt-flash-toast gt-flash-toast-success" data-auto-dismiss="5000">
+                                        <div class="gt-flash-toast-icon">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d={okMeta.iconPath}/></svg>
+                                        </div>
+                                        <div class="gt-flash-toast-content">
+                                            <div class="gt-flash-toast-title">{okMeta.title}</div>
+                                            <div class="gt-flash-toast-text">{successMessage}</div>
+                                        </div>
+                                        <button type="button" class="gt-flash-toast-close" onclick="this.closest('.gt-flash-toast').remove()" aria-label="Fechar">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                        <div class="gt-flash-toast-bar"></div>
                                     </div>
-                                    <div class="gt-flash-toast-content">
-                                        <div class="gt-flash-toast-title">Operação concluída</div>
-                                        <div class="gt-flash-toast-text">{successMessage}</div>
+                                )}
+                                {errorMessage && errMeta && (
+                                    <div class="gt-flash-toast gt-flash-toast-error" data-auto-dismiss="6500">
+                                        <div class="gt-flash-toast-icon">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d={errMeta.iconPath}/></svg>
+                                        </div>
+                                        <div class="gt-flash-toast-content">
+                                            <div class="gt-flash-toast-title">{errMeta.title}</div>
+                                            <div class="gt-flash-toast-text">{errorMessage}</div>
+                                        </div>
+                                        <button type="button" class="gt-flash-toast-close" onclick="this.closest('.gt-flash-toast').remove()" aria-label="Fechar">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                        <div class="gt-flash-toast-bar"></div>
                                     </div>
-                                    <button type="button" class="gt-flash-toast-close" onclick="this.closest('.gt-flash-toast').remove()" aria-label="Fechar">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                    </button>
-                                    <div class="gt-flash-toast-bar"></div>
-                                </div>
-                            )}
-                            {errorMessage && (
-                                <div class="gt-flash-toast gt-flash-toast-error" data-auto-dismiss="6500">
-                                    <div class="gt-flash-toast-icon">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/></svg>
-                                    </div>
-                                    <div class="gt-flash-toast-content">
-                                        <div class="gt-flash-toast-title">Atenção</div>
-                                        <div class="gt-flash-toast-text">{errorMessage}</div>
-                                    </div>
-                                    <button type="button" class="gt-flash-toast-close" onclick="this.closest('.gt-flash-toast').remove()" aria-label="Fechar">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                    </button>
-                                    <div class="gt-flash-toast-bar"></div>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                                )}
+                            </div>
+                        );
+                    })()}
 
                     {/* Main Content Canvas */}
                     <main class="gt-admin-main flex-1 overflow-y-auto p-4 sm:p-6 lg:p-7 space-y-6">
