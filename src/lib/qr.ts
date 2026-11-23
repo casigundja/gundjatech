@@ -213,13 +213,16 @@ export function generateQrMatrix(text: string): boolean[][] {
         setFn(i, 6, i % 2 === 0);
     }
 
-    // Alignment patterns
+    // Alignment patterns (skip only the 3 finder corners, NOT the timing row/col!)
     const centers = ALIGNMENT_CENTERS[version];
     for (let i = 0; i < centers.length; i++) {
         for (let j = 0; j < centers.length; j++) {
+            const isTopLeft = i === 0 && j === 0;
+            const isTopRight = i === 0 && j === centers.length - 1;
+            const isBottomLeft = i === centers.length - 1 && j === 0;
+            if (isTopLeft || isTopRight || isBottomLeft) continue;
             const r0 = centers[i];
             const c0 = centers[j];
-            if (isFunction[r0][c0]) continue;
             for (let dr = -2; dr <= 2; dr++) {
                 for (let dc = -2; dc <= 2; dc++) {
                     const dist = Math.max(Math.abs(dr), Math.abs(dc));
