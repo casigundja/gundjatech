@@ -197,25 +197,47 @@ export const AdminDomainsView: FC<AdminDomainsProps> = ({
                                                 <span class={`gt-badge ${statusMeta.badgeClass}`}>{statusMeta.label}</span>
                                             </td>
                                             <td class="py-3.5 px-5 text-right whitespace-nowrap">
-                                                <form
-                                                    action={`/admin/dominios/${d.id}/excluir`}
-                                                    method="post"
-                                                    class="inline-block m-0"
-                                                    data-confirm="Deseja realmente remover este domínio do monitoramento?"
-                                                >
+                                                <div class="inline-flex items-center justify-end gap-1.5">
                                                     <button
-                                                        type="submit"
-                                                        class="gt-btn-danger-ghost gt-btn-icon-only"
-                                                        title="Excluir domínio"
-                                                        aria-label="Excluir domínio"
+                                                        type="button"
+                                                        data-id={String(d.id)}
+                                                        data-client-id={String(d.client_id || '')}
+                                                        data-domain-name={String(d.domain_name || '')}
+                                                        data-registrar={String(d.registrar || '')}
+                                                        data-dns-provider={String(d.dns_provider || 'Cloudflare Edge')}
+                                                        data-expires-at={d.expires_at ? String(d.expires_at).slice(0, 10) : ''}
+                                                        data-auto-renew={d.auto_renew ? '1' : '0'}
+                                                        data-status={String(d.status || 'active')}
+                                                        onclick="window.GT_OpenEditDomainModal && window.GT_OpenEditDomainModal(this)"
+                                                        class="gt-btn-outline gt-btn-xs"
+                                                        title="Editar domínio"
                                                     >
-                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                            <path d="M3 6h18" />
-                                                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                                                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path d="M12 20h9" />
+                                                            <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
                                                         </svg>
+                                                        <span>Editar</span>
                                                     </button>
-                                                </form>
+                                                    <form
+                                                        action={`/admin/dominios/${d.id}/excluir`}
+                                                        method="post"
+                                                        class="inline-block m-0"
+                                                        data-confirm="Deseja realmente remover este domínio do monitoramento?"
+                                                    >
+                                                        <button
+                                                            type="submit"
+                                                            class="gt-btn-danger-ghost gt-btn-icon-only"
+                                                            title="Excluir domínio"
+                                                            aria-label="Excluir domínio"
+                                                        >
+                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                <path d="M3 6h18" />
+                                                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                                            </svg>
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </td>
                                         </tr>
                                     );
@@ -229,8 +251,9 @@ export const AdminDomainsView: FC<AdminDomainsProps> = ({
             {/* Modal Novo Domínio */}
             <div
                 id="modal-novo-dominio"
-                style="display: none; position: fixed; inset: 0; z-index: 100; align-items: center; justify-content: center; padding: 16px;"
-                class="bg-black/80 backdrop-blur-xs"
+                onclick="if(event.target===this)this.style.display='none'"
+                style="display: none; position: fixed; inset: 0; margin: 0; z-index: 200; align-items: center; justify-content: center; padding: 16px;"
+                class="gt-modal-overlay bg-black/80 backdrop-blur-xs"
             >
                 <div class="gtb-card gt-modal-card max-w-lg p-6 sm:p-8">
                     <div class="flex items-center justify-between gap-3 mb-5">
@@ -302,6 +325,127 @@ export const AdminDomainsView: FC<AdminDomainsProps> = ({
                     </form>
                 </div>
             </div>
+
+            {/* Modal Editar Domínio */}
+            <div
+                id="modal-editar-dominio"
+                onclick="if(event.target===this)this.style.display='none'"
+                style="display: none; position: fixed; inset: 0; margin: 0; z-index: 200; align-items: center; justify-content: center; padding: 16px;"
+                class="gt-modal-overlay bg-black/80 backdrop-blur-xs"
+            >
+                <div class="gtb-card gt-modal-card max-w-lg p-5 sm:p-6">
+                    <div class="flex items-center justify-between gap-3 mb-4">
+                        <h2 class="gt-font-display text-lg font-extrabold text-white">Editar Domínio &amp; DNS</h2>
+                        <button
+                            type="button"
+                            onclick="document.getElementById('modal-editar-dominio').style.display='none'"
+                            class="text-[#8C95AA] hover:text-white text-xl leading-none cursor-pointer bg-transparent border-0"
+                        >
+                            &times;
+                        </button>
+                    </div>
+
+                    <form id="gt-edit-domain-form" action="/admin/dominios/0/editar" method="post" class="space-y-3.5">
+                        <div>
+                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Cliente Titular *</label>
+                            <select id="gt-edit-domain-client" name="client_id" required class="w-full rounded-xl px-3.5 py-2.5 text-[13px]">
+                                <option value="">Selecione o cliente...</option>
+                                {clients.map((c) => (
+                                    <option value={c.id}>{c.company ? `${c.company} (${c.name})` : c.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Nome do Domínio (FQDN) *</label>
+                            <input
+                                id="gt-edit-domain-name"
+                                type="text"
+                                name="domain_name"
+                                required
+                                placeholder="exemplo.com.br"
+                                class="w-full rounded-xl px-3.5 py-2.5 text-[13px] font-mono"
+                            />
+                        </div>
+
+                        <div class="gt-grid-2">
+                            <div>
+                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Registrador</label>
+                                <input id="gt-edit-domain-registrar" type="text" name="registrar" placeholder="Registro.br / Cloudflare" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]" />
+                            </div>
+                            <div>
+                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Provedor DNS</label>
+                                <input id="gt-edit-domain-dns" type="text" name="dns_provider" placeholder="Cloudflare Edge" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]" />
+                            </div>
+                        </div>
+
+                        <div class="gt-grid-2">
+                            <div>
+                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Data de Expiração</label>
+                                <input id="gt-edit-domain-expires" type="date" name="expires_at" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]" />
+                            </div>
+                            <div>
+                                <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Status</label>
+                                <select id="gt-edit-domain-status" name="status" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]">
+                                    <option value="active">Ativo &amp; Configurado</option>
+                                    <option value="pending_dns">Aguardando DNS</option>
+                                    <option value="expiring">Expirando</option>
+                                    <option value="expired">Expirado</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="gtb-surface-box rounded-xl overflow-hidden">
+                            <label class="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer">
+                                <div>
+                                    <div class="text-xs font-bold text-white">Renovação Automática GundjaTech</div>
+                                    <div class="text-[10.5px] text-[#8C95AA]">Renova preventivamente antes do vencimento</div>
+                                </div>
+                                <input id="gt-edit-domain-autorenew" type="checkbox" name="auto_renew" value="1" class="gt-switch" />
+                            </label>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-white/10">
+                            <button
+                                type="button"
+                                onclick="document.getElementById('modal-editar-dominio').style.display='none'"
+                                class="gt-btn-outline gt-btn-sm"
+                            >
+                                Cancelar
+                            </button>
+                            <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm">
+                                Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <script dangerouslySetInnerHTML={{ __html: `
+                window.GT_OpenEditDomainModal = function (btn) {
+                    var modal = document.getElementById('modal-editar-dominio');
+                    var form = document.getElementById('gt-edit-domain-form');
+                    if (!modal || !form || !btn) return;
+                    var id = btn.getAttribute('data-id') || '';
+                    form.setAttribute('action', '/admin/dominios/' + encodeURIComponent(id) + '/editar');
+                    var clientEl = document.getElementById('gt-edit-domain-client');
+                    var nameEl = document.getElementById('gt-edit-domain-name');
+                    var regEl = document.getElementById('gt-edit-domain-registrar');
+                    var dnsEl = document.getElementById('gt-edit-domain-dns');
+                    var expEl = document.getElementById('gt-edit-domain-expires');
+                    var statusEl = document.getElementById('gt-edit-domain-status');
+                    var autoEl = document.getElementById('gt-edit-domain-autorenew');
+                    if (clientEl) clientEl.value = btn.getAttribute('data-client-id') || '';
+                    if (nameEl) nameEl.value = btn.getAttribute('data-domain-name') || '';
+                    if (regEl) regEl.value = btn.getAttribute('data-registrar') || '';
+                    if (dnsEl) dnsEl.value = btn.getAttribute('data-dns-provider') || 'Cloudflare Edge';
+                    if (expEl) expEl.value = btn.getAttribute('data-expires-at') || '';
+                    if (statusEl) statusEl.value = btn.getAttribute('data-status') || 'active';
+                    if (autoEl) autoEl.checked = btn.getAttribute('data-auto-renew') === '1';
+                    modal.style.display = 'flex';
+                    if (nameEl) setTimeout(function () { nameEl.focus(); }, 40);
+                };
+            ` }} />
         </AdminLayout>
     );
 };

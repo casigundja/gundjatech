@@ -3291,6 +3291,41 @@ adminRoutes.post('/dominios', async (c) => {
     }
 });
 
+adminRoutes.post('/dominios/:id/editar', async (c) => {
+    const db = c.env.DB;
+    const id = Number(c.req.param('id'));
+    const body = await getRequestBody(c);
+
+    if (!id) {
+        return c.redirect('/admin/dominios?error=Domínio inválido');
+    }
+
+    const clientId = Number(body.client_id);
+    const domainName = String(body.domain_name || '').trim().toLowerCase();
+    const registrar = String(body.registrar || 'Cloudflare / Registro.br').trim();
+    const dnsProvider = String(body.dns_provider || 'Cloudflare Edge').trim();
+    const expiresAt = String(body.expires_at || '').trim() || null;
+    const autoRenew = body.auto_renew === '1' || body.auto_renew === 1 ? 1 : 0;
+    const rawStatus = String(body.status || 'active').trim();
+    const status = ['active', 'pending_dns', 'expiring', 'expired'].includes(rawStatus) ? rawStatus : 'active';
+
+    if (!clientId || !domainName) {
+        return c.redirect('/admin/dominios?error=Cliente e Nome do Domínio são obrigatórios');
+    }
+
+    try {
+        await db.prepare(
+            `UPDATE domains
+             SET client_id = ?, domain_name = ?, registrar = ?, dns_provider = ?, expires_at = ?, auto_renew = ?, status = ?, updated_at = datetime('now')
+             WHERE id = ?`
+        ).bind(clientId, domainName, registrar, dnsProvider, expiresAt, autoRenew, status, id).run();
+
+        return c.redirect('/admin/dominios?success=Domínio atualizado com sucesso');
+    } catch (err: any) {
+        return c.redirect(`/admin/dominios?error=${encodeURIComponent(err.message || 'Erro ao atualizar domínio')}`);
+    }
+});
+
 adminRoutes.post('/dominios/:id/excluir', async (c) => {
     const db = c.env.DB;
     const id = c.req.param('id');
