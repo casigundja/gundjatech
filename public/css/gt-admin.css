@@ -2347,6 +2347,50 @@ html[data-admin-theme="light"] .gtb-notif-empty-icon {
     gap: 24px;
 }
 
+/* Detalhe de Solicitação: encaixa na tela desktop sem extrapolar e sem espaços vazios */
+.gt-req-detail-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: calc(100vh - 120px);
+    max-height: calc(100vh - 120px);
+    overflow: hidden;
+}
+
+.gt-req-detail-grid {
+    flex: 1 1 0%;
+    min-height: 0;
+    align-items: stretch;
+    overflow: hidden;
+}
+
+.gt-req-detail-left {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+.gt-req-detail-right {
+    min-height: 0;
+    height: 100%;
+    overflow-y: auto;
+}
+
+@media (max-width: 1023px) {
+    .gt-req-detail-shell,
+    .gt-req-detail-grid,
+    .gt-req-detail-left,
+    .gt-req-detail-right {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    .gt-req-history-card .gt-activity-feed {
+        max-height: 420px;
+    }
+}
+
 .gt-cards-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));

@@ -8,6 +8,7 @@ interface AdminRequestsProps {
     history?: any[];
     linkedQuotation?: any;
     linkedProject?: any;
+    hasPaidInvoice?: boolean;
     statusFilter?: string;
     search?: string;
     successMessage?: string | null;
@@ -100,6 +101,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
     history = [],
     linkedQuotation = null,
     linkedProject = null,
+    hasPaidInvoice = false,
     statusFilter = '',
     search = '',
     successMessage,
@@ -126,6 +128,12 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
             hasActiveProject ||
             requestDetail.status === 'in_progress' ||
             requestDetail.status === 'completed';
+        const canRollbackExecution = !isProjectCompleted && !hasPaidInvoice;
+        const rollbackLockSuffix = hasPaidInvoice
+            ? ' — Fatura paga (Trava Contábil)'
+            : isProjectCompleted
+                ? ' — Projeto concluído'
+                : '';
         const canSendQuotation =
             effectiveBudgetValue > 0 &&
             (isQuotationSent || isQuotationApproved || isQuotationDraftOrRejected || !hasQuotation);
@@ -145,7 +153,8 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                 successMessage={successMessage}
                 errorMessage={errorMessage}
             >
-                <div class="gt-grid-detail" style="align-items: center; gap: 14px 20px;">
+                <div class="gt-req-detail-shell">
+                <div class="gt-grid-detail" style="align-items: center; gap: 10px 16px; flex-shrink: 0;">
                     {/* Topo Esquerdo: Voltar + Ações Secundárias (alinhado com o Card Principal) */}
                     <div class="flex items-center justify-between gap-3 flex-wrap min-w-0">
                         <a href="/admin/solicitacoes" class="gt-back-link">
@@ -232,15 +241,15 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                     </div>
                 </div>
 
-                <div class="gt-grid-detail" style="align-items: start; gap: 20px;">
+                <div class="gt-grid-detail gt-req-detail-grid" style="gap: 16px;">
                     {/* Coluna Principal: 3 Cards Separados (Resumo/Pipeline, Descrição, Histórico) */}
-                    <div class="min-w-0" style="display: flex; flex-direction: column; gap: 20px;">
+                    <div class="min-w-0 gt-req-detail-left" style="display: flex; flex-direction: column; gap: 12px;">
                         {/* Card 1: Resumo, Metadados, Pipeline e Orçamento Vinculado */}
-                        <section class="gtb-card !p-5 sm:!p-6 min-w-0" style="display: flex; flex-direction: column; gap: 20px;">
+                        <section class="gtb-card !p-4 min-w-0" style="flex-shrink: 0; display: flex; flex-direction: column; gap: 12px;">
                             {/* Cabeçalho Hero */}
-                            <div class="space-y-3.5 pb-4" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                            <div class="space-y-2.5 pb-3" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                                 <div class="flex items-center justify-between gap-3 flex-wrap">
-                                    <div class="flex items-center gap-2.5 flex-wrap">
+                                    <div class="flex items-center gap-2 flex-wrap">
                                         <span class="gt-req-pill-neutral font-mono">{requestDetail.protocol}</span>
                                         <span class={`gt-badge ${meta.badgeClass}`}>{meta.label}</span>
                                         {isConvertedToProject && (
@@ -252,12 +261,12 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                     </span>
                                 </div>
 
-                                <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white leading-snug">
+                                <h1 class="gt-font-display text-base sm:text-lg font-extrabold text-white leading-snug">
                                     {requestDetail.service_title || requestDetail.title}
                                 </h1>
 
                                 {/* Chips de Contato e Valor */}
-                                <div class="gt-req-meta-grid" style="gap: 12px; padding-top: 2px;">
+                                <div class="gt-req-meta-grid" style="gap: 10px;">
                                 <div class="gt-req-meta-chip">
                                     <span class="gt-req-meta-icon" aria-hidden="true">
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -314,13 +323,13 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                             </div>
                         ) : (
                             <div style="flex-shrink: 0;">
-                                <div class="flex items-center justify-between gap-2 mb-2.5">
+                                <div class="flex items-center justify-between gap-2 mb-1.5">
                                     <h2 class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Progresso no Pipeline</h2>
                                     <span class="text-[10.5px] font-bold text-[#8C95AA]">
                                         Etapa {Math.max(1, currentStepIndex + 1)} de {PIPELINE_STEPS.length}
                                     </span>
                                 </div>
-                                <div class="gt-req-stepper" style="padding: 13px 16px;" role="list" aria-label="Etapas da solicitação">
+                                <div class="gt-req-stepper" style="padding: 9px 14px;" role="list" aria-label="Etapas da solicitação">
                                     {PIPELINE_STEPS.map((step, idx) => {
                                         const isCompletedAll = requestDetail.status === 'completed';
                                         const isDone = isCompletedAll || (currentStepIndex >= 0 && idx < currentStepIndex);
@@ -346,7 +355,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                         )}
 
                         {/* Card de Governança: Orçamento Obrigatório -> Aprovação -> Projeto */}
-                        <div class="gtb-surface-box rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+                        <div class="gtb-surface-box rounded-xl px-3.5 py-2 flex items-center justify-between gap-3 flex-wrap">
                             {hasQuotation ? (
                                 <>
                                     <div class="flex items-center gap-2.5 flex-wrap min-w-0">
@@ -391,11 +400,11 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                         </section>
 
                         {/* Card 2: Descrição da Demanda */}
-                        <section class="gtb-card !p-5 sm:!p-6 min-w-0">
-                            <div class="flex items-center justify-between gap-2 pb-3 mb-3.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
-                                <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Descrição da Demanda</h2>
+                        <section class="gtb-card !p-3.5 sm:!px-4 min-w-0" style="flex-shrink: 0;">
+                            <div class="flex items-center justify-between gap-2 mb-2">
+                                <h2 class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Descrição da Demanda</h2>
                             </div>
-                            <div class="gt-req-briefing" style="padding: 14px 18px 14px 20px; max-height: 240px; overflow-y: auto;">
+                            <div class="gt-req-briefing" style="padding: 9px 14px 9px 16px; max-height: 82px; overflow-y: auto;">
                                 {structuredDesc ? (
                                     <div class="gt-req-kv-list">
                                         {structuredDesc.map((item) => (
@@ -421,19 +430,19 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                             </div>
                         </section>
 
-                        {/* Card 3: Linha do Tempo / Feed de Atividades */}
-                        <section class="gtb-card !p-5 sm:!p-6 min-w-0" style="display: flex; flex-direction: column;">
-                            <div class="flex items-center justify-between gap-2 pb-3 mb-3.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
-                                <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Histórico de Atividades</h2>
-                                <span class="text-[11px] font-semibold text-[#8C95AA]">{history.length} {history.length === 1 ? 'evento' : 'eventos'}</span>
+                        {/* Card 3: Linha do Tempo / Feed de Atividades (flex: 0 1 auto -> compacto com 1 item e rola internamente sem extrapolar a tela) */}
+                        <section class="gtb-card !p-3.5 sm:!px-4 min-w-0 gt-req-history-card" style="flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+                            <div class="flex items-center justify-between gap-2 mb-2" style="flex-shrink: 0;">
+                                <h2 class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Histórico de Atividades</h2>
+                                <span class="text-[10.5px] font-semibold text-[#8C95AA]">{history.length} {history.length === 1 ? 'evento' : 'eventos'}</span>
                             </div>
 
                             {history.length === 0 ? (
-                                <div class="gtb-surface-box rounded-xl p-4 text-xs text-[#8C95AA]">
+                                <div class="gtb-surface-box rounded-xl p-3 text-xs text-[#8C95AA]">
                                     Nenhuma movimentação registrada ainda.
                                 </div>
                             ) : (
-                                <div class="gt-activity-feed" id="gt-request-activity-feed" style="max-height: 460px; overflow-y: auto; padding: 6px 16px;">
+                                <div class="gt-activity-feed" id="gt-request-activity-feed" style="flex: 0 1 auto; min-height: 0; overflow-y: auto; padding: 4px 14px;">
                                     {history.map((h: any, idx: number) => {
                                         const fromSt = h.from_status || h.old_status || h.status_from || '';
                                         const toSt = h.to_status || h.new_status || h.status_to || '';
@@ -508,29 +517,29 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                     </div>
 
                     {/* Coluna Lateral: Atualizar Status + Ações Rápidas */}
-                    <div class="min-w-0" style="display: flex; flex-direction: column; gap: 20px;">
-                        <aside class="gtb-card !p-5 sm:!p-6 min-w-0" style="display: flex; flex-direction: column;">
-                            <div class="pb-3.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                    <div class="min-w-0 gt-req-detail-right" style="display: flex; flex-direction: column; gap: 12px;">
+                        <aside class="gtb-card !p-4 min-w-0" style="flex-shrink: 0; display: flex; flex-direction: column;">
+                            <div class="pb-2.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                                 <h2 class="gt-font-display text-sm font-extrabold text-white">Atualizar Status Operacional</h2>
                                 <p class="text-[11px] text-[#8C95AA] mt-0.5">Registre o avanço no pipeline comercial.</p>
                             </div>
 
-                            <form action={`/admin/solicitacoes/${requestDetail.id}/status`} method="post" data-dirty-guard="1" style="display: flex; flex-direction: column; gap: 14px; margin-top: 14px;">
+                            <form action={`/admin/solicitacoes/${requestDetail.id}/status`} method="post" data-dirty-guard="1" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
                                 <div>
                                     <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Novo Status</label>
                                     <select name="status" class="w-full rounded-xl px-3 py-2 text-xs">
-                                        <option value="new" selected={requestDetail.status === 'new'} disabled={isConvertedToProject}>
-                                            1. Novo / Recebido{isConvertedToProject ? ' — Projeto já iniciado' : ''}
+                                        <option value="new" selected={requestDetail.status === 'new'} disabled={isConvertedToProject && !canRollbackExecution}>
+                                            1. Novo / Recebido{isConvertedToProject && !canRollbackExecution ? rollbackLockSuffix : ''}
                                         </option>
-                                        <option value="analyzing" selected={requestDetail.status === 'analyzing'} disabled={isConvertedToProject}>
-                                            2. Em Análise Técnica{isConvertedToProject ? ' — Projeto já iniciado' : ''}
+                                        <option value="analyzing" selected={requestDetail.status === 'analyzing'} disabled={isConvertedToProject && !canRollbackExecution}>
+                                            2. Em Análise Técnica{isConvertedToProject && !canRollbackExecution ? rollbackLockSuffix : ''}
                                         </option>
                                         <option
                                             value="quotation_sent"
                                             selected={requestDetail.status === 'quotation_sent'}
-                                            disabled={(!canSendQuotation && requestDetail.status !== 'quotation_sent') || isConvertedToProject}
+                                            disabled={(!canSendQuotation && requestDetail.status !== 'quotation_sent') || (isConvertedToProject && !canRollbackExecution)}
                                         >
-                                            3. Orçamento Enviado ao Cliente{!canSendQuotation && requestDetail.status !== 'quotation_sent' ? (hasQuotation ? ' — Defina valor no Orçamento acima' : ' — Elabore o Orçamento acima') : ''}
+                                            3. Orçamento Enviado ao Cliente{isConvertedToProject && !canRollbackExecution ? rollbackLockSuffix : !canSendQuotation && requestDetail.status !== 'quotation_sent' ? (hasQuotation ? ' — Defina valor no Orçamento acima' : ' — Elabore o Orçamento acima') : ''}
                                         </option>
                                         <option
                                             value="approved"
@@ -569,7 +578,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                         rows={3}
                                         placeholder="Descreva o motivo ou avanço desta etapa..."
                                         class="w-full rounded-xl px-3 py-2 text-xs"
-                                        style="height: 82px; min-height: 82px; max-height: 112px; resize: none;"
+                                        style="height: 66px; min-height: 66px; max-height: 92px; resize: none;"
                                     ></textarea>
                                 </div>
 
@@ -581,14 +590,14 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                         </aside>
 
                         {/* Card de Ações Rápidas & Gestão */}
-                        <aside class="gtb-card !p-5 sm:!p-6 min-w-0" style="display: flex; flex-direction: column; gap: 16px;">
-                            <div class="space-y-3">
-                                <div class="pb-3" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                        <aside class="gtb-card !p-4 min-w-0" style="flex-shrink: 0; display: flex; flex-direction: column; gap: 12px;">
+                            <div class="space-y-2.5">
+                                <div class="pb-2" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                                     <h2 class="gt-font-display text-sm font-extrabold text-white">Ações Rápidas &amp; Gestão</h2>
                                     <p class="text-[11px] text-[#8C95AA] mt-0.5">Comunicação direta, rastreio e controle administrativo.</p>
                                 </div>
 
-                                <div class="space-y-2.5">
+                                <div class="space-y-2">
                                     <button
                                         type="button"
                                         onclick={`var url=window.location.origin+'${trackingPath}';navigator.clipboard.writeText(url).then(function(){var el=document.getElementById('gt-copy-track-lbl');if(el){el.textContent='Link copiado!';setTimeout(function(){el.textContent='Copiar Link de Rastreio';},2000);}});`}
@@ -621,7 +630,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                 </div>
                             </div>
 
-                            <div class={`grid gap-2.5 pt-4 ${requestDetail.status !== 'cancelled' ? 'grid-cols-2' : 'grid-cols-1'}`} style="border-top: 1px solid rgba(22, 116, 154, 0.14); flex-shrink: 0;">
+                            <div class={`grid gap-2 pt-3 ${requestDetail.status !== 'cancelled' ? 'grid-cols-2' : 'grid-cols-1'}`} style="border-top: 1px solid rgba(22, 116, 154, 0.14); flex-shrink: 0;">
                                 {requestDetail.status !== 'cancelled' && (
                                     <form action={`/admin/solicitacoes/${requestDetail.id}/cancelar`} method="post" class="m-0">
                                         <button type="submit" data-loading-text="Cancelando..." class="gt-btn-outline gt-btn-sm w-full justify-center">
@@ -648,6 +657,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                             </div>
                         </aside>
                     </div>
+                </div>
                 </div>
 
                 {/* Modal Editar Solicitação */}
