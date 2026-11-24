@@ -70,35 +70,39 @@ export async function ensureClientProfile(db: D1Database, user: { id: number; na
 }
 
 export async function getPortalDashboard(db: D1Database, clientId: number): Promise<Omit<PortalDashboardSummary, 'client'>> {
-    const pendingRequestsRes = await db.prepare(
-        `SELECT COUNT(*) as total FROM service_requests 
-         WHERE client_id = ? AND status IN ('new', 'analyzing', 'awaiting_info', 'quotation_sent', 'awaiting_approval')`
-    ).bind(clientId).first<{ total: number }>();
-
-    const activeProjectsRes = await db.prepare(
-        `SELECT COUNT(*) as total FROM projects 
-         WHERE client_id = ? AND status IN ('planning', 'in_progress', 'reviewing')`
-    ).bind(clientId).first<{ total: number }>();
-
-    const totalDomainsRes = await db.prepare(
-        `SELECT COUNT(*) as total FROM domains WHERE client_id = ?`
-    ).bind(clientId).first<{ total: number }>();
-
-    const activeCampaignsRes = await db.prepare(
-        `SELECT COUNT(*) as total FROM advertising_campaigns WHERE client_id = ? AND status = 'active'`
-    ).bind(clientId).first<{ total: number }>();
-
-    const quotationsPending = await db.prepare(
-        `SELECT * FROM quotations WHERE client_id = ? AND status = 'sent' ORDER BY created_at DESC LIMIT 5`
-    ).bind(clientId).all();
-
-    const recentProjects = await db.prepare(
-        `SELECT * FROM projects WHERE client_id = ? ORDER BY updated_at DESC LIMIT 3`
-    ).bind(clientId).all();
-
-    const recentRequests = await db.prepare(
-        `SELECT * FROM service_requests WHERE client_id = ? ORDER BY created_at DESC LIMIT 4`
-    ).bind(clientId).all();
+    const [
+        pendingRequestsRes,
+        activeProjectsRes,
+        totalDomainsRes,
+        activeCampaignsRes,
+        quotationsPending,
+        recentProjects,
+        recentRequests
+    ] = await Promise.all([
+        db.prepare(
+            `SELECT COUNT(*) as total FROM service_requests 
+             WHERE client_id = ? AND status IN ('new', 'analyzing', 'awaiting_info', 'quotation_sent', 'awaiting_approval')`
+        ).bind(clientId).first<{ total: number }>(),
+        db.prepare(
+            `SELECT COUNT(*) as total FROM projects 
+             WHERE client_id = ? AND status IN ('planning', 'in_progress', 'reviewing')`
+        ).bind(clientId).first<{ total: number }>(),
+        db.prepare(
+            `SELECT COUNT(*) as total FROM domains WHERE client_id = ?`
+        ).bind(clientId).first<{ total: number }>(),
+        db.prepare(
+            `SELECT COUNT(*) as total FROM advertising_campaigns WHERE client_id = ? AND status = 'active'`
+        ).bind(clientId).first<{ total: number }>(),
+        db.prepare(
+            `SELECT * FROM quotations WHERE client_id = ? AND status = 'sent' ORDER BY created_at DESC LIMIT 5`
+        ).bind(clientId).all(),
+        db.prepare(
+            `SELECT * FROM projects WHERE client_id = ? ORDER BY updated_at DESC LIMIT 3`
+        ).bind(clientId).all(),
+        db.prepare(
+            `SELECT * FROM service_requests WHERE client_id = ? ORDER BY created_at DESC LIMIT 4`
+        ).bind(clientId).all()
+    ]);
 
     return {
         pendingRequests: pendingRequestsRes?.total ?? 0,

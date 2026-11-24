@@ -710,6 +710,7 @@ ${urls.map((u) => `  <url><loc>${u}</loc><changefreq>weekly</changefreq><priorit
 </urlset>`;
 
     c.header('Content-Type', 'application/xml; charset=utf-8');
+    c.header('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
     return c.body(xml);
 });
 
@@ -725,5 +726,6 @@ publicRoutes.get('/feed.xml', (c) => {
 </rss>`;
 
     c.header('Content-Type', 'application/xml; charset=utf-8');
+    c.header('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
     return c.body(xml);
 });

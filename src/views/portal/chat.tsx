@@ -215,6 +215,10 @@ export const PortalChatView: FC<PortalChatProps> = ({
                         } catch (e) {}
                     }
                     async function pollPortalChat() {
+                        if (document.hidden) {
+                            setTimeout(pollPortalChat, 12000);
+                            return;
+                        }
                         try {
                             var r = await fetch('/portal/atendimento/' + convId + '/mensagens?after_id=' + lastId, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
                             if (!r.ok) return;

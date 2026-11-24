@@ -15,10 +15,6 @@ adminCampaignsRoutes.get('/campanhas', async (c) => {
     const platformFilter = (c.req.query('platform') || '').trim();
     const statusFilter = (c.req.query('status') || '').trim();
 
-    const budgetRow = await db.prepare(
-        `SELECT SUM(budget) as total_budget, SUM(spent_amount) as total_spent FROM advertising_campaigns`
-    ).first<{ total_budget: number; total_spent: number }>();
-
     let query = `
         SELECT a.*, c.name as client_name, c.company
         FROM advertising_campaigns a
@@ -46,9 +42,15 @@ adminCampaignsRoutes.get('/campanhas', async (c) => {
     query += ` ORDER BY a.created_at DESC`;
 
     const stmt = db.prepare(query);
-    const campaigns = (await (params.length ? stmt.bind(...params) : stmt).all()).results || [];
-
-    const clients = (await db.prepare(`SELECT id, name, company FROM clients ORDER BY company ASC, name ASC`).all()).results || [];
+    const [budgetRow, campaignsRes, clientsRes] = await Promise.all([
+        db.prepare(
+            `SELECT SUM(budget) as total_budget, SUM(spent_amount) as total_spent FROM advertising_campaigns`
+        ).first<{ total_budget: number; total_spent: number }>(),
+        (params.length ? stmt.bind(...params) : stmt).all(),
+        db.prepare(`SELECT id, name, company FROM clients ORDER BY company ASC, name ASC`).all()
+    ]);
+    const campaigns = campaignsRes.results || [];
+    const clients = clientsRes.results || [];
 
     return c.html(
         <AdminCampaignsView

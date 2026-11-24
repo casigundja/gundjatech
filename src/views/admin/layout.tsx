@@ -763,7 +763,20 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                         showToast: showToast
                     };
 
+                    var __gtGlobalPollTimer = null;
+                    function scheduleGlobalPoll(ms) {
+                        clearTimeout(__gtGlobalPollTimer);
+                        __gtGlobalPollTimer = setTimeout(checkGlobalUpdates, ms);
+                    }
+                    document.addEventListener('visibilitychange', function () {
+                        if (!document.hidden) scheduleGlobalPoll(250);
+                    });
+
                     async function checkGlobalUpdates() {
+                        if (document.hidden) {
+                            scheduleGlobalPoll(15000);
+                            return;
+                        }
                         try {
                             var resp = await fetch('/admin/atendimento/resumo', { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
                             if (!resp.ok) return;
@@ -819,7 +832,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             }
                         } catch (e) {
                         } finally {
-                            setTimeout(checkGlobalUpdates, 6000);
+                            scheduleGlobalPoll(6000);
                         }
                     }
 

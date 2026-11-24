@@ -20,22 +20,6 @@ export function createAdminFinanceRoutes(deps: {
         const statusFilter = (c.req.query('status') || '').trim();
         const typeFilter = (c.req.query('type') || '').trim();
 
-        const totalInvoicedRow = await db.prepare(
-            `SELECT SUM(amount) as val FROM financial_transactions WHERE type = 'income' AND status != 'canceled'`
-        ).first<{ val: number }>();
-
-        const totalReceivedRow = await db.prepare(
-            `SELECT SUM(amount) as val FROM financial_transactions WHERE type = 'income' AND status = 'paid'`
-        ).first<{ val: number }>();
-
-        const totalPendingRow = await db.prepare(
-            `SELECT SUM(amount) as val FROM financial_transactions WHERE type = 'income' AND status IN ('pending', 'reviewing')`
-        ).first<{ val: number }>();
-
-        const totalOverdueRow = await db.prepare(
-            `SELECT SUM(amount) as val FROM financial_transactions WHERE type = 'income' AND status = 'pending' AND due_date < date('now')`
-        ).first<{ val: number }>();
-
         let query = `
             SELECT t.*, c.name as client_name, c.company, c.email as client_email,
                    (SELECT p.proof_file FROM payments p WHERE p.financial_transaction_id = t.id ORDER BY p.id DESC LIMIT 1) AS proof_file
@@ -64,9 +48,21 @@ export function createAdminFinanceRoutes(deps: {
         query += ` ORDER BY t.due_date DESC, t.created_at DESC`;
 
         const stmt = db.prepare(query);
-        const transactions = (await (params.length ? stmt.bind(...params) : stmt).all()).results || [];
+        const [metricsRow, txRes, clientsRes] = await Promise.all([
+            db.prepare(
+                `SELECT
+                    SUM(CASE WHEN type = 'income' AND status != 'canceled' THEN amount ELSE 0 END) as total_invoiced,
+                    SUM(CASE WHEN type = 'income' AND status = 'paid' THEN amount ELSE 0 END) as total_received,
+                    SUM(CASE WHEN type = 'income' AND status IN ('pending', 'reviewing') THEN amount ELSE 0 END) as total_pending,
+                    SUM(CASE WHEN type = 'income' AND status = 'pending' AND due_date < date('now') THEN amount ELSE 0 END) as total_overdue
+                 FROM financial_transactions`
+            ).first<{ total_invoiced: number; total_received: number; total_pending: number; total_overdue: number }>(),
+            (params.length ? stmt.bind(...params) : stmt).all(),
+            db.prepare(`SELECT id, name, company FROM clients ORDER BY company ASC, name ASC`).all()
+        ]);
 
-        const clients = (await db.prepare(`SELECT id, name, company FROM clients ORDER BY company ASC, name ASC`).all()).results || [];
+        const transactions = txRes.results || [];
+        const clients = clientsRes.results || [];
 
         return c.html(
             <AdminFinanceView
@@ -74,10 +70,10 @@ export function createAdminFinanceRoutes(deps: {
                 transactions={transactions}
                 clients={clients}
                 metrics={{
-                    totalInvoiced: totalInvoicedRow?.val || 0,
-                    totalReceived: totalReceivedRow?.val || 0,
-                    totalPending: totalPendingRow?.val || 0,
-                    totalOverdue: totalOverdueRow?.val || 0
+                    totalInvoiced: metricsRow?.total_invoiced || 0,
+                    totalReceived: metricsRow?.total_received || 0,
+                    totalPending: metricsRow?.total_pending || 0,
+                    totalOverdue: metricsRow?.total_overdue || 0
                 }}
                 statusFilter={statusFilter}
                 typeFilter={typeFilter}

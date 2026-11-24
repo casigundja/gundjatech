@@ -715,32 +715,39 @@ adminRoutes.get('/solicitacoes/:id', async (c) => {
         return c.redirect('/admin/solicitacoes?error=Solicitação não encontrada');
     }
 
-    const history = (await db.prepare(
-        `SELECT h.*, u.name as user_name 
-         FROM service_request_history h 
-         LEFT JOIN users u ON h.user_id = u.id 
-         WHERE h.service_request_id = ? 
-         ORDER BY h.created_at DESC`
-    ).bind(id).all()).results || [];
-
-    let linkedQuotation: any = null;
-    try {
-        linkedQuotation = await db.prepare(
+    const reqTitle = String(requestDetail.service_title || requestDetail.title || '').trim();
+    const [historyRes, linkedQuotation, linkedProject] = await Promise.all([
+        db.prepare(
+            `SELECT h.*, u.name as user_name 
+             FROM service_request_history h 
+             LEFT JOIN users u ON h.user_id = u.id 
+             WHERE h.service_request_id = ? 
+             ORDER BY h.created_at DESC`
+        ).bind(id).all(),
+        db.prepare(
             `SELECT * FROM quotations WHERE service_request_id = ? ORDER BY id DESC LIMIT 1`
-        ).bind(id).first();
-    } catch { }
-
-    let linkedProject: any = null;
-    try {
-        const reqTitle = String(requestDetail.service_title || requestDetail.title || '').trim();
-        if (requestDetail.client_id && reqTitle) {
-            linkedProject = await db.prepare(
-                `SELECT id, title, name, status, progress_percentage FROM projects
-                 WHERE client_id = ? AND (lower(title) = lower(?) OR lower(name) = lower(?))
-                 ORDER BY id DESC LIMIT 1`
-            ).bind(requestDetail.client_id, reqTitle, reqTitle).first();
-        }
-    } catch { }
+        ).bind(id).first().catch(() => null),
+        (async () => {
+            try {
+                const byRel = await db.prepare(
+                    `SELECT id, title, name, status, progress_percentage FROM projects
+                     WHERE service_request_id = ? ORDER BY id DESC LIMIT 1`
+                ).bind(id).first();
+                if (byRel) return byRel;
+            } catch { }
+            if (requestDetail.client_id && reqTitle) {
+                try {
+                    return await db.prepare(
+                        `SELECT id, title, name, status, progress_percentage FROM projects
+                         WHERE client_id = ? AND (lower(title) = lower(?) OR lower(name) = lower(?))
+                         ORDER BY id DESC LIMIT 1`
+                    ).bind(requestDetail.client_id, reqTitle, reqTitle).first();
+                } catch { }
+            }
+            return null;
+        })()
+    ]);
+    const history = historyRes.results || [];
 
     return c.html(
         <AdminRequestsView

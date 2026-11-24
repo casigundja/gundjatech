@@ -36,9 +36,12 @@ adminDomainsRoutes.get('/dominios', async (c) => {
     query += ` ORDER BY d.expires_at ASC`;
 
     const stmt = db.prepare(query);
-    const domains = (await (params.length ? stmt.bind(...params) : stmt).all()).results || [];
-
-    const clients = (await db.prepare(`SELECT id, name, company FROM clients ORDER BY company ASC, name ASC`).all()).results || [];
+    const [domainsRes, clientsRes] = await Promise.all([
+        (params.length ? stmt.bind(...params) : stmt).all(),
+        db.prepare(`SELECT id, name, company FROM clients ORDER BY company ASC, name ASC`).all()
+    ]);
+    const domains = domainsRes.results || [];
+    const clients = clientsRes.results || [];
 
     return c.html(
         <AdminDomainsView
