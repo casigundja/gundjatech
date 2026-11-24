@@ -3028,31 +3028,59 @@ button[data-dirty-locked="1"] {
     }
 }
 
+@media (max-width: 1023px) {
+    .gt-grid-detail,
+    .gt-grid-detail > * {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+}
+
 @media (max-width: 767px) {
     .gt-admin-main {
-        padding: 16px !important;
+        padding: 14px !important;
+    }
+
+    .gt-admin-main.space-y-5 > :not([hidden]) ~ :not([hidden]) {
+        margin-top: 14px !important;
+    }
+
+    .gt-admin-main .gap-5 {
+        gap: 12px !important;
+    }
+
+    .gt-admin-main .gap-4 {
+        gap: 10px !important;
+    }
+
+    .gt-admin-main .gtb-card {
+        padding: 14px !important;
     }
 
     .gt-page-header {
         flex-direction: column;
         align-items: stretch;
-        gap: 12px;
-        margin-bottom: 18px;
+        gap: 12px !important;
+        margin-bottom: 14px !important;
     }
 
     .gt-page-header > div,
+    .gt-page-header > div:first-child,
     .gt-page-header > div:not(:first-child) {
-        flex: none;
-        margin-left: 0;
+        flex: 0 0 auto !important;
+        flex-basis: auto !important;
+        margin-left: 0 !important;
         justify-content: flex-start;
     }
 
     .gt-page-header h1 {
-        font-size: 20px !important;
+        font-size: 19px !important;
         line-height: 1.25 !important;
     }
 
-    .gt-page-header .gt-btn-primary {
+    .gt-page-header .gt-btn-primary,
+    .gt-page-header .gt-btn-outline {
         width: 100%;
         justify-content: center;
         text-align: center;
