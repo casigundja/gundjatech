@@ -120,9 +120,10 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
             requestDetail.status === 'approved' ||
             requestDetail.status === 'in_progress' ||
             requestDetail.status === 'completed';
+        const hasActiveProject = Boolean(linkedProject?.id && linkedProject.status !== 'canceled');
+        const isProjectCompleted = linkedProject?.status === 'completed' || requestDetail.status === 'completed';
         const isConvertedToProject =
-            Boolean(linkedProject?.id) ||
-            history.some((h: any) => h.action === 'converted_to_project') ||
+            hasActiveProject ||
             requestDetail.status === 'in_progress' ||
             requestDetail.status === 'completed';
         const canSendQuotation =
@@ -184,7 +185,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                                     <path d="m9 11 3 3L22 4" />
                                 </svg>
-                                <span>Abrir Projeto em Execução</span>
+                                <span>{isProjectCompleted ? 'Ver Projeto Concluído' : 'Abrir Projeto em Execução'}</span>
                             </a>
                         ) : requestDetail.status !== 'cancelled' && !hasQuotation ? (
                             <form action={`/admin/solicitacoes/${requestDetail.id}/gerar-orcamento`} method="post" class="m-0">

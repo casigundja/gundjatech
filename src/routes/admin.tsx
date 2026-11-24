@@ -2959,12 +2959,21 @@ adminRoutes.post('/projetos/:id', async (c) => {
     let previousProject: any = null;
     try {
         previousProject = await db.prepare(
-            `SELECT p.id, p.client_id, p.title, p.name, p.status, p.progress_percentage, c.name AS client_name, c.company AS client_company, c.email AS client_email
+            `SELECT p.id, p.client_id, p.quotation_id, p.service_request_id, p.title, p.name, p.status, p.progress_percentage, c.name AS client_name, c.company AS client_company, c.email AS client_email
              FROM projects p
              LEFT JOIN clients c ON c.id = p.client_id
              WHERE p.id = ?`
         ).bind(id).first<any>();
-    } catch { }
+    } catch {
+        try {
+            previousProject = await db.prepare(
+                `SELECT p.id, p.client_id, p.title, p.name, p.status, p.progress_percentage, c.name AS client_name, c.company AS client_company, c.email AS client_email
+                 FROM projects p
+                 LEFT JOIN clients c ON c.id = p.client_id
+                 WHERE p.id = ?`
+            ).bind(id).first<any>();
+        } catch { }
+    }
 
     const prevStatus = String(previousProject?.status || '');
     const prevProgress = Number(previousProject?.progress_percentage ?? 0);
@@ -3001,35 +3010,66 @@ adminRoutes.post('/projetos/:id', async (c) => {
          WHERE id = ?`
     ).bind(status, progress, startDate, expectedEndDate, id).run();
 
-    // Sincroniza Projeto -> Solicitação vinculada quando entra em execução ou é concluído
+    // Sincroniza Projeto -> Solicitação & Orçamento vinculados (avanço ou cancelamento/retorno de fase)
     let linkedReqForCompletion: any = null;
     const projTitle = String(previousProject?.title || previousProject?.name || 'Projeto GundjaTech').trim();
-    if (previousProject && previousProject.client_id && prevStatus !== status && (status === 'in_progress' || status === 'completed')) {
+    if (previousProject && previousProject.client_id && prevStatus !== status && (status === 'in_progress' || status === 'completed' || status === 'canceled')) {
         try {
-            if (projTitle) {
+            if (previousProject.service_request_id) {
+                linkedReqForCompletion = await db.prepare(
+                    `SELECT id, status, protocol, estimated_budget, client_id FROM service_requests WHERE id = ? LIMIT 1`
+                ).bind(previousProject.service_request_id).first<any>();
+            }
+            if (!linkedReqForCompletion && projTitle) {
                 linkedReqForCompletion = await db.prepare(
                     `SELECT id, status, protocol, estimated_budget, client_id FROM service_requests
                      WHERE client_id = ? AND (lower(service_title) = lower(?) OR lower(title) = lower(?))
                      ORDER BY id DESC LIMIT 1`
                 ).bind(previousProject.client_id, projTitle, projTitle).first<any>();
+            }
 
-                if (linkedReqForCompletion && linkedReqForCompletion.status !== status) {
+            if (status === 'canceled') {
+                // Ao cancelar o projeto, retorna o orçamento (se aprovado) para 'sent' e a solicitação para 'quotation_sent' ou 'analyzing'
+                let linkedQuoteForRollback: any = null;
+                if (previousProject.quotation_id) {
+                    linkedQuoteForRollback = await db.prepare(`SELECT id, status FROM quotations WHERE id = ?`).bind(previousProject.quotation_id).first<any>();
+                } else if (linkedReqForCompletion?.id) {
+                    linkedQuoteForRollback = await db.prepare(`SELECT id, status FROM quotations WHERE service_request_id = ? ORDER BY id DESC LIMIT 1`).bind(linkedReqForCompletion.id).first<any>();
+                }
+                if (linkedQuoteForRollback && linkedQuoteForRollback.status === 'approved') {
+                    await db.prepare(`UPDATE quotations SET status = 'sent', updated_at = datetime('now') WHERE id = ?`).bind(linkedQuoteForRollback.id).run();
+                }
+                const targetReqStatus = linkedQuoteForRollback ? 'quotation_sent' : 'analyzing';
+                if (linkedReqForCompletion && linkedReqForCompletion.status !== targetReqStatus) {
                     const prevLinkedReqSt = String(linkedReqForCompletion.status || '');
                     await db.prepare(
                         `UPDATE service_requests SET status = ?, updated_at = datetime('now') WHERE id = ?`
-                    ).bind(status, linkedReqForCompletion.id).run();
-
+                    ).bind(targetReqStatus, linkedReqForCompletion.id).run();
                     await recordRequestTimeline(db, {
                         serviceRequestId: linkedReqForCompletion.id,
                         userId: user.id,
-                        action: status === 'completed' ? 'project_completed' : 'project_in_progress',
+                        action: 'status_change',
                         fromStatus: prevLinkedReqSt,
-                        toStatus: status,
-                        notes: status === 'completed'
-                            ? `Projeto #${id} concluído e entregue — Receita lançada automaticamente em Receita & Caixa`
-                            : `Projeto #${id} iniciado — em execução pela equipe GundjaTech`,
+                        toStatus: targetReqStatus,
+                        notes: `Projeto #${id} cancelado — solicitação retornou para ${targetReqStatus === 'quotation_sent' ? 'Orçamento Enviado' : 'Em Análise'}`
                     });
                 }
+            } else if (linkedReqForCompletion && linkedReqForCompletion.status !== status) {
+                const prevLinkedReqSt = String(linkedReqForCompletion.status || '');
+                await db.prepare(
+                    `UPDATE service_requests SET status = ?, updated_at = datetime('now') WHERE id = ?`
+                ).bind(status, linkedReqForCompletion.id).run();
+
+                await recordRequestTimeline(db, {
+                    serviceRequestId: linkedReqForCompletion.id,
+                    userId: user.id,
+                    action: status === 'completed' ? 'project_completed' : 'project_in_progress',
+                    fromStatus: prevLinkedReqSt,
+                    toStatus: status,
+                    notes: status === 'completed'
+                        ? `Projeto #${id} concluído e entregue — Receita lançada automaticamente em Receita & Caixa`
+                        : `Projeto #${id} iniciado — em execução pela equipe GundjaTech`,
+                });
             }
         } catch { }
     }
@@ -3600,8 +3640,16 @@ adminRoutes.post('/orcamentos/:id', async (c) => {
                         approvalNote: `Orçamento ${updatedQuote.reference_code || `#${id}`} aprovado — projeto iniciado automaticamente`
                     });
                     return c.redirect(`/admin/orcamentos/${id}?success=${encodeURIComponent('Proposta aprovada! Projeto criado automaticamente e solicitação movida para Em Execução.')}`);
-                } else if (status === 'sent' && reqRow.status !== 'quotation_sent' && reqRow.status !== 'approved' && reqRow.status !== 'in_progress') {
+                } else if (status === 'sent' && reqRow.status !== 'quotation_sent') {
                     await db.prepare(`UPDATE service_requests SET status = 'quotation_sent', estimated_budget = ?, updated_at = datetime('now') WHERE id = ?`).bind(finalAmount, reqRow.id).run();
+                    try {
+                        const rollbackTitle = String(updatedQuote.title || reqRow.service_title || reqRow.title || '').trim();
+                        await db.prepare(
+                            `UPDATE projects SET status = 'canceled', updated_at = datetime('now')
+                             WHERE status NOT IN ('completed', 'canceled')
+                               AND (quotation_id = ? OR service_request_id = ? OR (client_id = ? AND (lower(title) = lower(?) OR lower(name) = lower(?))))`
+                        ).bind(id, reqRow.id, updatedQuote.client_id || reqRow.client_id || 0, rollbackTitle, rollbackTitle).run();
+                    } catch { }
                     await recordRequestTimeline(db, {
                         serviceRequestId: reqRow.id,
                         userId: user.id,
@@ -3612,6 +3660,14 @@ adminRoutes.post('/orcamentos/:id', async (c) => {
                     });
                 } else if (status === 'rejected' && reqRow.status !== 'analyzing') {
                     await db.prepare(`UPDATE service_requests SET status = 'analyzing', updated_at = datetime('now') WHERE id = ?`).bind(reqRow.id).run();
+                    try {
+                        const rollbackTitle = String(updatedQuote.title || reqRow.service_title || reqRow.title || '').trim();
+                        await db.prepare(
+                            `UPDATE projects SET status = 'canceled', updated_at = datetime('now')
+                             WHERE status NOT IN ('completed', 'canceled')
+                               AND (quotation_id = ? OR service_request_id = ? OR (client_id = ? AND (lower(title) = lower(?) OR lower(name) = lower(?))))`
+                        ).bind(id, reqRow.id, updatedQuote.client_id || reqRow.client_id || 0, rollbackTitle, rollbackTitle).run();
+                    } catch { }
                     await recordRequestTimeline(db, {
                         serviceRequestId: reqRow.id,
                         userId: user.id,
@@ -3620,15 +3676,23 @@ adminRoutes.post('/orcamentos/:id', async (c) => {
                         toStatus: 'analyzing',
                         notes: `Orçamento ${updatedQuote.reference_code || `#${id}`} recusado — retornou para análise`
                     });
-                } else if (status === 'draft' && reqRow.status === 'quotation_sent') {
+                } else if ((status === 'draft' || status === 'expired') && reqRow.status !== 'analyzing' && reqRow.status !== 'new') {
                     await db.prepare(`UPDATE service_requests SET status = 'analyzing', estimated_budget = ?, updated_at = datetime('now') WHERE id = ?`).bind(finalAmount, reqRow.id).run();
+                    try {
+                        const rollbackTitle = String(updatedQuote.title || reqRow.service_title || reqRow.title || '').trim();
+                        await db.prepare(
+                            `UPDATE projects SET status = 'canceled', updated_at = datetime('now')
+                             WHERE status NOT IN ('completed', 'canceled')
+                               AND (quotation_id = ? OR service_request_id = ? OR (client_id = ? AND (lower(title) = lower(?) OR lower(name) = lower(?))))`
+                        ).bind(id, reqRow.id, updatedQuote.client_id || reqRow.client_id || 0, rollbackTitle, rollbackTitle).run();
+                    } catch { }
                     await recordRequestTimeline(db, {
                         serviceRequestId: reqRow.id,
                         userId: user.id,
                         action: 'status_change',
                         fromStatus: reqRow.status,
                         toStatus: 'analyzing',
-                        notes: `Orçamento ${updatedQuote.reference_code || `#${id}`} voltou para rascunho — solicitação retornou para análise`
+                        notes: `Orçamento ${updatedQuote.reference_code || `#${id}`} voltou para ${status === 'draft' ? 'rascunho' : 'expirado'} — solicitação retornou para análise`
                     });
                 } else {
                     await db.prepare(`UPDATE service_requests SET estimated_budget = ?, updated_at = datetime('now') WHERE id = ?`).bind(finalAmount, reqRow.id).run();
@@ -3730,14 +3794,25 @@ adminRoutes.post('/orcamentos/:id/status', async (c) => {
         return c.redirect(`${backUrl}?success=${encodeURIComponent('Orçamento aprovado! O Projeto foi criado e iniciado automaticamente.')}`);
     }
 
-    // Sincroniza Orçamento -> Solicitação vinculada e linha do tempo unificada
+    // Sincroniza Orçamento -> Solicitação & Projeto vinculado (avanço ou retorno de fase)
     if (quotation?.service_request_id) {
         const mappedReqStatus: Record<string, { status: string; note: string }> = {
+            draft: { status: 'analyzing', note: `Orçamento ${quotation.reference_code || `#${id}`} retornou para rascunho — solicitação voltou para análise` },
             sent: { status: 'quotation_sent', note: `Orçamento ${quotation.reference_code || `#${id}`} enviado ao cliente` },
             rejected: { status: 'analyzing', note: `Orçamento ${quotation.reference_code || `#${id}`} recusado — retornou para análise` },
+            expired: { status: 'analyzing', note: `Orçamento ${quotation.reference_code || `#${id}`} expirado — retornou para análise` },
         };
         const sync = mappedReqStatus[status];
         if (sync) {
+            try {
+                // Se voltou de fase a partir de aprovado, cancela projeto ainda não concluído (por FK ou título legado) para manter o botão/status 100% sincronizado
+                const rollbackTitle = String(quotation.title || '').trim();
+                await db.prepare(
+                    `UPDATE projects SET status = 'canceled', updated_at = datetime('now')
+                     WHERE status NOT IN ('completed', 'canceled')
+                       AND (quotation_id = ? OR service_request_id = ? OR (client_id = ? AND (lower(title) = lower(?) OR lower(name) = lower(?))))`
+                ).bind(id, quotation.service_request_id, quotation.client_id || 0, rollbackTitle, rollbackTitle).run();
+            } catch { }
             try {
                 const reqRow = await db.prepare('SELECT id, status FROM service_requests WHERE id = ?').bind(quotation.service_request_id).first<{ id: number; status: string }>();
                 if (reqRow && reqRow.status !== sync.status) {
