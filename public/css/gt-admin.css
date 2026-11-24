@@ -3030,10 +3030,17 @@ button[data-dirty-locked="1"] {
 
 @media (max-width: 1023px) {
     .gt-grid-detail,
-    .gt-grid-detail > * {
+    .gt-grid-detail > *:not(.gt-portal-chat-box) {
         height: auto !important;
         max-height: none !important;
         overflow: visible !important;
+    }
+
+    .gt-portal-chat-box {
+        height: 68vh !important;
+        min-height: 420px;
+        max-height: 620px;
+        overflow: hidden !important;
     }
 }
 
@@ -4912,6 +4919,21 @@ body.is-light-mode .gt-csel-opt-check {
     border-style: solid !important;
     border-color: #16749A !important;
     background: #F0F7FA !important;
+}
+
+@media (max-width: 520px) {
+    .gt-checkout-head {
+        padding: 16px 18px 14px;
+    }
+
+    .gt-checkout-body {
+        padding: 16px 18px 18px;
+        gap: 13px;
+    }
+
+    .gt-checkout-panel {
+        padding: 13px;
+    }
 }
 
 
