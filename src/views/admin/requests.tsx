@@ -225,29 +225,31 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                 </div>
 
                 <div class="gt-grid-detail" style="align-items: start; gap: 20px;">
-                    {/* Coluna Principal */}
-                    <section class="gtb-card !p-5 min-w-0" style="display: flex; flex-direction: column; gap: 16px;">
-                        {/* Cabeçalho Hero */}
-                        <div class="space-y-2.5 pb-2.5" style="flex-shrink: 0; border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
-                            <div class="flex items-center justify-between gap-3 flex-wrap">
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <span class="gt-req-pill-neutral font-mono">{requestDetail.protocol}</span>
-                                    <span class={`gt-badge ${meta.badgeClass}`}>{meta.label}</span>
-                                    {isConvertedToProject && (
-                                        <span class="gt-req-pill-neutral">Projeto Vinculado</span>
-                                    )}
+                    {/* Coluna Principal: 3 Cards Separados (Resumo/Pipeline, Descrição, Histórico) */}
+                    <div class="min-w-0" style="display: flex; flex-direction: column; gap: 20px;">
+                        {/* Card 1: Resumo, Metadados, Pipeline e Orçamento Vinculado */}
+                        <section class="gtb-card !p-5 sm:!p-6 min-w-0" style="display: flex; flex-direction: column; gap: 20px;">
+                            {/* Cabeçalho Hero */}
+                            <div class="space-y-3.5 pb-4" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                                <div class="flex items-center justify-between gap-3 flex-wrap">
+                                    <div class="flex items-center gap-2.5 flex-wrap">
+                                        <span class="gt-req-pill-neutral font-mono">{requestDetail.protocol}</span>
+                                        <span class={`gt-badge ${meta.badgeClass}`}>{meta.label}</span>
+                                        {isConvertedToProject && (
+                                            <span class="gt-req-pill-neutral">Projeto Vinculado</span>
+                                        )}
+                                    </div>
+                                    <span class="text-[11px] font-semibold text-[#8C95AA]">
+                                        Aberta em {formatDateBrt(requestDetail.created_at)}
+                                    </span>
                                 </div>
-                                <span class="text-[11px] font-semibold text-[#8C95AA]">
-                                    Aberta em {formatDateBrt(requestDetail.created_at)}
-                                </span>
-                            </div>
 
-                            <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white leading-tight">
-                                {requestDetail.service_title || requestDetail.title}
-                            </h1>
+                                <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white leading-snug">
+                                    {requestDetail.service_title || requestDetail.title}
+                                </h1>
 
-                            {/* Chips de Contato e Valor */}
-                            <div class="gt-req-meta-grid">
+                                {/* Chips de Contato e Valor */}
+                                <div class="gt-req-meta-grid" style="gap: 12px; padding-top: 2px;">
                                 <div class="gt-req-meta-chip">
                                     <span class="gt-req-meta-icon" aria-hidden="true">
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -304,13 +306,13 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                             </div>
                         ) : (
                             <div style="flex-shrink: 0;">
-                                <div class="flex items-center justify-between gap-2 mb-1.5">
+                                <div class="flex items-center justify-between gap-2 mb-2.5">
                                     <h2 class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Progresso no Pipeline</h2>
                                     <span class="text-[10.5px] font-bold text-[#8C95AA]">
                                         Etapa {Math.max(1, currentStepIndex + 1)} de {PIPELINE_STEPS.length}
                                     </span>
                                 </div>
-                                <div class="gt-req-stepper" style="padding: 9px 12px;" role="list" aria-label="Etapas da solicitação">
+                                <div class="gt-req-stepper" style="padding: 13px 16px;" role="list" aria-label="Etapas da solicitação">
                                     {PIPELINE_STEPS.map((step, idx) => {
                                         const isCompletedAll = requestDetail.status === 'completed';
                                         const isDone = isCompletedAll || (currentStepIndex >= 0 && idx < currentStepIndex);
@@ -336,7 +338,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                         )}
 
                         {/* Card de Governança: Orçamento Obrigatório -> Aprovação -> Projeto */}
-                        <div class="gtb-surface-box rounded-xl px-3 py-2 flex items-center justify-between gap-3 flex-wrap" style="flex-shrink: 0;">
+                        <div class="gtb-surface-box rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
                             {hasQuotation ? (
                                 <>
                                     <div class="flex items-center gap-2.5 flex-wrap min-w-0">
@@ -378,10 +380,14 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                             )}
                         </div>
 
-                        {/* Descrição da Demanda */}
-                        <div>
-                            <h2 class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Descrição da Demanda</h2>
-                            <div class="gt-req-briefing" style="padding: 12px 16px 12px 18px; max-height: 220px; overflow-y: auto;">
+                        </section>
+
+                        {/* Card 2: Descrição da Demanda */}
+                        <section class="gtb-card !p-5 sm:!p-6 min-w-0">
+                            <div class="flex items-center justify-between gap-2 pb-3 mb-3.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                                <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Descrição da Demanda</h2>
+                            </div>
+                            <div class="gt-req-briefing" style="padding: 14px 18px 14px 20px; max-height: 240px; overflow-y: auto;">
                                 {structuredDesc ? (
                                     <div class="gt-req-kv-list">
                                         {structuredDesc.map((item) => (
@@ -405,13 +411,13 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                     </div>
                                 )}
                             </div>
-                        </div>
+                        </section>
 
-                        {/* Linha do Tempo / Feed de Atividades */}
-                        <div style="display: flex; flex-direction: column;">
-                            <div class="flex items-center justify-between gap-2 mb-1.5">
-                                <h2 class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Histórico de Atividades</h2>
-                                <span class="text-[10.5px] font-semibold text-[#8C95AA]">{history.length} {history.length === 1 ? 'evento' : 'eventos'}</span>
+                        {/* Card 3: Linha do Tempo / Feed de Atividades */}
+                        <section class="gtb-card !p-5 sm:!p-6 min-w-0" style="display: flex; flex-direction: column;">
+                            <div class="flex items-center justify-between gap-2 pb-3 mb-3.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                                <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Histórico de Atividades</h2>
+                                <span class="text-[11px] font-semibold text-[#8C95AA]">{history.length} {history.length === 1 ? 'evento' : 'eventos'}</span>
                             </div>
 
                             {history.length === 0 ? (
@@ -490,18 +496,18 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                     })}
                                 </div>
                             )}
-                        </div>
-                    </section>
+                        </section>
+                    </div>
 
                     {/* Coluna Lateral: Atualizar Status + Ações Rápidas */}
-                    <div class="min-w-0" style="display: flex; flex-direction: column; gap: 16px;">
-                        <aside class="gtb-card !p-5 min-w-0" style="display: flex; flex-direction: column;">
-                            <div class="pb-2.5" style="flex-shrink: 0; border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                    <div class="min-w-0" style="display: flex; flex-direction: column; gap: 20px;">
+                        <aside class="gtb-card !p-5 sm:!p-6 min-w-0" style="display: flex; flex-direction: column;">
+                            <div class="pb-3.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                                 <h2 class="gt-font-display text-sm font-extrabold text-white">Atualizar Status Operacional</h2>
                                 <p class="text-[11px] text-[#8C95AA] mt-0.5">Registre o avanço no pipeline comercial.</p>
                             </div>
 
-                            <form action={`/admin/solicitacoes/${requestDetail.id}/status`} method="post" data-dirty-guard="1" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                            <form action={`/admin/solicitacoes/${requestDetail.id}/status`} method="post" data-dirty-guard="1" style="display: flex; flex-direction: column; gap: 14px; margin-top: 14px;">
                                 <div>
                                     <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Novo Status</label>
                                     <select name="status" class="w-full rounded-xl px-3 py-2 text-xs">
@@ -567,14 +573,14 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                         </aside>
 
                         {/* Card de Ações Rápidas & Gestão */}
-                        <aside class="gtb-card !p-5 min-w-0" style="display: flex; flex-direction: column; gap: 14px;">
-                            <div class="space-y-2.5">
-                                <div class="pb-2" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                        <aside class="gtb-card !p-5 sm:!p-6 min-w-0" style="display: flex; flex-direction: column; gap: 16px;">
+                            <div class="space-y-3">
+                                <div class="pb-3" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                                     <h2 class="gt-font-display text-sm font-extrabold text-white">Ações Rápidas &amp; Gestão</h2>
                                     <p class="text-[11px] text-[#8C95AA] mt-0.5">Comunicação direta, rastreio e controle administrativo.</p>
                                 </div>
 
-                                <div class="space-y-2">
+                                <div class="space-y-2.5">
                                     <button
                                         type="button"
                                         onclick={`var url=window.location.origin+'${trackingPath}';navigator.clipboard.writeText(url).then(function(){var el=document.getElementById('gt-copy-track-lbl');if(el){el.textContent='Link copiado!';setTimeout(function(){el.textContent='Copiar Link de Rastreio';},2000);}});`}
@@ -607,7 +613,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                 </div>
                             </div>
 
-                            <div class={`grid gap-2 pt-2.5 ${requestDetail.status !== 'cancelled' ? 'grid-cols-2' : 'grid-cols-1'}`} style="border-top: 1px solid rgba(22, 116, 154, 0.14); flex-shrink: 0;">
+                            <div class={`grid gap-2.5 pt-4 ${requestDetail.status !== 'cancelled' ? 'grid-cols-2' : 'grid-cols-1'}`} style="border-top: 1px solid rgba(22, 116, 154, 0.14); flex-shrink: 0;">
                                 {requestDetail.status !== 'cancelled' && (
                                     <form action={`/admin/solicitacoes/${requestDetail.id}/cancelar`} method="post" class="m-0">
                                         <button type="submit" data-loading-text="Cancelando..." class="gt-btn-outline gt-btn-sm w-full justify-center">
