@@ -205,12 +205,26 @@ export function renderOfficialPaymentReceiptHtml(opts: {
 }): string {
     const { tx, client, bankSettings } = opts;
     const receiptNo = `REC-GT-${String(tx.id).padStart(5, '0')}`;
-    const authCode = `GT${String(tx.id).padStart(4, '0')}-${String(tx.paid_at || tx.updated_at || '').replace(/\D+/g, '').slice(0, 8) || '2026'}`;
+    const rawPaid = String(tx.paid_at || tx.updated_at || '');
+    const authCode = `GT${String(tx.id).padStart(4, '0')}-${rawPaid.replace(/\D+/g, '').slice(0, 8) || '2026'}`;
     const amountFmt = Number(tx.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const paidDate = tx.paid_at ? new Date(String(tx.paid_at).replace(' ', 'T') + (String(tx.paid_at).includes('T') ? '' : 'Z')).toLocaleString('pt-BR') : new Date().toLocaleString('pt-BR');
+
+    const formatBrDate = (val: unknown): string => {
+        const s = String(val || '').trim();
+        const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        return m ? `${m[3]}/${m[2]}/${m[1]}` : (s || '—');
+    };
+
+    const paidDateObj = tx.paid_at
+        ? new Date(String(tx.paid_at).replace(' ', 'T') + (String(tx.paid_at).includes('T') ? '' : 'Z'))
+        : new Date();
+    const paidDate = paidDateObj.toLocaleDateString('pt-BR') + ' às ' + paidDateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const dueDateFmt = formatBrDate(tx.due_date);
     const payerName = client?.company || client?.name || 'Cliente';
     const payerContact = client?.company && client?.name && client.company !== client.name ? client.name : '';
     const payerDoc = client?.document || '';
+    const payerEmail = client?.email && !String(client.email).endsWith('.local') ? String(client.email) : '';
+    const methodLabel = String(tx.payment_method || 'PIX');
 
     return `<!doctype html>
 <html lang="pt-BR">
@@ -218,103 +232,376 @@ export function renderOfficialPaymentReceiptHtml(opts: {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Recibo de Quitação ${escapeReceiptHtml(receiptNo)} • GundjaTech</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; padding: 28px 16px; background: #E7F0F5; color: #063B5C; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
-    .sheet { max-width: 760px; margin: 0 auto; background: #FFFFFF; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 50px -20px rgba(6,59,92,0.28); border: 1px solid #CFE0EB; }
-    .top { background: #063B5C; color: #FFFFFF; padding: 28px 32px; display: flex; justify-content: space-between; align-items: center; gap: 16px; border-bottom: 4px solid #F2C230; }
-    .brand { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
-    .brand span { color: #F2C230; }
-    .top-meta { text-align: right; font-size: 12px; color: #E7F0F5; }
-    .top-meta strong { display: block; font-size: 15px; color: #F2C230; }
-    .body { padding: 30px 32px; }
-    .badge { display: inline-block; padding: 5px 12px; border-radius: 999px; background: #E6F7F0; color: #0E7A53; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
-    h1 { margin: 12px 0 6px; font-size: 22px; color: #063B5C; }
-    .subtitle { margin: 0 0 22px; font-size: 13px; color: #4A6A80; }
-    .amount-box { background: #F4F9FC; border: 1px solid #D4E4EE; border-left: 5px solid #F2C230; border-radius: 12px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
-    .amount-box small { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #4A6A80; }
-    .amount-box strong { font-size: 26px; font-weight: 800; color: #063B5C; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 22px; }
-    .box { background: #FAFDFE; border: 1px solid #E2EDF4; border-radius: 12px; padding: 14px 16px; font-size: 12.5px; }
-    .box h3 { margin: 0 0 8px; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: #16749A; }
-    .box p { margin: 3px 0; color: #063B5C; }
-    .decl { font-size: 13px; line-height: 1.65; color: #1E445D; background: #FAFDFE; border: 1px solid #E2EDF4; border-radius: 12px; padding: 16px 18px; margin-bottom: 24px; }
-    .foot { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-top: 18px; border-top: 1px solid #E2EDF4; font-size: 11.5px; color: #527086; }
-    .actions { max-width: 760px; margin: 16px auto 0; display: flex; justify-content: flex-end; gap: 10px; }
-    .btn { padding: 10px 18px; border-radius: 10px; border: 0; font-weight: 800; font-size: 13px; cursor: pointer; text-decoration: none; }
-    .btn-gold { background: #F2C230; color: #063B5C; }
-    .btn-out { background: #FFFFFF; color: #063B5C; border: 1px solid #C5D9E6; }
-    @media print { body { background: #FFFFFF; padding: 0; } .sheet { box-shadow: none; border: 0; } .actions { display: none; } }
-    @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } .top { flex-direction: column; align-items: flex-start; } .top-meta { text-align: left; } }
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body {
+      margin: 0;
+      padding: 32px 16px 56px;
+      background: #EAF1F6;
+      color: #063B5C;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 780px; margin: 0 auto; }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .toolbar-meta {
+      font-size: 12px;
+      font-weight: 700;
+      color: #4A6A80;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .toolbar-actions { display: flex; align-items: center; gap: 8px; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 16px;
+      border-radius: 10px;
+      border: 0;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 12.5px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+    .btn-gold { background: #F2C230; color: #063B5C; box-shadow: 0 2px 8px rgba(242, 194, 48, 0.35); }
+    .btn-gold:hover { background: #E0B020; }
+    .btn-out { background: #FFFFFF; color: #063B5C; border: 1px solid #CBDCE8; }
+    .btn-out:hover { background: #F5F9FC; }
+
+    .sheet {
+      background: #FFFFFF;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 24px 60px -24px rgba(6, 59, 92, 0.28), 0 4px 16px -4px rgba(6, 59, 92, 0.08);
+      border: 1px solid #D6E4EE;
+    }
+
+    /* Header Corporativo */
+    .header {
+      background: linear-gradient(135deg, #042940 0%, #063B5C 58%, #0E567C 100%);
+      color: #FFFFFF;
+      padding: 28px 34px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      border-bottom: 3px solid #F2C230;
+    }
+    .brand-row { display: flex; align-items: center; gap: 13px; }
+    .brand-name { font-size: 21px; font-weight: 800; letter-spacing: -0.025em; line-height: 1; }
+    .brand-name span { color: #F2C230; }
+    .brand-sub { font-size: 11px; color: #BFD6E6; margin-top: 5px; font-weight: 500; }
+    .doc-pill {
+      text-align: right;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 12px;
+      padding: 10px 14px;
+    }
+    .doc-pill small { display: block; font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #BFD6E6; font-weight: 700; }
+    .doc-pill strong { display: block; font-size: 14px; color: #F2C230; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; margin-top: 2px; }
+    .doc-pill span { display: block; font-size: 10.5px; color: #E7F0F5; margin-top: 2px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; opacity: 0.85; }
+
+    .body { padding: 32px 34px; }
+
+    /* Hero Title + Valor */
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #E6EFF5;
+      margin-bottom: 24px;
+    }
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 11px;
+      border-radius: 999px;
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      color: #047857;
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .status-dot { width: 7px; height: 7px; border-radius: 999px; background: #10B981; }
+    .hero h1 { margin: 10px 0 4px; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; color: #063B5C; }
+    .hero p { margin: 0; font-size: 12px; color: #5D7B91; }
+
+    .amount-card {
+      text-align: right;
+      background: #F7FAFC;
+      border: 1px solid #DFEAF2;
+      border-radius: 14px;
+      padding: 14px 20px;
+      min-width: 210px;
+    }
+    .amount-card small { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #5D7B91; }
+    .amount-card strong { display: block; font-size: 28px; font-weight: 800; color: #063B5C; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; margin-top: 2px; }
+    .amount-card .method-tag {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 2px 9px;
+      border-radius: 6px;
+      background: #E7F0F5;
+      color: #063B5C;
+      font-size: 10.5px;
+      font-weight: 700;
+    }
+
+    /* Partes (Credor x Pagador) */
+    .parties {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .party-box {
+      background: #FAFDFE;
+      border: 1px solid #E4EEF5;
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+    .party-label {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: #16749A;
+      margin-bottom: 8px;
+    }
+    .party-name { font-size: 14px; font-weight: 800; color: #063B5C; margin: 0 0 6px; }
+    .party-meta { font-size: 12px; color: #4A6A80; line-height: 1.55; margin: 0; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; color: #063B5C; font-weight: 600; }
+
+    /* Tabela de Discriminação */
+    .ledger {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 22px;
+      border: 1px solid #E4EEF5;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .ledger th {
+      background: #F4F8FB;
+      color: #527086;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      text-align: left;
+      padding: 11px 16px;
+      border-bottom: 1px solid #E4EEF5;
+    }
+    .ledger td {
+      padding: 14px 16px;
+      font-size: 12.5px;
+      color: #063B5C;
+      border-bottom: 1px solid #EDF3F8;
+      vertical-align: top;
+    }
+    .ledger tr:last-child td { border-bottom: 0; }
+    .ledger .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .ledger .desc-sub { display: block; font-size: 11px; color: #5D7B91; margin-top: 3px; }
+    .ledger .total-row td {
+      background: #F9FCFE;
+      font-weight: 800;
+      border-top: 1px solid #DCE7F0;
+      padding: 12px 16px;
+    }
+
+    /* Declaração Legal */
+    .decl {
+      font-size: 12.5px;
+      line-height: 1.65;
+      color: #254860;
+      background: #F8FBFD;
+      border: 1px solid #E4EEF5;
+      border-left: 3px solid #16749A;
+      border-radius: 10px;
+      padding: 15px 18px;
+      margin-bottom: 24px;
+    }
+
+    /* Selo de Autenticação / Rodapé */
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding-top: 18px;
+      border-top: 1px solid #E6EFF5;
+      font-size: 11px;
+      color: #5D7B91;
+    }
+    .seal {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .seal-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: #E7F0F5;
+      color: #063B5C;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    @media print {
+      body { background: #FFFFFF; padding: 0; }
+      .toolbar { display: none; }
+      .sheet { box-shadow: none; border: 0; border-radius: 0; }
+    }
+    @media (max-width: 640px) {
+      .header, .hero, .footer { flex-direction: column; align-items: flex-start; }
+      .doc-pill, .amount-card { text-align: left; width: 100%; }
+      .parties { grid-template-columns: 1fr; }
+      .body, .header { padding: 22px 20px; }
+    }
   </style>
 </head>
 <body>
-  <div class="sheet">
-    <div class="top">
-      <div>
-        <div class="brand">Gundja<span>Tech</span></div>
-        <div style="font-size:11.5px;color:#CFE0EB;margin-top:4px;">CNPJ: ${escapeReceiptHtml(bankSettings.bankCnpj)} • ${escapeReceiptHtml(bankSettings.bankName)}</div>
+  <div class="wrap">
+    <div class="toolbar">
+      <div class="toolbar-meta">
+        <span>Recibo Eletrônico • <strong style="color:#063B5C;">${escapeReceiptHtml(receiptNo)}</strong></span>
       </div>
-      <div class="top-meta">
-        <strong>${escapeReceiptHtml(receiptNo)}</strong>
-        <span>Autenticação: ${escapeReceiptHtml(authCode)}</span>
-      </div>
-    </div>
-    <div class="body">
-      <span class="badge">✓ Pagamento Quitado &amp; Confirmado</span>
-      <h1>Recibo Oficial de Quitação</h1>
-      <p class="subtitle">Emitido eletronicamente conforme Art. 319 e Art. 320 do Código Civil Brasileiro.</p>
-
-      <div class="amount-box">
-        <div>
-          <small>Valor Recebido</small>
-          <strong>R$ ${amountFmt}</strong>
-        </div>
-        <div style="text-align:right;font-size:12px;">
-          <small>Forma de Pagamento</small>
-          <span style="font-weight:800;color:#063B5C;">${escapeReceiptHtml(tx.payment_method || 'PIX')}</span>
-        </div>
-      </div>
-
-      <div class="grid">
-        <div class="box">
-          <h3>Credor (Recebedor)</h3>
-          <p><strong>${escapeReceiptHtml(bankSettings.pixHolder)}</strong></p>
-          <p>CNPJ: ${escapeReceiptHtml(bankSettings.bankCnpj)}</p>
-          <p>Conta: ${escapeReceiptHtml(bankSettings.bankName)} · Ag ${escapeReceiptHtml(bankSettings.bankAgency)} · Cc ${escapeReceiptHtml(bankSettings.bankAccount)}</p>
-        </div>
-        <div class="box">
-          <h3>Pagador (Cliente)</h3>
-          <p><strong>${escapeReceiptHtml(payerName)}</strong></p>
-          ${payerContact ? `<p>Contato: ${escapeReceiptHtml(payerContact)}</p>` : ''}
-          ${payerDoc ? `<p>CPF/CNPJ: ${escapeReceiptHtml(payerDoc)}</p>` : ''}
-          ${client?.email && !String(client.email).endsWith('.local') ? `<p>E-mail: ${escapeReceiptHtml(client.email)}</p>` : ''}
-        </div>
-      </div>
-
-      <div class="decl">
-        Recebemos de <strong>${escapeReceiptHtml(payerName)}</strong> a importância líquida de <strong>R$ ${amountFmt}</strong>, referente a:
-        <strong>${escapeReceiptHtml(tx.description)}</strong>${tx.invoice_number ? ` (Documento / NF #${escapeReceiptHtml(tx.invoice_number)})` : ''},
-        liquidado via <strong>${escapeReceiptHtml(tx.payment_method || 'PIX')}</strong> em <strong>${escapeReceiptHtml(paidDate)}</strong>,
-        pelo que damos plena, geral e irrevogável quitação desta obrigação.
-      </div>
-
-      <div class="foot">
-        <div>
-          <strong>GundjaTech Tecnologia e Soluções Digitais</strong><br />
-          Documento eletrônico válido sem necessidade de assinatura física.
-        </div>
-        <div style="text-align:right;">
-          Data da quitação: <strong>${escapeReceiptHtml(paidDate)}</strong><br />
-          Vencimento original: ${escapeReceiptHtml(tx.due_date || '—')}
-        </div>
+      <div class="toolbar-actions">
+        <button type="button" onclick="window.close()" class="btn btn-out">Fechar</button>
+        <button type="button" onclick="window.print()" class="btn btn-gold">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+          <span>Imprimir / Salvar PDF</span>
+        </button>
       </div>
     </div>
-  </div>
-  <div class="actions">
-    <button type="button" onclick="window.close()" class="btn btn-out">Fechar</button>
-    <button type="button" onclick="window.print()" class="btn btn-gold">Imprimir / Salvar PDF</button>
+
+    <div class="sheet">
+      <header class="header">
+        <div class="brand-row">
+          <svg width="38" height="34" viewBox="0 0 340 300" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M 236 0 L 138 0 C 119 0.3, 126 1.3, 123 2 C 116 4.7, 111.8 4.7, 107 6 C 90 12, 74 20, 59 30 C 42.5 44.3, 27.3 61.8, 19 75 C 9.3 94.8, 1.3 121, 1 127 L 1 152 L 2 145 C 8 129, 24 104, 39 88 C 53.8 75.5, 72.2 64.5, 94 55 C 122.5 46.3, 139 42.5, 148 42 C 174.5 42.5, 193.8 40.5, 201 34 L 236 0 Z" fill="#16749A"/>
+            <path d="M 15 118 C 7.3 133, 1.3 148, 1 154 C 1.5 167.7, 7 190.5, 10 198 C 17.2 213.7, 27.7 230.2, 33 236 C 45.3 249.2, 60.7 260.8, 79 271 C 101 279, 104.5 283, 125 283 C 145.5 283, 203.5 281.3, 224 279 C 244.5 276.7, 255 264.7, 259 261 C 268.3 252, 278.8 235.7, 281 231 C 285.8 204.2, 286.5 155.7, 286 142 L 282 137 L 167 137 C 161 138.5, 157 145, 157 145 L 143 176 L 228 176 C 230.3 185.3, 230.7 209.5, 230 220 C 228.2 235, 220 252, 217 256 C 212 262, 196.2 272.5, 193 274 L 189 274 L 190 234 L 158 238 C 129.3 236.3, 103.7 228.8, 96 224 C 79 211.3, 63.2 191.7, 60 186 C 52.3 164.8, 50.3 156.5, 50 149 C 50.7 133, 54.7 114.2, 58 107 C 67.2 89.7, 80.7 72.2, 87 67 L 110 52 L 84 60 C 62.8 70.8, 37.5 90.2, 31 97 C 24.5 103.8, 19.3 111, 15 118 Z" fill="#FFFFFF"/>
+            <path d="M 323 54 C 315.8 44.7, 308.2 39, 300 36 C 289.5 35.7, 281.7 36.8, 270 43 C 260.2 54.2, 269.3 59.3, 251 60 C 232.7 60.7, 165.8 60.7, 147 61 C 133.3 63.2, 119 68, 105 76 C 90 89, 80 103, 73 117 C 69.5 130, 68.3 146.8, 69 153 C 72 166.7, 78 180.7, 81 185 C 87.3 193.8, 104.7 207.3, 109 210 L 121 214 L 109 202 C 103 193, 96.3 177.7, 95 170 C 93.7 162.3, 95.7 140.8, 99 133 C 103.5 123.5, 115.8 109.3, 120 106 C 127.8 100.8, 123.8 95.7, 145 95 C 166.2 94.3, 237.3 93.3, 259 95 C 271.3 103, 278.7 107, 294 107 C 305.3 103, 313.7 97.7, 323 85 C 326.5 70.5, 325.2 57.7, 323 54 Z" fill="#F2C230"/>
+            <circle cx="290.5" cy="71.4" r="15.1" fill="#063B5C"/>
+          </svg>
+          <div>
+            <div class="brand-name">Gundja<span>Tech</span></div>
+            <div class="brand-sub">CNPJ ${escapeReceiptHtml(bankSettings.bankCnpj)} • Engenharia Digital &amp; Soluções Web</div>
+          </div>
+        </div>
+        <div class="doc-pill">
+          <small>Comprovante de Quitação</small>
+          <strong>${escapeReceiptHtml(receiptNo)}</strong>
+          <span>Cód. ${escapeReceiptHtml(authCode)}</span>
+        </div>
+      </header>
+
+      <div class="body">
+        <div class="hero">
+          <div>
+            <span class="status-chip"><i class="status-dot"></i> Pagamento Quitado</span>
+            <h1>Recibo Oficial de Quitação</h1>
+            <p>Emitido eletronicamente conforme Art. 319 e Art. 320 do Código Civil Brasileiro.</p>
+          </div>
+          <div class="amount-card">
+            <small>Valor Líquido Recebido</small>
+            <strong>R$ ${amountFmt}</strong>
+            <span class="method-tag">Via ${escapeReceiptHtml(methodLabel)}</span>
+          </div>
+        </div>
+
+        <div class="parties">
+          <div class="party-box">
+            <div class="party-label">Credor (Recebedor)</div>
+            <p class="party-name">${escapeReceiptHtml(bankSettings.pixHolder)}</p>
+            <p class="party-meta">
+              CNPJ: <span class="mono">${escapeReceiptHtml(bankSettings.bankCnpj)}</span><br />
+              ${escapeReceiptHtml(bankSettings.bankName)}<br />
+              Ag <span class="mono">${escapeReceiptHtml(bankSettings.bankAgency)}</span> · Cc <span class="mono">${escapeReceiptHtml(bankSettings.bankAccount)}</span>
+            </p>
+          </div>
+          <div class="party-box">
+            <div class="party-label">Pagador (Cliente)</div>
+            <p class="party-name">${escapeReceiptHtml(payerName)}</p>
+            <p class="party-meta">
+              ${payerContact ? `Responsável: ${escapeReceiptHtml(payerContact)}<br />` : ''}
+              ${payerDoc ? `CPF/CNPJ: <span class="mono">${escapeReceiptHtml(payerDoc)}</span><br />` : ''}
+              ${payerEmail ? `E-mail: ${escapeReceiptHtml(payerEmail)}` : 'Cadastro verificado no Portal do Cliente'}
+            </p>
+          </div>
+        </div>
+
+        <table class="ledger">
+          <thead>
+            <tr>
+              <th>Discriminação do Lançamento</th>
+              <th>Vencimento</th>
+              <th>Pagamento</th>
+              <th class="num">Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <strong>${escapeReceiptHtml(tx.description)}</strong>
+                ${tx.invoice_number ? `<span class="desc-sub">Documento / Referência: #${escapeReceiptHtml(tx.invoice_number)}</span>` : ''}
+              </td>
+              <td class="mono">${escapeReceiptHtml(dueDateFmt)}</td>
+              <td>${escapeReceiptHtml(methodLabel)}</td>
+              <td class="num"><strong>R$ ${amountFmt}</strong></td>
+            </tr>
+            <tr class="total-row">
+              <td colspan="3">Total Quitado</td>
+              <td class="num" style="font-size:14px;">R$ ${amountFmt}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="decl">
+          Declaramos ter recebido de <strong>${escapeReceiptHtml(payerName)}</strong> a importância líquida de <strong>R$ ${amountFmt}</strong>,
+          referente à obrigação discriminada acima, liquidada via <strong>${escapeReceiptHtml(methodLabel)}</strong> em <strong>${escapeReceiptHtml(paidDate)}</strong>,
+          dando plena, geral e irrevogável quitação desta parcela.
+        </div>
+
+        <footer class="footer">
+          <div class="seal">
+            <div class="seal-icon">
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            </div>
+            <div>
+              <strong style="color:#063B5C;">Autenticação Eletrônica GundjaTech</strong><br />
+              Documento digital válido sem necessidade de assinatura física · gundjatech.com
+            </div>
+          </div>
+          <div style="text-align:right;">
+            Quitado em <strong style="color:#063B5C;">${escapeReceiptHtml(paidDate)}</strong><br />
+            Código: <span class="mono">${escapeReceiptHtml(authCode)}</span>
+          </div>
+        </footer>
+      </div>
+    </div>
   </div>
 </body>
 </html>`;
