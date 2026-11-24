@@ -5,9 +5,12 @@ import { getFile, putFile, generateStorageKey, streamR2Response } from '../lib/s
 
 export const uploadRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
+const BLOCKED_UPLOAD_EXTS = new Set(['html', 'htm', 'svg', 'xhtml', 'js', 'mjs', 'cjs', 'php', 'phtml', 'exe', 'bat', 'sh']);
+const BLOCKED_UPLOAD_MIME_PATTERNS = ['text/html', 'image/svg+xml', 'application/xhtml+xml', 'javascript', 'ecmascript'];
+
 /**
  * Rota pública/protegida de streaming de arquivos do bucket R2
- * Suporta cache headers HTTP, ETags e mime-type correto
+ * Suporta cache headers HTTP, ETags e proteção contra Stored XSS / IDOR
  */
 uploadRoutes.get('/uploads/:key{.*}', async (c) => {
     const key = c.req.param('key');
@@ -15,11 +18,14 @@ uploadRoutes.get('/uploads/:key{.*}', async (c) => {
         return c.text('Key do arquivo não fornecida', 400);
     }
 
-    // Bloqueia acesso não-autenticado para arquivos armazenados sob o prefixo private/
+    // Bloqueia acesso não-autenticado e acesso direto de clientes (multi-tenant) para private/
     if (key.startsWith('private/')) {
         const user = c.get('user');
         if (!user) {
             return c.json({ error: 'Unauthenticated', message: 'Autenticação obrigatória para acessar arquivos privados.' }, 401);
+        }
+        if (user.role === 'client') {
+            return c.json({ error: 'Forbidden', message: 'Use a rota autenticada do Portal do Cliente para baixar arquivos privados.' }, 403);
         }
     }
 
@@ -32,7 +38,7 @@ uploadRoutes.get('/uploads/:key{.*}', async (c) => {
         return c.text('Arquivo não encontrado no armazenamento', 404);
     }
 
-    return streamR2Response(c, object);
+    return streamR2Response(c, object, key);
 });
 
 /**
@@ -55,6 +61,16 @@ uploadRoutes.post('/api/uploads', requireAuth, async (c) => {
         // Limite de 25MB para uploads edge
         if (file.size > 25 * 1024 * 1024) {
             return c.json({ error: 'Arquivo excede o limite máximo permitido de 25MB' }, 413);
+        }
+
+        // Bloqueia extensões e MIME types ativos (proteção contra Stored XSS)
+        const ext = file.name.includes('.') ? file.name.split('.').pop()!.toLowerCase().trim() : '';
+        const mimeLower = String(file.type || '').toLowerCase();
+        if (
+            (ext && BLOCKED_UPLOAD_EXTS.has(ext)) ||
+            BLOCKED_UPLOAD_MIME_PATTERNS.some((p) => mimeLower.includes(p))
+        ) {
+            return c.json({ error: 'Tipo de arquivo não permitido por política de segurança.' }, 422);
         }
 
         const key = generateStorageKey(folder, file.name);

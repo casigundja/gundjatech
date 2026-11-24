@@ -57,9 +57,13 @@ app.notFound((c) => {
 // Error Handler
 app.onError((err, c) => {
     console.error('Unhandled Worker Error:', err);
+    const envName = String(c.env?.ENVIRONMENT || (c.env as any)?.APP_ENV || '').toLowerCase();
+    const isProd = envName === 'production';
     return c.json({
         error: 'Internal Server Error',
-        message: err instanceof Error ? err.message : 'Erro interno do servidor'
+        message: isProd
+            ? 'Erro interno do servidor. Tente novamente em instantes.'
+            : (err instanceof Error ? err.message : 'Erro interno do servidor')
     }, 500);
 });
 

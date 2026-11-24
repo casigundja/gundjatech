@@ -1,6 +1,7 @@
 import type { FC, PropsWithChildren } from 'hono/jsx';
 import { hasPermission } from '../../lib/rbac';
 import { resolveToastMeta } from '../../lib/toast';
+import { GT_ADMIN_CSS_VERSION, GT_TAILWIND_CSS_VERSION } from '../../lib/assets';
 import type { UserRole } from '../../types/env';
 
 interface AdminLayoutProps {
@@ -43,8 +44,8 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Regular.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link rel="preload" href="/fonts/ZalandoSansExpanded-Bold.woff2" as="font" type="font/woff2" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-                <link rel="stylesheet" href="/css/gt-tailwind.css?v=1" />
-                <link rel="stylesheet" href="/css/gt-admin.css?v=71" />
+                <link rel="stylesheet" href={`/css/gt-tailwind.css?v=${GT_TAILWIND_CSS_VERSION}`} />
+                <link rel="stylesheet" href={`/css/gt-admin.css?v=${GT_ADMIN_CSS_VERSION}`} />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{
                     __html: `

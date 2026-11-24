@@ -144,7 +144,7 @@ portalRoutes.post('/projetos/:id/anexos', async (c) => {
 
         const originalName = String(file.name || 'arquivo').trim();
         const ext = originalName.includes('.') ? originalName.split('.').pop()!.toLowerCase() : '';
-        const allowedExts = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'svg', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'txt', 'csv'];
+        const allowedExts = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'txt', 'csv'];
         if (ext && !allowedExts.includes(ext)) {
             return c.redirect(`/portal/projetos/${projectId}?error=Formato de arquivo não permitido (.${ext}).`);
         }
@@ -203,7 +203,7 @@ portalRoutes.get('/projetos/:id/anexos/:attId', async (c) => {
         return c.text('Arquivo não encontrado no armazenamento.', 404);
     }
 
-    const response = streamR2Response(c, object);
+    const response = streamR2Response(c, object, storageKey);
     const safeFileName = String(attachment.file_name || 'anexo').replace(/["\r\n]/g, '');
     response.headers.set('Content-Disposition', `attachment; filename="${safeFileName}"`);
     return response;
@@ -233,7 +233,7 @@ portalRoutes.get('/orcamentos/:id', async (c) => {
     const quoteId = Number(c.req.param('id'));
 
     const quote = await db.prepare(
-        'SELECT * FROM quotations WHERE id = ? AND client_id = ?'
+        'SELECT * FROM quotations WHERE id = ? AND client_id = ? AND status != "draft"'
     ).bind(quoteId, client.id).first();
 
     if (!quote) {
@@ -291,11 +291,19 @@ portalRoutes.post('/orcamentos/:id/aprovar', async (c) => {
     let createdProjectId: number | undefined;
     try {
         await db.prepare(`UPDATE clients SET status = 'active', updated_at = datetime('now') WHERE id = ?`).bind(client.id).run();
-        const insProj = await db.prepare(
-            `INSERT INTO projects (client_id, name, title, slug, description, status, priority, progress_percentage, start_date, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, 'in_progress', 'high', 50, date('now'), datetime('now'), datetime('now'))`
-        ).bind(client.id, projectName, projectName, projectSlug, projectDesc).run();
-        createdProjectId = Number(insProj?.meta?.last_row_id || 0) || undefined;
+        try {
+            const insProj = await db.prepare(
+                `INSERT INTO projects (client_id, quotation_id, service_request_id, name, title, slug, description, status, priority, progress_percentage, start_date, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, 'in_progress', 'high', 50, date('now'), datetime('now'), datetime('now'))`
+            ).bind(client.id, quoteId, quote.service_request_id || null, projectName, projectName, projectSlug, projectDesc).run();
+            createdProjectId = Number(insProj?.meta?.last_row_id || 0) || undefined;
+        } catch {
+            const insProj = await db.prepare(
+                `INSERT INTO projects (client_id, name, title, slug, description, status, priority, progress_percentage, start_date, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, 'in_progress', 'high', 50, date('now'), datetime('now'), datetime('now'))`
+            ).bind(client.id, projectName, projectName, projectSlug, projectDesc).run();
+            createdProjectId = Number(insProj?.meta?.last_row_id || 0) || undefined;
+        }
 
         if (createdProjectId) {
             const defaultStages = [
@@ -562,11 +570,19 @@ portalRoutes.post('/solicitacoes/:id/aprovar', async (c) => {
     let createdProjectId: number | undefined;
     try {
         await db.prepare(`UPDATE clients SET status = 'active', updated_at = datetime('now') WHERE id = ?`).bind(client.id).run();
-        const insProj = await db.prepare(
-            `INSERT INTO projects (client_id, name, title, slug, description, status, priority, progress_percentage, start_date, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, 'in_progress', 'high', 50, date('now'), datetime('now'), datetime('now'))`
-        ).bind(client.id, projectName, projectName, projectSlug, projectDesc).run();
-        createdProjectId = Number(insProj?.meta?.last_row_id || 0) || undefined;
+        try {
+            const insProj = await db.prepare(
+                `INSERT INTO projects (client_id, quotation_id, service_request_id, name, title, slug, description, status, priority, progress_percentage, start_date, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, 'in_progress', 'high', 50, date('now'), datetime('now'), datetime('now'))`
+            ).bind(client.id, linkedQuote?.id || null, reqId || null, projectName, projectName, projectSlug, projectDesc).run();
+            createdProjectId = Number(insProj?.meta?.last_row_id || 0) || undefined;
+        } catch {
+            const insProj = await db.prepare(
+                `INSERT INTO projects (client_id, name, title, slug, description, status, priority, progress_percentage, start_date, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, 'in_progress', 'high', 50, date('now'), datetime('now'), datetime('now'))`
+            ).bind(client.id, projectName, projectName, projectSlug, projectDesc).run();
+            createdProjectId = Number(insProj?.meta?.last_row_id || 0) || undefined;
+        }
 
         if (createdProjectId) {
             const defaultStages = [

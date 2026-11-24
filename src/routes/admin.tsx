@@ -12,38 +12,48 @@ import { AdminCrmView } from '../views/admin/crm';
 import { AutonomousCrmAgent } from '../services/ai-crm-agent';
 import { AdminClientsView } from '../views/admin/clients';
 import { AdminRequestsView } from '../views/admin/requests';
-import { AdminServicesView } from '../views/admin/services';
 import { AdminUsersView } from '../views/admin/users';
-import { AdminSettingsView } from '../views/admin/settings';
 import { AdminQuotationsView } from '../views/admin/quotations';
 import { sendWhatsAppTextMessage } from '../services/whatsapp';
-import { getSocialFeed, clearSocialFeedCache } from '../services/social-feed';
 import { AdminChatView } from '../views/admin/chat';
 import { AdminProjectsView } from '../views/admin/projects';
-import { AdminFinanceView } from '../views/admin/finance';
-import { AdminDomainsView } from '../views/admin/domains';
-import { AdminCampaignsView } from '../views/admin/campaigns';
-import { sendInvoiceNoticeEmail, sendProjectStartedEmail, sendProjectCompletedEmail, sendPortalInviteEmail, sendEmail } from '../lib/email';
-import { loadBankPaymentSettings, renderOfficialPaymentReceiptHtml } from '../lib/pix';
+import { sendProjectStartedEmail, sendProjectCompletedEmail, sendPortalInviteEmail, sendEmail } from '../lib/email';
 import { recordRequestTimeline } from '../lib/timeline';
+import { adminServicesRoutes } from './admin/services';
+import { adminDomainsRoutes } from './admin/domains';
+import { adminCampaignsRoutes } from './admin/campaigns';
+import { adminSettingsRoutes } from './admin/settings';
+import { createAdminFinanceRoutes } from './admin/finance';
 
 export const adminRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
 // Protege todas as rotas do admin exigindo login e perfil staff
 adminRoutes.use('*', requireAuth, requireStaff);
 
-// RBAC Granular por módulo administrativo
+// RBAC Granular por módulo administrativo (leitura vs mutação)
+function requireModulePermission(viewPermission: string, managePermission: string) {
+    const viewGuard = requirePermission(viewPermission);
+    const manageGuard = requirePermission(managePermission);
+    return async (c: any, next: any) => {
+        const method = c.req.method.toUpperCase();
+        if (['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+            return viewGuard(c, next);
+        }
+        return manageGuard(c, next);
+    };
+}
+
 adminRoutes.use('/usuarios*', requirePermission('users.manage'));
 adminRoutes.use('/configuracoes*', requirePermission('settings.manage'));
-adminRoutes.use('/financeiro*', requirePermission('finance.view'));
-adminRoutes.use('/clientes*', requirePermission('clients.view'));
-adminRoutes.use('/solicitacoes*', requirePermission('requests.view'));
-adminRoutes.use('/servicos*', requirePermission('services.view'));
-adminRoutes.use('/projetos*', requirePermission('projects.view'));
-adminRoutes.use('/dominios*', requirePermission('domains.view'));
-adminRoutes.use('/campanhas*', requirePermission('campaigns.view'));
-adminRoutes.use('/orcamentos*', requirePermission('quotations.view'));
-adminRoutes.use('/atendimento*', requirePermission('chat.view'));
+adminRoutes.use('/financeiro*', requireModulePermission('finance.view', 'finance.manage'));
+adminRoutes.use('/clientes*', requireModulePermission('clients.view', 'clients.manage'));
+adminRoutes.use('/solicitacoes*', requireModulePermission('requests.view', 'requests.manage'));
+adminRoutes.use('/servicos*', requireModulePermission('services.view', 'services.manage'));
+adminRoutes.use('/projetos*', requireModulePermission('projects.view', 'projects.manage'));
+adminRoutes.use('/dominios*', requireModulePermission('domains.view', 'domains.manage'));
+adminRoutes.use('/campanhas*', requireModulePermission('campaigns.view', 'campaigns.manage'));
+adminRoutes.use('/orcamentos*', requireModulePermission('quotations.view', 'quotations.manage'));
+adminRoutes.use('/atendimento*', requireModulePermission('chat.view', 'chat.manage'));
 adminRoutes.use('/crm-autonomo*', requirePermission('chat.manage'));
 
 // Helper para obter mensagens de feedback
@@ -599,17 +609,50 @@ adminRoutes.post('/clientes/:id/excluir', async (c) => {
     const db = c.env.DB;
     const id = c.req.param('id');
 
+    // Trava Contábil: impede excluir cliente com faturas já pagas (preserva Recibos Oficiais e auditoria)
     try {
+        const paidTx = await db.prepare(
+            `SELECT id FROM financial_transactions WHERE client_id = ? AND status = 'paid' LIMIT 1`
+        ).bind(id).first<{ id: number }>();
+        if (paidTx) {
+            return c.redirect(
+                `/admin/clientes?error=${encodeURIComponent('Trava Contábil: Este cliente possui fatura já paga. Para preservar os Recibos Oficiais de Quitação e o histórico financeiro, inative o cliente em vez de excluir.')}`
+            );
+        }
+
+        // Trava de Fase: impede excluir cliente com projetos ativos
+        const activeProj = await db.prepare(
+            `SELECT id FROM projects WHERE client_id = ? AND status NOT IN ('completed', 'canceled') LIMIT 1`
+        ).bind(id).first<{ id: number }>();
+        if (activeProj) {
+            return c.redirect(
+                `/admin/clientes?error=${encodeURIComponent('Trava de Fase: Este cliente possui projeto ativo em andamento. Conclua ou cancele os projetos antes de remover o cliente.')}`
+            );
+        }
+    } catch { }
+
+    let linkedUserId: number | null = null;
+    try {
+        const clientRow = await db.prepare(`SELECT user_id FROM clients WHERE id = ?`).bind(id).first<{ user_id: number | null }>();
+        linkedUserId = clientRow?.user_id ? Number(clientRow.user_id) : null;
+
         await db.prepare(`UPDATE conversations SET client_id = NULL WHERE client_id = ?`).bind(id).run();
         await db.prepare(`UPDATE service_requests SET client_id = NULL WHERE client_id = ?`).bind(id).run();
         await db.prepare(`DELETE FROM quotations WHERE client_id = ?`).bind(id).run();
         await db.prepare(`DELETE FROM advertising_campaigns WHERE client_id = ?`).bind(id).run();
-        await db.prepare(`DELETE FROM financial_transactions WHERE client_id = ?`).bind(id).run();
+        await db.prepare(`DELETE FROM financial_transactions WHERE client_id = ? AND status != 'paid'`).bind(id).run();
         await db.prepare(`DELETE FROM domains WHERE client_id = ?`).bind(id).run();
         await db.prepare(`DELETE FROM projects WHERE client_id = ?`).bind(id).run();
     } catch { }
 
     await db.prepare(`DELETE FROM clients WHERE id = ?`).bind(id).run();
+
+    if (linkedUserId) {
+        try {
+            await destroyAllUserSessions(c.env, linkedUserId);
+        } catch { }
+    }
+
     return c.redirect('/admin/clientes?success=Cliente removido com sucesso');
 });
 
@@ -1121,11 +1164,19 @@ async function autoStartProjectFromApprovedRequest(
 
         try {
             const insProj = await db.prepare(
-                `INSERT INTO projects (client_id, name, title, slug, description, status, priority, progress_percentage, start_date, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, 'in_progress', 'high', 50, date('now'), datetime('now'), datetime('now'))`
-            ).bind(clientId || 1, projectName, projectName, projectSlug, projectDesc).run();
+                `INSERT INTO projects (client_id, quotation_id, service_request_id, name, title, slug, description, status, priority, progress_percentage, start_date, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, 'in_progress', 'high', 50, date('now'), datetime('now'), datetime('now'))`
+            ).bind(clientId || 1, quotation?.id || null, req?.id || null, projectName, projectName, projectSlug, projectDesc).run();
             newProjectId = Number(insProj.meta?.last_row_id || 0) || undefined;
-        } catch { }
+        } catch {
+            try {
+                const insProj = await db.prepare(
+                    `INSERT INTO projects (client_id, name, title, slug, description, status, priority, progress_percentage, start_date, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, 'in_progress', 'high', 50, date('now'), datetime('now'), datetime('now'))`
+                ).bind(clientId || 1, projectName, projectName, projectSlug, projectDesc).run();
+                newProjectId = Number(insProj.meta?.last_row_id || 0) || undefined;
+            } catch { }
+        }
     }
 
     // Popula automaticamente as 4 etapas obrigatórias do cronograma e lança a fatura A RECEBER
@@ -1249,6 +1300,8 @@ async function deleteLinkedCommercialFlow(
             const p = (await db.prepare(`SELECT * FROM projects WHERE id = ?`).bind(anchor.projectId).first()) as any;
             if (p) {
                 if (p.client_id) clientId = Number(p.client_id);
+                if (p.quotation_id) quotationIds.add(Number(p.quotation_id));
+                if (p.service_request_id) requestIds.add(Number(p.service_request_id));
                 addTitle(p.title);
                 addTitle(p.name);
             }
@@ -1297,9 +1350,14 @@ async function deleteLinkedCommercialFlow(
 
             const pRes = await db.prepare(`SELECT * FROM projects WHERE client_id = ?`).bind(clientId).all();
             for (const p of (pRes?.results || []) as any[]) {
+                const matchesRelational =
+                    (p.quotation_id && quotationIds.has(Number(p.quotation_id))) ||
+                    (p.service_request_id && requestIds.has(Number(p.service_request_id)));
+                const hasRelationalLink = Boolean(p.quotation_id || p.service_request_id);
                 const pt1 = String(p.title || '').trim().toLowerCase();
                 const pt2 = String(p.name || '').trim().toLowerCase();
-                if ((pt1 && titles.has(pt1)) || (pt2 && titles.has(pt2))) {
+                const matchesLegacyTitle = !hasRelationalLink && ((pt1 && titles.has(pt1)) || (pt2 && titles.has(pt2)));
+                if (matchesRelational || matchesLegacyTitle) {
                     projectIds.add(Number(p.id));
                 }
             }
@@ -1317,19 +1375,27 @@ async function deleteLinkedCommercialFlow(
         };
     }
 
+    const matchesTransactionToFlow = (tx: any): boolean => {
+        if (tx.project_id && projectIds.has(Number(tx.project_id))) return true;
+        if (tx.quotation_id && quotationIds.has(Number(tx.quotation_id))) return true;
+        // Se a fatura já possui vínculo relacional explícito com outro projeto/orçamento, não faz match por texto
+        if (tx.project_id || tx.quotation_id) return false;
+        const inv = String(tx.invoice_number || '').trim();
+        const descLow = String(tx.description || '').toLowerCase();
+        const matchesRef = Boolean(inv && invoiceRefs.has(inv));
+        const matchesRefInDesc = [...invoiceRefs].some((r) => r && descLow.includes(r.toLowerCase()));
+        const matchesTitle = [...titles].some((t) => t && descLow.includes(t));
+        return matchesRef || matchesRefInDesc || matchesTitle;
+    };
+
     // Trava Contábil 2: Bloqueia exclusão se houver fatura já paga vinculada a este fluxo
     try {
-        if (clientId && (invoiceRefs.size > 0 || titles.size > 0)) {
+        if (clientId && (projectIds.size > 0 || quotationIds.size > 0 || invoiceRefs.size > 0 || titles.size > 0)) {
             const paidRes = await db.prepare(
-                `SELECT id, invoice_number, description FROM financial_transactions WHERE client_id = ? AND status = 'paid'`
+                `SELECT id, project_id, quotation_id, invoice_number, description FROM financial_transactions WHERE client_id = ? AND status = 'paid'`
             ).bind(clientId).all();
             for (const tx of (paidRes?.results || []) as any[]) {
-                const inv = String(tx.invoice_number || '').trim();
-                const descLow = String(tx.description || '').toLowerCase();
-                const matchesRef = inv && invoiceRefs.has(inv);
-                const matchesRefInDesc = [...invoiceRefs].some((r) => r && descLow.includes(r.toLowerCase()));
-                const matchesTitle = [...titles].some((t) => t && descLow.includes(t));
-                if (matchesRef || matchesRefInDesc || matchesTitle) {
+                if (matchesTransactionToFlow(tx)) {
                     return {
                         blockedReason: 'Trava Contábil: Este fluxo possui fatura já paga. Para preservar o Recibo Oficial de Quitação e o histórico financeiro, cancele/arquive em vez de excluir.',
                         deletedRequests: 0,
@@ -1344,17 +1410,12 @@ async function deleteLinkedCommercialFlow(
 
     let deletedInvoices = 0;
     try {
-        if (clientId && (invoiceRefs.size > 0 || titles.size > 0)) {
+        if (clientId && (projectIds.size > 0 || quotationIds.size > 0 || invoiceRefs.size > 0 || titles.size > 0)) {
             const txRes = await db.prepare(
-                `SELECT id, invoice_number, description, status FROM financial_transactions WHERE client_id = ? AND status != 'paid'`
+                `SELECT id, project_id, quotation_id, invoice_number, description, status FROM financial_transactions WHERE client_id = ? AND status != 'paid'`
             ).bind(clientId).all();
             for (const tx of (txRes?.results || []) as any[]) {
-                const inv = String(tx.invoice_number || '').trim();
-                const descLow = String(tx.description || '').toLowerCase();
-                const matchesRef = inv && invoiceRefs.has(inv);
-                const matchesRefInDesc = [...invoiceRefs].some((r) => r && descLow.includes(r.toLowerCase()));
-                const matchesTitle = [...titles].some((t) => t && descLow.includes(t));
-                if (matchesRef || matchesRefInDesc || matchesTitle) {
+                if (matchesTransactionToFlow(tx)) {
                     try { await db.prepare(`DELETE FROM payments WHERE financial_transaction_id = ?`).bind(tx.id).run(); } catch { }
                     await db.prepare(`DELETE FROM financial_transactions WHERE id = ? AND status != 'paid'`).bind(tx.id).run();
                     deletedInvoices++;
@@ -2103,150 +2164,9 @@ adminRoutes.post('/solicitacoes/:id/excluir', async (c) => {
 });
 
 // ==========================================
-// 4. PACOTES DE SERVIÇOS & CATÁLOGO
+// 4. PACOTES DE SERVIÇOS & CATÁLOGO (Modularizado em src/routes/admin/services.tsx)
 // ==========================================
-const DEFAULT_CATEGORIES = [
-    { id: 'sites', name: 'Websites & Portais' },
-    { id: 'ecommerce', name: 'E-commerce B2B/B2C' },
-    { id: 'software', name: 'Software & SaaS Edge' },
-    { id: 'infra', name: 'Infra & Cloudflare' }
-];
-
-adminRoutes.get('/servicos', async (c) => {
-    const user = c.get('user');
-    const db = c.env.DB;
-    const { successMessage, errorMessage } = getFlashMessages(c);
-
-    const search = (c.req.query('search') || '').trim();
-    const categoryFilter = (c.req.query('category') || '').trim();
-
-    let query = `SELECT * FROM services WHERE 1=1`;
-    const params: any[] = [];
-
-    if (search) {
-        query += ` AND (title LIKE ? OR summary LIKE ?)`;
-        const s = `%${search}%`;
-        params.push(s, s);
-    }
-
-    if (categoryFilter) {
-        query += ` AND category = ?`;
-        params.push(categoryFilter);
-    }
-
-    query += ` ORDER BY order_position ASC, created_at DESC`;
-
-    const stmt = db.prepare(query);
-    const services = (await (params.length ? stmt.bind(...params) : stmt).all()).results || [];
-
-    return c.html(
-        <AdminServicesView
-            currentUser={user}
-            services={services}
-            categories={DEFAULT_CATEGORIES}
-            isCreate={false}
-            successMessage={successMessage}
-            errorMessage={errorMessage}
-        />
-    );
-});
-
-adminRoutes.get('/servicos/novo', async (c) => {
-    const user = c.get('user');
-    const { successMessage, errorMessage } = getFlashMessages(c);
-
-    return c.html(
-        <AdminServicesView
-            currentUser={user}
-            services={[]}
-            categories={DEFAULT_CATEGORIES}
-            isCreate={true}
-            successMessage={successMessage}
-            errorMessage={errorMessage}
-        />
-    );
-});
-
-adminRoutes.post('/servicos', async (c) => {
-    const db = c.env.DB;
-    const body = await getRequestBody(c);
-
-    const title = String(body.title || body.name || '').trim();
-    let slug = String(body.slug || '').trim().toLowerCase();
-    const category = String(body.category || body.category_id || 'sites').trim();
-    const price = Number(body.price || body.base_price) || 0;
-    const summary = String(body.summary || body.short_description || '').trim() || null;
-    const description = String(body.description || '').trim() || null;
-    const is_active = body.is_active === '0' || body.is_active === 0 ? 0 : 1;
-    const is_featured = body.is_featured === '1' || body.is_featured === 1 ? 1 : 0;
-
-    if (!title) {
-        return c.redirect('/admin/servicos?error=Título do serviço é obrigatório');
-    }
-
-    if (!slug) {
-        slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-    }
-
-    try {
-        await db.prepare(
-            `INSERT INTO services (title, slug, category, price, summary, description, is_active, is_featured, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
-        ).bind(title, slug, category, price, summary, description, is_active, is_featured).run();
-
-        return c.redirect('/admin/servicos?success=Pacote de serviço cadastrado com sucesso');
-    } catch (err: any) {
-        return c.redirect(`/admin/servicos?error=${encodeURIComponent(err.message || 'Erro ao salvar serviço')}`);
-    }
-});
-
-const toggleServiceHandler = async (c: any) => {
-    const db = c.env.DB;
-    const id = c.req.param('id');
-
-    await db.prepare(
-        `UPDATE services SET is_active = CASE WHEN is_active = 1 THEN 0 ELSE 1 END, updated_at = datetime('now') WHERE id = ?`
-    ).bind(id).run();
-
-    return c.redirect('/admin/servicos?success=Status do serviço atualizado');
-};
-
-adminRoutes.post('/servicos/:id/toggle', toggleServiceHandler);
-
-adminRoutes.post('/servicos/:id/editar', async (c) => {
-    const db = c.env.DB;
-    const id = Number(c.req.param('id'));
-    const body = await getRequestBody(c);
-
-    const title = String(body.title || body.name || '').trim();
-    const category = String(body.category || body.category_id || 'sites').trim();
-    const price = Math.max(0, Number(body.price || body.base_price) || 0);
-    const summary = String(body.summary || body.short_description || '').trim() || null;
-    const isActive = body.is_active === '0' || body.is_active === 0 ? 0 : 1;
-
-    if (!title) {
-        return c.redirect('/admin/servicos?error=Título do serviço é obrigatório.');
-    }
-
-    await db.prepare(
-        `UPDATE services
-         SET name = ?, title = ?, category = ?, base_price = ?, price = ?, price_starting_at = ?, short_description = ?, summary = ?, is_active = ?, updated_at = datetime('now')
-         WHERE id = ?`
-    ).bind(title, title, category, price, price, price, summary, summary, isActive, id).run();
-
-    return c.redirect('/admin/servicos?success=Pacote de serviço atualizado com sucesso!');
-});
-
-adminRoutes.post('/servicos/:id/excluir', async (c) => {
-    const db = c.env.DB;
-    const id = Number(c.req.param('id'));
-
-    if (id > 0) {
-        await db.prepare(`DELETE FROM services WHERE id = ?`).bind(id).run();
-    }
-
-    return c.redirect('/admin/servicos?success=Pacote de serviço excluído com sucesso.');
-});
+adminRoutes.route('/', adminServicesRoutes);
 
 // ==========================================
 // 5. EQUIPE & USUÁRIOS (RBAC)
@@ -3317,541 +3237,11 @@ adminRoutes.post('/projetos/:id/anexos/:attId/excluir', async (c) => {
 });
 
 // ==========================================
-// 8. FATURAS & GESTÃO FINANCEIRA
+// 8-10. FINANCEIRO, DOMÍNIOS & CAMPANHAS (Modularizados em src/routes/admin/*)
 // ==========================================
-adminRoutes.get('/financeiro', async (c) => {
-    const user = c.get('user');
-    const db = c.env.DB;
-    const { successMessage, errorMessage } = getFlashMessages(c);
-
-    const search = (c.req.query('search') || '').trim();
-    const statusFilter = (c.req.query('status') || '').trim();
-    const typeFilter = (c.req.query('type') || '').trim();
-
-    // Métricas financeiras
-    const totalInvoicedRow = await db.prepare(
-        `SELECT SUM(amount) as val FROM financial_transactions WHERE type = 'income' AND status != 'canceled'`
-    ).first<{ val: number }>();
-
-    const totalReceivedRow = await db.prepare(
-        `SELECT SUM(amount) as val FROM financial_transactions WHERE type = 'income' AND status = 'paid'`
-    ).first<{ val: number }>();
-
-    const totalPendingRow = await db.prepare(
-        `SELECT SUM(amount) as val FROM financial_transactions WHERE type = 'income' AND status IN ('pending', 'reviewing')`
-    ).first<{ val: number }>();
-
-    const totalOverdueRow = await db.prepare(
-        `SELECT SUM(amount) as val FROM financial_transactions WHERE type = 'income' AND status = 'pending' AND due_date < date('now')`
-    ).first<{ val: number }>();
-
-    let query = `
-        SELECT t.*, c.name as client_name, c.company, c.email as client_email,
-               (SELECT p.proof_file FROM payments p WHERE p.financial_transaction_id = t.id ORDER BY p.id DESC LIMIT 1) AS proof_file
-        FROM financial_transactions t
-        LEFT JOIN clients c ON t.client_id = c.id
-        WHERE 1=1
-    `;
-    const params: any[] = [];
-
-    if (search) {
-        query += ` AND (t.description LIKE ? OR t.invoice_number LIKE ? OR c.name LIKE ? OR c.company LIKE ?)`;
-        const s = `%${search}%`;
-        params.push(s, s, s, s);
-    }
-
-    if (statusFilter) {
-        query += ` AND t.status = ?`;
-        params.push(statusFilter);
-    }
-
-    if (typeFilter) {
-        query += ` AND t.type = ?`;
-        params.push(typeFilter);
-    }
-
-    query += ` ORDER BY t.due_date DESC, t.created_at DESC`;
-
-    const stmt = db.prepare(query);
-    const transactions = (await (params.length ? stmt.bind(...params) : stmt).all()).results || [];
-
-    const clients = (await db.prepare(`SELECT id, name, company FROM clients ORDER BY company ASC, name ASC`).all()).results || [];
-
-    return c.html(
-        <AdminFinanceView
-            currentUser={user}
-            transactions={transactions}
-            clients={clients}
-            metrics={{
-                totalInvoiced: totalInvoicedRow?.val || 0,
-                totalReceived: totalReceivedRow?.val || 0,
-                totalPending: totalPendingRow?.val || 0,
-                totalOverdue: totalOverdueRow?.val || 0
-            }}
-            statusFilter={statusFilter}
-            typeFilter={typeFilter}
-            search={search}
-            successMessage={successMessage}
-            errorMessage={errorMessage}
-        />
-    );
-});
-
-adminRoutes.post('/financeiro', async (c) => {
-    const db = c.env.DB;
-    const body = await getRequestBody(c);
-
-    const clientId = Number(body.client_id);
-    const typeRaw = String(body.type || 'income').trim();
-    const txType = typeRaw === 'expense' ? 'expense' : 'income';
-    const description = String(body.description || '').trim();
-    const amount = Number(body.amount);
-    const dueDate = String(body.due_date || '').trim();
-    const paymentMethod = String(body.payment_method || 'PIX').trim();
-    const invoiceNumber = String(body.invoice_number || '').trim() || null;
-
-    if (!clientId || !description || !amount || !dueDate) {
-        return c.redirect('/admin/financeiro?error=Preencha todos os campos obrigatórios');
-    }
-
-    const txTypeSql = txType === 'expense' ? "'expense'" : "'income'";
-    await db.prepare(
-        `INSERT INTO financial_transactions (client_id, type, category, description, amount, status, due_date, payment_method, invoice_number, created_at, updated_at)
-         VALUES (?, ${txTypeSql}, 'contract', ?, ?, 'pending', ?, ?, ?, datetime('now'), datetime('now'))`
-    ).bind(clientId, description, amount, dueDate, paymentMethod, invoiceNumber).run();
-
-    try {
-        const client = await db.prepare(`SELECT name, email FROM clients WHERE id = ?`).bind(clientId).first<{ name: string; email: string }>();
-        if (client && client.email) {
-            await sendInvoiceNoticeEmail(c.env, client.email, client.name, {
-                description,
-                amount,
-                dueDate,
-                invoiceNumber: invoiceNumber || undefined
-            });
-        }
-    } catch (mailErr) {
-        console.error('Erro ao despachar e-mail de fatura:', mailErr);
-    }
-
-    return c.redirect('/admin/financeiro?success=Fatura cadastrada com sucesso');
-});
-
-adminRoutes.get('/financeiro/:id/comprovante', async (c) => {
-    const db = c.env.DB;
-    const txId = Number(c.req.param('id'));
-
-    const row = await db.prepare(
-        `SELECT proof_file FROM payments
-         WHERE financial_transaction_id = ? AND proof_file IS NOT NULL
-         ORDER BY id DESC LIMIT 1`
-    ).bind(txId).first<{ proof_file: string }>();
-
-    if (!row?.proof_file || !c.env.UPLOADS_BUCKET) {
-        return c.text('Comprovante não encontrado', 404);
-    }
-
-    const obj = await c.env.UPLOADS_BUCKET.get(row.proof_file);
-    if (!obj) return c.text('Arquivo não encontrado', 404);
-
-    const headers = new Headers();
-    headers.set('Content-Type', obj.httpMetadata?.contentType || 'application/octet-stream');
-    headers.set('Content-Disposition', `inline; filename="comprovante-fatura-${txId}"`);
-    headers.set('X-Content-Type-Options', 'nosniff');
-    headers.set('Content-Security-Policy', 'sandbox');
-    headers.set('Cache-Control', 'private, no-store');
-    return new Response(obj.body, { headers });
-});
-
-adminRoutes.get('/financeiro/:id/recibo', async (c) => {
-    const db = c.env.DB;
-    const txId = Number(c.req.param('id'));
-
-    const tx = await db.prepare(
-        `SELECT * FROM financial_transactions WHERE id = ? AND status = 'paid'`
-    ).bind(txId).first<any>();
-
-    if (!tx) {
-        return c.text('Recibo disponível apenas para lançamentos quitados.', 404);
-    }
-
-    const client = tx.client_id
-        ? await db.prepare(`SELECT * FROM clients WHERE id = ?`).bind(tx.client_id).first<any>()
-        : null;
-    const bankSettings = await loadBankPaymentSettings(db);
-    return c.html(renderOfficialPaymentReceiptHtml({ tx, client, bankSettings }));
-});
-
-adminRoutes.post('/financeiro/:id/recusar-comprovante', async (c) => {
-    const db = c.env.DB;
-    const txId = Number(c.req.param('id'));
-    const body = await getRequestBody(c);
-    const reason = String(body.reason || 'Comprovante ilegível ou divergente. Por favor, envie novamente.').trim().slice(0, 200);
-
-    await db.prepare(
-        `UPDATE financial_transactions
-         SET status = 'pending', notes = ?, updated_at = datetime('now')
-         WHERE id = ? AND status = 'reviewing'`
-    ).bind(`[COMPROVANTE RECUSADO] ${reason}`, txId).run();
-
-    try {
-        await db.prepare(
-            `UPDATE payments SET status = 'rejected', updated_at = datetime('now')
-             WHERE financial_transaction_id = ? AND status = 'reviewing'`
-        ).bind(txId).run();
-    } catch { }
-
-    return c.redirect('/admin/financeiro?success=Comprovante recusado e fatura devolvida ao cliente como Pendente.');
-});
-
-adminRoutes.post('/financeiro/:id/pagar', async (c) => {
-    const db = c.env.DB;
-    const id = c.req.param('id');
-
-    let txType = 'income';
-    let txClientId: number | null = null;
-    let txDesc = '';
-    let txAmount = 0;
-    try {
-        const row = await db.prepare(`SELECT type, client_id, description, amount FROM financial_transactions WHERE id = ?`).bind(id).first<any>();
-        if (row?.type) txType = row.type;
-        if (row?.client_id) txClientId = Number(row.client_id);
-        if (row?.description) txDesc = String(row.description);
-        if (row?.amount) txAmount = Number(row.amount);
-    } catch { }
-
-    await db.prepare(
-        `UPDATE financial_transactions SET status = 'paid', paid_at = datetime('now'), notes = NULL, updated_at = datetime('now') WHERE id = ?`
-    ).bind(id).run();
-
-    try {
-        await db.prepare(
-            `UPDATE payments SET status = 'completed', updated_at = datetime('now')
-             WHERE financial_transaction_id = ? AND status = 'reviewing'`
-        ).bind(id).run();
-    } catch { }
-
-    // Envia confirmação de quitação com link do Recibo Oficial ao cliente
-    if (txType === 'income' && txClientId) {
-        try {
-            const client = await db.prepare(`SELECT name, company, email FROM clients WHERE id = ?`).bind(txClientId).first<any>();
-            if (client?.email && !String(client.email).endsWith('.local')) {
-                const appUrl = (c.env.APP_URL || 'https://gundjatech.casimirogundja.workers.dev').replace(/\/$/, '');
-                const valFmt = txAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                await sendEmail(c.env, {
-                    to: client.email,
-                    subject: `Pagamento Confirmado • Recibo Oficial GundjaTech #${id}`,
-                    html: `<p>Olá, <strong>${client.company || client.name}</strong>!</p>
-                           <p>Confirmamos o recebimento de <strong>R$ ${valFmt}</strong> referente a <strong>${txDesc}</strong>.</p>
-                           <p>Seu <strong>Recibo Oficial de Quitação</strong> já está disponível no Portal do Cliente:<br/>
-                           <a href="${appUrl}/portal/financeiro/${id}/recibo">Acessar Recibo de Quitação (PDF)</a></p>`
-                });
-            }
-        } catch { }
-    }
-
-    // Encerramento de Ciclo: após quitar a fatura (RECEBIDO), caso o projeto уже esteja concluído
-    // e o cliente não possua nenhum outro projeto em andamento, domínio ativo ou campanha ativa,
-    // encerra automaticamente o login ocioso do Portal (users.is_active = 0)
-    if (txClientId) {
-        try {
-            await autoRevokeIdlePortalUser(db, c.env, txClientId);
-        } catch { }
-    }
-
-    const msg = txType === 'expense' ? 'Despesa marcada como paga com sucesso' : 'Recebimento confirmado em caixa com sucesso';
-    return c.redirect(`/admin/financeiro?success=${encodeURIComponent(msg)}`);
-});
-
-adminRoutes.post('/financeiro/:id/cancelar', async (c) => {
-    const db = c.env.DB;
-    const id = c.req.param('id');
-
-    let txClientId: number | null = null;
-    try {
-        const row = await db.prepare(`SELECT client_id FROM financial_transactions WHERE id = ?`).bind(id).first<{ client_id?: number }>();
-        if (row?.client_id) txClientId = Number(row.client_id);
-    } catch { }
-
-    await db.prepare(
-        `UPDATE financial_transactions SET status = 'canceled', updated_at = datetime('now') WHERE id = ?`
-    ).bind(id).run();
-
-    if (txClientId) {
-        try {
-            await autoRevokeIdlePortalUser(db, c.env, txClientId);
-        } catch { }
-    }
-
-    return c.redirect('/admin/financeiro?success=Fatura cancelada');
-});
-
-adminRoutes.post('/financeiro/:id/excluir', async (c) => {
-    const db = c.env.DB;
-    const id = Number(c.req.param('id'));
-
-    if (id > 0) {
-        const tx = (await db.prepare(`SELECT status FROM financial_transactions WHERE id = ?`).bind(id).first()) as { status?: string } | null;
-        if (tx?.status === 'paid') {
-            return c.redirect(
-                `/admin/financeiro?error=${encodeURIComponent('Trava Contábil: Faturas já pagas não podem ser excluídas para preservar o Recibo Oficial de Quitação e a auditoria financeira.')}`
-            );
-        }
-        try { await db.prepare(`DELETE FROM payments WHERE financial_transaction_id = ?`).bind(id).run(); } catch { }
-        await db.prepare(`DELETE FROM financial_transactions WHERE id = ? AND status != 'paid'`).bind(id).run();
-    }
-
-    return c.redirect('/admin/financeiro?success=Lançamento financeiro excluído com sucesso.');
-});
-
-// ==========================================
-// 9. DOMÍNIOS & ZONAS DNS
-// ==========================================
-adminRoutes.get('/dominios', async (c) => {
-    const user = c.get('user');
-    const db = c.env.DB;
-    const { successMessage, errorMessage } = getFlashMessages(c);
-
-    const search = (c.req.query('search') || '').trim();
-    const statusFilter = (c.req.query('status') || '').trim();
-
-    let query = `
-        SELECT d.*, c.name as client_name, c.company, c.email as client_email
-        FROM domains d
-        LEFT JOIN clients c ON d.client_id = c.id
-        WHERE 1=1
-    `;
-    const params: any[] = [];
-
-    if (search) {
-        query += ` AND (d.domain_name LIKE ? OR c.name LIKE ? OR c.company LIKE ?)`;
-        const s = `%${search}%`;
-        params.push(s, s, s);
-    }
-
-    if (statusFilter) {
-        query += ` AND d.status = ?`;
-        params.push(statusFilter);
-    }
-
-    query += ` ORDER BY d.expires_at ASC`;
-
-    const stmt = db.prepare(query);
-    const domains = (await (params.length ? stmt.bind(...params) : stmt).all()).results || [];
-
-    const clients = (await db.prepare(`SELECT id, name, company FROM clients ORDER BY company ASC, name ASC`).all()).results || [];
-
-    return c.html(
-        <AdminDomainsView
-            currentUser={user}
-            domains={domains}
-            clients={clients}
-            search={search}
-            statusFilter={statusFilter}
-            successMessage={successMessage}
-            errorMessage={errorMessage}
-        />
-    );
-});
-
-adminRoutes.post('/dominios', async (c) => {
-    const db = c.env.DB;
-    const body = await getRequestBody(c);
-
-    const clientId = Number(body.client_id);
-    const domainName = String(body.domain_name || '').trim().toLowerCase();
-    const registrar = String(body.registrar || 'Cloudflare / Registro.br').trim();
-    const expiresAt = String(body.expires_at || '').trim() || null;
-    const autoRenew = body.auto_renew === '1' || body.auto_renew === 1 ? 1 : 0;
-
-    if (!clientId || !domainName) {
-        return c.redirect('/admin/dominios?error=Cliente e Nome do Domínio são obrigatórios');
-    }
-
-    try {
-        await db.prepare(
-            `INSERT INTO domains (client_id, domain_name, registrar, expires_at, auto_renew, status, dns_provider, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, 'active', 'Cloudflare Edge', datetime('now'), datetime('now'))`
-        ).bind(clientId, domainName, registrar, expiresAt, autoRenew).run();
-
-        return c.redirect('/admin/dominios?success=Domínio cadastrado para monitoramento');
-    } catch (err: any) {
-        return c.redirect(`/admin/dominios?error=${encodeURIComponent(err.message || 'Erro ao cadastrar domínio')}`);
-    }
-});
-
-adminRoutes.post('/dominios/:id/editar', async (c) => {
-    const db = c.env.DB;
-    const id = Number(c.req.param('id'));
-    const body = await getRequestBody(c);
-
-    if (!id) {
-        return c.redirect('/admin/dominios?error=Domínio inválido');
-    }
-
-    const clientId = Number(body.client_id);
-    const domainName = String(body.domain_name || '').trim().toLowerCase();
-    const registrar = String(body.registrar || 'Cloudflare / Registro.br').trim();
-    const dnsProvider = String(body.dns_provider || 'Cloudflare Edge').trim();
-    const expiresAt = String(body.expires_at || '').trim() || null;
-    const autoRenew = body.auto_renew === '1' || body.auto_renew === 1 ? 1 : 0;
-    const rawStatus = String(body.status || 'active').trim();
-    const status = ['active', 'pending_dns', 'expiring', 'expired'].includes(rawStatus) ? rawStatus : 'active';
-
-    if (!clientId || !domainName) {
-        return c.redirect('/admin/dominios?error=Cliente e Nome do Domínio são obrigatórios');
-    }
-
-    try {
-        await db.prepare(
-            `UPDATE domains
-             SET client_id = ?, domain_name = ?, registrar = ?, dns_provider = ?, expires_at = ?, auto_renew = ?, status = ?, updated_at = datetime('now')
-             WHERE id = ?`
-        ).bind(clientId, domainName, registrar, dnsProvider, expiresAt, autoRenew, status, id).run();
-
-        return c.redirect('/admin/dominios?success=Domínio atualizado com sucesso');
-    } catch (err: any) {
-        return c.redirect(`/admin/dominios?error=${encodeURIComponent(err.message || 'Erro ao atualizar domínio')}`);
-    }
-});
-
-adminRoutes.post('/dominios/:id/excluir', async (c) => {
-    const db = c.env.DB;
-    const id = c.req.param('id');
-
-    await db.prepare(`DELETE FROM domains WHERE id = ?`).bind(id).run();
-    return c.redirect('/admin/dominios?success=Domínio removido');
-});
-
-// ==========================================
-// 10. CAMPANHAS DE PERFORMANCE & ADS
-// ==========================================
-adminRoutes.get('/campanhas', async (c) => {
-    const user = c.get('user');
-    const db = c.env.DB;
-    const { successMessage, errorMessage } = getFlashMessages(c);
-
-    const search = (c.req.query('search') || '').trim();
-    const platformFilter = (c.req.query('platform') || '').trim();
-    const statusFilter = (c.req.query('status') || '').trim();
-
-    const budgetRow = await db.prepare(
-        `SELECT SUM(budget) as total_budget, SUM(spent_amount) as total_spent FROM advertising_campaigns`
-    ).first<{ total_budget: number; total_spent: number }>();
-
-    let query = `
-        SELECT a.*, c.name as client_name, c.company
-        FROM advertising_campaigns a
-        LEFT JOIN clients c ON a.client_id = c.id
-        WHERE 1=1
-    `;
-    const params: any[] = [];
-
-    if (search) {
-        query += ` AND (a.name LIKE ? OR c.name LIKE ? OR c.company LIKE ?)`;
-        const s = `%${search}%`;
-        params.push(s, s, s);
-    }
-
-    if (platformFilter) {
-        query += ` AND a.platform = ?`;
-        params.push(platformFilter);
-    }
-
-    if (statusFilter) {
-        query += ` AND a.status = ?`;
-        params.push(statusFilter);
-    }
-
-    query += ` ORDER BY a.created_at DESC`;
-
-    const stmt = db.prepare(query);
-    const campaigns = (await (params.length ? stmt.bind(...params) : stmt).all()).results || [];
-
-    const clients = (await db.prepare(`SELECT id, name, company FROM clients ORDER BY company ASC, name ASC`).all()).results || [];
-
-    return c.html(
-        <AdminCampaignsView
-            currentUser={user}
-            campaigns={campaigns}
-            clients={clients}
-            totalBudget={budgetRow?.total_budget || 0}
-            totalSpent={budgetRow?.total_spent || 0}
-            search={search}
-            platformFilter={platformFilter}
-            statusFilter={statusFilter}
-            successMessage={successMessage}
-            errorMessage={errorMessage}
-        />
-    );
-});
-
-adminRoutes.post('/campanhas', async (c) => {
-    const db = c.env.DB;
-    const body = await getRequestBody(c);
-
-    const clientId = Number(body.client_id);
-    const name = String(body.name || '').trim();
-    const platform = String(body.platform || 'google_ads').trim();
-    const budget = Number(body.budget) || 0;
-
-    if (!clientId || !name) {
-        return c.redirect('/admin/campanhas?error=Cliente e Nome da Campanha são obrigatórios');
-    }
-
-    await db.prepare(
-        `INSERT INTO advertising_campaigns (client_id, name, platform, budget, spent_amount, status, created_at, updated_at)
-         VALUES (?, ?, ?, ?, 0, 'active', datetime('now'), datetime('now'))`
-    ).bind(clientId, name, platform, budget).run();
-
-    return c.redirect('/admin/campanhas?success=Campanha cadastrada com sucesso');
-});
-
-adminRoutes.post('/campanhas/:id/toggle', async (c) => {
-    const db = c.env.DB;
-    const id = c.req.param('id');
-
-    await db.prepare(
-        `UPDATE advertising_campaigns 
-         SET status = CASE WHEN status = 'active' THEN 'paused' ELSE 'active' END, updated_at = datetime('now')
-         WHERE id = ?`
-    ).bind(id).run();
-
-    return c.redirect('/admin/campanhas?success=Status da campanha alterado');
-});
-
-adminRoutes.post('/campanhas/:id/editar', async (c) => {
-    const db = c.env.DB;
-    const id = Number(c.req.param('id'));
-    const body = await getRequestBody(c);
-
-    const name = String(body.name || '').trim();
-    const platform = String(body.platform || 'google_ads').trim();
-    const statusRaw = String(body.status || 'active').trim();
-    const status = ['active', 'paused', 'completed'].includes(statusRaw) ? statusRaw : 'active';
-    const budget = Math.max(0, Number(body.budget) || 0);
-    const spentAmount = Math.max(0, Number(body.spent_amount) || 0);
-
-    if (!name) {
-        return c.redirect('/admin/campanhas?error=O nome da campanha é obrigatório.');
-    }
-
-    await db.prepare(
-        `UPDATE advertising_campaigns
-         SET name = ?, platform = ?, status = ?, budget = ?, spent_amount = ?, updated_at = datetime('now')
-         WHERE id = ?`
-    ).bind(name, platform, status, budget, spentAmount, id).run();
-
-    return c.redirect('/admin/campanhas?success=Campanha atualizada com sucesso!');
-});
-
-adminRoutes.post('/campanhas/:id/excluir', async (c) => {
-    const db = c.env.DB;
-    const id = Number(c.req.param('id'));
-
-    await db.prepare(`DELETE FROM advertising_campaigns WHERE id = ?`).bind(id).run();
-    return c.redirect('/admin/campanhas?success=Campanha excluída com sucesso.');
-});
+adminRoutes.route('/', createAdminFinanceRoutes({ autoRevokeIdlePortalUser }));
+adminRoutes.route('/', adminDomainsRoutes);
+adminRoutes.route('/', adminCampaignsRoutes);
 
 // ==========================================
 // 11. ORÇAMENTOS & PROPOSTAS COMERCIAIS
@@ -4574,196 +3964,9 @@ adminRoutes.post('/crm-autonomo/testar', async (c) => {
 });
 
 // ==========================================
-// 12B. CONFIGURAÇÕES GERAIS (/admin/configuracoes)
+// 12B. CONFIGURAÇÕES GERAIS (Modularizado em src/routes/admin/settings.tsx)
 // ==========================================
-adminRoutes.get('/configuracoes', async (c) => {
-    const user = c.get('user')!;
-    const db = c.env.DB;
-    const { successMessage, errorMessage } = getFlashMessages(c);
-
-    const settingsMap: Record<string, string> = {};
-    try {
-        const res = await db.prepare(`SELECT key, value FROM system_settings`).all<{ key: string; value: string }>();
-        for (const row of res.results || []) {
-            settingsMap[row.key] = row.value || '';
-        }
-    } catch { }
-
-    const activeProvider = settingsMap.whatsapp_provider || 'zapi_omni';
-    const whatsappSyncEnabled = settingsMap.whatsapp_sync_enabled !== '0';
-    const whatsappAiEnabled = settingsMap.whatsapp_ai_enabled !== '0';
-    const whatsappDirectorEnabled = settingsMap.whatsapp_director_enabled !== '0';
-    const whatsappConfigured =
-        activeProvider === 'zapi' || activeProvider === 'zapi_omni'
-            ? Boolean(settingsMap.whatsapp_zapi_instance_id && (settingsMap.whatsapp_zapi_token || settingsMap.whatsapp_zapi_client_token))
-            : activeProvider === 'evolution'
-                ? Boolean(settingsMap.whatsapp_evolution_url && settingsMap.whatsapp_evolution_instance && settingsMap.whatsapp_evolution_api_key)
-                : Boolean((c.env.WHATSAPP_ACCESS_TOKEN || settingsMap.whatsapp_access_token) && (c.env.WHATSAPP_PHONE_NUMBER_ID || settingsMap.whatsapp_phone_number_id));
-
-    let whatsappLastError: string | null = null;
-    if (c.env?.KV_CACHE) {
-        try {
-            const rawLastSend = await c.env.KV_CACHE.get('wa:debug:last_send');
-            if (rawLastSend) {
-                const parsed = JSON.parse(rawLastSend) as { ok?: boolean; error?: string };
-                if (parsed && parsed.ok === false && parsed.error) {
-                    whatsappLastError = parsed.error;
-                }
-            }
-        } catch { }
-    }
-
-    settingsMap.has_zapi_token = settingsMap.whatsapp_zapi_token ? '1' : '';
-    settingsMap.has_zapi_client_token = settingsMap.whatsapp_zapi_client_token ? '1' : '';
-    settingsMap.has_evolution_key = settingsMap.whatsapp_evolution_api_key ? '1' : '';
-    delete settingsMap.whatsapp_access_token;
-    delete settingsMap.whatsapp_zapi_token;
-    delete settingsMap.whatsapp_zapi_client_token;
-    delete settingsMap.whatsapp_evolution_api_key;
-
-    const origin = new URL(c.req.url).origin;
-    return c.html(
-        <AdminSettingsView
-            currentUser={user}
-            settings={settingsMap}
-            whatsappConfigured={whatsappConfigured}
-            whatsappSyncEnabled={whatsappSyncEnabled}
-            whatsappAiEnabled={whatsappAiEnabled}
-            whatsappDirectorEnabled={whatsappDirectorEnabled}
-            whatsappLastError={whatsappLastError}
-            webhookUrl={`${origin}/api/webhooks/whatsapp`}
-            verifyToken={c.env.WHATSAPP_VERIFY_TOKEN || 'gundjatech_wa_verify_2026'}
-            successMessage={successMessage}
-            errorMessage={errorMessage}
-        />
-    );
-});
-
-adminRoutes.post('/configuracoes', async (c) => {
-    const db = c.env.DB;
-    const body = await getRequestBody(c);
-
-    const pairs: Array<[string, string, string]> = [
-        ['company_name', String(body.company_name || 'GundjaTech').trim(), 'general'],
-        ['company_cnpj', String(body.company_cnpj || '').trim(), 'general'],
-        ['company_slogan', String(body.company_slogan || '').trim(), 'general'],
-        ['company_email', String(body.company_email || '').trim(), 'general'],
-        ['company_phone', String(body.company_phone || '').trim(), 'general'],
-        ['company_whatsapp', String(body.company_whatsapp || '').trim(), 'general'],
-        ['whatsapp_director_phone', String(body.whatsapp_director_phone || '').replace(/\D+/g, ''), 'integrations'],
-        ['company_address', String(body.company_address || '').trim(), 'general'],
-        ['whatsapp_sync_enabled', body.whatsapp_sync_enabled ? '1' : '0', 'integrations'],
-        ['whatsapp_ai_enabled', body.whatsapp_ai_enabled ? '1' : '0', 'integrations'],
-        ['whatsapp_director_enabled', body.whatsapp_director_enabled ? '1' : '0', 'integrations']
-    ];
-
-    const provider = String(body.whatsapp_provider || '').trim();
-    if (provider === 'zapi' || provider === 'zapi_omni' || provider === 'evolution' || provider === 'meta') {
-        pairs.push(['whatsapp_provider', provider, 'integrations']);
-    }
-
-    const optionalSecrets: Array<[string, string]> = [
-        ['whatsapp_phone_number_id', String(body.whatsapp_phone_number_id || '').trim()],
-        ['whatsapp_access_token', String(body.whatsapp_access_token || '').trim()],
-        ['whatsapp_zapi_instance_id', String(body.whatsapp_zapi_instance_id || '').trim()],
-        ['whatsapp_zapi_token', String(body.whatsapp_zapi_token || '').trim()],
-        ['whatsapp_zapi_client_token', String(body.whatsapp_zapi_client_token || '').trim()],
-        ['whatsapp_evolution_url', String(body.whatsapp_evolution_url || '').trim()],
-        ['whatsapp_evolution_instance', String(body.whatsapp_evolution_instance || '').trim()],
-        ['whatsapp_evolution_api_key', String(body.whatsapp_evolution_api_key || '').trim()],
-        ['meta_social_access_token', String(body.meta_social_access_token || '').trim()],
-        ['payment_gateway_api_key', String(body.payment_gateway_api_key || '').trim()],
-        ['payment_gateway_webhook_secret', String(body.payment_gateway_webhook_secret || '').trim()]
-    ];
-    for (const [k, v] of optionalSecrets) {
-        if (v) pairs.push([k, v, k.startsWith('payment_') ? 'payments' : 'integrations']);
-    }
-
-    // Redes Sociais: Instagram & Facebook Sync + Curadoria Manual
-    pairs.push(
-        ['meta_ig_account_id', String(body.meta_ig_account_id || '').trim(), 'social'],
-        ['meta_fb_page_id', String(body.meta_fb_page_id || '').trim(), 'social'],
-        ['payment_pix_key', String(body.payment_pix_key || '').trim(), 'payments'],
-        ['payment_pix_holder', String(body.payment_pix_holder || '').trim(), 'payments'],
-        ['payment_pix_city', String(body.payment_pix_city || '').trim(), 'payments'],
-        ['payment_bank_name', String(body.payment_bank_name || '').trim(), 'payments'],
-        ['payment_bank_agency', String(body.payment_bank_agency || '').trim(), 'payments'],
-        ['payment_bank_account', String(body.payment_bank_account || '').trim(), 'payments'],
-        ['payment_bank_cnpj', String(body.payment_bank_cnpj || '').trim(), 'payments'],
-        ['payment_gateway_provider', String(body.payment_gateway_provider || 'static').trim(), 'payments']
-    );
-
-    const manualReels: Array<{ permalink: string; imageUrl: string; caption: string; platform: string }> = [];
-    for (let i = 1; i <= 4; i++) {
-        const link = String(body[`social_reel_url_${i}`] || '').trim();
-        const cover = String(body[`social_reel_cover_${i}`] || '').trim();
-        const caption = String(body[`social_reel_caption_${i}`] || '').trim();
-        if (link && link.startsWith('http')) {
-            manualReels.push({
-                permalink: link,
-                imageUrl: cover,
-                caption: caption || 'Conteúdo oficial da GundjaTech',
-                platform: link.includes('facebook.com') ? 'facebook' : 'instagram'
-            });
-        }
-    }
-    pairs.push(['social_manual_reels_json', JSON.stringify(manualReels), 'social']);
-
-    try {
-        for (const [key, value, groupName] of pairs) {
-            await db.prepare(
-                `INSERT INTO system_settings (key, value, type, group_name, created_at, updated_at)
-                 VALUES (?, ?, 'string', ?, datetime('now'), datetime('now'))
-                 ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`
-            ).bind(key, value, groupName).run();
-        }
-    } catch { }
-
-    await clearSocialFeedCache(c.env);
-
-    return c.redirect('/admin/configuracoes?success=Configurações gerais e redes sociais salvas com sucesso');
-});
-
-adminRoutes.post('/configuracoes/sincronizar-redes', async (c) => {
-    const feed = await getSocialFeed(c.env, { forceRefresh: true });
-    if (feed.source === 'meta_api' && feed.items.length > 0) {
-        return c.redirect(`/admin/configuracoes?success=${encodeURIComponent(`${feed.items.length} publicação(ões)/Reels sincronizados em tempo real via Meta Graph API!`)}`);
-    }
-    if (feed.source === 'manual' && feed.items.length > 0) {
-        return c.redirect(`/admin/configuracoes?success=${encodeURIComponent(`Cache atualizado com ${feed.items.length} Reels em destaque (modo manual).`)}`);
-    }
-    return c.redirect(`/admin/configuracoes?error=${encodeURIComponent(feed.error || 'Configure o Instagram Business Account ID + Meta Access Token ou adicione links manuais antes de sincronizar.')}`);
-});
-
-adminRoutes.post('/configuracoes/testar-whatsapp', async (c) => {
-    const db = c.env.DB;
-    let targetPhone = '';
-    try {
-        const rows = await db.prepare(
-            `SELECT key, value FROM system_settings WHERE key IN ('whatsapp_director_phone', 'company_whatsapp')`
-        ).all<{ key: string; value: string }>();
-        const map: Record<string, string> = {};
-        for (const r of rows.results || []) map[r.key] = String(r.value || '').replace(/\D+/g, '');
-        targetPhone = map.whatsapp_director_phone || map.company_whatsapp || '';
-    } catch { }
-
-    if (!targetPhone) {
-        return c.redirect('/admin/configuracoes?error=Informe um número de WhatsApp (Oficial ou Diretor) antes de testar.');
-    }
-
-    const res = await sendWhatsAppTextMessage(
-        c.env,
-        targetPhone,
-        '✅ Teste de integração GundjaTech CRM concluído com sucesso! Sua conexão WhatsApp está operando normalmente.',
-        undefined,
-        { bypassSyncPause: true }
-    );
-
-    if (res.ok) {
-        return c.redirect(`/admin/configuracoes?success=${encodeURIComponent(`Mensagem de teste enviada via ${res.provider || 'WhatsApp'} para ${targetPhone}`)}`);
-    }
-    return c.redirect(`/admin/configuracoes?error=${encodeURIComponent(res.error || 'Falha ao enviar mensagem de teste no WhatsApp')}`);
-});
+adminRoutes.route('/', adminSettingsRoutes);
 
 // ==========================================
 // 13. RESUMO EM TEMPO REAL & MENSAGENS (SOM & NOTIFICAÇÕES)

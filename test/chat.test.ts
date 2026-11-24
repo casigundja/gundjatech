@@ -123,7 +123,7 @@ describe('Fase 4 - Módulo 3: Chat ao Vivo & Autonomous CRM AI', () => {
         const mockAiEnv = {
             AI: {
                 run: async (model: string, options: any) => {
-                    expect(model).toBe('@cf/meta/llama-3.3-70b-instruct');
+                    expect(model).toBe('@cf/meta/llama-3.3-70b-instruct-fp8-fast');
                     expect(options.messages.length).toBeGreaterThan(0);
                     return { response: 'Resposta gerada com sucesso pela Llama 3.3 no Cloudflare Workers AI' };
                 }

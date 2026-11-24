@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { AppVariables, Env } from '../types/env';
 import { AutonomousCrmAgent } from '../services/ai-crm-agent';
-import { hmacVerify } from '../lib/crypto';
+import { hmacVerifyHex } from '../lib/crypto';
 import {
     markWhatsAppMessageRead,
     normalizeWhatsAppPhone,
@@ -216,12 +216,12 @@ whatsappRoutes.get('/', (c) => {
 whatsappRoutes.post('/', async (c) => {
     const rawBody = await c.req.text();
 
-    // 1. Validação opcional de assinatura HMAC-SHA256 da Meta (X-Hub-Signature-256)
+    // 1. Validação obrigatória de assinatura HMAC-SHA256 Hex da Meta (X-Hub-Signature-256) quando configurada
     const appSecret = (c.env?.WHATSAPP_APP_SECRET || '').trim();
     if (appSecret) {
         const sigHeader = (c.req.header('x-hub-signature-256') || '').trim();
         const providedHex = sigHeader.startsWith('sha256=') ? sigHeader.slice(7) : '';
-        if (!providedHex || !(await hmacVerify(rawBody, providedHex, appSecret))) {
+        if (!providedHex || !(await hmacVerifyHex(rawBody, providedHex, appSecret))) {
             return c.json({ ok: false, error: 'Invalid webhook signature' }, 401);
         }
     }

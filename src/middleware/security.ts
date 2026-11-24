@@ -13,6 +13,10 @@ export const securityHeaders: MiddlewareHandler<{ Bindings: Env; Variables: AppV
     c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
     c.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+    c.header(
+        'Content-Security-Policy-Report-Only',
+        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https:; frame-ancestors 'self'; object-src 'none'; base-uri 'self'"
+    );
 };
 
 /**
@@ -24,7 +28,11 @@ export const csrfProtection: MiddlewareHandler<{ Bindings: Env; Variables: AppVa
     const path = c.req.path;
     const method = c.req.method.toUpperCase();
 
-    if (path.startsWith('/api/') || ['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+    const isCookieAuthenticatedApi = path.startsWith('/api/account') || path.startsWith('/api/uploads');
+    if (['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+        return next();
+    }
+    if (path.startsWith('/api/') && !isCookieAuthenticatedApi) {
         return next();
     }
 

@@ -325,7 +325,7 @@ export async function settleInvoiceAsPaid(
 
     const ref = meta.gatewayReference || `GTFAT${String(txId).padStart(5, '0')}`;
 
-    await db.prepare(
+    const updateRes = await db.prepare(
         `UPDATE financial_transactions
          SET status = 'paid',
              payment_method = 'PIX',
@@ -333,6 +333,11 @@ export async function settleInvoiceAsPaid(
              updated_at = datetime('now')
          WHERE id = ? AND status != 'paid'`
     ).bind(txId).run();
+
+    // Garante idempotência sob concorrência (webhook + polling simultâneos)
+    if (Number(updateRes.meta?.changes ?? 0) === 0) {
+        return { settled: false, alreadyPaid: true };
+    }
 
     try {
         await db.prepare(

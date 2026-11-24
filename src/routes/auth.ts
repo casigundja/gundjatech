@@ -5,7 +5,7 @@ import { rateLimit } from '../middleware/security';
 import { verifyPassword, hashPassword } from '../lib/password';
 import { createSession, destroySession, destroyAllUserSessions } from '../lib/session';
 import { findUserByEmail, createUser, updateUserPassword } from '../lib/users';
-import { generateRandomToken } from '../lib/crypto';
+import { generateRandomToken, sha256Hex, timingSafeEqual } from '../lib/crypto';
 import { sendPasswordResetEmail } from '../lib/email';
 import { renderAuthBladePage } from '../views/auth-blade-templates';
 
@@ -228,7 +228,7 @@ authRoutes.get('/esqueci-minha-senha', requireGuest, (c) => {
     );
 });
 
-authRoutes.post('/esqueci-minha-senha', async (c) => {
+authRoutes.post('/esqueci-minha-senha', rateLimit({ keyPrefix: 'auth_forgot', maxRequests: 5, windowSeconds: 600 }), async (c) => {
     const body = await c.req.parseBody();
     const email = String(body.email || '').trim().toLowerCase();
 
@@ -239,12 +239,13 @@ authRoutes.post('/esqueci-minha-senha', async (c) => {
     const user = await findUserByEmail(c.env.DB, email);
     if (user) {
         const token = generateRandomToken(32);
+        const tokenHash = await sha256Hex(token);
         await c.env.DB.prepare(
             `INSERT INTO password_reset_tokens (email, token, created_at)
              VALUES (?, ?, datetime('now'))
              ON CONFLICT(email) DO UPDATE SET token = excluded.token, created_at = datetime('now')`
         )
-            .bind(email, token)
+            .bind(email, tokenHash)
             .run();
 
         await sendPasswordResetEmail(c.env, email, user.name, token);
@@ -273,7 +274,9 @@ authRoutes.get('/redefinir-senha/:token', (c) => {
     );
 });
 
-authRoutes.post('/redefinir-senha', async (c) => {
+const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000; // 60 minutos
+
+authRoutes.post('/redefinir-senha', rateLimit({ keyPrefix: 'auth_reset', maxRequests: 10, windowSeconds: 600 }), async (c) => {
     const body = await c.req.parseBody();
     const token = String(body.token || '');
     const email = String(body.email || '').trim().toLowerCase();
@@ -289,7 +292,27 @@ authRoutes.post('/redefinir-senha', async (c) => {
         .bind(email)
         .first<{ token: string; created_at: string }>();
 
-    if (!resetRecord || resetRecord.token !== token) {
+    const providedHash = await sha256Hex(token);
+    const tokenMatches = Boolean(
+        resetRecord &&
+        (timingSafeEqual(resetRecord.token, providedHash) || timingSafeEqual(resetRecord.token, token))
+    );
+
+    let isExpired = false;
+    if (resetRecord?.created_at) {
+        const normalizedIso = resetRecord.created_at.includes('T')
+            ? resetRecord.created_at
+            : resetRecord.created_at.replace(' ', 'T') + 'Z';
+        const createdMs = Date.parse(normalizedIso);
+        if (Number.isFinite(createdMs) && Date.now() - createdMs > PASSWORD_RESET_TTL_MS) {
+            isExpired = true;
+        }
+    }
+
+    if (!resetRecord || !tokenMatches || isExpired) {
+        if (isExpired) {
+            await c.env.DB.prepare(`DELETE FROM password_reset_tokens WHERE email = ?`).bind(email).run();
+        }
         return c.html(`
             <body style="font-family: sans-serif; background: #063B5C; color: #fff; text-align: center; padding: 80px 20px;">
                 <h2 style="color: #f87171;">Token Inválido ou Expirado</h2>

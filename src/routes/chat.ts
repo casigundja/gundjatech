@@ -210,7 +210,7 @@ chatRoutes.post('/start', rateLimit({ keyPrefix: 'chat_start', maxRequests: 15, 
 // ----------------------------------------------------
 // ENVIAR MENSAGEM NO CHAT - Paridade com Laravel apiChatMessage
 // ----------------------------------------------------
-chatRoutes.post('/message', async (c) => {
+chatRoutes.post('/message', rateLimit({ keyPrefix: 'chat_message', maxRequests: 40, windowSeconds: 60 }), async (c) => {
     const body = await getRequestBody(c);
     const visitorToken = String(body.visitor_token || '').trim();
     const message = String(body.message || '').trim();
@@ -258,6 +258,13 @@ chatRoutes.post('/message', async (c) => {
             } catch {}
         }
     } catch {}
+
+    if (c.env?.DB && !conversation) {
+        return c.json({
+            ok: false,
+            error: 'Conversa não encontrada ou sessão expirada.'
+        }, 404);
+    }
 
     if (conversation && conversation.status === 'closed') {
         return c.json({

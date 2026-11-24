@@ -38,25 +38,60 @@ export function base64UrlToBuffer(base64url: string): Uint8Array {
     return bytes;
 }
 
-const DEFAULT_HMAC_SECRET = 'gundjatech_prod_hmac_key_PU1bNMoz8jVmKIWiC650bGnL2FljkKJ3w3W2JcD1Myk';
+function bufferToHex(buffer: ArrayBuffer | Uint8Array): string {
+    const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+    let hex = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+        hex += bytes[i].toString(16).padStart(2, '0');
+    }
+    return hex;
+}
 
-export async function hmacSign(message: string, secret?: string): Promise<string> {
-    const effectiveSecret = secret && secret.length > 0 ? secret : DEFAULT_HMAC_SECRET;
+async function computeHmacSignature(message: string, secret?: string): Promise<ArrayBuffer> {
+    if (!secret || secret.trim().length === 0) {
+        throw new Error('SESSION_SECRET / HMAC secret não configurado no ambiente.');
+    }
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
         'raw',
-        encoder.encode(effectiveSecret),
+        encoder.encode(secret),
         { name: 'HMAC', hash: 'SHA-256' },
         false,
         ['sign']
     );
-    const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(message));
+    return crypto.subtle.sign('HMAC', key, encoder.encode(message));
+}
+
+export async function hmacSign(message: string, secret?: string): Promise<string> {
+    const signature = await computeHmacSignature(message, secret);
     return bufferToBase64Url(signature);
 }
 
 export async function hmacVerify(message: string, signature: string, secret?: string): Promise<boolean> {
+    if (!secret || secret.trim().length === 0 || !signature) {
+        return false;
+    }
     const expectedSignature = await hmacSign(message, secret);
     return timingSafeEqual(expectedSignature, signature);
+}
+
+export async function hmacSignHex(message: string, secret?: string): Promise<string> {
+    const signature = await computeHmacSignature(message, secret);
+    return bufferToHex(signature);
+}
+
+export async function hmacVerifyHex(message: string, hexSignature: string, secret?: string): Promise<boolean> {
+    if (!secret || secret.trim().length === 0 || !hexSignature) {
+        return false;
+    }
+    const expectedHex = await hmacSignHex(message, secret);
+    return timingSafeEqual(expectedHex, hexSignature.toLowerCase());
+}
+
+export async function sha256Hex(value: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const digest = await crypto.subtle.digest('SHA-256', encoder.encode(value));
+    return bufferToHex(digest);
 }
 
 export function generateRandomToken(bytesLength = 32): string {

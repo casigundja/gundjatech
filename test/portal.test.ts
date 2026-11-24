@@ -238,7 +238,7 @@ function createMockEnv() {
         } as any,
         KV_CACHE: {} as any,
         UPLOADS_BUCKET: {} as any,
-        AI: {} as any
+        AI: undefined as any
     };
 }
 
