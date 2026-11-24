@@ -1844,6 +1844,19 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
             );
         }
 
+        // Trava de Fase sincronizada com o botão superior: orçamento ainda em rascunho/recusado precisa ser enviado antes de aprovar
+        if (
+            newStatus === 'approved' &&
+            !isAlreadyApprovedOrRunning &&
+            linkedQuotation &&
+            (linkedQuotation.status === 'draft' || linkedQuotation.status === 'rejected') &&
+            current.status !== 'quotation_sent'
+        ) {
+            return c.redirect(
+                `/admin/solicitacoes/${id}?error=${encodeURIComponent('Trava de Fase: Finalize e envie o orçamento ao cliente primeiro ("Finalizar & Enviar Orçamento" ou status "3. Orçamento Enviado") antes de aprovar.')}`
+            );
+        }
+
         if ((newStatus === 'in_progress' || newStatus === 'completed') && !isAlreadyApprovedOrRunning && linkedQuotation?.status !== 'approved') {
             return c.redirect(
                 `/admin/solicitacoes/${id}?error=${encodeURIComponent('Só é possível iniciar ou concluir o trabalho depois que o orçamento estiver Aprovado.')}`
@@ -1969,6 +1982,15 @@ adminRoutes.post('/solicitacoes/:id/status', async (c) => {
             }
         } catch { }
         return c.redirect(`/admin/solicitacoes/${id}?success=${encodeURIComponent('Orçamento enviado! Acesso ao Portal do Cliente liberado automaticamente para aprovação.')}`);
+    }
+
+    // Se retornou de "Orçamento Enviado" para "Novo" ou "Em Análise", sincroniza orçamento enviado de volta para rascunho
+    if ((newStatus === 'new' || newStatus === 'analyzing') && linkedQuotation && linkedQuotation.status === 'sent') {
+        try {
+            await db.prepare(
+                `UPDATE quotations SET status = 'draft', updated_at = datetime('now') WHERE id = ?`
+            ).bind(linkedQuotation.id).run();
+        } catch { }
     }
 
     if (newStatus === 'cancelled') {
@@ -3590,6 +3612,16 @@ adminRoutes.post('/orcamentos/:id', async (c) => {
                         fromStatus: reqRow.status,
                         toStatus: 'analyzing',
                         notes: `Orçamento ${updatedQuote.reference_code || `#${id}`} recusado — retornou para análise`
+                    });
+                } else if (status === 'draft' && reqRow.status === 'quotation_sent') {
+                    await db.prepare(`UPDATE service_requests SET status = 'analyzing', estimated_budget = ?, updated_at = datetime('now') WHERE id = ?`).bind(finalAmount, reqRow.id).run();
+                    await recordRequestTimeline(db, {
+                        serviceRequestId: reqRow.id,
+                        userId: user.id,
+                        action: 'status_change',
+                        fromStatus: reqRow.status,
+                        toStatus: 'analyzing',
+                        notes: `Orçamento ${updatedQuote.reference_code || `#${id}`} voltou para rascunho — solicitação retornou para análise`
                     });
                 } else {
                     await db.prepare(`UPDATE service_requests SET estimated_budget = ?, updated_at = datetime('now') WHERE id = ?`).bind(finalAmount, reqRow.id).run();

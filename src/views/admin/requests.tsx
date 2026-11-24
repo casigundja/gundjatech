@@ -111,6 +111,10 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
     if (requestDetail) {
         const meta = STATUS_META[requestDetail.status] || { label: requestDetail.status || 'Novo', badgeClass: 'gt-badge-warning', dotClass: '' };
         const hasQuotation = Boolean(linkedQuotation?.id);
+        const quoteFinalValue = hasQuotation ? Number(linkedQuotation.final_amount ?? linkedQuotation.total_amount ?? 0) : null;
+        const effectiveBudgetValue = Number(quoteFinalValue || requestDetail.estimated_budget || 0);
+        const isQuotationSent = linkedQuotation?.status === 'sent';
+        const isQuotationDraftOrRejected = hasQuotation && (linkedQuotation?.status === 'draft' || linkedQuotation?.status === 'rejected');
         const isQuotationApproved =
             linkedQuotation?.status === 'approved' ||
             requestDetail.status === 'approved' ||
@@ -121,8 +125,11 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
             history.some((h: any) => h.action === 'converted_to_project') ||
             requestDetail.status === 'in_progress' ||
             requestDetail.status === 'completed';
+        const canSendQuotation =
+            effectiveBudgetValue > 0 &&
+            (isQuotationSent || isQuotationApproved || isQuotationDraftOrRejected || !hasQuotation);
+        const canApproveQuotation = isQuotationSent || isQuotationApproved;
         const currentStepIndex = PIPELINE_STEPS.findIndex((s) => s.key === requestDetail.status);
-        const quoteFinalValue = hasQuotation ? Number(linkedQuotation.final_amount ?? linkedQuotation.total_amount ?? 0) : null;
         const formattedBudget = formatCurrencyBrl(quoteFinalValue || requestDetail.estimated_budget);
         const structuredDesc = parseStructuredDescription(requestDetail.description || requestDetail.briefing);
         const phoneDigits = String(requestDetail.phone || '').replace(/\D/g, '');
@@ -498,11 +505,25 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                 <div>
                                     <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Novo Status</label>
                                     <select name="status" class="w-full rounded-xl px-3 py-2 text-xs">
-                                        <option value="new" selected={requestDetail.status === 'new'}>1. Novo / Recebido</option>
-                                        <option value="analyzing" selected={requestDetail.status === 'analyzing'}>2. Em Análise Técnica</option>
-                                        <option value="quotation_sent" selected={requestDetail.status === 'quotation_sent'}>3. Orçamento Enviado ao Cliente</option>
-                                        <option value="approved" selected={requestDetail.status === 'approved'} disabled={!hasQuotation && !isQuotationApproved}>
-                                            4. Aprovado (Inicia Projeto Automaticamente){!hasQuotation && !isQuotationApproved ? ' — Requer Orçamento' : ''}
+                                        <option value="new" selected={requestDetail.status === 'new'} disabled={isConvertedToProject}>
+                                            1. Novo / Recebido{isConvertedToProject ? ' — Projeto já iniciado' : ''}
+                                        </option>
+                                        <option value="analyzing" selected={requestDetail.status === 'analyzing'} disabled={isConvertedToProject}>
+                                            2. Em Análise Técnica{isConvertedToProject ? ' — Projeto já iniciado' : ''}
+                                        </option>
+                                        <option
+                                            value="quotation_sent"
+                                            selected={requestDetail.status === 'quotation_sent'}
+                                            disabled={(!canSendQuotation && requestDetail.status !== 'quotation_sent') || isConvertedToProject}
+                                        >
+                                            3. Orçamento Enviado ao Cliente{!canSendQuotation && requestDetail.status !== 'quotation_sent' ? (hasQuotation ? ' — Defina valor no Orçamento acima' : ' — Elabore o Orçamento acima') : ''}
+                                        </option>
+                                        <option
+                                            value="approved"
+                                            selected={requestDetail.status === 'approved'}
+                                            disabled={!canApproveQuotation}
+                                        >
+                                            4. Aprovado (Inicia Projeto Automaticamente){!canApproveQuotation ? (hasQuotation ? ' — Envie o Orçamento primeiro' : ' — Elabore e envie o Orçamento') : ''}
                                         </option>
                                         <option value="in_progress" selected={requestDetail.status === 'in_progress'} disabled={!isQuotationApproved}>
                                             5. Em Execução{!isQuotationApproved ? ' — Requer Orçamento Aprovado' : ''}
@@ -512,11 +533,19 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                         </option>
                                         <option value="cancelled" selected={requestDetail.status === 'cancelled'}>Cancelado</option>
                                     </select>
-                                    {!isQuotationApproved && (
-                                        <p class="text-[10px] text-[#8C95AA] mt-1">
-                                            A execução só é liberada após o orçamento ser emitido e aprovado.
-                                        </p>
-                                    )}
+                                    <p class="text-[10px] text-[#8C95AA] mt-1.5 leading-snug">
+                                        {isConvertedToProject
+                                            ? 'Sincronizado com o Projeto em Execução: conclua todas as etapas em Projetos antes de marcar como Concluído.'
+                                            : !hasQuotation
+                                                ? 'Sincronizado com o botão acima: clique em "Elaborar Orçamento" para criar a proposta e liberar o envio.'
+                                                : isQuotationDraftOrRejected
+                                                    ? effectiveBudgetValue > 0
+                                                        ? 'Orçamento em rascunho pronto: clique em "Finalizar & Enviar Orçamento" acima ou selecione "3. Orçamento Enviado" para enviar e sincronizar.'
+                                                        : 'Sincronizado com o botão acima: clique em "Finalizar & Enviar Orçamento" e defina o valor da proposta para liberar o envio.'
+                                                    : isQuotationSent
+                                                        ? 'Orçamento enviado ao cliente: clique em "Aprovar & Iniciar Projeto" acima ou selecione "4. Aprovado" para iniciar o projeto.'
+                                                        : 'Sincronizado automaticamente com o ciclo comercial da proposta e do projeto.'}
+                                    </p>
                                 </div>
 
                                 <div>
