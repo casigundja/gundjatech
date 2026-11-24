@@ -144,30 +144,42 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                 successMessage={successMessage}
                 errorMessage={errorMessage}
             >
-                <div class="gt-detail-toolbar">
-                    <a href="/admin/solicitacoes" class="gt-back-link">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M19 12H5" />
-                            <path d="m12 19-7-7 7-7" />
-                        </svg>
-                        <span>Voltar para Solicitações</span>
-                    </a>
-
-                    <div class="gt-detail-toolbar-actions">
-                        <button
-                            type="button"
-                            onclick="var p=document.getElementById('gt-profile-menu');if(p)p.classList.add('hidden');var n=document.getElementById('gt-notif-dropdown');if(n)n.classList.add('hidden');var m=document.getElementById('gt-edit-request-modal');if(m){m.classList.remove('hidden');var first=m.querySelector('input[name=service_title]');if(first)setTimeout(function(){first.focus();},50);}"
-                            class="gt-btn-outline gt-btn-sm"
-                        >
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 20h9" />
-                                <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                <div class="gt-grid-detail" style="align-items: center; gap: 14px 20px;">
+                    {/* Topo Esquerdo: Voltar + Ações Secundárias (alinhado com o Card Principal) */}
+                    <div class="flex items-center justify-between gap-3 flex-wrap min-w-0">
+                        <a href="/admin/solicitacoes" class="gt-back-link">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M19 12H5" />
+                                <path d="m12 19-7-7 7-7" />
                             </svg>
-                            <span>Editar</span>
-                        </button>
+                            <span>Voltar para Solicitações</span>
+                        </a>
 
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <button
+                                type="button"
+                                onclick="var p=document.getElementById('gt-profile-menu');if(p)p.classList.add('hidden');var n=document.getElementById('gt-notif-dropdown');if(n)n.classList.add('hidden');var m=document.getElementById('gt-edit-request-modal');if(m){m.classList.remove('hidden');var first=m.querySelector('input[name=service_title]');if(first)setTimeout(function(){first.focus();},50);}"
+                                class="gt-btn-outline gt-btn-sm"
+                            >
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 20h9" />
+                                    <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                                </svg>
+                                <span>Editar</span>
+                            </button>
+
+                            {!isConvertedToProject && requestDetail.status !== 'cancelled' && hasQuotation && linkedQuotation.status === 'sent' && (
+                                <a href={`/admin/orcamentos/${linkedQuotation.id}`} class="gt-btn-outline gt-btn-sm">
+                                    <span>Ver Orçamento ({linkedQuotation.reference_code})</span>
+                                </a>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Topo Direito: CTA Principal da Fase (alinhado 100% com o card Atualizar Status) */}
+                    <div class="min-w-0">
                         {isConvertedToProject ? (
-                            <a href={linkedProject?.id ? `/admin/projetos/${linkedProject.id}` : '/admin/projetos'} class="gt-btn-petrol gt-btn-sm">
+                            <a href={linkedProject?.id ? `/admin/projetos/${linkedProject.id}` : '/admin/projetos'} class="gt-btn-petrol gt-btn-sm w-full justify-center">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                                     <path d="m9 11 3 3L22 4" />
@@ -176,7 +188,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                             </a>
                         ) : requestDetail.status !== 'cancelled' && !hasQuotation ? (
                             <form action={`/admin/solicitacoes/${requestDetail.id}/gerar-orcamento`} method="post" class="m-0">
-                                <button type="submit" data-loading-text="Gerando..." class="gt-btn-primary gt-btn-sm">
+                                <button type="submit" data-loading-text="Gerando..." class="gt-btn-primary gt-btn-sm w-full justify-center">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                                         <polyline points="14 2 14 8 20 8" />
@@ -187,7 +199,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                 </button>
                             </form>
                         ) : requestDetail.status !== 'cancelled' && hasQuotation && (linkedQuotation.status === 'draft' || linkedQuotation.status === 'rejected') ? (
-                            <a href={`/admin/orcamentos/${linkedQuotation.id}`} class="gt-btn-primary gt-btn-sm">
+                            <a href={`/admin/orcamentos/${linkedQuotation.id}`} class="gt-btn-primary gt-btn-sm w-full justify-center">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="m22 2-7 20-4-9-9-4Z" />
                                     <path d="M22 2 11 13" />
@@ -195,23 +207,18 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                 <span>Finalizar &amp; Enviar Orçamento</span>
                             </a>
                         ) : requestDetail.status !== 'cancelled' && hasQuotation && linkedQuotation.status === 'sent' ? (
-                            <>
-                                <a href={`/admin/orcamentos/${linkedQuotation.id}`} class="gt-btn-outline gt-btn-sm">
-                                    <span>Ver Orçamento ({linkedQuotation.reference_code})</span>
-                                </a>
-                                <form action={`/admin/orcamentos/${linkedQuotation.id}/status`} method="post" class="m-0">
-                                    <input type="hidden" name="status" value="approved" />
-                                    <button type="submit" data-loading-text="Aprovando..." class="gt-btn-primary gt-btn-sm">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                                            <polyline points="20 6 9 17 4 12" />
-                                        </svg>
-                                        <span>Aprovar &amp; Iniciar Projeto</span>
-                                    </button>
-                                </form>
-                            </>
+                            <form action={`/admin/orcamentos/${linkedQuotation.id}/status`} method="post" class="m-0">
+                                <input type="hidden" name="status" value="approved" />
+                                <button type="submit" data-loading-text="Aprovando..." class="gt-btn-primary gt-btn-sm w-full justify-center">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                    <span>Aprovar &amp; Iniciar Projeto</span>
+                                </button>
+                            </form>
                         ) : isQuotationApproved && !isConvertedToProject ? (
                             <form action={`/admin/solicitacoes/${requestDetail.id}/converter`} method="post" class="m-0">
-                                <button type="submit" data-loading-text="Iniciando..." class="gt-btn-primary gt-btn-sm">
+                                <button type="submit" data-loading-text="Iniciando..." class="gt-btn-primary gt-btn-sm w-full justify-center">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
                                         <path d="M12 10v6" />
