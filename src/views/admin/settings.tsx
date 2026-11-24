@@ -58,12 +58,13 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
             successMessage={successMessage}
             errorMessage={errorMessage}
         >
+            <div class="gt-settings-shell">
             {/* Header Bar */}
-            <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center justify-between gap-3" style="flex-shrink: 0;">
                 <div class="min-w-0">
                     <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white">Configurações Gerais &amp; Integrações</h1>
                     <p class="text-xs text-[#8C95AA] mt-0.5">
-                        Dados institucionais da GundjaTech, números de atendimento e credenciais de WhatsApp.
+                        Dados institucionais da GundjaTech, números de atendimento, WhatsApp e redes sociais.
                     </p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
@@ -77,14 +78,14 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                 </div>
             </div>
 
-            {/* Main 2-column balanced grid (independent heights) */}
-            <form id="gt-settings-form" action="/admin/configuracoes" method="post" data-dirty-guard="1" class="gt-crm-grid items-start" style="align-items: start;">
+            {/* Main 2-column viewport-fit cockpit */}
+            <form id="gt-settings-form" action="/admin/configuracoes" method="post" data-dirty-guard="1" class="gt-settings-grid">
                 {/* Coluna Esquerda: Identidade & Canais Corporativos */}
-                <section class="gtb-card gt-card-fixed-h !p-5 flex flex-col justify-between gap-4 min-w-0">
-                    <div class="gt-card-scroll-body space-y-4">
-                        <div class="pb-3.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                <section class="gtb-card gt-settings-left !p-4 flex flex-col justify-between gap-3 min-w-0">
+                    <div class="gt-card-scroll-body space-y-3">
+                        <div class="pb-2.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                             <h2 class="gt-font-display text-sm sm:text-base font-extrabold text-white">Identidade &amp; Dados da Empresa</h2>
-                            <p class="text-xs text-[#8C95AA] mt-0.5">
+                            <p class="text-[11px] text-[#8C95AA] mt-0.5">
                                 Informações exibidas em propostas comerciais, rodapé institucional e comunicações oficiais.
                             </p>
                         </div>
@@ -345,7 +346,7 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                         </details>
                     </div>
 
-                    <div class="pt-4 flex items-center justify-between gap-3 flex-wrap" style="border-top: 1px solid rgba(22, 116, 154, 0.14);">
+                    <div class="pt-3 flex items-center justify-between gap-3 flex-wrap" style="flex-shrink: 0; border-top: 1px solid rgba(22, 116, 154, 0.14);">
                         <span class="text-[11px] text-[#8C95AA]">Alterações são aplicadas imediatamente em todo o painel e site.</span>
                         <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm">
                             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7"/></svg>
@@ -354,13 +355,14 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                     </div>
                 </section>
 
-                {/* Coluna Direita: Integração WhatsApp (Z-API / Evolution / Meta) */}
-                <aside class="gtb-card gt-card-fixed-h !p-5 flex flex-col justify-between gap-4 min-w-0">
-                    <div class="gt-card-scroll-body space-y-4">
-                        <div class="flex items-start justify-between gap-2 pb-3.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                {/* Coluna Direita: WhatsApp IA + Instagram/Facebook empilhados sem extrapolar a tela */}
+                <div class="gt-settings-right min-w-0">
+                <aside class="gtb-card !p-4 flex flex-col gap-3 min-w-0" style="flex-shrink: 0;">
+                    <div class="space-y-2.5">
+                        <div class="flex items-start justify-between gap-2 pb-2.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                             <div>
-                                <h2 class="gt-font-display text-sm sm:text-base font-extrabold text-white">Integração WhatsApp IA</h2>
-                                <p class="text-xs text-[#8C95AA] mt-0.5">Conexão via QR Code (Z-API / Evolution) ou Meta Oficial.</p>
+                                <h2 class="gt-font-display text-sm font-extrabold text-white">Integração WhatsApp IA</h2>
+                                <p class="text-[11px] text-[#8C95AA] mt-0.5">Conexão via QR Code (Z-API / Evolution) ou Meta Oficial.</p>
                             </div>
                             <span id="gt-wa-status-badge" data-configured={whatsappConfigured ? '1' : '0'} class={`gt-badge shrink-0 ${statusMeta.cls}`}>
                                 {statusMeta.label}
@@ -573,7 +575,7 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                     </div>
 
                     {/* Rodapé de teste rápido WhatsApp */}
-                    <div class="pt-3.5" style="border-top: 1px solid rgba(22, 116, 154, 0.14);">
+                    <div class="pt-2.5" style="border-top: 1px solid rgba(22, 116, 154, 0.14);">
                         <button
                             type="button"
                             onclick="var f=document.getElementById('gt-test-wa-form');if(f)f.submit();"
@@ -585,35 +587,35 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                     </div>
                 </aside>
 
-                {/* Seção Full-Width: Sincronização Instagram Reels & Facebook em Tempo Real */}
-                <section class="gtb-card !p-5 space-y-4 min-w-0" style="grid-column: 1 / -1;">
-                    <div class="flex flex-wrap items-start justify-between gap-3 pb-3.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
-                        <div>
+                {/* Card 2 Direita: Sincronização Instagram Reels & Facebook em Tempo Real */}
+                <section class="gtb-card !p-4 space-y-2.5 min-w-0" style="flex-shrink: 0;">
+                    <div class="flex flex-wrap items-start justify-between gap-2 pb-2.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                        <div class="min-w-0">
                             <div class="flex items-center gap-2 flex-wrap">
-                                <h2 class="gt-font-display text-sm sm:text-base font-extrabold text-white">
-                                    Sincronização em Tempo Real • Instagram Reels &amp; Facebook
+                                <h2 class="gt-font-display text-sm font-extrabold text-white">
+                                    Instagram Reels &amp; Facebook
                                 </h2>
                                 <span class={`gt-badge ${socialMetaConfigured ? 'gt-badge-success' : manualReelsParsed.length > 0 ? 'gt-badge-info' : 'gt-badge-warning'}`}>
                                     {socialMetaConfigured ? '● Meta API Ativa' : manualReelsParsed.length > 0 ? `● ${manualReelsParsed.length} Reels Manuais` : '● Vitrine Padrão'}
                                 </span>
                             </div>
-                            <p class="text-xs text-[#8C95AA] mt-1">
-                                Conecte sua conta profissional da Meta para exibir automaticamente os últimos 4 Reels e posts na seção <strong>Acompanhe a GundjaTech</strong> da Home (cache automático de 15 min no Edge).
+                            <p class="text-[11px] text-[#8C95AA] mt-0.5">
+                                Exibe os últimos 4 Reels na Home (cache de 15 min no Edge).
                             </p>
                         </div>
 
                         <button
                             type="button"
                             onclick="var f=document.getElementById('gt-sync-social-form');if(f)f.submit();"
-                            class="gt-btn-outline gt-btn-sm shrink-0"
+                            class="gt-btn-outline gt-btn-xs shrink-0"
                         >
-                            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
                                 <path d="M3 3v5h5" />
                                 <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
                                 <path d="M16 16h5v5" />
                             </svg>
-                            <span>Sincronizar Agora</span>
+                            <span>Sincronizar</span>
                         </button>
                     </div>
 
@@ -714,13 +716,15 @@ export const AdminSettingsView: FC<AdminSettingsProps> = ({
                     </details>
 
                     <div class="flex items-center justify-end gap-3 pt-1">
-                        <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm">
+                        <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm w-full justify-center">
                             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7"/></svg>
                             <span>Salvar Integração de Redes</span>
                         </button>
                     </div>
                 </section>
+                </div>
             </form>
+            </div>
 
             {/* Forms auxiliares isolados para testes/sincronização sem disparar dirty-guard */}
             <form id="gt-test-wa-form" action="/admin/configuracoes/testar-whatsapp" method="post" class="hidden"></form>

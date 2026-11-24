@@ -2391,6 +2391,61 @@ html[data-admin-theme="light"] .gtb-notif-empty-icon {
     }
 }
 
+/* Configurações Gerais: cockpit 2 colunas contido em 1 tela no desktop */
+.gt-settings-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: calc(100vh - 120px);
+    max-height: calc(100vh - 120px);
+    overflow: hidden;
+}
+
+.gt-settings-grid {
+    flex: 1 1 0%;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 16px;
+    align-items: stretch;
+    overflow: hidden;
+}
+
+.gt-settings-left {
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.gt-settings-right {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 2px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(22, 116, 154, 0.35) transparent;
+}
+
+@media (max-width: 1100px) {
+    .gt-settings-shell,
+    .gt-settings-grid,
+    .gt-settings-left,
+    .gt-settings-right {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    .gt-settings-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 .gt-cards-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
