@@ -2694,17 +2694,29 @@ html[data-admin-theme="light"] .gt-req-meta-icon--gold {
 }
 
 .gt-req-briefing {
-    border-radius: 14px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
     border: 1px solid var(--gtb-border);
-    border-left: 3px solid #16749A;
     background: rgba(255, 255, 255, 0.03);
-    padding: 16px 18px;
+    padding: 14px 18px 14px 20px;
+}
+
+.gt-req-briefing::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3.5px;
+    background: linear-gradient(180deg, #F2C230 0%, #16749A 100%);
 }
 
 html[data-admin-theme="light"] .gt-req-briefing {
     background: #F8FBFD;
     border-color: #DCE8F0;
-    border-left-color: #063B5C;
+}
+
+html[data-admin-theme="light"] .gt-req-briefing::before {
+    background: linear-gradient(180deg, #16749A 0%, #063B5C 100%);
 }
 
 .gt-req-kv-list {

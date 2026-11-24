@@ -27,3 +27,14 @@ Sempre que você criar, editar ou gerar qualquer código, página web, component
 
 5. **Skill de Referência Técnica**:
    - Para tokens CSS completos, snippets Tailwind, templates de cards e layouts prontos, consulte a skill `gundjatech-brand-guidelines`.
+
+---
+
+## 🧭 Regra Obrigatória de Comunicação e Transparência
+
+Sempre que realizar qualquer alteração, correção, auditoria, migration ou deploy neste projeto, **explique claramente ao usuário em português**:
+
+1. **O que está sendo feito / foi feito:** resumo objetivo das mudanças e arquivos tocados.
+2. **O porquê das decisões e por que tal coisa é assim:** contexto técnico/arquitetural que justifica a escolha.
+3. **O que a ação pode quebrar (efeitos colaterais):** dependências, impactos em fluxos existentes ou comportamentos que mudam.
+4. **O que o usuário deve verificar:** checklist prático de validação manual ou operacional após a mudança.

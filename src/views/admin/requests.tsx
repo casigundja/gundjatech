@@ -217,9 +217,9 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                     </div>
                 </div>
 
-                <div class="gt-grid-detail" style="height: calc(100vh - 176px); max-height: calc(100vh - 176px); align-items: stretch; overflow: hidden;">
+                <div class="gt-grid-detail" style="align-items: start; gap: 20px;">
                     {/* Coluna Principal */}
-                    <section class="gtb-card !p-4 min-w-0" style="display: flex; flex-direction: column; gap: 11px; height: 100%; max-height: 100%; overflow: hidden;">
+                    <section class="gtb-card !p-5 min-w-0" style="display: flex; flex-direction: column; gap: 16px;">
                         {/* Cabeçalho Hero */}
                         <div class="space-y-2.5 pb-2.5" style="flex-shrink: 0; border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                             <div class="flex items-center justify-between gap-3 flex-wrap">
@@ -372,9 +372,9 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                         </div>
 
                         {/* Descrição da Demanda */}
-                        <div style="flex-shrink: 0;">
+                        <div>
                             <h2 class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Descrição da Demanda</h2>
-                            <div class="gt-req-briefing" style="padding: 9px 13px; max-height: 76px; overflow-y: auto;">
+                            <div class="gt-req-briefing" style="padding: 12px 16px 12px 18px; max-height: 220px; overflow-y: auto;">
                                 {structuredDesc ? (
                                     <div class="gt-req-kv-list">
                                         {structuredDesc.map((item) => (
@@ -401,18 +401,18 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                         </div>
 
                         {/* Linha do Tempo / Feed de Atividades */}
-                        <div style="flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
-                            <div class="flex items-center justify-between gap-2 mb-1.5" style="flex-shrink: 0;">
+                        <div style="display: flex; flex-direction: column;">
+                            <div class="flex items-center justify-between gap-2 mb-1.5">
                                 <h2 class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Histórico de Atividades</h2>
                                 <span class="text-[10.5px] font-semibold text-[#8C95AA]">{history.length} {history.length === 1 ? 'evento' : 'eventos'}</span>
                             </div>
 
                             {history.length === 0 ? (
-                                <div class="gtb-surface-box rounded-xl p-3 text-xs text-[#8C95AA]" style="flex: 1 1 0%;">
+                                <div class="gtb-surface-box rounded-xl p-4 text-xs text-[#8C95AA]">
                                     Nenhuma movimentação registrada ainda.
                                 </div>
                             ) : (
-                                <div class="gt-activity-feed" id="gt-request-activity-feed" style="flex: 1 1 0%; min-height: 0; overflow-y: auto; padding-right: 4px;">
+                                <div class="gt-activity-feed" id="gt-request-activity-feed" style="max-height: 460px; overflow-y: auto; padding: 6px 16px;">
                                     {history.map((h: any, idx: number) => {
                                         const fromSt = h.from_status || h.old_status || h.status_from || '';
                                         const toSt = h.to_status || h.new_status || h.status_to || '';
@@ -487,8 +487,8 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                     </section>
 
                     {/* Coluna Lateral: Atualizar Status + Ações Rápidas */}
-                    <div class="min-w-0" style="display: flex; flex-direction: column; gap: 14px; height: 100%; max-height: 100%; overflow: hidden;">
-                        <aside class="gtb-card !p-4 min-w-0" style="flex-shrink: 0; display: flex; flex-direction: column;">
+                    <div class="min-w-0" style="display: flex; flex-direction: column; gap: 16px;">
+                        <aside class="gtb-card !p-5 min-w-0" style="display: flex; flex-direction: column;">
                             <div class="pb-2.5" style="flex-shrink: 0; border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                                 <h2 class="gt-font-display text-sm font-extrabold text-white">Atualizar Status Operacional</h2>
                                 <p class="text-[11px] text-[#8C95AA] mt-0.5">Registre o avanço no pipeline comercial.</p>
@@ -538,7 +538,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                         </aside>
 
                         {/* Card de Ações Rápidas & Gestão */}
-                        <aside class="gtb-card !p-4 min-w-0" style="flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; overflow-y: auto;">
+                        <aside class="gtb-card !p-5 min-w-0" style="display: flex; flex-direction: column; gap: 14px;">
                             <div class="space-y-2.5">
                                 <div class="pb-2" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                                     <h2 class="gt-font-display text-sm font-extrabold text-white">Ações Rápidas &amp; Gestão</h2>
