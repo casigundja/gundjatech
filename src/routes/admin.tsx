@@ -1198,6 +1198,7 @@ async function deleteLinkedCommercialFlow(
     env: any,
     anchor: { requestId?: number; quotationId?: number; projectId?: number }
 ): Promise<{
+    blockedReason?: string;
     deletedRequests: number;
     deletedQuotations: number;
     deletedProjects: number;
@@ -1300,6 +1301,42 @@ async function deleteLinkedCommercialFlow(
                 const pt2 = String(p.name || '').trim().toLowerCase();
                 if ((pt1 && titles.has(pt1)) || (pt2 && titles.has(pt2))) {
                     projectIds.add(Number(p.id));
+                }
+            }
+        }
+    } catch { }
+
+    // Trava de Fase 1: Orçamento que já gerou Projeto vinculado não pode ser excluído diretamente
+    if (anchor.quotationId && projectIds.size > 0) {
+        return {
+            blockedReason: 'Trava de Fase: Este orçamento já possui projeto vinculado. Exclua ou cancele o projeto primeiro em Projetos antes de remover o orçamento.',
+            deletedRequests: 0,
+            deletedQuotations: 0,
+            deletedProjects: 0,
+            deletedInvoices: 0
+        };
+    }
+
+    // Trava Contábil 2: Bloqueia exclusão se houver fatura já paga vinculada a este fluxo
+    try {
+        if (clientId && (invoiceRefs.size > 0 || titles.size > 0)) {
+            const paidRes = await db.prepare(
+                `SELECT id, invoice_number, description FROM financial_transactions WHERE client_id = ? AND status = 'paid'`
+            ).bind(clientId).all();
+            for (const tx of (paidRes?.results || []) as any[]) {
+                const inv = String(tx.invoice_number || '').trim();
+                const descLow = String(tx.description || '').toLowerCase();
+                const matchesRef = inv && invoiceRefs.has(inv);
+                const matchesRefInDesc = [...invoiceRefs].some((r) => r && descLow.includes(r.toLowerCase()));
+                const matchesTitle = [...titles].some((t) => t && descLow.includes(t));
+                if (matchesRef || matchesRefInDesc || matchesTitle) {
+                    return {
+                        blockedReason: 'Trava Contábil: Este fluxo possui fatura já paga. Para preservar o Recibo Oficial de Quitação e o histórico financeiro, cancele/arquive em vez de excluir.',
+                        deletedRequests: 0,
+                        deletedQuotations: 0,
+                        deletedProjects: 0,
+                        deletedInvoices: 0
+                    };
                 }
             }
         }
@@ -2056,7 +2093,10 @@ adminRoutes.post('/solicitacoes/:id/excluir', async (c) => {
     const id = Number(c.req.param('id'));
 
     if (id > 0) {
-        await deleteLinkedCommercialFlow(db, c.env, { requestId: id });
+        const res = await deleteLinkedCommercialFlow(db, c.env, { requestId: id });
+        if (res.blockedReason) {
+            return c.redirect(`/admin/solicitacoes?error=${encodeURIComponent(res.blockedReason)}`);
+        }
     }
 
     return c.redirect('/admin/solicitacoes?success=Solicitação e vínculos (orçamento, projeto e faturas em aberto) excluídos com sucesso.');
@@ -3090,7 +3130,10 @@ adminRoutes.post('/projetos/:id/excluir', async (c) => {
     const id = Number(c.req.param('id'));
 
     if (id > 0) {
-        await deleteLinkedCommercialFlow(db, c.env, { projectId: id });
+        const res = await deleteLinkedCommercialFlow(db, c.env, { projectId: id });
+        if (res.blockedReason) {
+            return c.redirect(`/admin/projetos?error=${encodeURIComponent(res.blockedReason)}`);
+        }
     }
 
     return c.redirect('/admin/projetos?success=Projeto e vínculos (solicitação, orçamento e faturas em aberto) excluídos com sucesso.');
@@ -3548,8 +3591,14 @@ adminRoutes.post('/financeiro/:id/excluir', async (c) => {
     const id = Number(c.req.param('id'));
 
     if (id > 0) {
+        const tx = (await db.prepare(`SELECT status FROM financial_transactions WHERE id = ?`).bind(id).first()) as { status?: string } | null;
+        if (tx?.status === 'paid') {
+            return c.redirect(
+                `/admin/financeiro?error=${encodeURIComponent('Trava Contábil: Faturas já pagas não podem ser excluídas para preservar o Recibo Oficial de Quitação e a auditoria financeira.')}`
+            );
+        }
         try { await db.prepare(`DELETE FROM payments WHERE financial_transaction_id = ?`).bind(id).run(); } catch { }
-        await db.prepare(`DELETE FROM financial_transactions WHERE id = ?`).bind(id).run();
+        await db.prepare(`DELETE FROM financial_transactions WHERE id = ? AND status != 'paid'`).bind(id).run();
     }
 
     return c.redirect('/admin/financeiro?success=Lançamento financeiro excluído com sucesso.');
@@ -4330,9 +4379,12 @@ adminRoutes.post('/orcamentos/:id/excluir', async (c) => {
     const db = c.env.DB;
     const id = Number(c.req.param('id'));
     if (id > 0) {
-        await deleteLinkedCommercialFlow(db, c.env, { quotationId: id });
+        const res = await deleteLinkedCommercialFlow(db, c.env, { quotationId: id });
+        if (res.blockedReason) {
+            return c.redirect(`/admin/orcamentos?error=${encodeURIComponent(res.blockedReason)}`);
+        }
     }
-    return c.redirect('/admin/orcamentos?success=Orçamento e vínculos (solicitação, projeto e faturas em aberto) excluídos com sucesso.');
+    return c.redirect('/admin/orcamentos?success=Orçamento e vínculos (solicitação e faturas em aberto) excluídos com sucesso.');
 });
 
 adminRoutes.get('/permissoes', (c) => c.redirect('/admin/usuarios'));
