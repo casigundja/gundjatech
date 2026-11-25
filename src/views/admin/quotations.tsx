@@ -81,9 +81,9 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                     </div>
                 </div>
 
-                <div class="gt-grid-detail" style="height: calc(100vh - 176px); max-height: calc(100vh - 176px); align-items: stretch; overflow: hidden;">
+                <div class="gt-grid-detail gt-quote-detail-grid">
                     {/* Coluna Principal: Proposta Comercial (Sem duplicações e com ritmo visual executivo) */}
-                    <section class="gtb-card !p-5 min-w-0 gt-quote-editor-card" style="display: flex; flex-direction: column; gap: 12px; height: 100%; max-height: 100%; overflow: hidden;">
+                    <section class="gtb-card !p-5 min-w-0 gt-quote-editor-card">
                         {/* Cabeçalho Limpo (Sem subtítulo repetido) */}
                         <div class="space-y-3 pb-3" style="flex-shrink: 0; border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                             <div class="flex items-center justify-between gap-3 flex-wrap">
@@ -278,7 +278,7 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                     </section>
 
                     {/* Coluna Lateral: 2 Cards proporcionais sem buracos vazios */}
-                    <div class="min-w-0" style="display: flex; flex-direction: column; gap: 14px; height: 100%; max-height: 100%; overflow: hidden;">
+                    <div class="min-w-0 gt-quote-side-col">
                         {/* Card 1: Resumo Financeiro & Vínculos */}
                         <aside class="gtb-card !p-4 space-y-3 min-w-0" style="flex-shrink: 0;">
                             <div class="pb-2" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">

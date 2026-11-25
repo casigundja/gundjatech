@@ -5406,8 +5406,9 @@ html[data-admin-theme="light"] .gt-quote-label {
 .gt-approved-dialog {
     width: 100%;
     max-width: 460px;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
     border-radius: 18px;
-    overflow: hidden;
     padding: 0 !important;
     background: #081C2D;
     border: 1.5px solid rgba(242, 194, 48, 0.55);
@@ -5722,7 +5723,7 @@ html[data-admin-theme="light"] .gt-dp-trigger-icon {
 .gt-dp-popover {
     position: fixed;
     z-index: 320;
-    width: 286px;
+    width: min(286px, calc(100vw - 24px));
     border-radius: 16px;
     overflow: hidden;
     background: #081C2D;
@@ -5928,6 +5929,66 @@ html[data-admin-theme="light"] .gt-dp-foot-btn:hover {
 
 html[data-admin-theme="light"] .gt-dp-foot-btn.is-accent {
     color: #16749A !important;
+}
+
+/* ==========================================================================
+   MOBILE SAFETY & QUOTATION DETAIL RESPONSIVE GRID
+   ========================================================================== */
+.gt-quote-editor-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.gt-quote-side-col {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+@media (min-width: 1024px) {
+    .gt-quote-detail-grid {
+        height: calc(100vh - 176px);
+        max-height: calc(100vh - 176px);
+        align-items: stretch;
+        overflow: hidden;
+    }
+
+    .gt-quote-detail-grid .gt-quote-editor-card,
+    .gt-quote-detail-grid .gt-quote-side-col {
+        height: 100%;
+        max-height: 100%;
+        overflow: hidden;
+    }
+}
+
+@media (max-width: 1023px) {
+    .gt-quote-detail-grid,
+    .gt-quote-detail-grid .gt-quote-editor-card,
+    .gt-quote-detail-grid .gt-quote-side-col,
+    .gt-quote-detail-grid .gt-quote-form {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    .gt-quote-detail-grid textarea.gt-quote-textarea {
+        min-height: 120px !important;
+        resize: vertical !important;
+    }
+}
+
+@media (max-width: 639px) {
+    .gt-billing-alert-banner {
+        padding: 13px 14px;
+        gap: 12px;
+    }
+
+    .gt-billing-alert-banner > a,
+    .gt-billing-alert-banner > button {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 .gt-chat-tab-count {

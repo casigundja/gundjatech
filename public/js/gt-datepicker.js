@@ -306,6 +306,12 @@
         if (popover && popover.style.display === 'block') positionPopover();
     });
 
+    window.addEventListener('scroll', function (ev) {
+        if (!popover || popover.style.display !== 'block') return;
+        if (ev.target && popover.contains(ev.target)) return;
+        closePopover();
+    }, true);
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', scanDateInputs);
     } else {
