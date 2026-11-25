@@ -432,9 +432,13 @@ portalRoutes.post('/orcamentos/:id/aprovar', async (c) => {
         });
     } catch {}
 
-    if (Number(quote.final_amount ?? quote.total_amount ?? 0) > 0) {
-        const payParam = createdInvoiceId ? `pagar=${createdInvoiceId}&` : 'pagar=1&';
-        return c.redirect(`/portal/financeiro?${payParam}success=` + encodeURIComponent('Orçamento aprovado! Para liberar o início imediato da execução pela engenharia, conclua o pagamento da fatura abaixo.'));
+    const approvedAmt = Number(quote.final_amount ?? quote.total_amount ?? 0);
+    if (approvedAmt > 0) {
+        const invParam = createdInvoiceId ? String(createdInvoiceId) : '1';
+        return c.redirect(
+            `/portal/orcamentos?fatura_gerada=${encodeURIComponent(invParam)}&valor=${encodeURIComponent(String(approvedAmt))}&success=` +
+            encodeURIComponent('Orçamento aprovado com sucesso! Fatura gerada para liberação do projeto.')
+        );
     }
 
     return c.redirect('/portal/orcamentos?success=Or%C3%A7amento+aprovado+com+sucesso!+Seu+projeto+j%C3%A1+foi+iniciado+automaticamente.');
@@ -811,9 +815,13 @@ portalRoutes.post('/solicitacoes/:id/aprovar', async (c) => {
         ).run();
     } catch {}
 
-    if (Number(linkedQuote?.final_amount ?? linkedQuote?.total_amount ?? request.estimated_budget ?? 0) > 0) {
-        const payParam = createdInvoiceId ? `pagar=${createdInvoiceId}&` : 'pagar=1&';
-        return c.redirect(`/portal/financeiro?${payParam}success=` + encodeURIComponent('Orçamento aprovado! Para liberar o início imediato da execução pela engenharia, conclua o pagamento da fatura abaixo.'));
+    const approvedReqAmt = Number(linkedQuote?.final_amount ?? linkedQuote?.total_amount ?? request.estimated_budget ?? 0);
+    if (approvedReqAmt > 0) {
+        const invParam = createdInvoiceId ? String(createdInvoiceId) : '1';
+        return c.redirect(
+            `/portal/solicitacoes/${reqId}?fatura_gerada=${encodeURIComponent(invParam)}&valor=${encodeURIComponent(String(approvedReqAmt))}&success=` +
+            encodeURIComponent('Orçamento aprovado com sucesso! Fatura gerada para liberação do projeto.')
+        );
     }
 
     return c.redirect(`/portal/solicitacoes/${reqId}?success=Or%C3%A7amento+aprovado+com+sucesso!+Seu+projeto+j%C3%A1+entrou+em+execu%C3%A7%C3%A3o.`);

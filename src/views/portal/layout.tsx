@@ -432,6 +432,76 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                     </main>
                 </div>
 
+                {/* Modal Executivo de Próximo Passo Pós-Aprovação (Pergunta se deseja ver/pagar a fatura agora) */}
+                <div
+                    id="gt-portal-approved-modal"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="gt-approved-modal-title"
+                    style="display: none; position: fixed; inset: 0; margin: 0; z-index: 210; align-items: center; justify-content: center; padding: 16px;"
+                    class="gt-modal-overlay bg-[#041E30]/75 backdrop-blur-xs"
+                    onclick="if(event.target===this){this.style.display='none';}"
+                >
+                    <div class="gtb-card !p-0 overflow-hidden w-full max-w-md shadow-2xl" style="border: 1.5px solid #F2C230;">
+                        <div class="px-6 py-5" style="background: linear-gradient(135deg, #042840 0%, #063B5C 65%, #16749A 100%);">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <span style="width:40px;height:40px;min-width:40px;border-radius:12px;background:rgba(242,194,48,0.18);border:1px solid rgba(242,194,48,0.5);color:#F2C230;display:inline-flex;align-items:center;justify-content:center;">
+                                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </span>
+                                    <div>
+                                        <div style="font-size:10px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#F2C230;">Próximo Passo Obrigatório</div>
+                                        <h3 id="gt-approved-modal-title" class="gt-font-display text-base font-extrabold text-white mt-0.5">
+                                            Orçamento Aprovado com Sucesso!
+                                        </h3>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onclick="var m=document.getElementById('gt-portal-approved-modal');if(m)m.style.display='none';"
+                                    style="width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,0.12);color:#FFFFFF;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;"
+                                    aria-label="Fechar"
+                                >
+                                    &times;
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="p-6 space-y-4">
+                            <div id="gt-approved-amount-box" class="gtb-surface-box rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                                <span class="text-xs font-bold text-[#8C95AA]">Fatura gerada para início</span>
+                                <span id="gt-approved-amount-val" class="gt-font-display text-base font-extrabold text-[#F2C230]">—</span>
+                            </div>
+
+                            <p class="text-xs text-[#8C95AA] leading-relaxed">
+                                Sua fatura já foi emitida no <strong class="text-white">Financeiro</strong>. Para liberar o início imediato da execução pela engenharia GundjaTech, é obrigatório concluir o pagamento.
+                            </p>
+                            <p class="text-xs font-bold text-white">
+                                Deseja visualizar a fatura e realizar o pagamento agora?
+                            </p>
+
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-2">
+                                <button
+                                    type="button"
+                                    onclick="var m=document.getElementById('gt-portal-approved-modal');if(m)m.style.display='none';"
+                                    class="gt-btn-outline gt-btn-sm justify-center"
+                                >
+                                    Agora Não, Pagar Depois
+                                </button>
+                                <a
+                                    id="gt-approved-pay-cta"
+                                    href="/portal/financeiro"
+                                    class="gt-btn-primary gt-btn-sm justify-center"
+                                >
+                                    <span>Ver Fatura e Pagar Agora &rarr;</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <script dangerouslySetInnerHTML={{
                     __html: `
                     (function () {
@@ -751,6 +821,35 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                             }
 
                             fetchPortalNotifs();
+                        })();
+
+                        // Abre o Modal Executivo de Próximo Passo Pós-Aprovação (?fatura_gerada=<id>&valor=<amt>)
+                        (function initPostApprovalPaymentPrompt() {
+                            try {
+                                var url = new URL(window.location.href);
+                                var invId = url.searchParams.get('fatura_gerada');
+                                if (!invId) return;
+                                var rawVal = parseFloat(url.searchParams.get('valor') || '0');
+                                url.searchParams.delete('fatura_gerada');
+                                url.searchParams.delete('valor');
+                                window.history.replaceState({}, '', url.pathname + (url.search ? url.search : '') + url.hash);
+
+                                var modal = document.getElementById('gt-portal-approved-modal');
+                                var amtBox = document.getElementById('gt-approved-amount-box');
+                                var amtEl = document.getElementById('gt-approved-amount-val');
+                                var ctaEl = document.getElementById('gt-approved-pay-cta');
+                                if (!modal) return;
+
+                                if (amtEl && rawVal > 0) {
+                                    amtEl.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rawVal);
+                                } else if (amtBox) {
+                                    amtBox.style.display = 'none';
+                                }
+                                if (ctaEl) {
+                                    ctaEl.setAttribute('href', '/portal/financeiro?pagar=' + encodeURIComponent(invId));
+                                }
+                                modal.style.display = 'flex';
+                            } catch (e) {}
                         })();
 
                         // Tooltip corporativo instantâneo na sidebar recolhida (substitui title nativo)

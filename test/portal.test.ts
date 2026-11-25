@@ -332,7 +332,7 @@ describe('Fase 4 - Módulo 4: Portal do Cliente Multi-tenant', () => {
 
         expect(res.status).toBe(302);
         const loc = res.headers.get('Location') || '';
-        expect(loc).toContain('/portal/financeiro?pagar=');
+        expect(loc).toContain('/portal/orcamentos?fatura_gerada=');
         expect(loc).toContain('success=Or');
     });
 
