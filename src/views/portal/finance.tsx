@@ -24,9 +24,9 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
     const totalPaid = transactions
         .filter((t: any) => t.status === 'paid')
         .reduce((acc: number, t: any) => acc + Number(t.amount || 0), 0);
-    const totalPending = transactions
-        .filter((t: any) => t.status !== 'paid' && t.status !== 'canceled')
-        .reduce((acc: number, t: any) => acc + Number(t.amount || 0), 0);
+    const pendingItems = transactions.filter((t: any) => t.status !== 'paid' && t.status !== 'canceled');
+    const totalPending = pendingItems.reduce((acc: number, t: any) => acc + Number(t.amount || 0), 0);
+    const firstPending = pendingItems[0] || null;
 
     return (
         <PortalLayout
@@ -43,6 +43,33 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                     <p class="text-xs text-[#8C95AA] mt-1">Pague via PIX instantâneo ou Transferência TED Nu Empresas e envie seu comprovante com segurança.</p>
                 </div>
             </div>
+
+            {totalPending > 0 && firstPending && (
+                <div class="gt-billing-alert-banner" role="alert">
+                    <div class="gt-billing-alert-left">
+                        <span class="gt-billing-alert-icon" aria-hidden="true">
+                            <svg width="19" height="19" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                            </svg>
+                        </span>
+                        <div class="min-w-0">
+                            <div class="gt-billing-alert-title">
+                                Pagamento Obrigatório Pendente • R$ {totalPending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </div>
+                            <p class="gt-billing-alert-desc">
+                                Você possui {pendingItems.length} {pendingItems.length === 1 ? 'fatura em aberto' : 'faturas em aberto'}. A confirmação do pagamento é obrigatória para liberar o início e manter o cronograma de entregas do seu projeto.
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onclick={`var btn=document.querySelector('button[data-id="${firstPending.id}"]');if(btn&&window.GT_OpenPayModal){window.GT_OpenPayModal(btn);}`}
+                        class="gt-btn-primary gt-btn-sm shrink-0"
+                    >
+                        <span>Pagar Agora (PIX) &rarr;</span>
+                    </button>
+                </div>
+            )}
 
             {transactions.length > 0 && (
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -600,6 +627,22 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                             .catch(function () {});
                     }
                 };
+
+                // Abre automaticamente o Checkout PIX quando redirecionado pós-aprovação (?pagar=<id>)
+                (function autoOpenCheckoutFromQuery() {
+                    try {
+                        var url = new URL(window.location.href);
+                        var payId = url.searchParams.get('pagar');
+                        if (!payId) return;
+                        url.searchParams.delete('pagar');
+                        window.history.replaceState({}, '', url.pathname + (url.search ? url.search : '') + url.hash);
+                        var targetBtn = document.querySelector('button[data-id="' + payId.replace(/[^0-9]/g, '') + '"]')
+                            || document.querySelector('button[onclick*="GT_OpenPayModal"]');
+                        if (targetBtn && window.GT_OpenPayModal) {
+                            setTimeout(function () { window.GT_OpenPayModal(targetBtn); }, 180);
+                        }
+                    } catch (e) {}
+                })();
             ` }} />
         </PortalLayout>
     );

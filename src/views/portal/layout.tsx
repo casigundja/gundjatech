@@ -217,10 +217,11 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                             </a>
 
                             <a href="/portal/financeiro" class={`gtb-nav-item ${activeNav === 'finance' ? 'is-active' : ''}`} title="Financeiro & Faturas">
-                                <div class="flex items-center gap-3">
+                                <div class="flex items-center gap-3 min-w-0">
                                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                                    <span>Financeiro &amp; Faturas</span>
+                                    <span class="truncate">Financeiro &amp; Faturas</span>
                                 </div>
+                                <span id="gt-portal-finance-badge" class="gt-portal-nav-badge hidden" aria-label="Faturas pendentes">0</span>
                             </a>
 
                             <a href="/portal/atendimento" class={`gtb-nav-item ${activeNav === 'chat' ? 'is-active' : ''}`} title="Falar com Atendimento">
@@ -407,6 +408,26 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
 
                     {/* Main Content Canvas */}
                     <main class="gt-admin-main flex-1 overflow-y-auto p-4 sm:p-6 lg:p-7 space-y-6">
+                        {activeNav !== 'finance' && (
+                            <div id="gt-portal-billing-banner" class="gt-billing-alert-banner hidden" role="alert">
+                                <div class="gt-billing-alert-left">
+                                    <span class="gt-billing-alert-icon" aria-hidden="true">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                                        </svg>
+                                    </span>
+                                    <div class="min-w-0">
+                                        <div id="gt-portal-billing-title" class="gt-billing-alert-title">Pagamento Obrigatório Pendente</div>
+                                        <p id="gt-portal-billing-desc" class="gt-billing-alert-desc">
+                                            A confirmação do pagamento é indispensável para liberar e manter a execução e entrega do seu projeto.
+                                        </p>
+                                    </div>
+                                </div>
+                                <a id="gt-portal-billing-cta" href="/portal/financeiro" class="gt-btn-primary gt-btn-sm shrink-0">
+                                    <span>Realizar Pagamento &rarr;</span>
+                                </a>
+                            </div>
+                        )}
                         {children}
                     </main>
                 </div>
@@ -668,6 +689,47 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                                 if (!document.hidden) schedulePoll(300);
                             });
 
+                            function renderPendingBilling(pb) {
+                                var finBadge = document.getElementById('gt-portal-finance-badge');
+                                var banner = document.getElementById('gt-portal-billing-banner');
+                                var titleEl = document.getElementById('gt-portal-billing-title');
+                                var descEl = document.getElementById('gt-portal-billing-desc');
+                                var ctaEl = document.getElementById('gt-portal-billing-cta');
+                                var count = pb && pb.count ? Number(pb.count) : 0;
+
+                                if (finBadge) {
+                                    if (count > 0) {
+                                        finBadge.textContent = count > 9 ? '9+' : String(count);
+                                        finBadge.classList.remove('hidden');
+                                    } else {
+                                        finBadge.classList.add('hidden');
+                                    }
+                                }
+
+                                if (banner) {
+                                    if (count > 0) {
+                                        var brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(pb.total_amount || 0));
+                                        var dueTxt = '';
+                                        if (pb.next_due_date) {
+                                            var p = String(pb.next_due_date).slice(0, 10).split('-');
+                                            if (p.length === 3) dueTxt = ' • Vencimento ' + p[2] + '/' + p[1] + '/' + p[0];
+                                        }
+                                        if (titleEl) {
+                                            titleEl.textContent = (pb.has_overdue ? 'Pagamento Vencido • ' : 'Pagamento Obrigatório Pendente • ') + brl;
+                                        }
+                                        if (descEl) {
+                                            descEl.textContent = 'Você possui ' + count + (count === 1 ? ' fatura em aberto' : ' faturas em aberto') + dueTxt + '. A confirmação do pagamento é obrigatória para liberar e manter a execução do seu projeto.';
+                                        }
+                                        if (ctaEl) {
+                                            ctaEl.setAttribute('href', pb.next_invoice_id ? '/portal/financeiro?pagar=' + encodeURIComponent(pb.next_invoice_id) : '/portal/financeiro');
+                                        }
+                                        banner.classList.remove('hidden');
+                                    } else {
+                                        banner.classList.add('hidden');
+                                    }
+                                }
+                            }
+
                             async function fetchPortalNotifs() {
                                 if (document.hidden) {
                                     schedulePoll(20000);
@@ -677,7 +739,10 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                                     var resp = await fetch('/portal/notificacoes/resumo', { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
                                     if (resp.ok) {
                                         var data = await resp.json();
-                                        if (data && data.ok) renderPortalNotifs(data.notifications || []);
+                                        if (data && data.ok) {
+                                            renderPortalNotifs(data.notifications || []);
+                                            renderPendingBilling(data.pending_billing || null);
+                                        }
                                     }
                                 } catch (e) {
                                 } finally {

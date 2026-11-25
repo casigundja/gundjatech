@@ -7,6 +7,7 @@ interface PortalRequestsProps {
     requests?: any[];
     requestDetail?: any;
     linkedQuotation?: any;
+    pendingInvoice?: any;
     services?: any[];
     history?: any[];
     attachments?: any[];
@@ -79,6 +80,7 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
     requests = [],
     requestDetail,
     linkedQuotation = null,
+    pendingInvoice = null,
     services = [],
     history = [],
     isCreate = false,
@@ -579,8 +581,22 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                                     </div>
                                 )}
 
+                                {pendingInvoice && (
+                                    <div class="gt-project-payment-strip !flex-col !items-stretch gap-2.5">
+                                        <div>
+                                            <div class="gt-project-payment-title">Pagamento Obrigatório Pendente</div>
+                                            <div class="gt-project-payment-sub">
+                                                Fatura de R$ {Number(pendingInvoice.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em aberto. A quitação é indispensável para liberar e manter a execução do projeto.
+                                            </div>
+                                        </div>
+                                        <a href={`/portal/financeiro?pagar=${pendingInvoice.id}`} class="gt-btn-primary gt-btn-sm w-full justify-center">
+                                            <span>Realizar Pagamento (PIX) &rarr;</span>
+                                        </a>
+                                    </div>
+                                )}
+
                                 {(requestDetail.status === 'approved' || requestDetail.status === 'in_progress' || requestDetail.status === 'completed') && (
-                                    <a href="/portal/projetos" class="gt-btn-primary gt-btn-sm w-full justify-center">
+                                    <a href="/portal/projetos" class={pendingInvoice ? 'gt-btn-outline gt-btn-sm w-full justify-center' : 'gt-btn-primary gt-btn-sm w-full justify-center'}>
                                         <span>Acompanhar Meu Projeto →</span>
                                     </a>
                                 )}

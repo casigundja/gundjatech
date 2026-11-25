@@ -331,7 +331,9 @@ describe('Fase 4 - Módulo 4: Portal do Cliente Multi-tenant', () => {
         }, env);
 
         expect(res.status).toBe(302);
-        expect(res.headers.get('Location')).toContain('success=Or');
+        const loc = res.headers.get('Location') || '';
+        expect(loc).toContain('/portal/financeiro?pagar=');
+        expect(loc).toContain('success=Or');
     });
 
     it('deve permitir criar nova solicitação via POST /portal/solicitacoes com protocolo GNDJ', async () => {

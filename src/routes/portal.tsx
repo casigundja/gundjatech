@@ -72,11 +72,28 @@ portalRoutes.get('/projetos', async (c) => {
         'SELECT * FROM projects WHERE client_id = ? ORDER BY created_at DESC'
     ).bind(client.id).all();
 
+    const pendingInvoicesByProject: Record<number, any> = {};
+    try {
+        const invRes = await db.prepare(
+            `SELECT id, project_id, amount, due_date, status
+             FROM financial_transactions
+             WHERE client_id = ? AND type = 'income' AND status IN ('pending', 'overdue') AND project_id IS NOT NULL
+             ORDER BY due_date ASC`
+        ).bind(client.id).all();
+        for (const inv of (invRes.results || []) as any[]) {
+            const pid = Number(inv.project_id || 0);
+            if (pid > 0 && !pendingInvoicesByProject[pid]) {
+                pendingInvoicesByProject[pid] = inv;
+            }
+        }
+    } catch {}
+
     return c.html(
         <PortalProjectsView
             currentUser={user}
             clientName={client.company || client.name}
             projects={projectsRes.results || []}
+            pendingInvoicesByProject={pendingInvoicesByProject}
             successMessage={c.req.query('success')}
             errorMessage={c.req.query('error')}
         />
@@ -301,6 +318,7 @@ portalRoutes.post('/orcamentos/:id/aprovar', async (c) => {
         : `Projeto iniciado automaticamente após aprovação do orçamento ${quote.reference_code}.`;
 
     let createdProjectId: number | undefined;
+    let createdInvoiceId: number | undefined;
     try {
         await db.prepare(`UPDATE clients SET status = 'active', updated_at = datetime('now') WHERE id = ?`).bind(client.id).run();
         try {
@@ -335,7 +353,7 @@ portalRoutes.post('/orcamentos/:id/aprovar', async (c) => {
         const quoteAmt = Number(quote.final_amount ?? quote.total_amount ?? 0);
         if (quoteAmt > 0) {
             const dueDate = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
-            await db.prepare(
+            const invRes = await db.prepare(
                 `INSERT INTO financial_transactions (client_id, project_id, quotation_id, type, category, description, amount, status, due_date, payment_method, invoice_number, created_at, updated_at)
                  VALUES (?, ?, ?, 'income', 'contract', ?, ?, 'pending', ?, 'PIX', ?, datetime('now'), datetime('now'))`
             ).bind(
@@ -347,6 +365,7 @@ portalRoutes.post('/orcamentos/:id/aprovar', async (c) => {
                 dueDate,
                 quote.reference_code || `ORC-${quoteId}`
             ).run();
+            createdInvoiceId = Number(invRes?.meta?.last_row_id || 0) || undefined;
         }
     } catch {}
 
@@ -412,6 +431,11 @@ portalRoutes.post('/orcamentos/:id/aprovar', async (c) => {
             )
         });
     } catch {}
+
+    if (Number(quote.final_amount ?? quote.total_amount ?? 0) > 0) {
+        const payParam = createdInvoiceId ? `pagar=${createdInvoiceId}&` : 'pagar=1&';
+        return c.redirect(`/portal/financeiro?${payParam}success=` + encodeURIComponent('Orçamento aprovado! Para liberar o início imediato da execução pela engenharia, conclua o pagamento da fatura abaixo.'));
+    }
 
     return c.redirect('/portal/orcamentos?success=Or%C3%A7amento+aprovado+com+sucesso!+Seu+projeto+j%C3%A1+foi+iniciado+automaticamente.');
 });
@@ -611,10 +635,19 @@ portalRoutes.get('/solicitacoes/:id', async (c) => {
     ).bind(reqId).all();
 
     let linkedQuotation: any = null;
+    let pendingInvoice: any = null;
     try {
         linkedQuotation = await db.prepare(
             'SELECT * FROM quotations WHERE service_request_id = ? AND status != "draft" ORDER BY id DESC LIMIT 1'
         ).bind(reqId).first();
+        if (linkedQuotation?.id) {
+            pendingInvoice = await db.prepare(
+                `SELECT id, amount, due_date, status, description
+                 FROM financial_transactions
+                 WHERE client_id = ? AND quotation_id = ? AND type = 'income' AND status IN ('pending', 'overdue')
+                 ORDER BY id DESC LIMIT 1`
+            ).bind(client.id, linkedQuotation.id).first();
+        }
     } catch {}
 
     return c.html(
@@ -624,6 +657,7 @@ portalRoutes.get('/solicitacoes/:id', async (c) => {
             requestDetail={request}
             history={history.results || []}
             linkedQuotation={linkedQuotation}
+            pendingInvoice={pendingInvoice}
             successMessage={c.req.query('success')}
             errorMessage={c.req.query('error')}
         />
@@ -683,6 +717,7 @@ portalRoutes.post('/solicitacoes/:id/aprovar', async (c) => {
     const projectDesc = String(linkedQuote?.notes || request.description || 'Projeto iniciado após aprovação de orçamento pelo Portal do Cliente').trim();
 
     let createdProjectId: number | undefined;
+    let createdInvoiceId: number | undefined;
     try {
         await db.prepare(`UPDATE clients SET status = 'active', updated_at = datetime('now') WHERE id = ?`).bind(client.id).run();
         try {
@@ -717,7 +752,7 @@ portalRoutes.post('/solicitacoes/:id/aprovar', async (c) => {
         const quoteAmt = Number(linkedQuote?.final_amount ?? linkedQuote?.total_amount ?? request.estimated_budget ?? 0);
         if (quoteAmt > 0) {
             const dueDate = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
-            await db.prepare(
+            const invRes = await db.prepare(
                 `INSERT INTO financial_transactions (client_id, project_id, quotation_id, type, category, description, amount, status, due_date, payment_method, invoice_number, created_at, updated_at)
                  VALUES (?, ?, ?, 'income', 'contract', ?, ?, 'pending', ?, 'PIX', ?, datetime('now'), datetime('now'))`
             ).bind(
@@ -729,6 +764,7 @@ portalRoutes.post('/solicitacoes/:id/aprovar', async (c) => {
                 dueDate,
                 linkedQuote?.reference_code || request.protocol || `REQ-${reqId}`
             ).run();
+            createdInvoiceId = Number(invRes?.meta?.last_row_id || 0) || undefined;
         }
     } catch {}
 
@@ -774,6 +810,11 @@ portalRoutes.post('/solicitacoes/:id/aprovar', async (c) => {
             userAgent
         ).run();
     } catch {}
+
+    if (Number(linkedQuote?.final_amount ?? linkedQuote?.total_amount ?? request.estimated_budget ?? 0) > 0) {
+        const payParam = createdInvoiceId ? `pagar=${createdInvoiceId}&` : 'pagar=1&';
+        return c.redirect(`/portal/financeiro?${payParam}success=` + encodeURIComponent('Orçamento aprovado! Para liberar o início imediato da execução pela engenharia, conclua o pagamento da fatura abaixo.'));
+    }
 
     return c.redirect(`/portal/solicitacoes/${reqId}?success=Or%C3%A7amento+aprovado+com+sucesso!+Seu+projeto+j%C3%A1+entrou+em+execu%C3%A7%C3%A3o.`);
 });
@@ -1359,6 +1400,14 @@ portalRoutes.get('/notificacoes/resumo', async (c) => {
         }
     };
 
+    let pendingBilling = {
+        count: 0,
+        total_amount: 0,
+        next_invoice_id: null as number | null,
+        next_due_date: null as string | null,
+        has_overdue: false
+    };
+
     try {
         const [pendingQuotes, pendingInvoices, waitingChats] = await Promise.all([
             db.prepare(
@@ -1368,10 +1417,10 @@ portalRoutes.get('/notificacoes/resumo', async (c) => {
                  ORDER BY updated_at DESC LIMIT 3`
             ).bind(client.id).all(),
             db.prepare(
-                `SELECT id, description, amount, due_date, updated_at
+                `SELECT id, description, amount, due_date, status, updated_at
                  FROM financial_transactions
-                 WHERE client_id = ? AND status = 'pending' AND type = 'income'
-                 ORDER BY due_date ASC LIMIT 3`
+                 WHERE client_id = ? AND status IN ('pending', 'overdue') AND type = 'income'
+                 ORDER BY due_date ASC LIMIT 20`
             ).bind(client.id).all(),
             db.prepare(
                 `SELECT id, subject, updated_at
@@ -1395,17 +1444,26 @@ portalRoutes.get('/notificacoes/resumo', async (c) => {
             });
         }
 
-        for (const inv of (pendingInvoices.results || []) as any[]) {
+        const invList = (pendingInvoices.results || []) as any[];
+        if (invList.length > 0) {
+            pendingBilling.count = invList.length;
+            pendingBilling.total_amount = invList.reduce((acc, inv) => acc + Number(inv.amount || 0), 0);
+            pendingBilling.next_invoice_id = Number(invList[0].id || 0) || null;
+            pendingBilling.next_due_date = invList[0].due_date || null;
+            pendingBilling.has_overdue = invList.some((inv) => inv.status === 'overdue' || (inv.due_date ? new Date(inv.due_date).getTime() < Date.now() : false));
+        }
+
+        for (const inv of invList.slice(0, 3)) {
             const val = brl.format(Number(inv.amount || 0));
-            const isOverdue = inv.due_date ? new Date(inv.due_date).getTime() < Date.now() : false;
+            const isOverdue = inv.status === 'overdue' || (inv.due_date ? new Date(inv.due_date).getTime() < Date.now() : false);
             const dueLabel = inv.due_date ? String(inv.due_date).slice(5, 10).split('-').reverse().join('/') : '';
             notifications.push({
                 key: `pinv:${inv.id}:${inv.due_date || ''}`,
                 type: 'finance',
-                title: `${isOverdue ? 'Fatura Vencida' : 'Fatura Pendente'} • ${val}`,
+                title: `${isOverdue ? 'Fatura Vencida' : 'Pagamento Pendente'} • ${val}`,
                 subtitle: inv.description || 'Cobrança disponível no Financeiro',
                 time: dueLabel,
-                url: '/portal/financeiro'
+                url: `/portal/financeiro?pagar=${inv.id}`
             });
         }
 
@@ -1424,6 +1482,7 @@ portalRoutes.get('/notificacoes/resumo', async (c) => {
     return c.json({
         ok: true,
         total_notifications: notifications.length,
+        pending_billing: pendingBilling,
         notifications
     });
 });

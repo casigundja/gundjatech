@@ -5,6 +5,7 @@ interface PortalProjectsProps {
     currentUser: any;
     clientName?: string;
     projects: any[];
+    pendingInvoicesByProject?: Record<number, any>;
     projectDetail?: any;
     stages?: any[];
     attachments?: any[];
@@ -24,6 +25,7 @@ export const PortalProjectsView: FC<PortalProjectsProps> = ({
     currentUser,
     clientName,
     projects,
+    pendingInvoicesByProject = {},
     projectDetail,
     stages = [],
     attachments = [],
@@ -234,18 +236,34 @@ export const PortalProjectsView: FC<PortalProjectsProps> = ({
                 <div class="gt-cards-grid">
                     {projects.map((p: any) => {
                         const stInfo = statusMap[p.status] || { label: p.status, badge: 'gt-badge-info' };
+                        const pendingInv = pendingInvoicesByProject[Number(p.id)] || null;
                         return (
                             <div class="gtb-card !p-5 flex flex-col justify-between">
                                 <div class="gtb-card-accent-top gtb-card-accent-blue"></div>
                                 <div>
                                     <div class="flex items-center justify-between gap-2 mb-3">
-                                        <span class={`gt-badge ${stInfo.badge}`}>{stInfo.label}</span>
+                                        <span class={`gt-badge ${pendingInv ? 'gt-badge-warning' : stInfo.badge}`}>
+                                            {pendingInv ? 'Aguardando Pagamento' : stInfo.label}
+                                        </span>
                                         <span class="text-xs font-extrabold text-[#F2C230]">{p.progress_percentage || 0}% Concluído</span>
                                     </div>
                                     <h3 class="text-base font-extrabold text-white mb-1.5">{p.title}</h3>
                                     <p class="text-xs text-[#8C95AA] leading-relaxed mb-4">
                                         {p.description || 'Desenvolvimento contínuo e infraestrutura sob medida.'}
                                     </p>
+                                    {pendingInv && (
+                                        <div class="gt-project-payment-strip mb-4">
+                                            <div class="min-w-0">
+                                                <div class="gt-project-payment-title">Pagamento obrigatório pendente</div>
+                                                <div class="gt-project-payment-sub">
+                                                    R$ {Number(pendingInv.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} • Libera as entregas do projeto
+                                                </div>
+                                            </div>
+                                            <a href={`/portal/financeiro?pagar=${pendingInv.id}`} class="gt-btn-primary gt-btn-xs shrink-0">
+                                                Pagar &rarr;
+                                            </a>
+                                        </div>
+                                    )}
                                     <div class="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mb-4">
                                         <div style={`width: ${p.progress_percentage || 0}%; height: 100%; background: linear-gradient(90deg, #16749A 0%, #F2C230 100%);`}></div>
                                     </div>
