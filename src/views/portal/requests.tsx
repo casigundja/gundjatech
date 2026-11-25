@@ -662,10 +662,18 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                         <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white">Solicitações de Serviço</h1>
                         <p class="text-xs text-[#8C95AA] mt-0.5">Consulte e acompanhe suas demandas, orçamentos solicitados e prazos.</p>
                     </div>
-                    <a href="/portal/orcamentos" class="gt-btn-outline gt-btn-sm shrink-0">
-                        <span>Ver Meus Orçamentos</span>
-                        <span>&rarr;</span>
-                    </a>
+                    <div class="flex items-center gap-2 shrink-0 flex-wrap">
+                        <a href="/portal/orcamentos" class="gt-btn-outline gt-btn-sm">
+                            <span>Ver Meus Orçamentos</span>
+                            <span>&rarr;</span>
+                        </a>
+                        <a href="/portal/solicitacoes/nova" class="gt-btn-primary gt-btn-sm">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                            </svg>
+                            <span>Nova Solicitação</span>
+                        </a>
+                    </div>
                 </div>
 
                 {/* 4 KPIs Executivos Compactos */}
