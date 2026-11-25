@@ -83,8 +83,9 @@ export const AdminCampaignsView: FC<AdminCampaignsProps> = ({
             successMessage={successMessage}
             errorMessage={errorMessage}
         >
+            <div class="gt-list-shell">
             {/* Header */}
-            <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center justify-between gap-3" style="flex-shrink: 0;">
                 <div class="min-w-0">
                     <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white">
                         Gestão de Campanhas &amp; Mídia Paga
@@ -107,44 +108,44 @@ export const AdminCampaignsView: FC<AdminCampaignsProps> = ({
             </div>
 
             {/* 4 KPIs Executivos Compactos */}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="gtb-card gtb-kpi-gold !py-3.5 !px-4 flex items-center justify-between gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5" style="flex-shrink: 0;">
+                <div class="gtb-card gtb-kpi-gold !py-3 !px-4 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Orçamento Total</span>
-                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-white mt-0.5 block" style="font-variant-numeric: tabular-nums;">{formatCurrency(totalBudget)}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-white mt-0.5 block" style="font-variant-numeric: tabular-nums;">{formatCurrency(totalBudget)}</span>
                     </div>
                     <span class="gt-badge gt-badge-info">{campaigns.length} camp.</span>
                 </div>
 
-                <div class="gtb-card gtb-kpi-blue !py-3.5 !px-4 flex items-center justify-between gap-2">
+                <div class="gtb-card gtb-kpi-blue !py-3 !px-4 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Investimento Executado</span>
-                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-[#F2C230] mt-0.5 block" style="font-variant-numeric: tabular-nums;">{formatCurrency(totalSpent)}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-[#F2C230] mt-0.5 block" style="font-variant-numeric: tabular-nums;">{formatCurrency(totalSpent)}</span>
                     </div>
                     <span class="gt-badge gt-badge-warning">{overallPct}%</span>
                 </div>
 
-                <div class="gtb-card !py-3.5 !px-4 flex items-center justify-between gap-2">
+                <div class="gtb-card !py-3 !px-4 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Saldo Disponível</span>
-                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-white mt-0.5 block" style="font-variant-numeric: tabular-nums;">{formatCurrency(remainingBudget)}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-white mt-0.5 block" style="font-variant-numeric: tabular-nums;">{formatCurrency(remainingBudget)}</span>
                     </div>
                     <span class="gt-badge gt-badge-info">Saldo</span>
                 </div>
 
-                <div class="gtb-card gtb-kpi-petrol !py-3.5 !px-4 flex items-center justify-between gap-2">
+                <div class="gtb-card gtb-kpi-petrol !py-3 !px-4 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Campanhas no Ar</span>
-                        <span class="gt-font-display text-xl font-extrabold text-[#34D399] mt-0.5 block" style="font-variant-numeric: tabular-nums;">{activeCount}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-[#34D399] mt-0.5 block" style="font-variant-numeric: tabular-nums;">{activeCount}</span>
                     </div>
                     <span class="gt-badge gt-badge-success">Ativas</span>
                 </div>
             </div>
 
-            {/* Card Unificado: Toolbar de Filtros + Tabela Executiva */}
-            <section class="gtb-card !p-0 overflow-hidden">
+            {/* Card Unificado: Toolbar de Filtros + Tabela Executiva com Scroll Interno */}
+            <section class="gtb-card gt-list-table-card !p-0 overflow-hidden">
                 {/* Toolbar integrada */}
-                <div class="px-5 py-3.5 flex flex-wrap items-center justify-between gap-3" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                <div class="px-4 py-3 flex flex-wrap items-center justify-between gap-3" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14); flex-shrink: 0;">
                     <div class="flex flex-wrap items-center gap-1.5">
                         <a
                             href={buildFilterUrl('')}
@@ -180,9 +181,9 @@ export const AdminCampaignsView: FC<AdminCampaignsProps> = ({
                         </a>
                     </div>
 
-                    <form method="get" action="/admin/campanhas" class="flex flex-wrap items-center gap-2 m-0">
+                    <form method="get" action="/admin/campanhas" class="flex flex-wrap sm:flex-nowrap items-center gap-2 m-0">
                         {statusFilter && <input type="hidden" name="status" value={statusFilter} />}
-                        <select name="platform" onchange="this.form.submit()" class="rounded-xl px-3 py-1.5 text-xs" style="min-width: 155px;">
+                        <select name="platform" onchange="this.form.submit()" class="rounded-xl px-3 py-1.5 text-xs" style="min-width: 150px; width: auto;">
                             <option value="">Todas as Plataformas</option>
                             <option value="google_ads" selected={platformFilter === 'google_ads'}>Google Ads</option>
                             <option value="meta_ads" selected={platformFilter === 'meta_ads'}>Meta Ads</option>
@@ -194,7 +195,7 @@ export const AdminCampaignsView: FC<AdminCampaignsProps> = ({
                             value={search}
                             placeholder="Buscar campanha ou cliente..."
                             class="rounded-xl px-3 py-1.5 text-xs"
-                            style="width: 220px;"
+                            style="width: 200px; max-width: 100%;"
                         />
                         <button type="submit" class="gt-btn-outline gt-btn-xs">Filtrar</button>
                         {(search || platformFilter || statusFilter) && (
@@ -229,7 +230,7 @@ export const AdminCampaignsView: FC<AdminCampaignsProps> = ({
                         </div>
                     </div>
                 ) : (
-                    <div class="gt-table-wrap">
+                    <div class="gt-table-wrap gt-list-table-scroll">
                         <table class="w-full text-left text-xs">
                             <thead>
                                 <tr class="border-b border-white/10 text-[10px] uppercase tracking-wider text-[#8C95AA]">
@@ -262,10 +263,18 @@ export const AdminCampaignsView: FC<AdminCampaignsProps> = ({
                                                         <PlatformIcon platform={c.platform} />
                                                     </span>
                                                     <div class="min-w-0">
-                                                        <div class="font-extrabold text-white text-[13px] leading-snug truncate max-w-[260px]">
+                                                        <div
+                                                            title={c.name}
+                                                            class="font-extrabold text-white text-[13px] leading-snug"
+                                                            style="max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                                        >
                                                             {c.name}
                                                         </div>
-                                                        <div class="text-[11px] text-[#8C95AA] mt-0.5">
+                                                        <div
+                                                            title={`${c.company || c.client_name || 'GundjaTech'} · ${startLabel}`}
+                                                            class="text-[11px] text-[#8C95AA] mt-0.5"
+                                                            style="max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                                        >
                                                             Cliente: <strong class="text-white font-semibold">{c.company || c.client_name || 'GundjaTech'}</strong>
                                                             <span> · {startLabel}</span>
                                                         </div>
@@ -352,6 +361,7 @@ export const AdminCampaignsView: FC<AdminCampaignsProps> = ({
                     </div>
                 )}
             </section>
+            </div>
 
             {/* Modal Nova Campanha */}
             <div

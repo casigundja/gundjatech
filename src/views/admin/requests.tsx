@@ -827,12 +827,13 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
             successMessage={successMessage}
             errorMessage={errorMessage}
         >
-            <div class="gt-page-header !mb-0">
+            <div class="gt-list-shell">
+            <div class="gt-page-header !mb-0" style="flex-shrink: 0;">
                 <div>
-                    <h1 class="gt-font-display text-xl sm:text-2xl font-extrabold text-white">
+                    <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white">
                         Gestão de Solicitações &amp; Pipeline de Entrada
                     </h1>
-                    <p class="text-xs sm:text-sm text-[#8C95AA] mt-1">
+                    <p class="text-xs text-[#8C95AA] mt-0.5">
                         Analise briefings de clientes, qualifique leads, converta em projetos e gere orçamentos formais.
                     </p>
                 </div>
@@ -842,39 +843,39 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
             </div>
 
             {/* 4 KPIs Executivos Compactos */}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div class="gtb-card gtb-kpi-gold !p-4 flex items-center justify-between gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5" style="flex-shrink: 0;">
+                <div class="gtb-card gtb-kpi-gold !py-3 !px-4 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total no Pipeline</span>
-                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{requests.length}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-white mt-0.5 block">{requests.length}</span>
                     </div>
                     <span class="px-2 py-0.5 rounded-md bg-white/10 text-[10px] font-bold text-[#D5DCEB]">Total</span>
                 </div>
-                <div class="gtb-card gtb-kpi-blue !p-4 flex items-center justify-between gap-2">
+                <div class="gtb-card gtb-kpi-blue !py-3 !px-4 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Novas / Pendentes</span>
-                        <span class="gt-font-display text-xl font-extrabold text-[#F2C230] mt-0.5 block">{newCount}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-[#F2C230] mt-0.5 block">{newCount}</span>
                     </div>
                     <span class="gt-badge gt-badge-warning">Triagem</span>
                 </div>
-                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+                <div class="gtb-card !py-3 !px-4 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Em Análise / Proposta</span>
-                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block">{analyzingCount}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-white mt-0.5 block">{analyzingCount}</span>
                     </div>
                     <span class="gt-badge gt-badge-info">Análise</span>
                 </div>
-                <div class="gtb-card gtb-kpi-petrol !p-4 flex items-center justify-between gap-2">
+                <div class="gtb-card gtb-kpi-petrol !py-3 !px-4 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Aprovadas / Concluídas</span>
-                        <span class="gt-font-display text-xl font-extrabold text-[#34D399] mt-0.5 block">{approvedCount}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-[#34D399] mt-0.5 block">{approvedCount}</span>
                     </div>
                     <span class="gt-badge gt-badge-success">Aprovado</span>
                 </div>
             </div>
 
             {/* Filtros */}
-            <div class="gtb-card !p-4">
+            <div class="gtb-card !p-3" style="flex-shrink: 0;">
                 <form action="/admin/solicitacoes" method="get" class="gt-filter-bar">
                     <div class="gt-filter-input">
                         <input
@@ -882,11 +883,11 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                             name="search"
                             value={search}
                             placeholder="Buscar por protocolo, título ou cliente..."
-                            class="w-full rounded-xl px-3.5 py-2.5 text-[13px]"
+                            class="w-full rounded-xl px-3.5 py-2 text-xs"
                         />
                     </div>
                     <div class="gt-filter-select">
-                        <select name="status" class="w-full rounded-xl px-3.5 py-2.5 text-[13px]">
+                        <select name="status" class="w-full rounded-xl px-3.5 py-2 text-xs">
                             <option value="">Todos os status</option>
                             <option value="new" selected={statusFilter === 'new'}>Novas</option>
                             <option value="analyzing" selected={statusFilter === 'analyzing'}>Em Análise</option>
@@ -903,12 +904,12 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                 </form>
             </div>
 
-            {/* Tabela de Solicitações */}
-            <div class="gtb-card !p-0 overflow-hidden">
+            {/* Tabela de Solicitações com Scroll Interno */}
+            <div class="gtb-card gt-list-table-card !p-0 overflow-hidden">
                 {requests.length === 0 ? (
                     <div class="gt-empty-state">Nenhuma solicitação encontrada.</div>
                 ) : (
-                    <div class="gt-table-wrap">
+                    <div class="gt-table-wrap gt-list-table-scroll">
                         <table class="w-full text-left text-xs">
                             <thead>
                                 <tr class="border-b border-white/10 text-[10.5px] uppercase tracking-wider text-[#8C95AA]">
@@ -995,6 +996,7 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                         </table>
                     </div>
                 )}
+            </div>
             </div>
         </AdminLayout>
     );
