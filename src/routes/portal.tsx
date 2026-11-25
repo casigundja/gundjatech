@@ -270,6 +270,14 @@ portalRoutes.post('/orcamentos/:id/aprovar', async (c) => {
         return c.redirect('/portal/orcamentos?error=Or%C3%A7amento+n%C3%A3o+dispon%C3%ADvel+para+aprova%C3%A7%C3%A3o.');
     }
 
+    // Validação de validade da proposta (CDC Arts. 30/35)
+    if (quote.valid_until) {
+        const validEnd = new Date(`${String(quote.valid_until).slice(0, 10)}T23:59:59Z`).getTime();
+        if (!isNaN(validEnd) && validEnd < Date.now()) {
+            return c.redirect(`/portal/orcamentos/${quoteId}?error=${encodeURIComponent('Este orçamento expirou. Clique em "Solicitar Revisão" ou fale com nossa equipe para atualizar a validade.')}`);
+        }
+    }
+
     // Compare-and-swap atômico: evita duplicação de projetos/faturas em duplo clique ou concorrência
     const approveRes = await db.prepare(
         'UPDATE quotations SET status = "approved", updated_at = datetime("now") WHERE id = ? AND client_id = ? AND status = "sent"'
@@ -367,12 +375,42 @@ portalRoutes.post('/orcamentos/:id/aprovar', async (c) => {
         });
     }
 
-    // Registra log de auditoria (colunas corretas de 0001_core_and_auth.sql)
+    // Registra prova de aceite eletrônico (MP 2.200-2 / CDC) com IP e User-Agent
     try {
+        const clientIp = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for')?.split(',')[0]?.trim() || null;
+        const userAgent = String(c.req.header('user-agent') || '').slice(0, 240);
         await db.prepare(
-            `INSERT INTO activity_logs (user_id, action, model_type, model_id, metadata, created_at, updated_at)
-             VALUES (?, 'portal.quotation_approved', 'Quotation', ?, ?, datetime('now'), datetime('now'))`
-        ).bind(user.id, quoteId, JSON.stringify({ reference: quote.reference_code })).run();
+            `INSERT INTO activity_logs (user_id, action, model_type, model_id, metadata, ip_address, user_agent, created_at, updated_at)
+             VALUES (?, 'portal.quotation_approved', 'Quotation', ?, ?, ?, ?, datetime('now'), datetime('now'))`
+        ).bind(
+            user.id,
+            quoteId,
+            JSON.stringify({
+                reference: quote.reference_code,
+                amount: Number(quote.final_amount ?? quote.total_amount ?? 0),
+                project_id: createdProjectId || null,
+                accepted_at: new Date().toISOString()
+            }),
+            clientIp,
+            userAgent
+        ).run();
+    } catch {}
+
+    // Notifica equipe comercial por e-mail sobre a aprovação pelo cliente
+    try {
+        const staffTo = c.env.STAFF_NOTIFY_EMAIL || 'gundjatech@gmail.com';
+        const appUrl = (c.env.APP_URL || 'https://gundjatech.casimirogundja.workers.dev').replace(/\/$/, '');
+        const valFmt = Number(quote.final_amount ?? quote.total_amount ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        await sendEmail(c.env, {
+            to: staffTo,
+            subject: `Orçamento Aprovado pelo Cliente • ${quote.reference_code || `#${quoteId}`} (R$ ${valFmt})`,
+            html: renderEmailTemplate(
+                'Orçamento Aprovado no Portal',
+                `<p>O cliente <strong>${escapeEmailHtml(client.company || client.name)}</strong> aprovou formalmente a proposta <strong>${escapeEmailHtml(quote.reference_code || `#${quoteId}`)}</strong>.</p>
+                 <p><strong>Projeto iniciado:</strong> ${escapeEmailHtml(projectName)}<br/><strong>Valor:</strong> R$ ${valFmt}</p>`,
+                { text: 'Abrir Orçamento no Painel Admin', url: `${appUrl}/admin/orcamentos/${quoteId}` }
+            )
+        });
     } catch {}
 
     return c.redirect('/portal/orcamentos?success=Or%C3%A7amento+aprovado+com+sucesso!+Seu+projeto+j%C3%A1+foi+iniciado+automaticamente.');
@@ -457,24 +495,34 @@ portalRoutes.post('/solicitacoes', async (c) => {
     const serviceId = Number(body.service_id);
     const title = String(body.title || '').trim();
     const description = String(body.description || '').trim();
-    const estimatedBudget = body.estimated_budget ? Number(body.estimated_budget) : null;
-    const desiredDeadline = body.desired_deadline ? String(body.desired_deadline) : null;
+    const rawBudget = body.estimated_budget !== undefined && String(body.estimated_budget).trim() !== ''
+        ? Number(body.estimated_budget)
+        : null;
+    const desiredDeadline = body.desired_deadline ? String(body.desired_deadline).trim().slice(0, 20) : null;
 
     if (!title || !description) {
         return c.redirect('/portal/solicitacoes/nova?error=T%C3%ADtulo+e+descri%C3%A7%C3%A3o+s%C3%A3o+obrigat%C3%B3rios.');
     }
+    if (rawBudget !== null && (!Number.isFinite(rawBudget) || rawBudget < 0)) {
+        return c.redirect('/portal/solicitacoes/nova?error=' + encodeURIComponent('Informe um valor de orçamento estimado válido (maior ou igual a zero).'));
+    }
+    const estimatedBudget = rawBudget;
 
-    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const randBytes = new Uint8Array(4);
+    crypto.getRandomValues(randBytes);
+    const randomSuffix = Array.from(randBytes, (b) => alphabet[b % alphabet.length]).join('');
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const protocol = `GNDJ-${dateStr}-${randomSuffix}`;
 
     const insertRes = await db.prepare(
         `INSERT INTO service_requests (
-            protocol, client_id, user_id, service_id, name, company, email, phone,
-            service_title, description, estimated_budget, desired_deadline, status,
+            protocol, tracking_code, client_id, user_id, service_id, name, company, email, phone,
+            title, service_title, description, estimated_budget, desired_deadline, status,
             created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', datetime('now'), datetime('now'))`
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', datetime('now'), datetime('now'))`
     ).bind(
+        protocol,
         protocol,
         client.id,
         user.id,
@@ -483,6 +531,7 @@ portalRoutes.post('/solicitacoes', async (c) => {
         client.company || user.name,
         user.email,
         user.phone || null,
+        title,
         title,
         description,
         estimatedBudget,
@@ -500,7 +549,49 @@ portalRoutes.post('/solicitacoes', async (c) => {
         notes: 'Solicitação aberta diretamente pelo Portal do Cliente.'
     });
 
+    // Notifica equipe sobre nova solicitação aberta pelo Portal
+    try {
+        const staffTo = c.env.STAFF_NOTIFY_EMAIL || 'gundjatech@gmail.com';
+        const appUrl = (c.env.APP_URL || 'https://gundjatech.casimirogundja.workers.dev').replace(/\/$/, '');
+        await sendEmail(c.env, {
+            to: staffTo,
+            subject: `[PORTAL] Nova Solicitação ${protocol} • ${client.company || client.name}`,
+            html: renderEmailTemplate(
+                'Nova Solicitação via Portal do Cliente',
+                `<p>O cliente <strong>${escapeEmailHtml(client.company || client.name)}</strong> abriu uma nova solicitação no Portal.</p>
+                 <p><strong>Protocolo:</strong> ${escapeEmailHtml(protocol)}<br/><strong>Demanda:</strong> ${escapeEmailHtml(title)}</p>`,
+                { text: 'Abrir Solicitação no Admin', url: `${appUrl}/admin/solicitacoes/${newReqId}` }
+            )
+        });
+    } catch {}
+
     return c.redirect(`/portal/solicitacoes/${newReqId}?success=Solicita%C3%A7%C3%A3o+criada+com+sucesso!+Protocolo:+${protocol}`);
+});
+
+// Cancelamento pelo cliente permitido EXCLUSIVAMENTE enquanto status === 'new' (respeita travas de fase e CDC)
+portalRoutes.post('/solicitacoes/:id/cancelar', async (c) => {
+    const { user, db, client } = await getClientContext(c);
+    const reqId = Number(c.req.param('id'));
+
+    const cancelRes = await db.prepare(
+        `UPDATE service_requests SET status = 'cancelled', updated_at = datetime('now')
+         WHERE id = ? AND client_id = ? AND status = 'new'`
+    ).bind(reqId, client.id).run();
+
+    if (!cancelRes.meta?.changes) {
+        return c.redirect(`/portal/solicitacoes/${reqId}?error=${encodeURIComponent('Esta solicitação já entrou em análise ou execução e não pode ser cancelada diretamente. Fale com nossa equipe no chat.')}`);
+    }
+
+    await recordRequestTimeline(db, {
+        serviceRequestId: reqId,
+        userId: user.id,
+        action: 'cancelled',
+        fromStatus: 'new',
+        toStatus: 'cancelled',
+        notes: 'Solicitação cancelada pelo cliente antes do início da análise técnica.'
+    });
+
+    return c.redirect(`/portal/solicitacoes/${reqId}?success=${encodeURIComponent('Solicitação cancelada com sucesso.')}`);
 });
 
 portalRoutes.get('/solicitacoes/:id', async (c) => {
@@ -551,6 +642,21 @@ portalRoutes.post('/solicitacoes/:id/aprovar', async (c) => {
         return c.redirect(`/portal/solicitacoes/${reqId}?error=Solicita%C3%A7%C3%A3o+n%C3%A3o+est%C3%A1+aguardando+aprova%C3%A7%C3%A3o.`);
     }
 
+    let linkedQuote: any = null;
+    try {
+        linkedQuote = await db.prepare(
+            'SELECT * FROM quotations WHERE service_request_id = ? ORDER BY id DESC LIMIT 1'
+        ).bind(reqId).first();
+    } catch {}
+
+    // Valida validade da proposta vinculada (CDC Arts. 30/35) antes de aprovar
+    if (linkedQuote?.valid_until) {
+        const validEnd = new Date(`${String(linkedQuote.valid_until).slice(0, 10)}T23:59:59Z`).getTime();
+        if (!isNaN(validEnd) && validEnd < Date.now()) {
+            return c.redirect(`/portal/solicitacoes/${reqId}?error=${encodeURIComponent('O orçamento vinculado expirou. Clique em "Solicitar Revisão" para atualizar a proposta.')}`);
+        }
+    }
+
     const reqLockRes = await db.prepare(
         'UPDATE service_requests SET status = "in_progress", updated_at = datetime("now") WHERE id = ? AND client_id = ? AND status = "quotation_sent"'
     ).bind(reqId, client.id).run();
@@ -558,11 +664,7 @@ portalRoutes.post('/solicitacoes/:id/aprovar', async (c) => {
         return c.redirect(`/portal/solicitacoes/${reqId}?error=Esta+solicita%C3%A7%C3%A3o+j%C3%A1+foi+aprovada.`);
     }
 
-    let linkedQuote: any = null;
     try {
-        linkedQuote = await db.prepare(
-            'SELECT * FROM quotations WHERE service_request_id = ? ORDER BY id DESC LIMIT 1'
-        ).bind(reqId).first();
         await db.prepare(
             'UPDATE quotations SET status = "approved", updated_at = datetime("now") WHERE service_request_id = ? AND status = "sent"'
         ).bind(reqId).run();
@@ -652,6 +754,27 @@ portalRoutes.post('/solicitacoes/:id/aprovar', async (c) => {
         notes: `Projeto${createdProjectId ? ` #${createdProjectId}` : ''} criado e iniciado automaticamente após aprovação do orçamento`,
     });
 
+    // Registra prova de aceite eletrônico (MP 2.200-2 / CDC)
+    try {
+        const clientIp = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for')?.split(',')[0]?.trim() || null;
+        const userAgent = String(c.req.header('user-agent') || '').slice(0, 240);
+        await db.prepare(
+            `INSERT INTO activity_logs (user_id, action, model_type, model_id, metadata, ip_address, user_agent, created_at, updated_at)
+             VALUES (?, 'portal.request_quote_approved', 'ServiceRequest', ?, ?, ?, ?, datetime('now'), datetime('now'))`
+        ).bind(
+            user.id,
+            reqId,
+            JSON.stringify({
+                protocol: request.protocol,
+                quotation_id: linkedQuote?.id || null,
+                project_id: createdProjectId || null,
+                accepted_at: new Date().toISOString()
+            }),
+            clientIp,
+            userAgent
+        ).run();
+    } catch {}
+
     return c.redirect(`/portal/solicitacoes/${reqId}?success=Or%C3%A7amento+aprovado+com+sucesso!+Seu+projeto+j%C3%A1+entrou+em+execu%C3%A7%C3%A3o.`);
 });
 
@@ -720,21 +843,54 @@ portalRoutes.post('/dominios/:id/renovacao', async (c) => {
         return c.redirect('/portal/dominios?error=Dom%C3%ADnio+n%C3%A3o+encontrado.');
     }
 
-    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const renewTitle = `Renovação de Domínio: ${domain.domain_name}`;
+    const existingRenew = (await db.prepare(
+        `SELECT id, protocol FROM service_requests
+         WHERE client_id = ? AND service_title = ? AND status IN ('new', 'analyzing', 'quotation_sent')
+         LIMIT 1`
+    ).bind(client.id, renewTitle).first()) as { id: number; protocol: string } | null;
+
+    if (existingRenew) {
+        return c.redirect(`/portal/dominios?error=${encodeURIComponent(`Já existe uma solicitação de renovação em aberto para ${domain.domain_name} (${existingRenew.protocol}).`)}`);
+    }
+
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const randBytes = new Uint8Array(4);
+    crypto.getRandomValues(randBytes);
+    const randomSuffix = Array.from(randBytes, (b) => alphabet[b % alphabet.length]).join('');
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const protocol = `REN-${dateStr}-${randomSuffix}`;
 
-    await db.prepare(
+    const renewIns = await db.prepare(
         `INSERT INTO service_requests (
-            protocol, client_id, user_id, service_title, description, status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, 'new', datetime('now'), datetime('now'))`
+            protocol, tracking_code, client_id, user_id, name, company, email, phone,
+            title, service_title, description, status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', datetime('now'), datetime('now'))`
     ).bind(
+        protocol,
         protocol,
         client.id,
         user.id,
-        `Renovação de Domínio: ${domain.domain_name}`,
+        user.name,
+        client.company || user.name,
+        user.email,
+        user.phone || null,
+        renewTitle,
+        renewTitle,
         `Solicitação de renovação anual do domínio ${domain.domain_name} via Portal do Cliente.`
     ).run();
+
+    const renewReqId = Number(renewIns.meta?.last_row_id || 0);
+    if (renewReqId > 0) {
+        await recordRequestTimeline(db, {
+            serviceRequestId: renewReqId,
+            userId: user.id,
+            action: 'created',
+            fromStatus: null,
+            toStatus: 'new',
+            notes: `Solicitação de renovação do domínio ${domain.domain_name} aberta pelo cliente.`
+        });
+    }
 
     return c.redirect(`/portal/dominios?success=Solicita%C3%A7%C3%A3o+de+renova%C3%A7%C3%A3o+registrada+(Protocolo+${protocol})!`);
 });
@@ -816,6 +972,9 @@ portalRoutes.post('/financeiro/:id/comprovante', rateLimit({ keyPrefix: 'portal_
 
     if (tx.status === 'paid' || tx.status === 'canceled') {
         return c.redirect('/portal/financeiro?error=Esta+fatura+n%C3%A3o+aceita+mais+envio+de+comprovante.');
+    }
+    if (tx.status === 'reviewing') {
+        return c.redirect('/portal/financeiro?error=' + encodeURIComponent('Já existe um comprovante em análise para esta fatura. Aguarde a conferência da equipe financeira.'));
     }
 
     try {
@@ -937,16 +1096,19 @@ portalRoutes.get('/financeiro/:id/status', async (c) => {
                 const gw = JSON.parse(gwRaw) as { provider: 'mercadopago' | 'asaas'; gatewayPaymentId: string };
                 const check = await verifyGatewayPaymentPaid(db, gw.provider, gw.gatewayPaymentId);
                 if (check.paid) {
-                    await settleInvoiceAsPaid(c.env, db, txId, {
+                    const settledRes = await settleInvoiceAsPaid(c.env, db, txId, {
                         provider: gw.provider === 'mercadopago' ? 'Mercado Pago PIX' : 'Asaas PIX',
-                        gatewayReference: gw.gatewayPaymentId
+                        gatewayReference: gw.gatewayPaymentId,
+                        paidAmount: check.amount
                     });
-                    return c.json({
-                        id: txId,
-                        status: 'paid',
-                        paid_at: new Date().toISOString(),
-                        receipt_url: `/portal/financeiro/${txId}/recibo`
-                    });
+                    if (settledRes.settled || settledRes.alreadyPaid) {
+                        return c.json({
+                            id: txId,
+                            status: 'paid',
+                            paid_at: new Date().toISOString(),
+                            receipt_url: `/portal/financeiro/${txId}/recibo`
+                        });
+                    }
                 }
             }
         } catch { }
@@ -1067,7 +1229,7 @@ portalRoutes.get('/atendimento', async (c) => {
     );
 });
 
-portalRoutes.post('/atendimento/:id/mensagem', async (c) => {
+portalRoutes.post('/atendimento/:id/mensagem', rateLimit({ keyPrefix: 'portal_chat_msg', maxRequests: 40, windowSeconds: 60 }), async (c) => {
     const { user, db, client } = await getClientContext(c);
     const convId = Number(c.req.param('id'));
     const body = await getRequestBody(c);
@@ -1075,6 +1237,9 @@ portalRoutes.post('/atendimento/:id/mensagem', async (c) => {
 
     if (!message) {
         return c.redirect('/portal/atendimento');
+    }
+    if (message.length > 2000) {
+        return c.redirect('/portal/atendimento?error=' + encodeURIComponent('A mensagem deve ter no máximo 2.000 caracteres.'));
     }
 
     // Isolamento multi-tenant: garante que a conversa pertence ao cliente autenticado
@@ -1126,8 +1291,8 @@ portalRoutes.get('/atendimento/:id/mensagens', async (c) => {
     }
 
     const query = afterId > 0
-        ? 'SELECT * FROM conversation_messages WHERE conversation_id = ? AND id > ? ORDER BY id ASC'
-        : 'SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY id ASC';
+        ? 'SELECT * FROM conversation_messages WHERE conversation_id = ? AND id > ? ORDER BY id ASC LIMIT 100'
+        : 'SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY id ASC LIMIT 100';
     const stmt = afterId > 0 ? db.prepare(query).bind(convId, afterId) : db.prepare(query).bind(convId);
     const messages = await stmt.all();
 

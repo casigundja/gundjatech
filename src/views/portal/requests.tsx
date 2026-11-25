@@ -562,6 +562,19 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                                     </a>
                                 )}
 
+                                {requestDetail.status === 'new' && (
+                                    <form
+                                        action={`/portal/solicitacoes/${requestDetail.id}/cancelar`}
+                                        method="post"
+                                        class="m-0 pt-1"
+                                        data-confirm="Deseja realmente cancelar esta solicitação antes do início da análise?"
+                                    >
+                                        <button type="submit" class="gt-btn-danger-ghost gt-btn-xs w-full justify-center">
+                                            <span>Cancelar Solicitação</span>
+                                        </button>
+                                    </form>
+                                )}
+
                                 {requestDetail.status === 'cancelled' && (
                                     <a href="/portal/solicitacoes/nova" class="gt-btn-primary gt-btn-sm w-full justify-center">
                                         <span>+ Abrir Nova Solicitação</span>
