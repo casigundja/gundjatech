@@ -5996,6 +5996,86 @@ html[data-admin-theme="light"] .gt-dp-foot-btn.is-accent {
     }
 }
 
+/* Viewport-fit para /admin/permissoes no desktop (tabela rola internamente, footer Salvar sempre visível) */
+@media (min-width: 1024px) {
+    main.gt-admin-main:has(> .gt-perm-grid) {
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        gap: 14px !important;
+        padding-top: 16px !important;
+        padding-bottom: 16px !important;
+    }
+
+    main.gt-admin-main:has(> .gt-perm-grid) > * {
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+    }
+
+    main.gt-admin-main:has(> .gt-perm-grid) > .gt-page-header {
+        flex-shrink: 0 !important;
+    }
+
+    .gt-perm-grid {
+        flex: 1 1 0% !important;
+        min-height: 0 !important;
+        align-items: stretch !important;
+        overflow: hidden !important;
+    }
+
+    .gt-perm-main-card {
+        height: 100%;
+        min-height: 0;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+    }
+
+    .gt-perm-main-card > :not(.gt-perm-form) {
+        flex-shrink: 0;
+    }
+
+    .gt-perm-form {
+        flex: 1 1 0%;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .gt-perm-form > .gt-table-wrap {
+        flex: 1 1 0%;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(22, 116, 154, 0.35) transparent;
+    }
+
+    .gt-perm-form > .gt-table-wrap thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: var(--gtb-card);
+    }
+
+    html[data-admin-theme="light"] .gt-perm-form > .gt-table-wrap thead th {
+        background: #F4F8FB;
+    }
+
+    .gt-perm-form > :not(.gt-table-wrap) {
+        flex-shrink: 0;
+    }
+
+    .gt-perm-side-card {
+        height: 100%;
+        min-height: 0;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(22, 116, 154, 0.35) transparent;
+    }
+}
+
 .gt-chat-tab-count {
     display: inline-flex;
     align-items: center;

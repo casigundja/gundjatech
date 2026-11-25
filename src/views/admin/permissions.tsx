@@ -86,9 +86,9 @@ export const AdminPermissionsView: FC<AdminPermissionsProps> = ({
             </div>
 
             {selectedTab === 'roles' ? (
-                <div class="gt-grid-detail items-start">
+                <div class="gt-grid-detail gt-perm-grid items-start">
                     {/* Coluna Principal: Matriz de Páginas & Ações do Cargo Selecionado */}
-                    <section class="gtb-card !p-5 space-y-4 min-w-0">
+                    <section class="gtb-card !p-5 space-y-4 min-w-0 gt-perm-main-card">
                         <div class="flex items-center justify-between gap-3 flex-wrap pb-3" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                             <div>
                                 <div class="flex items-center gap-2 flex-wrap">
@@ -115,7 +115,7 @@ export const AdminPermissionsView: FC<AdminPermissionsProps> = ({
                             </div>
                         )}
 
-                        <form action="/admin/permissoes/cargo" method="post" class="space-y-4 m-0">
+                        <form action="/admin/permissoes/cargo" method="post" class="gt-perm-form space-y-4 m-0">
                             <input type="hidden" name="role" value={activeRoleMeta.key} />
                             <div class="gt-table-wrap">
                                 <table class="w-full text-left text-xs">
@@ -199,7 +199,7 @@ export const AdminPermissionsView: FC<AdminPermissionsProps> = ({
                     </section>
 
                     {/* Coluna Lateral: Seletor de Cargos */}
-                    <aside class="gtb-card !p-4 space-y-2.5 min-w-0">
+                    <aside class="gtb-card !p-4 space-y-2.5 min-w-0 gt-perm-side-card">
                         <div class="pb-2" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                             <h2 class="gt-font-display text-sm font-extrabold text-white">Selecionar Cargo</h2>
                             <p class="text-[11px] text-[#8C95AA] mt-0.5">Escolha o perfil para configurar as páginas visíveis.</p>
@@ -232,9 +232,9 @@ export const AdminPermissionsView: FC<AdminPermissionsProps> = ({
                     </aside>
                 </div>
             ) : (
-                <div class="gt-grid-detail items-start">
+                <div class="gt-grid-detail gt-perm-grid items-start">
                     {/* Coluna Principal: Sobrescrita Individual por Usuário */}
-                    <section class="gtb-card !p-5 space-y-4 min-w-0">
+                    <section class="gtb-card !p-5 space-y-4 min-w-0 gt-perm-main-card">
                         {activeUser ? (
                             <>
                                 <div class="flex items-center justify-between gap-3 flex-wrap pb-3" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
@@ -264,7 +264,7 @@ export const AdminPermissionsView: FC<AdminPermissionsProps> = ({
                                     </div>
                                 )}
 
-                                <form action="/admin/permissoes/usuario" method="post" class="space-y-4 m-0">
+                                <form action="/admin/permissoes/usuario" method="post" class="gt-perm-form space-y-4 m-0">
                                     <input type="hidden" name="user_id" value={activeUser.id} />
                                     <div class="gt-table-wrap">
                                         <table class="w-full text-left text-xs">
@@ -354,7 +354,7 @@ export const AdminPermissionsView: FC<AdminPermissionsProps> = ({
                     </section>
 
                     {/* Coluna Lateral: Lista de Colaboradores */}
-                    <aside class="gtb-card !p-4 space-y-2.5 min-w-0">
+                    <aside class="gtb-card !p-4 space-y-2.5 min-w-0 gt-perm-side-card">
                         <div class="pb-2" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                             <h2 class="gt-font-display text-sm font-extrabold text-white">Colaboradores da Equipe</h2>
                             <p class="text-[11px] text-[#8C95AA] mt-0.5">Selecione um usuário para personalizar as telas visíveis.</p>
