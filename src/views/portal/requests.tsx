@@ -247,6 +247,49 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
         const normalizedSt = requestDetail.status === 'in_review' ? 'analyzing' : requestDetail.status;
         const currentStepIndex = PORTAL_PIPELINE_STEPS.findIndex((s) => s.key === normalizedSt);
         const structuredDesc = parsePortalDescription(requestDetail.description);
+        const estimatedVal = Number(linkedQuotation?.final_amount ?? linkedQuotation?.total_amount ?? requestDetail.estimated_budget ?? 0);
+        const formattedVal = estimatedVal > 0
+            ? `R$ ${estimatedVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+            : 'Em avaliação';
+        const statusBadgeCls =
+            requestDetail.status === 'approved' || requestDetail.status === 'completed'
+                ? 'gt-badge-success'
+                : requestDetail.status === 'cancelled'
+                    ? 'gt-badge-danger'
+                    : requestDetail.status === 'quotation_sent'
+                        ? 'gt-badge-warning'
+                        : 'gt-badge-info';
+
+        const nextStepInfo: { badge: string; title: string; desc: string } =
+            requestDetail.status === 'quotation_sent'
+                ? {
+                    badge: 'Ação Necessária',
+                    title: 'Proposta Pronta para Aprovação',
+                    desc: 'Revise os valores e condições do orçamento enviado. Ao aprovar, seu projeto inicia automaticamente.'
+                }
+                : requestDetail.status === 'approved' || requestDetail.status === 'in_progress'
+                    ? {
+                        badge: 'Em Andamento',
+                        title: 'Projeto em Execução',
+                        desc: 'Sua proposta foi aprovada e nossa equipe técnica está executando o cronograma de entregas.'
+                    }
+                    : requestDetail.status === 'completed'
+                        ? {
+                            badge: 'Entregue',
+                            title: 'Demanda Concluída',
+                            desc: 'Todas as etapas foram finalizadas. Você pode consultar entregáveis e recibos no portal.'
+                        }
+                        : requestDetail.status === 'cancelled'
+                            ? {
+                                badge: 'Encerrada',
+                                title: 'Solicitação Cancelada',
+                                desc: 'Esta solicitação foi cancelada. Caso deseje retomar o escopo, abra uma nova solicitação.'
+                            }
+                            : {
+                                badge: 'Em Triagem Técnica',
+                                title: 'Briefing em Análise',
+                                desc: 'Nossa equipe de engenharia está analisando seu escopo para estruturar o orçamento técnico ideal.'
+                            };
 
         return (
             <PortalLayout
@@ -257,190 +300,297 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                 successMessage={successMessage}
                 errorMessage={errorMessage}
             >
-                <div class="gt-detail-toolbar">
-                    <a href="/portal/solicitacoes" class="gt-back-link">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-                        <span>Voltar para Solicitações</span>
-                    </a>
-                </div>
-
-                <div class="gtb-card !p-5" style="display: flex; flex-direction: column; gap: 14px; height: calc(100vh - 176px); max-height: calc(100vh - 176px); overflow: hidden;">
-                    <div class="gtb-card-accent-top gtb-card-accent-gold"></div>
-                    <div class="flex items-start justify-between gap-4 flex-wrap pb-5 border-b border-white/10">
-                        <div class="min-w-0 flex-1">
-                            <div class="flex items-center gap-2 flex-wrap mb-2">
-                                <span class="gt-req-pill-neutral font-mono">{requestDetail.protocol}</span>
-                                <span class={`gt-badge ${requestDetail.status === 'approved' || requestDetail.status === 'completed' ? 'gt-badge-success' : requestDetail.status === 'cancelled' ? 'gt-badge-danger' : 'gt-badge-info'}`}>
-                                    {reqStatusLabel[requestDetail.status] || requestDetail.status}
-                                </span>
-                            </div>
-                            <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white">{requestDetail.service_title || requestDetail.title}</h1>
-                            <div class="text-xs text-[#8C95AA] mt-1">
-                                Aberta em {formatPortalDateBrt(requestDetail.created_at)}
-                            </div>
+                <div class="gt-req-detail-shell">
+                    <div class="gt-detail-toolbar !mb-0" style="flex-shrink: 0;">
+                        <a href="/portal/solicitacoes" class="gt-back-link">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                            <span>Voltar para Solicitações</span>
+                        </a>
+                        <div class="flex items-center gap-2">
+                            <span class="gt-req-pill-neutral font-mono">{requestDetail.protocol}</span>
+                            <span class={`gt-badge ${statusBadgeCls}`}>
+                                {reqStatusLabel[requestDetail.status] || requestDetail.status}
+                            </span>
                         </div>
-
-                        {requestDetail.status === 'quotation_sent' && (
-                            <div class="flex items-center gap-2.5 flex-wrap">
-                                <form action={`/portal/solicitacoes/${requestDetail.id}/recusar`} method="post" class="m-0">
-                                    <button type="submit" class="gt-btn-danger-ghost gt-btn-sm">
-                                        <span>Solicitar Revisão</span>
-                                    </button>
-                                </form>
-                                <form action={`/portal/solicitacoes/${requestDetail.id}/aprovar`} method="post" class="m-0">
-                                    <button type="submit" class="gt-btn-primary gt-btn-sm">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
-                                        <span>Aprovar Orçamento</span>
-                                    </button>
-                                </form>
-                            </div>
-                        )}
                     </div>
 
-                    {/* Esteira Visual do Pipeline (idêntica ao Admin) */}
-                    {requestDetail.status !== 'cancelled' && (
-                        <div>
-                            <div class="flex items-center justify-between gap-2 mb-2.5">
-                                <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Progresso no Pipeline</h2>
-                                <span class="text-[11px] font-bold text-[#8C95AA]">
-                                    Etapa {Math.max(1, currentStepIndex + 1)} de {PORTAL_PIPELINE_STEPS.length}
-                                </span>
-                            </div>
-                            <div class="gt-req-stepper" role="list" aria-label="Etapas da solicitação">
-                                {PORTAL_PIPELINE_STEPS.map((step, idx) => {
-                                    const isCompletedAll = normalizedSt === 'completed';
-                                    const isDone = isCompletedAll || (currentStepIndex >= 0 && idx < currentStepIndex);
-                                    const isActive = !isCompletedAll && idx === currentStepIndex;
-                                    return (
-                                        <div class={`gt-req-step ${isDone ? 'is-done' : ''} ${isActive ? 'is-active' : ''}`} role="listitem">
-                                            <span class="gt-req-step-dot" aria-hidden="true">
-                                                {isDone ? (
-                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                                ) : (
-                                                    idx + 1
-                                                )}
+                    <div class="gt-req-detail-grid">
+                        {/* Coluna Principal */}
+                        <div class="min-w-0 gt-req-detail-left" style="display: flex; flex-direction: column; gap: 12px;">
+                            {/* Card 1: Cabeçalho Executivo + 3 Mini-Cards + Esteira Visual */}
+                            <section class="gtb-card !p-4 sm:!px-5 space-y-3 min-w-0" style="flex-shrink: 0;">
+                                <div class="gtb-card-accent-top gtb-card-accent-gold"></div>
+                                <div class="flex items-start justify-between gap-3 flex-wrap">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-2 flex-wrap mb-1">
+                                            <span class="gt-req-pill-neutral font-mono">{requestDetail.protocol}</span>
+                                            <span class={`gt-badge ${statusBadgeCls}`}>
+                                                {reqStatusLabel[requestDetail.status] || requestDetail.status}
                                             </span>
-                                            <span class="gt-req-step-label">{step.label}</span>
+                                            {linkedQuotation && (
+                                                <span class="gt-req-pill-neutral">Proposta {linkedQuotation.reference_code}</span>
+                                            )}
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
+                                        <h1 class="gt-font-display text-base sm:text-lg font-extrabold text-white leading-snug">
+                                            {requestDetail.service_title || requestDetail.title}
+                                        </h1>
+                                    </div>
+                                    <span class="text-[11px] font-semibold text-[#8C95AA] whitespace-nowrap">
+                                        Aberta em {formatPortalDateBrt(requestDetail.created_at)}
+                                    </span>
+                                </div>
 
-                    {/* Orçamento Vinculado (Transparência e Aprovação pelo Cliente) */}
-                    {linkedQuotation && (
-                        <div class="gtb-surface-box rounded-xl p-4 flex items-center justify-between gap-3 flex-wrap">
-                            <div class="flex items-center gap-3 flex-wrap min-w-0">
-                                <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Proposta Comercial:</span>
-                                <a href={`/portal/orcamentos/${linkedQuotation.id}`} class="font-mono text-xs font-extrabold text-[#F2C230] hover:underline no-underline">
-                                    {linkedQuotation.reference_code}
-                                </a>
-                                <span class="text-xs font-extrabold text-white">
-                                    R$ {Number(linkedQuotation.final_amount ?? linkedQuotation.total_amount ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                </span>
-                                <span class={`gt-badge ${linkedQuotation.status === 'approved' ? 'gt-badge-success' : linkedQuotation.status === 'rejected' ? 'gt-badge-danger' : 'gt-badge-warning'}`}>
-                                    {linkedQuotation.status === 'approved' ? 'Aprovado • Projeto em Execução' : linkedQuotation.status === 'rejected' ? 'Em Revisão' : 'Aguardando Sua Aprovação'}
-                                </span>
-                            </div>
-                            <div class="flex items-center gap-2.5 flex-wrap">
-                                <a href={`/portal/orcamentos/${linkedQuotation.id}`} class="gt-btn-outline gt-btn-xs">
-                                    Ver Detalhes do Orçamento →
-                                </a>
-                                {linkedQuotation.status === 'approved' && (
-                                    <a href="/portal/projetos" class="gt-btn-primary gt-btn-xs">
-                                        Acompanhar Projeto em Execução →
-                                    </a>
+                                {/* 3 Mini-Cards Informativos */}
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                    <div class="gtb-surface-box rounded-xl px-3 py-2 flex items-center gap-2.5 min-w-0">
+                                        <span class="gtb-icon-box !w-7 !h-7 shrink-0" aria-hidden="true">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                        </span>
+                                        <div class="min-w-0">
+                                            <div class="text-[9.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Protocolo</div>
+                                            <div class="text-xs font-bold font-mono text-white truncate">{requestDetail.protocol}</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="gtb-surface-box rounded-xl px-3 py-2 flex items-center gap-2.5 min-w-0">
+                                        <span class="gtb-icon-box !w-7 !h-7 shrink-0" aria-hidden="true">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                        </span>
+                                        <div class="min-w-0">
+                                            <div class="text-[9.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Etapa Atual</div>
+                                            <div class="text-xs font-bold text-white truncate">
+                                                {requestDetail.status === 'cancelled'
+                                                    ? 'Cancelada'
+                                                    : `Etapa ${Math.max(1, currentStepIndex + 1)} de ${PORTAL_PIPELINE_STEPS.length} • ${PORTAL_PIPELINE_STEPS[Math.max(0, currentStepIndex)]?.label || 'Recebido'}`}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="gtb-surface-box rounded-xl px-3 py-2 flex items-center gap-2.5 min-w-0">
+                                        <span class="gtb-icon-box !w-7 !h-7 shrink-0" style="color: #F2C230;" aria-hidden="true">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                        </span>
+                                        <div class="min-w-0">
+                                            <div class="text-[9.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">
+                                                {linkedQuotation ? 'Valor da Proposta' : 'Orçamento Estimado'}
+                                            </div>
+                                            <div class="text-xs font-extrabold text-[#F2C230] truncate">{formattedVal}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Esteira Visual do Pipeline */}
+                                {requestDetail.status !== 'cancelled' && (
+                                    <div>
+                                        <div class="flex items-center justify-between gap-2 mb-1.5">
+                                            <h2 class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Progresso no Pipeline</h2>
+                                            <span class="text-[10.5px] font-bold text-[#8C95AA]">
+                                                Etapa {Math.max(1, currentStepIndex + 1)} de {PORTAL_PIPELINE_STEPS.length}
+                                            </span>
+                                        </div>
+                                        <div class="gt-req-stepper" role="list" aria-label="Etapas da solicitação">
+                                            {PORTAL_PIPELINE_STEPS.map((step, idx) => {
+                                                const isCompletedAll = normalizedSt === 'completed';
+                                                const isDone = isCompletedAll || (currentStepIndex >= 0 && idx < currentStepIndex);
+                                                const isActive = !isCompletedAll && idx === currentStepIndex;
+                                                return (
+                                                    <div class={`gt-req-step ${isDone ? 'is-done' : ''} ${isActive ? 'is-active' : ''}`} role="listitem">
+                                                        <span class="gt-req-step-dot" aria-hidden="true">
+                                                            {isDone ? (
+                                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                            ) : (
+                                                                idx + 1
+                                                            )}
+                                                        </span>
+                                                        <span class="gt-req-step-label">{step.label}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
                                 )}
-                            </div>
-                        </div>
-                    )}
 
-                    {/* Descrição da Demanda */}
-                    <div>
-                        <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-2.5">Descrição da Demanda</h2>
-                        <div class="gt-req-briefing">
-                            {structuredDesc ? (
-                                <div class="gt-req-kv-list">
-                                    {structuredDesc.map((item) => (
-                                        <div class="gt-req-kv-item">
-                                            <div class="gt-req-kv-key">{item.key}</div>
-                                            <div class="gt-req-kv-val">
-                                                {item.isUrl ? (
-                                                    <a href={item.value} target="_blank" rel="noopener noreferrer" class="text-[#16749A] hover:underline block truncate" title={item.value}>
-                                                        {item.value} ↗
-                                                    </a>
-                                                ) : (
-                                                    item.value
-                                                )}
-                                            </div>
+                                {/* Faixa de Proposta Comercial Vinculada */}
+                                {linkedQuotation && (
+                                    <div class="gtb-surface-box rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-3 flex-wrap">
+                                        <div class="flex items-center gap-2.5 flex-wrap min-w-0">
+                                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Proposta Comercial:</span>
+                                            <a href={`/portal/orcamentos/${linkedQuotation.id}`} class="font-mono text-xs font-extrabold text-[#F2C230] hover:underline no-underline">
+                                                {linkedQuotation.reference_code}
+                                            </a>
+                                            <span class={`gt-badge ${linkedQuotation.status === 'approved' ? 'gt-badge-success' : linkedQuotation.status === 'rejected' ? 'gt-badge-danger' : 'gt-badge-warning'}`}>
+                                                {linkedQuotation.status === 'approved' ? 'Aprovado' : linkedQuotation.status === 'rejected' ? 'Em Revisão' : 'Aguardando Aprovação'}
+                                            </span>
+                                            <span class="text-xs font-extrabold text-white">{formattedVal}</span>
                                         </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div class="text-[13.5px] text-white leading-relaxed whitespace-pre-wrap">
-                                    {requestDetail.description || 'Sem descrição detalhada.'}
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                                        <div class="flex items-center gap-2">
+                                            <a href={`/portal/orcamentos/${linkedQuotation.id}`} class="text-xs font-extrabold text-[#16749A] hover:underline no-underline">
+                                                Ver Orçamento →
+                                            </a>
+                                            {linkedQuotation.status === 'approved' && (
+                                                <a href="/portal/projetos" class="text-xs font-extrabold text-[#10B981] hover:underline no-underline ml-2">
+                                                    Ver Projeto →
+                                                </a>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </section>
 
-                    {/* Histórico em Feed de Atividades */}
-                    <div style="flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
-                        <div class="flex items-center justify-between gap-2 mb-2" style="flex-shrink: 0;">
-                            <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Histórico de Atividades</h2>
-                            <span class="text-[11px] font-semibold text-[#8C95AA]">{history.length} {history.length === 1 ? 'evento' : 'eventos'}</span>
-                        </div>
-                        {history.length === 0 ? (
-                            <div class="gt-empty-state" style="flex: 1 1 0%;">Aguardando primeira movimentação da equipe técnica.</div>
-                        ) : (
-                            <div class="gt-activity-feed" id="gt-portal-activity-feed" style="flex: 1 1 0%; min-height: 0; overflow-y: auto; padding-right: 4px;">
-                                {history.map((h: any, idx: number) => {
-                                    const fromSt = h.old_status || h.from_status || h.status_from || '';
-                                    const toSt = h.new_status || h.to_status || h.status_to || '';
-                                    const fromLabel = fromSt ? (reqStatusLabel[fromSt] || fromSt) : '';
-                                    const toLabel = toSt ? (reqStatusLabel[toSt] || toSt) : 'Atualização';
-                                    const hasTransition = Boolean(fromLabel && toLabel && fromSt !== toSt);
-                                    const noteText = String(h.comment || h.notes || '').trim();
-                                    const isDanger = toSt === 'cancelled';
-
-                                    return (
-                                        <div
-                                            class={`gt-activity-item ${idx === 0 ? 'is-latest' : ''}`}
-                                        >
-                                            <div class="gt-activity-rail" aria-hidden="true">
-                                                <span class={`gt-activity-node ${isDanger ? 'gt-activity-node--danger' : ''}`}>
-                                                    {isDanger ? (
-                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                                    ) : toSt === 'completed' || toSt === 'approved' ? (
-                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                                    ) : (
-                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                                                    )}
-                                                </span>
-                                            </div>
-                                            <div class="gt-activity-body">
-                                                <div class="gt-activity-head">
-                                                    <div class="gt-activity-title">
-                                                        {hasTransition ? (
-                                                            <>
-                                                                <span class="gt-activity-from">{fromLabel}</span>
-                                                                <span class="gt-activity-arrow">→</span>
-                                                                <span>{toLabel}</span>
-                                                            </>
+                            {/* Card 2: Descrição da Demanda */}
+                            <section class="gtb-card !p-3.5 sm:!px-4 min-w-0" style="flex-shrink: 0;">
+                                <div class="flex items-center justify-between gap-2 mb-2">
+                                    <h2 class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Descrição da Demanda</h2>
+                                </div>
+                                <div class="gt-req-briefing" style="padding: 9px 14px 9px 16px; max-height: 92px; overflow-y: auto;">
+                                    {structuredDesc ? (
+                                        <div class="gt-req-kv-list">
+                                            {structuredDesc.map((item) => (
+                                                <div class="gt-req-kv-item">
+                                                    <div class="gt-req-kv-key">{item.key}</div>
+                                                    <div class="gt-req-kv-val">
+                                                        {item.isUrl ? (
+                                                            <a href={item.value} target="_blank" rel="noopener noreferrer" class="text-[#16749A] hover:underline block truncate" title={item.value}>
+                                                                {item.value} ↗
+                                                            </a>
                                                         ) : (
-                                                            <span>{toLabel}</span>
+                                                            item.value
                                                         )}
                                                     </div>
-                                                    <span class="gt-activity-time">{formatPortalDateBrt(h.created_at)}</span>
                                                 </div>
-                                                {noteText && <div class="gt-activity-note">{noteText}</div>}
-                                            </div>
+                                            ))}
                                         </div>
-                                    );
-                                })}
+                                    ) : (
+                                        <div class="text-[13px] text-white leading-relaxed whitespace-pre-wrap">
+                                            {requestDetail.description || 'Sem descrição detalhada.'}
+                                        </div>
+                                    )}
+                                </div>
+                            </section>
+
+                            {/* Card 3: Histórico de Atividades (compacto com 1 item; rola internamente sem espaço vazio) */}
+                            <section class="gtb-card !p-3.5 sm:!px-4 min-w-0 gt-req-history-card" style="flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+                                <div class="flex items-center justify-between gap-2 mb-2" style="flex-shrink: 0;">
+                                    <h2 class="text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Histórico de Atividades</h2>
+                                    <span class="text-[10.5px] font-semibold text-[#8C95AA]">{history.length} {history.length === 1 ? 'evento' : 'eventos'}</span>
+                                </div>
+                                {history.length === 0 ? (
+                                    <div class="gtb-surface-box rounded-xl p-3 text-xs text-[#8C95AA]">
+                                        Aguardando primeira movimentação da equipe técnica.
+                                    </div>
+                                ) : (
+                                    <div class="gt-activity-feed" id="gt-portal-activity-feed" style="flex: 0 1 auto; min-height: 0; overflow-y: auto; padding: 4px 14px;">
+                                        {history.map((h: any, idx: number) => {
+                                            const fromSt = h.old_status || h.from_status || h.status_from || '';
+                                            const toSt = h.new_status || h.to_status || h.status_to || '';
+                                            const fromLabel = fromSt ? (reqStatusLabel[fromSt] || fromSt) : '';
+                                            const toLabel = toSt ? (reqStatusLabel[toSt] || toSt) : 'Atualização';
+                                            const hasTransition = Boolean(fromLabel && toLabel && fromSt !== toSt);
+                                            const noteText = String(h.comment || h.notes || '').trim();
+                                            const isDanger = toSt === 'cancelled';
+
+                                            return (
+                                                <div class={`gt-activity-item ${idx === 0 ? 'is-latest' : ''}`}>
+                                                    <div class="gt-activity-rail" aria-hidden="true">
+                                                        <span class={`gt-activity-node ${isDanger ? 'gt-activity-node--danger' : ''}`}>
+                                                            {isDanger ? (
+                                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                                            ) : toSt === 'completed' || toSt === 'approved' ? (
+                                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                            ) : (
+                                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                    <div class="gt-activity-body">
+                                                        <div class="gt-activity-head">
+                                                            <div class="gt-activity-title">
+                                                                {hasTransition ? (
+                                                                    <>
+                                                                        <span class="gt-activity-from">{fromLabel}</span>
+                                                                        <span class="gt-activity-arrow">→</span>
+                                                                        <span>{toLabel}</span>
+                                                                    </>
+                                                                ) : (
+                                                                    <span>{toLabel}</span>
+                                                                )}
+                                                            </div>
+                                                            <span class="gt-activity-time">{formatPortalDateBrt(h.created_at)}</span>
+                                                        </div>
+                                                        {noteText && <div class="gt-activity-note">{noteText}</div>}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </section>
+                        </div>
+
+                        {/* Coluna Lateral: Próximo Passo + Ações & Suporte GundjaTech */}
+                        <div class="min-w-0 gt-req-detail-right" style="display: flex; flex-direction: column; gap: 12px;">
+                            <aside class="gtb-card !p-4 min-w-0 space-y-3" style="flex-shrink: 0;">
+                                <div class="flex items-center justify-between gap-2 pb-2.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                                    <h2 class="gt-font-display text-sm font-extrabold text-white">Status &amp; Próximo Passo</h2>
+                                    <span class={`gt-badge ${statusBadgeCls}`}>{nextStepInfo.badge}</span>
+                                </div>
+
+                                <div class="gtb-surface-box rounded-xl p-3 space-y-1">
+                                    <div class="text-xs font-extrabold text-white">{nextStepInfo.title}</div>
+                                    <p class="text-[11.5px] text-[#8C95AA] leading-relaxed">{nextStepInfo.desc}</p>
+                                </div>
+
+                                {requestDetail.status === 'quotation_sent' && (
+                                    <div class="space-y-2 pt-1">
+                                        <form action={`/portal/solicitacoes/${requestDetail.id}/aprovar`} method="post" class="m-0">
+                                            <button type="submit" class="gt-btn-primary gt-btn-sm w-full justify-center">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+                                                <span>Aprovar Orçamento</span>
+                                            </button>
+                                        </form>
+                                        <form action={`/portal/solicitacoes/${requestDetail.id}/recusar`} method="post" class="m-0">
+                                            <button type="submit" class="gt-btn-danger-ghost gt-btn-sm w-full justify-center">
+                                                <span>Solicitar Revisão</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                )}
+
+                                {(requestDetail.status === 'approved' || requestDetail.status === 'in_progress' || requestDetail.status === 'completed') && (
+                                    <a href="/portal/projetos" class="gt-btn-primary gt-btn-sm w-full justify-center">
+                                        <span>Acompanhar Meu Projeto →</span>
+                                    </a>
+                                )}
+
+                                {requestDetail.status === 'cancelled' && (
+                                    <a href="/portal/solicitacoes/nova" class="gt-btn-primary gt-btn-sm w-full justify-center">
+                                        <span>+ Abrir Nova Solicitação</span>
+                                    </a>
+                                )}
+                            </aside>
+
+                            {/* Card de Suporte Institucional (Paleta 3: Azul Petróleo + Amarelo Ouro) */}
+                            <div class="gt-petrol-cta-card" style="flex-shrink: 0;">
+                                <div class="gt-petrol-cta-head">
+                                    <span class="gt-petrol-cta-icon" aria-hidden="true">
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.1" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+                                    </span>
+                                    <div class="gt-petrol-cta-title">Dúvidas sobre esta demanda?</div>
+                                </div>
+                                <p class="gt-petrol-cta-desc">
+                                    Fale em tempo real com nossa equipe técnica pelo chat ou acompanhe suas propostas comerciais.
+                                </p>
+                                <div class="space-y-2">
+                                    <a href="/portal/atendimento" class="gt-btn-primary gt-btn-sm w-full justify-center">
+                                        <span>Falar com a Equipe</span>
+                                        <span>&rarr;</span>
+                                    </a>
+                                    <a href="/portal/orcamentos" class="gt-btn-outline gt-btn-xs w-full justify-center" style="border-color: rgba(231, 240, 245, 0.25); color: #E7F0F5;">
+                                        <span>Ver Meus Orçamentos</span>
+                                    </a>
+                                </div>
                             </div>
-                        )}
+                        </div>
                     </div>
                 </div>
             </PortalLayout>
