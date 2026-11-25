@@ -575,7 +575,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                                 <tr class="border-b border-white/10 text-[10px] uppercase tracking-wider text-[#8C95AA]">
                                     <th class="py-3 px-4">Projeto / Escopo</th>
                                     <th class="py-3 px-4">Cliente</th>
-                                    <th class="py-3 px-4" style="min-width: 170px;">Progresso</th>
+                                    <th class="py-3 px-4" style="min-width: 110px; width: 120px;">Progresso</th>
                                     <th class="py-3 px-4">Início / Previsão</th>
                                     <th class="py-3 px-4">Status</th>
                                     <th class="py-3 px-4 text-right">Ações</th>
@@ -599,11 +599,20 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                                                         </svg>
                                                     </span>
                                                     <div class="min-w-0">
-                                                        <a href={`/admin/projetos/${p.id}`} class="font-extrabold text-white text-[13px] no-underline hover:text-[#16749A] transition block truncate max-w-[300px]">
+                                                        <a
+                                                            href={`/admin/projetos/${p.id}`}
+                                                            title={p.title}
+                                                            class="font-extrabold text-white text-[13px] no-underline hover:text-[#16749A] transition block"
+                                                            style="max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                                        >
                                                             {p.title}
                                                         </a>
                                                         {p.description && (
-                                                            <div class="text-[11px] text-[#8C95AA] truncate max-w-[320px] mt-0.5">
+                                                            <div
+                                                                title={p.description}
+                                                                class="text-[11px] text-[#8C95AA] mt-0.5"
+                                                                style="max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                                            >
                                                                 {p.description}
                                                             </div>
                                                         )}
@@ -611,8 +620,13 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                                                 </div>
                                             </td>
 
-                                            <td class="py-3.5 px-4 align-middle whitespace-nowrap font-bold text-white">
-                                                {p.company || p.client_name || 'Cliente'}
+                                            <td class="py-3.5 px-4 align-middle font-bold text-white">
+                                                <div
+                                                    title={p.company || p.client_name || 'Cliente'}
+                                                    style="max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                                >
+                                                    {p.company || p.client_name || 'Cliente'}
+                                                </div>
                                             </td>
 
                                             <td class="py-3.5 px-4 align-middle">

@@ -218,7 +218,13 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                                                         )}
                                                     </span>
                                                     <div class="min-w-0">
-                                                        <div class="font-bold text-white text-[13px] truncate max-w-[260px]">{t.description}</div>
+                                                        <div
+                                                            title={t.description}
+                                                            class="font-bold text-white text-[13px]"
+                                                            style="max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                                        >
+                                                            {t.description}
+                                                        </div>
                                                         <div class="text-[11px] text-[#8C95AA] mt-0.5">
                                                             {t.invoice_number ? `NF #${t.invoice_number} · ` : ''}
                                                             {t.payment_method || 'Boleto / PIX'} · {isIncome ? 'Receita' : 'Despesa'}
@@ -227,9 +233,21 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                                                 </div>
                                             </td>
                                             <td class="py-3.5 px-5">
-                                                <div class="font-semibold text-white">{t.company || t.client_name || '—'}</div>
+                                                <div
+                                                    title={t.company || t.client_name || '—'}
+                                                    class="font-semibold text-white"
+                                                    style="max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                                >
+                                                    {t.company || t.client_name || '—'}
+                                                </div>
                                                 {t.client_email && !String(t.client_email).endsWith('.local') && (
-                                                    <div class="text-[11px] text-[#8C95AA]">{t.client_email}</div>
+                                                    <div
+                                                        title={t.client_email}
+                                                        class="text-[11px] text-[#8C95AA]"
+                                                        style="max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                                    >
+                                                        {t.client_email}
+                                                    </div>
                                                 )}
                                             </td>
                                             <td class="py-3.5 px-5 whitespace-nowrap">

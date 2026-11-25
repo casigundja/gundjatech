@@ -301,9 +301,21 @@ export const AdminClientsView: FC<AdminClientsProps> = ({
                                                         {initials}
                                                     </div>
                                                     <div class="min-w-0">
-                                                        <div class="font-bold text-white truncate max-w-[240px] leading-tight">{displayName}</div>
+                                                        <div
+                                                            title={displayName}
+                                                            class="font-bold text-white leading-tight"
+                                                            style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                                        >
+                                                            {displayName}
+                                                        </div>
                                                         {c.company && c.name && c.company !== c.name && (
-                                                            <div class="text-[10.5px] text-[#8C95AA] truncate max-w-[240px]">Contato: {c.name}</div>
+                                                            <div
+                                                                title={`Contato: ${c.name}`}
+                                                                class="text-[10.5px] text-[#8C95AA]"
+                                                                style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                                            >
+                                                                Contato: {c.name}
+                                                            </div>
                                                         )}
                                                     </div>
                                                 </div>

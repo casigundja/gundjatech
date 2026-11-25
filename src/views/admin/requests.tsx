@@ -930,13 +930,30 @@ export const AdminRequestsView: FC<AdminRequestsProps> = ({
                                                 </a>
                                             </td>
                                             <td class="py-3.5 px-5 font-bold text-white">
-                                                <a href={`/admin/solicitacoes/${r.id}`} class="text-inherit no-underline hover:text-[#F2C230]">
+                                                <a
+                                                    href={`/admin/solicitacoes/${r.id}`}
+                                                    title={r.service_title || r.title}
+                                                    class="text-inherit no-underline hover:text-[#F2C230] block"
+                                                    style="max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                                >
                                                     {r.service_title || r.title}
                                                 </a>
                                             </td>
                                             <td class="py-3.5 px-5">
-                                                <div class="font-semibold text-white">{r.company || r.name}</div>
-                                                <div class="text-[11px] text-[#8C95AA]">{r.email}</div>
+                                                <div
+                                                    title={r.company || r.name}
+                                                    class="font-semibold text-white"
+                                                    style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                                >
+                                                    {r.company || r.name}
+                                                </div>
+                                                <div
+                                                    title={r.email}
+                                                    class="text-[11px] text-[#8C95AA]"
+                                                    style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                                >
+                                                    {r.email}
+                                                </div>
                                             </td>
                                             <td class="py-3.5 px-5 whitespace-nowrap">
                                                 <span class={`gt-badge ${meta.badgeClass}`}>{meta.label}</span>
