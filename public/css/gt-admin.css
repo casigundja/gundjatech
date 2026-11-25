@@ -5430,6 +5430,65 @@ html[data-admin-theme="light"] .gt-approved-question {
     color: #063B5C !important;
 }
 
+/* ==========================================================================
+   GLOBAL CARD TYPOGRAPHY STANDARDIZATION (ADMIN & CLIENT PORTAL)
+   Applies the crisp Plus Jakarta Sans + tabular-nums design across ALL cards
+   ========================================================================== */
+body.gt-admin-boost .gtb-card .gt-font-display,
+body.gt-admin-boost .gt-modal-card .gt-font-display {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+    font-weight: 800;
+    letter-spacing: -0.02em !important;
+    font-variant-numeric: tabular-nums;
+}
+
+body.gt-admin-boost .gtb-card :where(span, a, td, div).font-mono:not(code):not(pre),
+body.gt-admin-boost .gt-modal-card :where(span, a, td, div).font-mono:not(code):not(pre) {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+}
+
+body.gt-admin-boost .gtb-card input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]),
+body.gt-admin-boost .gtb-card select,
+body.gt-admin-boost .gtb-card textarea:not(#gt-pay-pix-code),
+body.gt-admin-boost .gt-modal-card input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]),
+body.gt-admin-boost .gt-modal-card select,
+body.gt-admin-boost .gt-modal-card textarea:not(#gt-pay-pix-code) {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 500;
+    line-height: 1.45;
+    font-variant-numeric: tabular-nums;
+}
+
+body.gt-admin-boost .gtb-card input[type="number"],
+body.gt-admin-boost .gtb-card input[type="date"],
+body.gt-admin-boost .gt-modal-card input[type="number"],
+body.gt-admin-boost .gt-modal-card input[type="date"] {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+body.gt-admin-boost .gtb-card textarea:not(#gt-pay-pix-code),
+body.gt-admin-boost .gt-modal-card textarea:not(#gt-pay-pix-code) {
+    line-height: 1.55;
+}
+
+body.gt-admin-boost .gtb-card label.uppercase,
+body.gt-admin-boost .gt-modal-card label.uppercase {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.05em !important;
+    color: #8FA3B8;
+}
+
+html[data-admin-theme="light"] body.gt-admin-boost .gtb-card label.uppercase,
+html[data-admin-theme="light"] body.gt-admin-boost .gt-modal-card label.uppercase {
+    color: #4A6479 !important;
+}
+
 .gt-chat-tab-count {
     display: inline-flex;
     align-items: center;
