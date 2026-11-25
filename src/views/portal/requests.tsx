@@ -221,32 +221,32 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
 
                         {/* Coluna Lateral: Fluxo de Atendimento + Suporte Técnico */}
                         <div class="min-w-0 gt-req-detail-right" style="display: flex; flex-direction: column; gap: 12px;">
-                            <aside class="gtb-card !p-4 sm:!p-5">
+                            <aside class="gtb-card gt-flow-card">
                                 <div class="gtb-card-accent-top gtb-card-accent-blue"></div>
-                                <div class="flex items-center justify-between mb-3.5 pb-2.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
-                                    <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#16749A]">Fluxo de Atendimento</h2>
-                                    <span class="gt-badge gt-badge-info">3 etapas</span>
+                                <div class="gt-flow-head">
+                                    <h2 class="gt-flow-heading">Fluxo de Atendimento</h2>
+                                    <span class="gt-flow-pill">3 etapas</span>
                                 </div>
                                 <div class="gt-step-list">
                                     <div class="gt-step-item">
                                         <span class="gt-step-badge">1</span>
-                                        <div class="min-w-0">
-                                            <div class="text-xs font-extrabold text-white">Protocolo &amp; Triagem</div>
-                                            <div class="text-[11px] text-[#8C95AA] mt-0.5 leading-relaxed">Seu pedido recebe um código único GNDJ e entra na fila prioritária da engenharia.</div>
+                                        <div class="gt-flow-step-body">
+                                            <div class="gt-flow-step-title">Protocolo &amp; Triagem</div>
+                                            <div class="gt-flow-step-desc">Seu pedido recebe um código único GNDJ e entra na fila prioritária da engenharia.</div>
                                         </div>
                                     </div>
                                     <div class="gt-step-item">
                                         <span class="gt-step-badge">2</span>
-                                        <div class="min-w-0">
-                                            <div class="text-xs font-extrabold text-white">Orçamento Transparente</div>
-                                            <div class="text-[11px] text-[#8C95AA] mt-0.5 leading-relaxed">Enviamos a proposta detalhada com escopo, prazo e valor para aprovação em 1 clique.</div>
+                                        <div class="gt-flow-step-body">
+                                            <div class="gt-flow-step-title">Orçamento Transparente</div>
+                                            <div class="gt-flow-step-desc">Enviamos a proposta detalhada com escopo, prazo e valor para aprovação em 1 clique.</div>
                                         </div>
                                     </div>
                                     <div class="gt-step-item">
                                         <span class="gt-step-badge">3</span>
-                                        <div class="min-w-0">
-                                            <div class="text-xs font-extrabold text-white">Execução &amp; Entregas</div>
-                                            <div class="text-[11px] text-[#8C95AA] mt-0.5 leading-relaxed">Acompanhe cada etapa, percentual concluído e arquivos direto pelo Portal.</div>
+                                        <div class="gt-flow-step-body">
+                                            <div class="gt-flow-step-title">Execução &amp; Entregas</div>
+                                            <div class="gt-flow-step-desc">Acompanhe cada etapa, percentual concluído e arquivos direto pelo Portal.</div>
                                         </div>
                                     </div>
                                 </div>

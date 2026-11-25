@@ -6076,6 +6076,109 @@ html[data-admin-theme="light"] .gt-dp-foot-btn.is-accent {
     }
 }
 
+/* ==========================================================================
+   FLUXO DE ATENDIMENTO CARD (PORTAL NOVA SOLICITAÇÃO — LIGHT & DARK)
+   ========================================================================== */
+.gt-flow-card {
+    padding: 20px !important;
+}
+
+.gt-flow-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid rgba(22, 116, 154, 0.16);
+}
+
+html[data-admin-theme="light"] .gt-flow-head {
+    border-bottom-color: #E2ECF3 !important;
+}
+
+.gt-flow-heading {
+    margin: 0;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #7DD3FC;
+}
+
+html[data-admin-theme="light"] .gt-flow-heading {
+    color: #16749A !important;
+}
+
+.gt-flow-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: rgba(22, 116, 154, 0.18);
+    border: 1px solid rgba(22, 116, 154, 0.35);
+    color: #7DD3FC;
+}
+
+html[data-admin-theme="light"] .gt-flow-pill {
+    background: #EDF5FA !important;
+    border-color: #C7DEEC !important;
+    color: #063B5C !important;
+}
+
+.gt-flow-card .gt-step-list {
+    gap: 18px;
+}
+
+.gt-flow-card .gt-step-item {
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.gt-flow-card .gt-step-item:not(:last-child)::after {
+    left: 15px;
+    top: 34px;
+    bottom: -16px;
+    width: 2px;
+    background: linear-gradient(180deg, rgba(22, 116, 154, 0.45) 0%, rgba(22, 116, 154, 0.14) 100%);
+}
+
+.gt-flow-step-body {
+    min-width: 0;
+    padding-top: 1px;
+}
+
+.gt-flow-step-title {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 13.5px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    color: #FFFFFF;
+}
+
+html[data-admin-theme="light"] .gt-flow-step-title {
+    color: #063B5C !important;
+}
+
+.gt-flow-step-desc {
+    margin-top: 4px;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: #9FB1C4;
+}
+
+html[data-admin-theme="light"] .gt-flow-step-desc {
+    color: #4A6479 !important;
+}
+
 .gt-chat-tab-count {
     display: inline-flex;
     align-items: center;
