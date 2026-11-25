@@ -307,19 +307,27 @@ body.is-light-mode .gtb-sidebar-footer-collapse {
 }
 
 html[data-admin-theme="light"] .gtb-sidebar-footer-toggle,
-body.is-light-mode .gtb-sidebar-footer-toggle {
-    background: #F4F8FB;
+html[data-admin-theme="light"] .gtb-sidebar-collapse-btn,
+body.is-light-mode .gtb-sidebar-footer-toggle,
+body.is-light-mode .gtb-sidebar-collapse-btn {
+    background: #F8FAFC;
     color: #063B5C;
-    border-color: #D4E3ED;
+    border-color: #DCE7EE;
+    font-size: 13px;
+    font-weight: 700;
 }
 
 html[data-admin-theme="light"] .gtb-sidebar-footer-toggle svg,
-body.is-light-mode .gtb-sidebar-footer-toggle svg {
+html[data-admin-theme="light"] .gtb-sidebar-collapse-btn svg,
+body.is-light-mode .gtb-sidebar-footer-toggle svg,
+body.is-light-mode .gtb-sidebar-collapse-btn svg {
     color: #16749A;
 }
 
 html[data-admin-theme="light"] .gtb-sidebar-footer-toggle:hover,
-body.is-light-mode .gtb-sidebar-footer-toggle:hover {
+html[data-admin-theme="light"] .gtb-sidebar-collapse-btn:hover,
+body.is-light-mode .gtb-sidebar-footer-toggle:hover,
+body.is-light-mode .gtb-sidebar-collapse-btn:hover {
     background: #FEF9E7;
     color: #063B5C;
     border-color: #F2C230;
@@ -327,7 +335,9 @@ body.is-light-mode .gtb-sidebar-footer-toggle:hover {
 }
 
 html[data-admin-theme="light"] .gtb-sidebar-footer-toggle:hover svg,
-body.is-light-mode .gtb-sidebar-footer-toggle:hover svg {
+html[data-admin-theme="light"] .gtb-sidebar-collapse-btn:hover svg,
+body.is-light-mode .gtb-sidebar-footer-toggle:hover svg,
+body.is-light-mode .gtb-sidebar-collapse-btn:hover svg {
     color: #063B5C;
 }
 
@@ -377,12 +387,16 @@ html[data-sidebar-collapsed="1"] .gtb-sidebar-collapse-btn svg {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 9px 14px 4px;
-    font-size: 9.5px;
+    padding: 10px 12px 5px;
+    font-size: 10.5px;
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--gtb-subtle);
+    letter-spacing: 0.06em;
+    color: #7E96AA;
+}
+
+html[data-admin-theme="light"] .gtb-section-head {
+    color: #708797 !important;
 }
 
 .gtb-section-head.gtb-section-head-divided {
@@ -392,9 +406,13 @@ html[data-sidebar-collapsed="1"] .gtb-sidebar-collapse-btn svg {
 }
 
 .gtb-sidebar-nav-divider {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid var(--gtb-border);
+    height: 1px;
+    background: rgba(231, 240, 245, 0.08);
+    margin: 8px 6px;
+}
+
+html[data-admin-theme="light"] .gtb-sidebar-nav-divider {
+    background: #E2ECF3 !important;
 }
 
 /* Barra de rolagem invisível / minimalista na sidebar e listas internas */
@@ -432,15 +450,15 @@ body.gt-admin-boost *::-webkit-scrollbar-thumb:hover {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    padding: 6.5px 12px;
+    gap: 12px;
+    padding: 7px 12px;
     border-radius: 10px;
-    font-size: 13px;
+    font-size: 13.5px;
     font-weight: 600;
     line-height: 1.35;
-    color: var(--gtb-muted);
+    color: #A6B8C7;
     text-decoration: none;
-    border: 1px solid transparent;
+    border: 1.5px solid transparent;
     transition: all 0.18s ease;
     white-space: nowrap;
 }
@@ -451,11 +469,11 @@ body.gt-admin-boost *::-webkit-scrollbar-thumb:hover {
 }
 
 .gtb-nav-item.is-active {
-    background: linear-gradient(90deg, rgba(242, 194, 48, 0.18) 0%, rgba(22, 116, 154, 0.24) 100%) !important;
-    border-color: rgba(242, 194, 48, 0.45) !important;
+    background: linear-gradient(90deg, rgba(242, 194, 48, 0.16) 0%, rgba(22, 116, 154, 0.22) 100%) !important;
+    border: 1.5px solid #F2C230 !important;
     color: #FFFFFF !important;
     font-weight: 700;
-    box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 16px rgba(242, 194, 48, 0.2) !important;
 }
 
 .gtb-nav-item.is-active svg {
@@ -1269,7 +1287,7 @@ html[data-admin-theme="light"] .gtb-brand-word .gtb-brand-tech {
 }
 
 html[data-admin-theme="light"] .gtb-nav-item {
-    color: #36566C;
+    color: #334D61;
 }
 
 html[data-admin-theme="light"] .gtb-nav-item:hover {
@@ -1277,15 +1295,20 @@ html[data-admin-theme="light"] .gtb-nav-item:hover {
     color: #063B5C;
 }
 
+html[data-admin-theme="light"] .gtb-nav-item:hover svg {
+    color: #063B5C;
+}
+
 html[data-admin-theme="light"] .gtb-nav-item.is-active {
-    background: linear-gradient(90deg, rgba(242, 194, 48, 0.24) 0%, rgba(22, 116, 154, 0.10) 100%) !important;
-    border-color: rgba(217, 155, 0, 0.55) !important;
+    background: linear-gradient(180deg, #FDF9EC 0%, #F1F6F9 100%) !important;
+    border: 1.5px solid #F2C230 !important;
     color: #063B5C !important;
-    box-shadow: 0 6px 16px -8px rgba(6, 59, 92, 0.18) !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 8px rgba(242, 194, 48, 0.18) !important;
 }
 
 html[data-admin-theme="light"] .gtb-nav-item.is-active svg {
-    color: #B57F00 !important;
+    color: #C99000 !important;
 }
 
 html[data-admin-theme="light"] .gtb-badge-pill {
