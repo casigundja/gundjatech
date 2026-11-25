@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { Env, AppVariables } from '../../types/env';
 import { getRequestBody } from '../../lib/request';
-import { sendInvoiceNoticeEmail, sendEmail } from '../../lib/email';
+import { sendInvoiceNoticeEmail, sendEmail, renderEmailTemplate, escapeEmailHtml } from '../../lib/email';
 import { loadBankPaymentSettings, renderOfficialPaymentReceiptHtml } from '../../lib/pix';
 import { AdminFinanceView } from '../../views/admin/finance';
 
@@ -97,15 +97,14 @@ export function createAdminFinanceRoutes(deps: {
         const paymentMethod = String(body.payment_method || 'PIX').trim();
         const invoiceNumber = String(body.invoice_number || '').trim() || null;
 
-        if (!clientId || !description || !amount || !dueDate) {
-            return c.redirect('/admin/financeiro?error=Preencha todos os campos obrigatórios');
+        if (!Number.isInteger(clientId) || clientId <= 0 || !description || !Number.isFinite(amount) || amount <= 0 || !dueDate) {
+            return c.redirect('/admin/financeiro?error=' + encodeURIComponent('Preencha todos os campos obrigatórios com um valor positivo válido.'));
         }
 
-        const txTypeSql = txType === 'expense' ? "'expense'" : "'income'";
         await db.prepare(
             `INSERT INTO financial_transactions (client_id, type, category, description, amount, status, due_date, payment_method, invoice_number, created_at, updated_at)
-             VALUES (?, ${txTypeSql}, 'contract', ?, ?, 'pending', ?, ?, ?, datetime('now'), datetime('now'))`
-        ).bind(clientId, description, amount, dueDate, paymentMethod, invoiceNumber).run();
+             VALUES (?, ?, 'contract', ?, ?, 'pending', ?, ?, ?, datetime('now'), datetime('now'))`
+        ).bind(clientId, txType, description, amount, dueDate, paymentMethod, invoiceNumber).run();
 
         try {
             const client = await db.prepare(`SELECT name, email FROM clients WHERE id = ?`).bind(clientId).first<{ name: string; email: string }>();
@@ -195,21 +194,29 @@ export function createAdminFinanceRoutes(deps: {
         const db = c.env.DB;
         const id = c.req.param('id');
 
-        let txType = 'income';
-        let txClientId: number | null = null;
-        let txDesc = '';
-        let txAmount = 0;
-        try {
-            const row = await db.prepare(`SELECT type, client_id, description, amount FROM financial_transactions WHERE id = ?`).bind(id).first<any>();
-            if (row?.type) txType = row.type;
-            if (row?.client_id) txClientId = Number(row.client_id);
-            if (row?.description) txDesc = String(row.description);
-            if (row?.amount) txAmount = Number(row.amount);
-        } catch { }
+        const row = await db.prepare(`SELECT status, type, client_id, description, amount FROM financial_transactions WHERE id = ?`).bind(id).first<any>();
+        if (!row) {
+            return c.redirect('/admin/financeiro?error=' + encodeURIComponent('Lançamento financeiro não encontrado.'));
+        }
+        if (row.status === 'paid') {
+            return c.redirect('/admin/financeiro?error=' + encodeURIComponent('Esta fatura já foi liquidada anteriormente.'));
+        }
+        if (row.status === 'canceled') {
+            return c.redirect('/admin/financeiro?error=' + encodeURIComponent('Não é possível liquidar uma fatura cancelada.'));
+        }
 
-        await db.prepare(
-            `UPDATE financial_transactions SET status = 'paid', paid_at = datetime('now'), notes = NULL, updated_at = datetime('now') WHERE id = ?`
+        const txType = row.type || 'income';
+        const txClientId = row.client_id ? Number(row.client_id) : null;
+        const txDesc = String(row.description || '');
+        const txAmount = Number(row.amount || 0);
+
+        const updRes = await db.prepare(
+            `UPDATE financial_transactions SET status = 'paid', paid_at = datetime('now'), notes = NULL, updated_at = datetime('now') WHERE id = ? AND status NOT IN ('paid', 'canceled')`
         ).bind(id).run();
+
+        if (!updRes.meta?.changes) {
+            return c.redirect('/admin/financeiro?error=' + encodeURIComponent('Esta fatura já foi processada.'));
+        }
 
         try {
             await db.prepare(
@@ -224,16 +231,22 @@ export function createAdminFinanceRoutes(deps: {
                 if (client?.email && !String(client.email).endsWith('.local')) {
                     const appUrl = (c.env.APP_URL || 'https://gundjatech.casimirogundja.workers.dev').replace(/\/$/, '');
                     const valFmt = txAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                    const receiptUrl = `${appUrl}/portal/financeiro/${id}/recibo`;
                     await sendEmail(c.env, {
                         to: client.email,
                         subject: `Pagamento Confirmado • Recibo Oficial GundjaTech #${id}`,
-                        html: `<p>Olá, <strong>${client.company || client.name}</strong>!</p>
-                               <p>Confirmamos o recebimento de <strong>R$ ${valFmt}</strong> referente a <strong>${txDesc}</strong>.</p>
-                               <p>Seu <strong>Recibo Oficial de Quitação</strong> já está disponível no Portal do Cliente:<br/>
-                               <a href="${appUrl}/portal/financeiro/${id}/recibo">Acessar Recibo de Quitação (PDF)</a></p>`
+                        html: renderEmailTemplate(
+                            'Pagamento Confirmado',
+                            `<p>Olá, <strong>${escapeEmailHtml(client.company || client.name)}</strong>!</p>
+                             <p>Confirmamos o recebimento de <strong>R$ ${valFmt}</strong> referente a <strong>${escapeEmailHtml(txDesc)}</strong>.</p>
+                             <p>Seu <strong>Recibo Oficial de Quitação</strong> já está disponível no Portal do Cliente.</p>`,
+                            { text: 'Acessar Recibo de Quitação (PDF)', url: receiptUrl }
+                        )
                     });
                 }
-            } catch { }
+            } catch (mailErr) {
+                console.error('Erro ao enviar recibo por e-mail:', mailErr);
+            }
         }
 
         if (txClientId) {
@@ -250,14 +263,20 @@ export function createAdminFinanceRoutes(deps: {
         const db = c.env.DB;
         const id = c.req.param('id');
 
-        let txClientId: number | null = null;
-        try {
-            const row = await db.prepare(`SELECT client_id FROM financial_transactions WHERE id = ?`).bind(id).first<{ client_id?: number }>();
-            if (row?.client_id) txClientId = Number(row.client_id);
-        } catch { }
+        const row = await db.prepare(`SELECT status, client_id FROM financial_transactions WHERE id = ?`).bind(id).first<{ status?: string; client_id?: number }>();
+        if (!row) {
+            return c.redirect('/admin/financeiro?error=' + encodeURIComponent('Lançamento financeiro não encontrado.'));
+        }
+        if (row.status === 'paid') {
+            return c.redirect(
+                `/admin/financeiro?error=${encodeURIComponent('Trava Contábil: Faturas já pagas não podem ser canceladas para preservar o Recibo Oficial de Quitação e a auditoria financeira.')}`
+            );
+        }
+
+        const txClientId = row.client_id ? Number(row.client_id) : null;
 
         await db.prepare(
-            `UPDATE financial_transactions SET status = 'canceled', updated_at = datetime('now') WHERE id = ?`
+            `UPDATE financial_transactions SET status = 'canceled', updated_at = datetime('now') WHERE id = ? AND status != 'paid'`
         ).bind(id).run();
 
         if (txClientId) {

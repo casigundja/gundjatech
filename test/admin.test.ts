@@ -255,6 +255,10 @@ function createAdminMockEnv() {
                                 const st = data.project_stages.find(x => x.id === Number(params[0]));
                                 return (st || null) as unknown as T;
                             }
+                            if (q.includes('from financial_transactions where id =')) {
+                                const tx = data.financial_transactions.find(x => Number(x.id) === Number(params[0]));
+                                return (tx || null) as unknown as T;
+                            }
                             if (q.includes('from financial_transactions') && q.includes('where client_id =')) {
                                 const tx = data.financial_transactions.find(
                                     x => Number(x.client_id) === Number(params[0]) &&
@@ -465,17 +469,18 @@ function createAdminMockEnv() {
                             }
                             if (q.includes('insert into financial_transactions')) {
                                 const tId = data.financial_transactions.length + 1;
+                                const hasTypeParam = params[1] === 'income' || params[1] === 'expense';
                                 data.financial_transactions.push({
                                     id: tId,
                                     client_id: Number(params[0]),
-                                    type: 'income',
+                                    type: hasTypeParam ? params[1] : 'income',
                                     category: 'contract',
-                                    description: params[1],
-                                    amount: Number(params[2]),
+                                    description: hasTypeParam ? params[2] : params[1],
+                                    amount: Number(hasTypeParam ? params[3] : params[2]),
                                     status: q.includes("'paid'") ? 'paid' : 'pending',
-                                    due_date: params[3],
-                                    payment_method: params[4],
-                                    invoice_number: params[5],
+                                    due_date: hasTypeParam ? params[4] : params[3],
+                                    payment_method: hasTypeParam ? params[5] : params[4],
+                                    invoice_number: hasTypeParam ? params[6] : params[5],
                                     created_at: new Date().toISOString()
                                 });
                                 return { success: true, meta: { last_row_id: tId } };
@@ -484,7 +489,7 @@ function createAdminMockEnv() {
                                 const targetId = Number(params[params.length - 1]);
                                 const t = data.financial_transactions.find(x => x.id === targetId);
                                 if (t) t.status = 'paid';
-                                return { success: true };
+                                return { success: true, meta: { changes: t ? 1 : 0 } };
                             }
                             if (q.includes("update financial_transactions set status = 'canceled'")) {
                                 const t = data.financial_transactions.find(x => x.id === Number(params[0]));

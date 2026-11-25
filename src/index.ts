@@ -54,23 +54,27 @@ app.notFound((c) => {
     `, 404);
 });
 
-// Error Handler
+// Error Handler (fail-closed: apenas development/local/test expõem detalhes internos)
 app.onError((err, c) => {
     console.error('Unhandled Worker Error:', err);
     const envName = String(c.env?.ENVIRONMENT || (c.env as any)?.APP_ENV || '').toLowerCase();
-    const isProd = envName === 'production';
+    const isDev = envName === 'development' || envName === 'local' || envName === 'test';
     return c.json({
         error: 'Internal Server Error',
-        message: isProd
-            ? 'Erro interno do servidor. Tente novamente em instantes.'
-            : (err instanceof Error ? err.message : 'Erro interno do servidor')
+        message: isDev
+            ? (err instanceof Error ? err.message : 'Erro interno do servidor')
+            : 'Erro interno do servidor. Tente novamente em instantes.'
     }, 500);
 });
 
 // Cron Trigger para limpeza automática de sessões expiradas no D1
 (app as unknown as { scheduled: (event: unknown, env: Env, ctx: unknown) => Promise<void> }).scheduled = async (_event, env) => {
-    if (env?.DB) {
-        await pruneExpiredSessions(env.DB);
+    try {
+        if (env?.DB) {
+            await pruneExpiredSessions(env.DB);
+        }
+    } catch (cronErr) {
+        console.error('[Cron scheduled] Erro ao limpar sessões expiradas:', cronErr);
     }
 };
 

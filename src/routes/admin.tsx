@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Env, AppVariables, UserRole } from '../types/env';
 import { requireAuth, requirePermission, requireStaff } from '../middleware/auth';
 import { hasPermission } from '../lib/rbac';
+import { sha256Hex } from '../lib/crypto';
 import { destroyAllUserSessions } from '../lib/session';
 import { getRequestBody } from '../lib/request';
 import { hashPassword } from '../lib/password';
@@ -56,6 +57,8 @@ adminRoutes.use('/campanhas*', requireModulePermission('campaigns.view', 'campai
 adminRoutes.use('/orcamentos*', requireModulePermission('quotations.view', 'quotations.manage'));
 adminRoutes.use('/atendimento*', requireModulePermission('chat.view', 'chat.manage'));
 adminRoutes.use('/crm-autonomo*', requirePermission('chat.manage'));
+adminRoutes.use('/canais*', requirePermission('settings.manage'));
+adminRoutes.use('/relatorio*', requirePermission('finance.view'));
 
 // Helper para obter mensagens de feedback
 function getFlashMessages(c: any) {
@@ -530,9 +533,12 @@ adminRoutes.post('/clientes/:id/ativar-portal', async (c) => {
 
     let userId: number;
     if (existingUser) {
+        if (existingUser.role && existingUser.role !== 'client') {
+            return c.json({ ok: false, error: 'Este e-mail pertence a um membro da equipe administrativa e não pode ser vinculado como cliente do Portal.' }, 409);
+        }
         userId = existingUser.id;
         await db.prepare(
-            `UPDATE users SET is_active = 1, updated_at = datetime('now') WHERE id = ?`
+            `UPDATE users SET is_active = 1, updated_at = datetime('now') WHERE id = ? AND role = 'client'`
         ).bind(userId).run();
     } else {
         const randomSecret = `${crypto.randomUUID()}-${crypto.randomUUID()}`;
@@ -550,15 +556,16 @@ adminRoutes.post('/clientes/:id/ativar-portal', async (c) => {
         ).bind(userId, id).run();
     }
 
-    // Gera token único seguro para definição da senha pessoal (/redefinir-senha/:token)
+    // Gera token único seguro para definição da senha pessoal (/redefinir-senha/:token) — armazena hash SHA-256 no banco
     const tokenBytes = new Uint8Array(24);
     crypto.getRandomValues(tokenBytes);
     const token = Array.from(tokenBytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+    const tokenHash = await sha256Hex(token);
 
-    await db.prepare(`DELETE FROM password_reset_tokens WHERE email = ?`).bind(targetEmail).run();
-    await db.prepare(
-        `INSERT INTO password_reset_tokens (email, token, created_at) VALUES (?, ?, datetime('now'))`
-    ).bind(targetEmail, token).run();
+    await db.batch([
+        db.prepare(`DELETE FROM password_reset_tokens WHERE email = ?`).bind(targetEmail),
+        db.prepare(`INSERT INTO password_reset_tokens (email, token, created_at) VALUES (?, ?, datetime('now'))`).bind(targetEmail, tokenHash)
+    ]);
 
     const baseUrl = (c.env.APP_URL || new URL(c.req.url).origin).replace(/\/+$/, '');
     const activateUrl = `${baseUrl}/redefinir-senha/${token}?email=${encodeURIComponent(targetEmail)}`;
@@ -610,7 +617,7 @@ adminRoutes.post('/clientes/:id/excluir', async (c) => {
     const db = c.env.DB;
     const id = c.req.param('id');
 
-    // Trava Contábil: impede excluir cliente com faturas já pagas (preserva Recibos Oficiais e auditoria)
+    // Trava Contábil e de Fase (fail-closed: se a validação falhar no D1, aborta a exclusão)
     try {
         const paidTx = await db.prepare(
             `SELECT id FROM financial_transactions WHERE client_id = ? AND status = 'paid' LIMIT 1`
@@ -630,26 +637,37 @@ adminRoutes.post('/clientes/:id/excluir', async (c) => {
                 `/admin/clientes?error=${encodeURIComponent('Trava de Fase: Este cliente possui projeto ativo em andamento. Conclua ou cancele os projetos antes de remover o cliente.')}`
             );
         }
-    } catch { }
+    } catch (lockErr) {
+        console.error('[Excluir Cliente] Falha fail-closed ao verificar travas:', lockErr);
+        return c.redirect(
+            `/admin/clientes?error=${encodeURIComponent('Não foi possível validar as travas contábeis/operacionais no momento. Exclusão abortada por segurança.')}`
+        );
+    }
 
     let linkedUserId: number | null = null;
     try {
         const clientRow = await db.prepare(`SELECT user_id FROM clients WHERE id = ?`).bind(id).first<{ user_id: number | null }>();
         linkedUserId = clientRow?.user_id ? Number(clientRow.user_id) : null;
 
-        await db.prepare(`UPDATE conversations SET client_id = NULL WHERE client_id = ?`).bind(id).run();
-        await db.prepare(`UPDATE service_requests SET client_id = NULL WHERE client_id = ?`).bind(id).run();
-        await db.prepare(`DELETE FROM quotations WHERE client_id = ?`).bind(id).run();
-        await db.prepare(`DELETE FROM advertising_campaigns WHERE client_id = ?`).bind(id).run();
-        await db.prepare(`DELETE FROM financial_transactions WHERE client_id = ? AND status != 'paid'`).bind(id).run();
-        await db.prepare(`DELETE FROM domains WHERE client_id = ?`).bind(id).run();
-        await db.prepare(`DELETE FROM projects WHERE client_id = ?`).bind(id).run();
-    } catch { }
-
-    await db.prepare(`DELETE FROM clients WHERE id = ?`).bind(id).run();
+        await db.batch([
+            db.prepare(`UPDATE conversations SET client_id = NULL WHERE client_id = ?`).bind(id),
+            db.prepare(`UPDATE service_requests SET client_id = NULL WHERE client_id = ?`).bind(id),
+            db.prepare(`DELETE FROM quotations WHERE client_id = ?`).bind(id),
+            db.prepare(`DELETE FROM advertising_campaigns WHERE client_id = ?`).bind(id),
+            db.prepare(`DELETE FROM payments WHERE financial_transaction_id IN (SELECT id FROM financial_transactions WHERE client_id = ? AND status != 'paid')`).bind(id),
+            db.prepare(`DELETE FROM financial_transactions WHERE client_id = ? AND status != 'paid'`).bind(id),
+            db.prepare(`DELETE FROM domains WHERE client_id = ?`).bind(id),
+            db.prepare(`DELETE FROM projects WHERE client_id = ?`).bind(id),
+            db.prepare(`DELETE FROM clients WHERE id = ?`).bind(id)
+        ]);
+    } catch (delErr) {
+        console.error('[Excluir Cliente] Erro ao excluir registros vinculados:', delErr);
+        return c.redirect(`/admin/clientes?error=${encodeURIComponent('Erro ao remover os dados do cliente. Tente novamente.')}`);
+    }
 
     if (linkedUserId) {
         try {
+            await db.prepare(`UPDATE users SET is_active = 0, updated_at = datetime('now') WHERE id = ? AND role = 'client'`).bind(linkedUserId).run();
             await destroyAllUserSessions(c.env, linkedUserId);
         } catch { }
     }
@@ -881,13 +899,16 @@ async function autoProvisionPortalUserForClient(
     let userId = 0;
     let isNewOrReactivated = false;
     if (existingUser && existingUser.id) {
+        if (existingUser.role && existingUser.role !== 'client') {
+            return { provisioned: false };
+        }
         userId = Number(existingUser.id);
         if (!existingUser.is_active || Number(existingUser.is_active) === 0) {
             isNewOrReactivated = true;
         }
         try {
             await db.prepare(
-                `UPDATE users SET is_active = 1, updated_at = datetime('now') WHERE id = ?`
+                `UPDATE users SET is_active = 1, updated_at = datetime('now') WHERE id = ? AND role = 'client'`
             ).bind(userId).run();
         } catch { }
     } else {
@@ -914,12 +935,13 @@ async function autoProvisionPortalUserForClient(
     const tokenBytes = new Uint8Array(24);
     crypto.getRandomValues(tokenBytes);
     const token = Array.from(tokenBytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+    const tokenHash = await sha256Hex(token);
 
     try {
-        await db.prepare(`DELETE FROM password_reset_tokens WHERE email = ?`).bind(rawEmail).run();
-        await db.prepare(
-            `INSERT INTO password_reset_tokens (email, token, created_at) VALUES (?, ?, datetime('now'))`
-        ).bind(rawEmail, token).run();
+        await db.batch([
+            db.prepare(`DELETE FROM password_reset_tokens WHERE email = ?`).bind(rawEmail),
+            db.prepare(`INSERT INTO password_reset_tokens (email, token, created_at) VALUES (?, ?, datetime('now'))`).bind(rawEmail, tokenHash)
+        ]);
     } catch { }
 
     const baseUrl = String(options.baseUrl || env?.APP_URL || 'https://gundjatech.casimirogundja.workers.dev').replace(/\/+$/, '');
@@ -1521,15 +1543,42 @@ async function deleteLinkedCommercialFlow(
         }
     } catch { }
 
-    // Trava de Fase 1: Orçamento que já gerou Projeto vinculado não pode ser excluído diretamente
-    if (anchor.quotationId && projectIds.size > 0) {
+    // Trava de Fase 1: Orçamento ou Solicitação que já gerou Projeto vinculado não pode ser excluído diretamente
+    if ((anchor.quotationId || anchor.requestId) && projectIds.size > 0) {
         return {
-            blockedReason: 'Trava de Fase: Este orçamento já possui projeto vinculado. Exclua ou cancele o projeto primeiro em Projetos antes de remover o orçamento.',
+            blockedReason: 'Trava de Fase: Este registro já possui projeto vinculado. Exclua ou cancele o projeto primeiro em Projetos antes de remover o orçamento ou solicitação.',
             deletedRequests: 0,
             deletedQuotations: 0,
             deletedProjects: 0,
             deletedInvoices: 0
         };
+    }
+
+    // Trava de Fase 1B: Projetos já concluídos não podem ser excluídos diretamente
+    if (projectIds.size > 0) {
+        try {
+            for (const pid of projectIds) {
+                const pSt = (await db.prepare(`SELECT status FROM projects WHERE id = ?`).bind(pid).first()) as { status?: string } | null;
+                if (pSt?.status === 'completed') {
+                    return {
+                        blockedReason: 'Trava de Fase: Projetos já concluídos não podem ser excluídos para preservar o histórico de entregas e auditoria.',
+                        deletedRequests: 0,
+                        deletedQuotations: 0,
+                        deletedProjects: 0,
+                        deletedInvoices: 0
+                    };
+                }
+            }
+        } catch (phaseErr) {
+            console.error('[deleteLinkedCommercialFlow] Falha fail-closed na Trava de Fase:', phaseErr);
+            return {
+                blockedReason: 'Não foi possível validar a Trava de Fase no momento. Exclusão abortada por segurança.',
+                deletedRequests: 0,
+                deletedQuotations: 0,
+                deletedProjects: 0,
+                deletedInvoices: 0
+            };
+        }
     }
 
     const matchesTransactionToFlow = (tx: any): boolean => {
@@ -1545,7 +1594,7 @@ async function deleteLinkedCommercialFlow(
         return matchesRef || matchesRefInDesc || matchesTitle;
     };
 
-    // Trava Contábil 2: Bloqueia exclusão se houver fatura já paga vinculada a este fluxo
+    // Trava Contábil 2 (fail-closed): Bloqueia exclusão se houver fatura já paga vinculada a este fluxo
     try {
         if (clientId && (projectIds.size > 0 || quotationIds.size > 0 || invoiceRefs.size > 0 || titles.size > 0)) {
             const paidRes = await db.prepare(
@@ -1563,7 +1612,16 @@ async function deleteLinkedCommercialFlow(
                 }
             }
         }
-    } catch { }
+    } catch (acctErr) {
+        console.error('[deleteLinkedCommercialFlow] Falha fail-closed na Trava Contábil:', acctErr);
+        return {
+            blockedReason: 'Não foi possível validar a Trava Contábil no momento. Exclusão abortada por segurança.',
+            deletedRequests: 0,
+            deletedQuotations: 0,
+            deletedProjects: 0,
+            deletedInvoices: 0
+        };
+    }
 
     let deletedInvoices = 0;
     try {
@@ -2283,9 +2341,22 @@ adminRoutes.post('/solicitacoes/:id/cancelar', async (c) => {
     const db = c.env.DB;
     const id = c.req.param('id');
 
-    const current = await db.prepare(`SELECT status, client_id FROM service_requests WHERE id = ?`).bind(id).first<{ status: string; client_id?: number }>();
+    const current = await db.prepare(`SELECT status, client_id, protocol, title, service_title FROM service_requests WHERE id = ?`).bind(id).first<any>();
     if (!current) {
         return c.redirect('/admin/solicitacoes?error=Solicitação não encontrada');
+    }
+
+    // Valida Trava Contábil / Fase e executa rollback do fluxo não finalizado antes de cancelar
+    const linkedQuote = await db.prepare(`SELECT id, reference_code FROM quotations WHERE service_request_id = ? ORDER BY id DESC LIMIT 1`).bind(id).first<any>();
+    const rb = await rollbackUnfinishedFlow(db, {
+        clientId: current.client_id ? Number(current.client_id) : null,
+        requestId: Number(id),
+        quotationId: linkedQuote?.id || null,
+        title: current.service_title || current.title || null,
+        refs: [current.protocol, linkedQuote?.reference_code]
+    });
+    if (rb.blockedReason) {
+        return c.redirect(`/admin/solicitacoes/${id}?error=${encodeURIComponent(rb.blockedReason)}`);
     }
 
     await db.prepare(
@@ -2415,6 +2486,7 @@ adminRoutes.get('/usuarios', async (c) => {
 });
 
 adminRoutes.post('/usuarios', async (c) => {
+    const currentUser = c.get('user')!;
     const db = c.env.DB;
     const body = await getRequestBody(c);
 
@@ -2424,6 +2496,14 @@ adminRoutes.post('/usuarios', async (c) => {
     const role = String(body.role || 'client').trim();
     const company = String(body.company || '').trim() || null;
     const password = String(body.password || '');
+
+    const allowedRoles = new Set(['superadmin', 'admin', 'manager', 'developer', 'financial', 'attendant', 'client']);
+    if (!allowedRoles.has(role)) {
+        return c.redirect('/admin/usuarios?error=Cargo informado é inválido.');
+    }
+    if (role === 'superadmin' && currentUser.role !== 'superadmin') {
+        return c.redirect('/admin/usuarios?error=Apenas um Super Admin pode cadastrar outro Super Admin.');
+    }
 
     if (!name || !email || !password) {
         return c.redirect('/admin/usuarios?error=Nome, E-mail e Senha são obrigatórios');
@@ -2449,18 +2529,35 @@ adminRoutes.post('/usuarios', async (c) => {
 });
 
 adminRoutes.post('/usuarios/:id/status', async (c) => {
+    const currentUser = c.get('user')!;
     const db = c.env.DB;
-    const id = c.req.param('id');
+    const id = Number(c.req.param('id'));
     const body = await getRequestBody(c);
 
     const isActive = body.is_active === '1' || body.is_active === 1 ? 1 : 0;
+    const target = await db.prepare(`SELECT id, role, is_active FROM users WHERE id = ?`).bind(id).first<{ id: number; role: string; is_active: number }>();
+    if (!target) {
+        return c.redirect('/admin/usuarios?error=Usuário não encontrado.');
+    }
+    if (isActive === 0 && id === Number(currentUser.id)) {
+        return c.redirect('/admin/usuarios?error=Não é possível desativar a própria conta.');
+    }
+    if (target.role === 'superadmin' && currentUser.role !== 'superadmin') {
+        return c.redirect('/admin/usuarios?error=Apenas um Super Admin pode alterar o status de outro Super Admin.');
+    }
+    if (target.role === 'superadmin' && isActive === 0) {
+        const activeSupers = await db.prepare(`SELECT COUNT(*) as total FROM users WHERE role = 'superadmin' AND is_active = 1`).first<{ total: number }>();
+        if ((activeSupers?.total || 0) <= 1) {
+            return c.redirect('/admin/usuarios?error=Não é possível desativar o último Super Admin ativo do sistema.');
+        }
+    }
 
     await db.prepare(
         `UPDATE users SET is_active = ?, updated_at = datetime('now') WHERE id = ?`
     ).bind(isActive, id).run();
 
     if (isActive === 0) {
-        await destroyAllUserSessions(c.env, Number(id));
+        await destroyAllUserSessions(c.env, id);
     }
 
     return c.redirect('/admin/usuarios?success=Status do usuário atualizado com sucesso');
@@ -2559,6 +2656,7 @@ adminRoutes.post('/usuarios/:id/revogar-sessoes', async (c) => {
 });
 
 adminRoutes.post('/usuarios/:id/reset-link', async (c) => {
+    const currentUser = c.get('user')!;
     const db = c.env.DB;
     const id = Number(c.req.param('id'));
     const body = await getRequestBody(c);
@@ -2568,17 +2666,21 @@ adminRoutes.post('/usuarios/:id/reset-link', async (c) => {
     if (!target || !target.email) {
         return c.json({ ok: false, error: 'Usuário não encontrado.' }, 404);
     }
+    if (target.role === 'superadmin' && currentUser.role !== 'superadmin') {
+        return c.json({ ok: false, error: 'Apenas um Super Admin pode gerar link de redefinição para outro Super Admin.' }, 403);
+    }
 
     const targetEmail = String(target.email).trim().toLowerCase();
     const displayName = String(target.name || 'Usuário').trim();
     const tokenBytes = new Uint8Array(24);
     crypto.getRandomValues(tokenBytes);
     const token = Array.from(tokenBytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+    const tokenHash = await sha256Hex(token);
 
-    await db.prepare(`DELETE FROM password_reset_tokens WHERE email = ?`).bind(targetEmail).run();
-    await db.prepare(
-        `INSERT INTO password_reset_tokens (email, token, created_at) VALUES (?, ?, datetime('now'))`
-    ).bind(targetEmail, token).run();
+    await db.batch([
+        db.prepare(`DELETE FROM password_reset_tokens WHERE email = ?`).bind(targetEmail),
+        db.prepare(`INSERT INTO password_reset_tokens (email, token, created_at) VALUES (?, ?, datetime('now'))`).bind(targetEmail, tokenHash)
+    ]);
 
     const baseUrl = (c.env.APP_URL || new URL(c.req.url).origin).replace(/\/+$/, '');
     const resetUrl = `${baseUrl}/redefinir-senha/${token}?email=${encodeURIComponent(targetEmail)}`;
@@ -2624,6 +2726,20 @@ adminRoutes.post('/usuarios/:id/excluir', async (c) => {
 
     if (!id || id === Number(currentUser.id)) {
         return c.redirect('/admin/usuarios?error=Não é possível excluir a própria conta.');
+    }
+
+    const target = await db.prepare(`SELECT id, role FROM users WHERE id = ?`).bind(id).first<{ id: number; role: string }>();
+    if (!target) {
+        return c.redirect('/admin/usuarios?error=Usuário não encontrado.');
+    }
+    if (target.role === 'superadmin' && currentUser.role !== 'superadmin') {
+        return c.redirect('/admin/usuarios?error=Apenas um Super Admin pode excluir outro Super Admin.');
+    }
+    if (target.role === 'superadmin') {
+        const activeSupers = await db.prepare(`SELECT COUNT(*) as total FROM users WHERE role = 'superadmin' AND is_active = 1`).first<{ total: number }>();
+        if ((activeSupers?.total || 0) <= 1) {
+            return c.redirect('/admin/usuarios?error=Não é possível excluir o último Super Admin ativo do sistema.');
+        }
     }
 
     try {
@@ -3179,16 +3295,19 @@ adminRoutes.post('/projetos/:id', async (c) => {
         } catch { }
     }
 
-    await db.prepare(
-        `UPDATE projects 
-         SET status = ?, progress_percentage = ?, start_date = ?, expected_end_date = ?, updated_at = datetime('now')
-         WHERE id = ?`
-    ).bind(status, progress, startDate, expectedEndDate, id).run();
+    const allowedProjectStatuses = new Set(['planning', 'in_progress', 'reviewing', 'completed', 'canceled']);
+    if (!allowedProjectStatuses.has(status)) {
+        return c.redirect(`/admin/projetos/${id}?error=${encodeURIComponent('Status de projeto inválido.')}`);
+    }
 
-    // Sincroniza Projeto -> Solicitação & Orçamento vinculados (avanço ou cancelamento/retorno de fase)
+    // Se estiver cancelando o projeto, valida Trava Contábil/Fase ANTES de alterar o projeto
     let linkedReqForCompletion: any = null;
+    let linkedQuoteForRollback: any = null;
     const projTitle = String(previousProject?.title || previousProject?.name || 'Projeto GundjaTech').trim();
-    if (previousProject && previousProject.client_id && prevStatus !== status && (status === 'in_progress' || status === 'completed' || status === 'canceled')) {
+    if (previousProject && previousProject.client_id && prevStatus !== status && status === 'canceled') {
+        if (prevStatus === 'completed') {
+            return c.redirect(`/admin/projetos/${id}?error=${encodeURIComponent('Trava de Fase: Projetos já concluídos não podem ser cancelados.')}`);
+        }
         try {
             if (previousProject.service_request_id) {
                 linkedReqForCompletion = await db.prepare(
@@ -3202,23 +3321,51 @@ adminRoutes.post('/projetos/:id', async (c) => {
                      ORDER BY id DESC LIMIT 1`
                 ).bind(previousProject.client_id, projTitle, projTitle).first<any>();
             }
+            if (previousProject.quotation_id) {
+                linkedQuoteForRollback = await db.prepare(`SELECT id, status, reference_code, title FROM quotations WHERE id = ?`).bind(previousProject.quotation_id).first<any>();
+            } else if (linkedReqForCompletion?.id) {
+                linkedQuoteForRollback = await db.prepare(`SELECT id, status, reference_code, title FROM quotations WHERE service_request_id = ? ORDER BY id DESC LIMIT 1`).bind(linkedReqForCompletion.id).first<any>();
+            }
+            const rbProj = await rollbackUnfinishedFlow(db, {
+                clientId: previousProject.client_id,
+                requestId: linkedReqForCompletion?.id || previousProject.service_request_id || null,
+                quotationId: linkedQuoteForRollback?.id || previousProject.quotation_id || null,
+                projectId: Number(id),
+                title: projTitle,
+                refs: [linkedReqForCompletion?.protocol, linkedQuoteForRollback?.reference_code]
+            });
+            if (rbProj.blockedReason) {
+                return c.redirect(`/admin/projetos/${id}?error=${encodeURIComponent(rbProj.blockedReason)}`);
+            }
+        } catch (rbErr) {
+            console.error('[POST /projetos/:id] Falha fail-closed ao validar rollback:', rbErr);
+            return c.redirect(`/admin/projetos/${id}?error=${encodeURIComponent('Não foi possível validar as travas financeiras. Operação abortada.')}`);
+        }
+    }
+
+    await db.prepare(
+        `UPDATE projects 
+         SET status = ?, progress_percentage = ?, start_date = ?, expected_end_date = ?, updated_at = datetime('now')
+         WHERE id = ?`
+    ).bind(status, progress, startDate, expectedEndDate, id).run();
+
+    // Sincroniza Projeto -> Solicitação & Orçamento vinculados (avanço ou cancelamento/retorno de fase)
+    if (previousProject && previousProject.client_id && prevStatus !== status && (status === 'in_progress' || status === 'completed' || status === 'canceled')) {
+        try {
+            if (!linkedReqForCompletion && previousProject.service_request_id) {
+                linkedReqForCompletion = await db.prepare(
+                    `SELECT id, status, protocol, estimated_budget, client_id FROM service_requests WHERE id = ? LIMIT 1`
+                ).bind(previousProject.service_request_id).first<any>();
+            }
+            if (!linkedReqForCompletion && projTitle) {
+                linkedReqForCompletion = await db.prepare(
+                    `SELECT id, status, protocol, estimated_budget, client_id FROM service_requests
+                     WHERE client_id = ? AND (lower(service_title) = lower(?) OR lower(title) = lower(?))
+                     ORDER BY id DESC LIMIT 1`
+                ).bind(previousProject.client_id, projTitle, projTitle).first<any>();
+            }
 
             if (status === 'canceled') {
-                // Ao cancelar o projeto, valida Trava Contábil, cancela fatura em aberto e retorna orçamento/solicitação
-                let linkedQuoteForRollback: any = null;
-                if (previousProject.quotation_id) {
-                    linkedQuoteForRollback = await db.prepare(`SELECT id, status, reference_code, title FROM quotations WHERE id = ?`).bind(previousProject.quotation_id).first<any>();
-                } else if (linkedReqForCompletion?.id) {
-                    linkedQuoteForRollback = await db.prepare(`SELECT id, status, reference_code, title FROM quotations WHERE service_request_id = ? ORDER BY id DESC LIMIT 1`).bind(linkedReqForCompletion.id).first<any>();
-                }
-                await rollbackUnfinishedFlow(db, {
-                    clientId: previousProject.client_id,
-                    requestId: linkedReqForCompletion?.id || previousProject.service_request_id || null,
-                    quotationId: linkedQuoteForRollback?.id || previousProject.quotation_id || null,
-                    projectId: Number(id),
-                    title: projTitle,
-                    refs: [linkedReqForCompletion?.protocol, linkedQuoteForRollback?.reference_code]
-                });
                 if (linkedQuoteForRollback && linkedQuoteForRollback.status === 'approved') {
                     await db.prepare(`UPDATE quotations SET status = 'sent', updated_at = datetime('now') WHERE id = ?`).bind(linkedQuoteForRollback.id).run();
                 }

@@ -221,17 +221,22 @@ publicRoutes.post('/solicitar-orcamento', rateLimit({ keyPrefix: 'public_quote',
             ).bind(requestId).run();
 
             const file = body.attachment;
-            if (file instanceof File && file.size > 0 && c.env?.UPLOADS_BUCKET) {
-                const fileKey = `attachments/${protocol}/${file.name}`;
-                const arrayBuffer = await file.arrayBuffer();
-                await c.env.UPLOADS_BUCKET.put(fileKey, arrayBuffer, {
-                    httpMetadata: { contentType: file.type }
-                });
+            if (file instanceof File && file.size > 0 && file.size <= 10 * 1024 * 1024 && c.env?.UPLOADS_BUCKET) {
+                const ext = file.name.includes('.') ? file.name.split('.').pop()!.toLowerCase().trim() : '';
+                const allowedPublicExts = new Set(['pdf', 'png', 'jpg', 'jpeg', 'webp', 'doc', 'docx', 'xls', 'xlsx', 'zip', 'txt']);
+                if (allowedPublicExts.has(ext)) {
+                    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 120);
+                    const fileKey = `private/attachments/${protocol}/${Date.now()}_${safeName}`;
+                    const arrayBuffer = await file.arrayBuffer();
+                    await c.env.UPLOADS_BUCKET.put(fileKey, arrayBuffer, {
+                        httpMetadata: { contentType: file.type || 'application/octet-stream' }
+                    });
 
-                await c.env.DB.prepare(
-                    `INSERT INTO request_attachments (service_request_id, file_name, file_path, file_size, mime_type, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
-                ).bind(requestId, file.name, fileKey, file.size, file.type).run();
+                    await c.env.DB.prepare(
+                        `INSERT INTO request_attachments (service_request_id, file_name, file_path, file_size, mime_type, created_at, updated_at)
+                         VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+                    ).bind(requestId, safeName, fileKey, file.size, file.type || 'application/octet-stream').run();
+                }
             }
 
             await sendQuoteConfirmationEmail(c.env, email, contactName, protocol, title);
@@ -489,16 +494,21 @@ publicRoutes.post('/api/lead', rateLimit({ keyPrefix: 'public_lead', maxRequests
             ).run();
 
             const file = body.arquivo;
-            if (file instanceof File && file.size > 0 && c.env?.UPLOADS_BUCKET) {
-                const fileKey = `attachments/${protocol}/${file.name}`;
-                const arrayBuffer = await file.arrayBuffer();
-                await c.env.UPLOADS_BUCKET.put(fileKey, arrayBuffer, {
-                    httpMetadata: { contentType: file.type }
-                });
-                await c.env.DB.prepare(
-                    `INSERT INTO request_attachments (service_request_id, file_name, file_path, file_size, mime_type, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
-                ).bind(requestId, file.name, fileKey, file.size, file.type).run();
+            if (file instanceof File && file.size > 0 && file.size <= 10 * 1024 * 1024 && c.env?.UPLOADS_BUCKET) {
+                const ext = file.name.includes('.') ? file.name.split('.').pop()!.toLowerCase().trim() : '';
+                const allowedPublicExts = new Set(['pdf', 'png', 'jpg', 'jpeg', 'webp', 'doc', 'docx', 'xls', 'xlsx', 'zip', 'txt']);
+                if (allowedPublicExts.has(ext)) {
+                    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 120);
+                    const fileKey = `private/attachments/${protocol}/${Date.now()}_${safeName}`;
+                    const arrayBuffer = await file.arrayBuffer();
+                    await c.env.UPLOADS_BUCKET.put(fileKey, arrayBuffer, {
+                        httpMetadata: { contentType: file.type || 'application/octet-stream' }
+                    });
+                    await c.env.DB.prepare(
+                        `INSERT INTO request_attachments (service_request_id, file_name, file_path, file_size, mime_type, created_at, updated_at)
+                         VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+                    ).bind(requestId, safeName, fileKey, file.size, file.type || 'application/octet-stream').run();
+                }
             }
         }
     } catch {}
@@ -511,7 +521,7 @@ publicRoutes.post('/api/lead', rateLimit({ keyPrefix: 'public_lead', maxRequests
     });
 });
 
-publicRoutes.post('/api/whatsapp', async (c) => {
+publicRoutes.post('/api/whatsapp', rateLimit({ keyPrefix: 'public_whatsapp', maxRequests: 15, windowSeconds: 300 }), async (c) => {
     const body = await getRequestBody(c);
     const email = String(body.email || '').trim().toLowerCase();
     const nome = String(body.nome || '').trim() || 'Contato WhatsApp';

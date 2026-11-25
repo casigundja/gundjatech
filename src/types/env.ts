@@ -14,6 +14,7 @@ export interface Env {
 
     // Environment & Secrets
     ENVIRONMENT?: string;
+    APP_ENV?: string;
     SESSION_SECRET: string;
     RESEND_API_KEY?: string;
     GEMINI_API_KEY?: string;

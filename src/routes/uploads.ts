@@ -1,24 +1,26 @@
 import { Hono } from 'hono';
-import { Env, AppVariables } from '../types/env';
+import { Env, AppVariables, UserRole } from '../types/env';
 import { requireAuth } from '../middleware/auth';
+import { hasPermission } from '../lib/rbac';
 import { getFile, putFile, generateStorageKey, streamR2Response } from '../lib/storage';
 
 export const uploadRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
 const BLOCKED_UPLOAD_EXTS = new Set(['html', 'htm', 'svg', 'xhtml', 'js', 'mjs', 'cjs', 'php', 'phtml', 'exe', 'bat', 'sh']);
 const BLOCKED_UPLOAD_MIME_PATTERNS = ['text/html', 'image/svg+xml', 'application/xhtml+xml', 'javascript', 'ecmascript'];
+const ALLOWED_UPLOAD_FOLDERS = new Set(['general', 'chat', 'projects', 'requests', 'avatars', 'contratos', 'documentos']);
 
 /**
  * Rota pública/protegida de streaming de arquivos do bucket R2
- * Suporta cache headers HTTP, ETags e proteção contra Stored XSS / IDOR
+ * Suporta cache headers HTTP, ETags e proteção contra Stored XSS / IDOR / RBAC
  */
 uploadRoutes.get('/uploads/:key{.*}', async (c) => {
     const key = c.req.param('key');
-    if (!key) {
-        return c.text('Key do arquivo não fornecida', 400);
+    if (!key || key.includes('..')) {
+        return c.text('Key do arquivo inválida', 400);
     }
 
-    // Bloqueia acesso não-autenticado e acesso direto de clientes (multi-tenant) para private/
+    // Bloqueia acesso não-autenticado, clientes (multi-tenant) e staff sem permissão modular para private/
     if (key.startsWith('private/')) {
         const user = c.get('user');
         if (!user) {
@@ -26,6 +28,16 @@ uploadRoutes.get('/uploads/:key{.*}', async (c) => {
         }
         if (user.role === 'client') {
             return c.json({ error: 'Forbidden', message: 'Use a rota autenticada do Portal do Cliente para baixar arquivos privados.' }, 403);
+        }
+        const role = user.role as UserRole;
+        if (key.startsWith('private/receipts/') && !hasPermission(role, 'finance.view')) {
+            return c.json({ error: 'Forbidden', message: 'Permissão finance.view obrigatória.' }, 403);
+        }
+        if (key.startsWith('private/projects/') && !hasPermission(role, 'projects.view')) {
+            return c.json({ error: 'Forbidden', message: 'Permissão projects.view obrigatória.' }, 403);
+        }
+        if (key.startsWith('private/attachments/') && !hasPermission(role, 'requests.view')) {
+            return c.json({ error: 'Forbidden', message: 'Permissão requests.view obrigatória.' }, 403);
         }
     }
 
@@ -52,7 +64,8 @@ uploadRoutes.post('/api/uploads', requireAuth, async (c) => {
     try {
         const body = await c.req.parseBody();
         const file = body.file;
-        const folder = String(body.folder || 'general').trim();
+        const rawFolder = String(body.folder || 'general').trim().toLowerCase().replace(/^\/+|\/+$/g, '');
+        const folder = ALLOWED_UPLOAD_FOLDERS.has(rawFolder) ? rawFolder : 'general';
 
         if (!(file instanceof File) || file.size === 0) {
             return c.json({ error: 'Nenhum arquivo válido enviado' }, 422);

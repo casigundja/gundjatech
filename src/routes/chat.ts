@@ -35,21 +35,25 @@ chatRoutes.post('/start', rateLimit({ keyPrefix: 'chat_start', maxRequests: 15, 
     const assunto = String(body.assunto || '').trim();
     const mensagem = String(body.mensagem || '').trim();
     const tema = String(body.tema || 'geral').trim();
-    let visitorToken = String(body.visitor_token || '').trim();
+    // Sempre gera visitor_token no servidor para impedir session fixation
+    const visitorToken = generateRandomToken(32);
 
     if (!nome || !email || !mensagem) {
         return c.json({ error: 'Preencha nome, email e mensagem para iniciar o atendimento.' }, 422);
     }
 
-    if (!visitorToken) {
-        visitorToken = generateRandomToken(32);
+    if (nome.length > 120 || email.length > 180 || assunto.length > 180 || mensagem.length > 2000 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return c.json({ error: 'Verifique os dados informados (e-mail válido e mensagem até 2.000 caracteres).' }, 422);
     }
 
-    const randomChars = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const randBytes = new Uint8Array(4);
+    crypto.getRandomValues(randBytes);
+    const randomChars = Array.from(randBytes, (b) => alphabet[b % alphabet.length]).join('');
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const protocol = `CHAT-${dateStr}-${randomChars}`;
 
-    let conversationId = 1;
+    let conversationId = c.env?.DB ? 0 : 1;
     let clientMsgId = 1;
     let globalAiEnabled = true;
 
@@ -106,7 +110,7 @@ chatRoutes.post('/start', rateLimit({ keyPrefix: 'chat_start', maxRequests: 15, 
             // 3. Cria conversa de chat
             const convRes = await c.env.DB.prepare(
                 `INSERT INTO conversations (session_id, client_id, subject, channel, visitor_name, visitor_email, visitor_phone, status, ai_enabled, crm_stage, lead_score, last_message_at, created_at, updated_at)
-                 VALUES (?, ?, ?, 'website_chat', ?, ?, ?, 'open', ?, 'qualifying', 15, datetime('now'), datetime('now'), datetime('now'))`
+                 VALUES (?, ?, ?, 'website_chat', ?, ?, ?, 'open', ?, 'greeting', 15, datetime('now'), datetime('now'), datetime('now'))`
             ).bind(visitorToken, clientId, assunto || `Chat • ${nome}`, nome, email, telefone || null, globalAiEnabled ? 1 : 0).run();
 
             conversationId = Number(convRes.meta.last_row_id);
@@ -120,6 +124,9 @@ chatRoutes.post('/start', rateLimit({ keyPrefix: 'chat_start', maxRequests: 15, 
         }
     } catch (err) {
         console.error('Erro ao persistir chat:', err);
+        if (c.env?.DB && !conversationId) {
+            return c.json({ ok: false, error: 'Não foi possível iniciar o atendimento no momento. Tente novamente.' }, 500);
+        }
     }
 
     // 5. Verifica se o visitante já solicitou atendimento humano ou se aciona a IA
@@ -215,8 +222,8 @@ chatRoutes.post('/message', rateLimit({ keyPrefix: 'chat_message', maxRequests: 
     const visitorToken = String(body.visitor_token || '').trim();
     const message = String(body.message || '').trim();
 
-    if (!visitorToken || !message) {
-        return c.json({ ok: false, error: 'Parâmetros inválidos' }, 422);
+    if (!visitorToken || !message || message.length > 2000) {
+        return c.json({ ok: false, error: 'Parâmetros inválidos (mensagem até 2.000 caracteres).' }, 422);
     }
 
     let conversation: {
@@ -234,7 +241,7 @@ chatRoutes.post('/message', rateLimit({ keyPrefix: 'chat_message', maxRequests: 
     try {
         if (c.env?.DB) {
             conversation = await c.env.DB.prepare(
-                `SELECT id, status, subject, visitor_name, visitor_email, visitor_phone, ai_enabled, crm_stage FROM conversations WHERE session_id = ?`
+                `SELECT id, status, subject, visitor_name, visitor_email, visitor_phone, ai_enabled, crm_stage FROM conversations WHERE session_id = ? AND channel = 'website_chat'`
             ).bind(visitorToken).first<{
                 id: number;
                 status: string;
@@ -415,9 +422,10 @@ chatRoutes.post('/message', rateLimit({ keyPrefix: 'chat_message', maxRequests: 
 // ----------------------------------------------------
 // LISTAR HISTÓRICO DE MENSAGENS - Paridade com Laravel apiChatMessages
 // ----------------------------------------------------
-chatRoutes.get('/messages', async (c) => {
-    const token = c.req.query('token') || c.req.query('visitor_token') || '';
-    const afterId = c.req.query('after_id') ? parseInt(c.req.query('after_id')!, 10) : 0;
+chatRoutes.get('/messages', rateLimit({ keyPrefix: 'chat_messages_poll', maxRequests: 60, windowSeconds: 60 }), async (c) => {
+    const token = String(c.req.query('token') || c.req.query('visitor_token') || '').trim();
+    const parsedAfter = Number.parseInt(c.req.query('after_id') || '0', 10);
+    const afterId = Number.isFinite(parsedAfter) && parsedAfter > 0 ? parsedAfter : 0;
 
     if (!token) {
         return c.json({ ok: false, error: 'Token obrigatório' }, 422);
@@ -428,14 +436,14 @@ chatRoutes.get('/messages', async (c) => {
     try {
         if (c.env?.DB) {
             const conv = await c.env.DB.prepare(
-                `SELECT id, status FROM conversations WHERE session_id = ?`
+                `SELECT id, status FROM conversations WHERE session_id = ? AND channel = 'website_chat'`
             ).bind(token).first<{ id: number; status: string }>();
 
             if (conv) {
                 convStatus = conv.status || 'open';
                 const query = afterId > 0
-                    ? `SELECT id, sender_type, message, is_ai, created_at FROM conversation_messages WHERE conversation_id = ? AND id > ? ORDER BY id ASC`
-                    : `SELECT id, sender_type, message, is_ai, created_at FROM conversation_messages WHERE conversation_id = ? ORDER BY id ASC`;
+                    ? `SELECT id, sender_type, message, is_ai, created_at FROM conversation_messages WHERE conversation_id = ? AND id > ? ORDER BY id ASC LIMIT 100`
+                    : `SELECT id, sender_type, message, is_ai, created_at FROM conversation_messages WHERE conversation_id = ? ORDER BY id ASC LIMIT 100`;
 
                 const stmt = afterId > 0
                     ? c.env.DB.prepare(query).bind(conv.id, afterId)

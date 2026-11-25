@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { Env, AppVariables } from '../types/env';
 import { requireAuth } from '../middleware/auth';
+import { rateLimit } from '../middleware/security';
 import { findUserById, updateUserProfile, updateUserPassword } from '../lib/users';
 import { verifyPassword, hashPassword } from '../lib/password';
 import { destroyAllUserSessionsExcept } from '../lib/session';
@@ -79,11 +80,26 @@ accountRoutes.post('/avatar', async (c) => {
         return c.json({ error: 'Imagem de avatar inválida' }, 422);
     }
 
+    if (file.size > 5 * 1024 * 1024) {
+        return c.redirect('/minha-conta?error=' + encodeURIComponent('A imagem de avatar deve ter no máximo 5MB.'));
+    }
+
+    const avatarExt = file.name.includes('.') ? file.name.split('.').pop()!.toLowerCase().trim() : '';
+    const allowedAvatarExts = new Set(['png', 'jpg', 'jpeg', 'webp']);
+    const arrayBuffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    const isPng = bytes.length >= 4 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
+    const isJpg = bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+    const isWebp = bytes.length >= 12 && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50;
+
+    if (!allowedAvatarExts.has(avatarExt) || !(isPng || isJpg || isWebp)) {
+        return c.redirect('/minha-conta?error=' + encodeURIComponent('Envie uma imagem válida nos formatos PNG, JPG ou WEBP.'));
+    }
+
     if (c.env.UPLOADS_BUCKET) {
-        const key = generateStorageKey('avatars', file.name);
-        const arrayBuffer = await file.arrayBuffer();
+        const key = generateStorageKey('avatars', `avatar.${avatarExt}`);
         const uploaded = await putFile(c.env.UPLOADS_BUCKET, key, arrayBuffer, {
-            contentType: file.type || 'image/png'
+            contentType: isPng ? 'image/png' : isWebp ? 'image/webp' : 'image/jpeg'
         });
 
         await c.env.DB.prepare(
@@ -98,7 +114,7 @@ accountRoutes.post('/avatar', async (c) => {
     return c.redirect('/minha-conta?success=Avatar+atualizado+com+sucesso');
 });
 
-accountRoutes.post('/senha', async (c) => {
+accountRoutes.post('/senha', rateLimit({ keyPrefix: 'account_password', maxRequests: 10, windowSeconds: 300 }), async (c) => {
     const sessionUser = c.get('user');
     const sessionId = c.get('sessionId');
     if (!sessionUser || !sessionId) {
@@ -108,9 +124,13 @@ accountRoutes.post('/senha', async (c) => {
     const body = await c.req.parseBody();
     const currentPassword = String(body.current_password || '');
     const newPassword = String(body.password || '');
+    const confirmPassword = body.password_confirmation !== undefined ? String(body.password_confirmation) : null;
 
     if (newPassword.length < 8) {
         return c.json({ error: 'Nova senha deve ter no mínimo 8 caracteres.' }, 422);
+    }
+    if (confirmPassword !== null && newPassword !== confirmPassword) {
+        return c.redirect('/minha-conta?error=' + encodeURIComponent('A confirmação da nova senha não confere.'));
     }
 
     const user = await findUserById(c.env.DB, sessionUser.id);

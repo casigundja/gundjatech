@@ -1,5 +1,5 @@
 import { Env } from '../types/env';
-import { sendEmail } from '../lib/email';
+import { sendEmail, renderEmailTemplate, escapeEmailHtml } from '../lib/email';
 import { renderQrCodeDataUri } from '../lib/qr';
 
 export type PixGatewayProvider = 'static' | 'mercadopago' | 'asaas';
@@ -310,7 +310,7 @@ export async function settleInvoiceAsPaid(
     env: Env,
     db: D1Database,
     txId: number,
-    meta: { provider: string; gatewayReference?: string }
+    meta: { provider: string; gatewayReference?: string; paidAmount?: number }
 ): Promise<{ settled: boolean; alreadyPaid: boolean }> {
     const tx = (await db.prepare(
         `SELECT t.*, c.name AS client_name, c.company AS client_company, c.email AS client_email
@@ -323,6 +323,15 @@ export async function settleInvoiceAsPaid(
     if (tx.status === 'paid') return { settled: false, alreadyPaid: true };
     if (tx.status === 'canceled') return { settled: false, alreadyPaid: false };
 
+    // Validação anti-subpagamento: exige valor pago >= valor da fatura (tolerância de R$ 0,01)
+    if (typeof meta.paidAmount === 'number' && Number.isFinite(meta.paidAmount) && meta.paidAmount > 0) {
+        const expectedAmount = Number(tx.amount || 0);
+        if (meta.paidAmount < expectedAmount - 0.01) {
+            console.error(`[PIX] Valor pago divergente na fatura #${txId}: pago=${meta.paidAmount}, esperado=${expectedAmount}`);
+            return { settled: false, alreadyPaid: false };
+        }
+    }
+
     const ref = meta.gatewayReference || `GTFAT${String(txId).padStart(5, '0')}`;
 
     const updateRes = await db.prepare(
@@ -331,7 +340,7 @@ export async function settleInvoiceAsPaid(
              payment_method = 'PIX',
              paid_at = datetime('now'),
              updated_at = datetime('now')
-         WHERE id = ? AND status != 'paid'`
+         WHERE id = ? AND status NOT IN ('paid', 'canceled')`
     ).bind(txId).run();
 
     // Garante idempotência sob concorrência (webhook + polling simultâneos)
@@ -344,43 +353,56 @@ export async function settleInvoiceAsPaid(
             `INSERT INTO payments (financial_transaction_id, amount, payment_method, transaction_reference, status, paid_at, created_at, updated_at)
              VALUES (?, ?, 'PIX', ?, 'completed', datetime('now'), datetime('now'), datetime('now'))`
         ).bind(txId, tx.amount, ref).run();
-    } catch { }
+    } catch (payErr) {
+        console.error(`[PIX] Falha ao registrar pagamento na tabela payments para fatura #${txId}:`, payErr);
+    }
 
     const appUrl = (env.APP_URL || 'https://gundjatech.casimirogundja.workers.dev').replace(/\/$/, '');
     const valFmt = Number(tx.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
     const clientLabel = tx.client_company || tx.client_name || 'Cliente';
 
-    // 1) Notifica o cliente com o Recibo Oficial de Quitação
+    // 1) Notifica o cliente com o Recibo Oficial de Quitação (template seguro com escapeHtml)
     if (tx.client_email && !String(tx.client_email).endsWith('.local')) {
         try {
+            const receiptUrl = `${appUrl}/portal/financeiro/${txId}/recibo`;
             await sendEmail(env, {
                 to: String(tx.client_email),
                 subject: `Pagamento Confirmado • Fatura #${txId} (R$ ${valFmt}) • GundjaTech`,
-                html: `<p>Olá, <strong>${clientLabel}</strong>!</p>
-                       <p>Seu pagamento via <strong>PIX</strong> foi <strong>confirmado automaticamente</strong> em nosso sistema.</p>
-                       <p><strong>Fatura:</strong> ${tx.description}<br/>
-                          <strong>Valor:</strong> R$ ${valFmt}<br/>
-                          <strong>Referência:</strong> ${ref}</p>
-                       <p>Seu <strong>Recibo Oficial de Quitação</strong> já está disponível no Portal do Cliente:<br/>
-                          <a href="${appUrl}/portal/financeiro/${txId}/recibo">Acessar Recibo de Quitação (PDF)</a></p>`
+                html: renderEmailTemplate(
+                    'Pagamento PIX Confirmado',
+                    `<p>Olá, <strong>${escapeEmailHtml(clientLabel)}</strong>!</p>
+                     <p>Seu pagamento via <strong>PIX</strong> foi <strong>confirmado automaticamente</strong> em nosso sistema.</p>
+                     <p><strong>Fatura:</strong> ${escapeEmailHtml(tx.description)}<br/>
+                        <strong>Valor:</strong> R$ ${valFmt}<br/>
+                        <strong>Referência:</strong> ${escapeEmailHtml(ref)}</p>
+                     <p>Seu <strong>Recibo Oficial de Quitação</strong> já está disponível no Portal do Cliente.</p>`,
+                    { text: 'Acessar Recibo de Quitação (PDF)', url: receiptUrl }
+                )
             });
-        } catch { }
+        } catch (mailErr) {
+            console.error(`[PIX] Erro ao enviar recibo ao cliente (fatura #${txId}):`, mailErr);
+        }
     }
 
-    // 2) Notifica o financeiro da GundjaTech instantaneamente
+    // 2) Notifica o financeiro da GundjaTech instantaneamente (template seguro com escapeHtml)
     try {
         const staffTo = env.STAFF_NOTIFY_EMAIL || 'gundjatech@gmail.com';
         await sendEmail(env, {
             to: staffTo,
             subject: `PIX Confirmado Automaticamente • Fatura #${txId} (R$ ${valFmt})`,
-            html: `<p>Um pagamento PIX foi <strong>validado e liquidado automaticamente</strong> (${meta.provider}).</p>
-                   <p><strong>Cliente:</strong> ${clientLabel}<br/>
-                      <strong>Fatura:</strong> ${tx.description}<br/>
-                      <strong>Valor:</strong> R$ ${valFmt}<br/>
-                      <strong>Referência:</strong> ${ref}</p>
-                   <p><a href="${appUrl}/admin/financeiro">Abrir Financeiro &amp; Caixa</a> · <a href="${appUrl}/admin/financeiro/${txId}/recibo">Ver Recibo PDF</a></p>`
+            html: renderEmailTemplate(
+                'PIX Confirmado Automaticamente',
+                `<p>Um pagamento PIX foi <strong>validado e liquidado automaticamente</strong> (${escapeEmailHtml(meta.provider)}).</p>
+                 <p><strong>Cliente:</strong> ${escapeEmailHtml(clientLabel)}<br/>
+                    <strong>Fatura:</strong> ${escapeEmailHtml(tx.description)}<br/>
+                    <strong>Valor:</strong> R$ ${valFmt}<br/>
+                    <strong>Referência:</strong> ${escapeEmailHtml(ref)}</p>`,
+                { text: 'Abrir Financeiro & Caixa', url: `${appUrl}/admin/financeiro` }
+            )
         });
-    } catch { }
+    } catch (staffErr) {
+        console.error(`[PIX] Erro ao notificar financeiro (fatura #${txId}):`, staffErr);
+    }
 
     return { settled: true, alreadyPaid: false };
 }

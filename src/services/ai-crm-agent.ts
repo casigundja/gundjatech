@@ -79,11 +79,16 @@ Seu objetivo é acolher o visitante, diagnosticar o desafio técnico dele e orie
             (dbApiKey && dbApiKey.startsWith('sk-') ? dbApiKey : '') ||
             (this.env?.OPENAI_API_KEY || '').trim();
 
+        // Evita duplicar visitorMessage quando ela já foi inserida como última mensagem do histórico no D1
+        const lastHist = history.length > 0 ? history[history.length - 1] : null;
+        const alreadyInHistory = Boolean(lastHist && lastHist.sender_type === 'client' && String(lastHist.message || '').trim() === visitorMessage.trim());
+        const effectiveHistory = alreadyInHistory ? history.slice(0, -1) : history;
+
         const runWorkersAi = async (): Promise<string> => {
             if (!this.env?.AI) return '';
             const promptMessages = [
                 { role: 'system', content: systemPrompt },
-                ...history.map((h) => ({
+                ...effectiveHistory.map((h) => ({
                     role: h.sender_type === 'client' ? 'user' : 'assistant',
                     content: h.message
                 })),
@@ -120,32 +125,34 @@ Seu objetivo é acolher o visitante, diagnosticar o desafio técnico dele e orie
                     ? configuredModel
                     : 'gemini-2.5-flash';
             const geminiModels = Array.from(new Set([preferredModel, 'gemini-2.5-flash', 'gemini-2.0-flash']));
-            const historyText = history.map((h) => `${h.sender_type === 'client' ? 'Cliente' : 'Assistente'}: ${h.message}`).join('\n');
+            const geminiContents = [
+                ...effectiveHistory.map((h) => ({
+                    role: h.sender_type === 'client' ? 'user' : 'model',
+                    parts: [{ text: h.message }]
+                })),
+                {
+                    role: 'user',
+                    parts: [{ text: visitorName ? `[${visitorName}]: ${visitorMessage}` : visitorMessage }]
+                }
+            ];
 
             for (const modelName of geminiModels) {
                 try {
-                    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent?key=${encodeURIComponent(geminiKey)}`;
+                    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent`;
                     const geminiPayload = {
                         systemInstruction: { parts: [{ text: systemPrompt }] },
-                        contents: [
-                            {
-                                role: 'user',
-                                parts: [
-                                    {
-                                        text: historyText
-                                            ? `Histórico recente:\n${historyText}\n\nNova mensagem do cliente${visitorName ? ` (${visitorName})` : ''}: ${visitorMessage}`
-                                            : `Mensagem do cliente${visitorName ? ` (${visitorName})` : ''}: ${visitorMessage}`
-                                    }
-                                ]
-                            }
-                        ],
+                        contents: geminiContents,
                         generationConfig: { maxOutputTokens: 350, temperature: 0.5 }
                     };
 
                     const res = await fetch(geminiUrl, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(geminiPayload)
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-goog-api-key': geminiKey
+                        },
+                        body: JSON.stringify(geminiPayload),
+                        signal: AbortSignal.timeout(8000)
                     });
 
                     if (res.ok) {
@@ -178,14 +185,15 @@ Seu objetivo é acolher o visitante, diagnosticar o desafio técnico dele e orie
                         model: openaiModel,
                         messages: [
                             { role: 'system', content: systemPrompt },
-                            ...history.map((h) => ({
+                            ...effectiveHistory.map((h) => ({
                                 role: h.sender_type === 'client' ? 'user' : 'assistant',
                                 content: h.message
                             })),
                             { role: 'user', content: visitorMessage }
                         ],
                         max_tokens: 350
-                    })
+                    }),
+                    signal: AbortSignal.timeout(8000)
                 });
 
                 if (res.ok) {
@@ -262,14 +270,15 @@ Seu objetivo é acolher o visitante, diagnosticar o desafio técnico dele e orie
 
                 msgId = Number(res.meta.last_row_id);
 
-                // Evolução automática do funil de lead (e handoff silencioso se a IA solicitou transferência)
+                // Evolução automática do funil de lead (com teto de 100 pontos e registro de handoff_at)
                 if (shouldHandoff) {
                     await this.env.DB.prepare(
                         `UPDATE conversations
-                         SET lead_score = lead_score + 10,
+                         SET lead_score = MIN(100, COALESCE(lead_score, 0) + 10),
                              crm_stage = 'handoff_human',
                              status = 'waiting_staff',
                              ai_enabled = 0,
+                             handoff_at = COALESCE(handoff_at, datetime('now')),
                              last_message_at = datetime('now'),
                              updated_at = datetime('now')
                          WHERE id = ?`
@@ -277,7 +286,7 @@ Seu objetivo é acolher o visitante, diagnosticar o desafio técnico dele e orie
                 } else {
                     await this.env.DB.prepare(
                         `UPDATE conversations
-                         SET lead_score = lead_score + 10,
+                         SET lead_score = MIN(100, COALESCE(lead_score, 0) + 10),
                              crm_stage = CASE 
                                 WHEN crm_stage = 'greeting' THEN 'discovery'
                                 WHEN crm_stage = 'discovery' THEN 'qualification'

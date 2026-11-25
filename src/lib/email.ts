@@ -115,6 +115,14 @@ export async function sendEmail(env: Env, options: EmailOptions): Promise<EmailR
         };
     }
 
+    const safeSubject = String(options.subject || 'Notificação GundjaTech').replace(/[\r\n]+/g, ' ').trim().slice(0, 200);
+    const plainFallback = options.text || options.html
+        .replace(/<head[\s\S]*?<\/head>/gi, ' ')
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<[^>]*>?/gm, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
     try {
         const response = await fetch('https://api.resend.com/emails', {
             method: 'POST',
@@ -125,9 +133,9 @@ export async function sendEmail(env: Env, options: EmailOptions): Promise<EmailR
             body: JSON.stringify({
                 from: fromAddress,
                 to: toList,
-                subject: options.subject,
+                subject: safeSubject,
                 html: options.html,
-                text: options.text || options.html.replace(/<[^>]*>?/gm, ''),
+                text: plainFallback,
                 reply_to: options.replyTo
             })
         });

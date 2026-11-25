@@ -40,9 +40,9 @@ export async function ensureClientProfile(db: D1Database, user: { id: number; na
         'SELECT * FROM clients WHERE lower(email) = ? LIMIT 1'
     ).bind(normalizedEmail).first<ClientRecord>();
 
-    if (existingByEmail) {
+    if (existingByEmail && existingByEmail.user_id === null) {
         await db.prepare(
-            'UPDATE clients SET user_id = ?, updated_at = datetime("now") WHERE id = ?'
+            'UPDATE clients SET user_id = ?, updated_at = datetime("now") WHERE id = ? AND user_id IS NULL'
         ).bind(user.id, existingByEmail.id).run();
         return { ...existingByEmail, user_id: user.id };
     }

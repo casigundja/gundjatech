@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { AppVariables, Env } from '../types/env';
 import { AutonomousCrmAgent } from '../services/ai-crm-agent';
-import { hmacVerifyHex } from '../lib/crypto';
+import { hmacVerifyHex, timingSafeEqual } from '../lib/crypto';
 import {
     markWhatsAppMessageRead,
     normalizeWhatsAppPhone,
@@ -199,9 +199,11 @@ whatsappRoutes.get('/', (c) => {
     const token = c.req.query('hub.verify_token');
     const challenge = c.req.query('hub.challenge');
 
-    const expectedToken = (c.env?.WHATSAPP_VERIFY_TOKEN || 'gundjatech_wa_verify_2026').trim();
+    const isProd = (c.env?.APP_ENV || c.env?.ENVIRONMENT || '').toLowerCase() === 'production';
+    const configuredToken = (c.env?.WHATSAPP_VERIFY_TOKEN || '').trim();
+    const expectedToken = configuredToken || (isProd ? '' : 'gundjatech_wa_verify_2026');
 
-    if (mode === 'subscribe' && token && token === expectedToken && challenge) {
+    if (mode === 'subscribe' && token && expectedToken && timingSafeEqual(token, expectedToken) && challenge) {
         return c.text(challenge, 200);
     }
 
@@ -215,27 +217,35 @@ whatsappRoutes.get('/', (c) => {
  */
 whatsappRoutes.post('/', async (c) => {
     const rawBody = await c.req.text();
+    if (rawBody.length > 256 * 1024) {
+        return c.json({ ok: false, error: 'Payload too large' }, 413);
+    }
 
-    // 1. Validação obrigatória de assinatura HMAC-SHA256 Hex da Meta (X-Hub-Signature-256) quando configurada
+    const isProd = (c.env?.APP_ENV || c.env?.ENVIRONMENT || '').toLowerCase() === 'production';
     const appSecret = (c.env?.WHATSAPP_APP_SECRET || '').trim();
-    if (appSecret) {
-        const sigHeader = (c.req.header('x-hub-signature-256') || '').trim();
+    const webhookSecret = (c.env?.WHATSAPP_WEBHOOK_SECRET || '').trim();
+
+    if (isProd && !appSecret && !webhookSecret) {
+        console.error('[WhatsApp Webhook] Bloqueado fail-closed: nenhum segredo de webhook configurado em produção.');
+        return c.json({ ok: false, error: 'Webhook authentication not configured' }, 503);
+    }
+
+    const sigHeader = (c.req.header('x-hub-signature-256') || '').trim();
+    const providedToken = (
+        c.req.query('token') ||
+        c.req.header('x-webhook-secret') ||
+        c.req.header('client-token') ||
+        ''
+    ).trim();
+
+    // Se vier assinatura Meta (ou só appSecret estiver configurado), valida HMAC-SHA256
+    if (appSecret && (sigHeader || !webhookSecret)) {
         const providedHex = sigHeader.startsWith('sha256=') ? sigHeader.slice(7) : '';
         if (!providedHex || !(await hmacVerifyHex(rawBody, providedHex, appSecret))) {
             return c.json({ ok: false, error: 'Invalid webhook signature' }, 401);
         }
-    }
-
-    // 2. Validação opcional de token secreto para Z-API / Evolution API
-    const webhookSecret = (c.env?.WHATSAPP_WEBHOOK_SECRET || '').trim();
-    if (webhookSecret) {
-        const providedToken = (
-            c.req.query('token') ||
-            c.req.header('x-webhook-secret') ||
-            c.req.header('client-token') ||
-            ''
-        ).trim();
-        if (providedToken !== webhookSecret) {
+    } else if (webhookSecret) {
+        if (!providedToken || !timingSafeEqual(providedToken, webhookSecret)) {
             return c.json({ ok: false, error: 'Invalid webhook token' }, 401);
         }
     }
@@ -247,7 +257,7 @@ whatsappRoutes.post('/', async (c) => {
         return c.json({ ok: false, error: 'Invalid JSON payload' }, 400);
     }
 
-    if (c.env?.KV_CACHE) {
+    if (!isProd && c.env?.KV_CACHE) {
         try {
             await c.env.KV_CACHE.put(
                 'wa:debug:last_incoming',
@@ -351,19 +361,26 @@ whatsappRoutes.post('/', async (c) => {
 
             if (targetConvId > 0 && cleanReplyText) {
                 try {
-                    await c.env.DB.prepare(
-                        `INSERT INTO conversation_messages (conversation_id, sender_type, message, is_ai, created_at, updated_at)
-                         VALUES (?, 'staff', ?, 0, datetime('now'), datetime('now'))`
-                    ).bind(targetConvId, cleanReplyText).run();
+                    const targetConv = await c.env.DB.prepare(
+                        `SELECT id, status FROM conversations WHERE id = ? AND status != 'closed' LIMIT 1`
+                    ).bind(targetConvId).first<{ id: number; status: string }>();
 
-                    await c.env.DB.prepare(
-                        `UPDATE conversations
-                         SET status = 'open', last_message_at = datetime('now'), updated_at = datetime('now')
-                         WHERE id = ?`
-                    ).bind(targetConvId).run();
+                    if (targetConv) {
+                        await c.env.DB.batch([
+                            c.env.DB.prepare(
+                                `INSERT INTO conversation_messages (conversation_id, sender_type, message, is_ai, created_at, updated_at)
+                                 VALUES (?, 'staff', ?, 0, datetime('now'), datetime('now'))`
+                            ).bind(targetConvId, cleanReplyText),
+                            c.env.DB.prepare(
+                                `UPDATE conversations
+                                 SET status = 'open', last_message_at = datetime('now'), updated_at = datetime('now')
+                                 WHERE id = ? AND status != 'closed'`
+                            ).bind(targetConvId)
+                        ]);
 
-                    processed.push({ provider, messageId, conversationId: targetConvId, replied: true });
-                    continue;
+                        processed.push({ provider, messageId, conversationId: targetConvId, replied: true });
+                        continue;
+                    }
                 } catch (err) {
                     console.error('[WhatsApp Director Bridge] Erro ao encaminhar resposta ao site:', err);
                 }
@@ -407,18 +424,18 @@ whatsappRoutes.post('/', async (c) => {
                     clientId = client.id;
                 }
 
-                // 2. Localiza conversa aberta/em atendimento de WhatsApp ou cria uma nova
-                const sessionId = `wa:${fromPhone}`;
+                // 2. Localiza conversa aberta/em atendimento de WhatsApp pelo telefone ou cria uma nova com session_id único
                 const existingConv = await c.env.DB.prepare(
                     `SELECT id, ai_enabled FROM conversations
-                     WHERE session_id = ? AND status != 'closed'
+                     WHERE channel = 'whatsapp' AND visitor_phone = ? AND status != 'closed'
                      ORDER BY id DESC LIMIT 1`
-                ).bind(sessionId).first<{ id: number; ai_enabled: number }>();
+                ).bind(fromPhone).first<{ id: number; ai_enabled: number }>();
 
                 if (existingConv) {
                     conversationId = existingConv.id;
                     conversationAiEnabled = existingConv.ai_enabled !== 0;
                 } else {
+                    const sessionId = `wa:${fromPhone}:${Date.now()}`;
                     const convRes = await c.env.DB.prepare(
                         `INSERT INTO conversations (session_id, client_id, subject, channel, visitor_name, visitor_email, visitor_phone, status, ai_enabled, crm_stage, lead_score, last_message_at, created_at, updated_at)
                          VALUES (?, ?, ?, 'whatsapp', ?, ?, ?, 'open', ?, 'greeting', 15, datetime('now'), datetime('now'), datetime('now'))`

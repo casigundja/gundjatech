@@ -39,8 +39,16 @@ export const csrfProtection: MiddlewareHandler<{ Bindings: Env; Variables: AppVa
     const requestOrigin = new URL(c.req.url).origin;
     const originHeader = c.req.header('origin');
     const refererHeader = c.req.header('referer');
+    const secFetchSite = (c.req.header('sec-fetch-site') || '').toLowerCase();
 
-    if (originHeader && originHeader !== 'null') {
+    if (originHeader === 'null' || secFetchSite === 'cross-site') {
+        return c.json(
+            { error: 'Forbidden', message: 'Requisição bloqueada por proteção CSRF (origem cross-site ou nula).' },
+            403
+        );
+    }
+
+    if (originHeader) {
         if (originHeader !== requestOrigin) {
             return c.json(
                 { error: 'Forbidden', message: 'Requisição bloqueada por proteção CSRF (Origin inválido).' },

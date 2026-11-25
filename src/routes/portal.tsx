@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { Env, AppVariables } from '../types/env';
 import { requireAuth } from '../middleware/auth';
+import { rateLimit } from '../middleware/security';
 import { getRequestBody } from '../lib/request';
 import { ensureClientProfile, getPortalDashboard } from '../lib/client-portal';
 import { getFile, streamR2Response } from '../lib/storage';
@@ -12,7 +13,7 @@ import {
     settleInvoiceAsPaid,
     verifyGatewayPaymentPaid
 } from '../services/pix-gateway';
-import { sendEmail } from '../lib/email';
+import { sendEmail, renderEmailTemplate, escapeEmailHtml } from '../lib/email';
 import { recordRequestTimeline } from '../lib/timeline';
 import { AutonomousCrmAgent } from '../services/ai-crm-agent';
 import { PortalDashboardView } from '../views/portal/dashboard';
@@ -269,10 +270,13 @@ portalRoutes.post('/orcamentos/:id/aprovar', async (c) => {
         return c.redirect('/portal/orcamentos?error=Or%C3%A7amento+n%C3%A3o+dispon%C3%ADvel+para+aprova%C3%A7%C3%A3o.');
     }
 
-    // Atualiza status do orçamento
-    await db.prepare(
-        'UPDATE quotations SET status = "approved", updated_at = datetime("now") WHERE id = ?'
-    ).bind(quoteId).run();
+    // Compare-and-swap atômico: evita duplicação de projetos/faturas em duplo clique ou concorrência
+    const approveRes = await db.prepare(
+        'UPDATE quotations SET status = "approved", updated_at = datetime("now") WHERE id = ? AND client_id = ? AND status = "sent"'
+    ).bind(quoteId, client.id).run();
+    if (!approveRes.meta?.changes) {
+        return c.redirect('/portal/orcamentos?error=Este+or%C3%A7amento+j%C3%A1+foi+aprovado+ou+atualizado.');
+    }
 
     // Cria automaticamente o Projeto em Execução (50%) se ainda não existir para este cliente/título
     const projectName = String(quote.title || `Projeto • ${quote.reference_code || quoteId}`).trim();
@@ -324,10 +328,12 @@ portalRoutes.post('/orcamentos/:id/aprovar', async (c) => {
         if (quoteAmt > 0) {
             const dueDate = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
             await db.prepare(
-                `INSERT INTO financial_transactions (client_id, type, category, description, amount, status, due_date, payment_method, invoice_number, created_at, updated_at)
-                 VALUES (?, 'income', 'contract', ?, ?, 'pending', ?, 'PIX', ?, datetime('now'), datetime('now'))`
+                `INSERT INTO financial_transactions (client_id, project_id, quotation_id, type, category, description, amount, status, due_date, payment_method, invoice_number, created_at, updated_at)
+                 VALUES (?, ?, ?, 'income', 'contract', ?, ?, 'pending', ?, 'PIX', ?, datetime('now'), datetime('now'))`
             ).bind(
                 client.id,
+                createdProjectId || null,
+                quoteId,
                 `Contrato Aprovado: ${projectName} (Orçamento ${quote.reference_code})`,
                 quoteAmt,
                 dueDate,
@@ -361,10 +367,10 @@ portalRoutes.post('/orcamentos/:id/aprovar', async (c) => {
         });
     }
 
-    // Registra log de auditoria
+    // Registra log de auditoria (colunas corretas de 0001_core_and_auth.sql)
     try {
         await db.prepare(
-            `INSERT INTO activity_logs (user_id, action, subject_type, subject_id, details, created_at, updated_at)
+            `INSERT INTO activity_logs (user_id, action, model_type, model_id, metadata, created_at, updated_at)
              VALUES (?, 'portal.quotation_approved', 'Quotation', ?, ?, datetime('now'), datetime('now'))`
         ).bind(user.id, quoteId, JSON.stringify({ reference: quote.reference_code })).run();
     } catch {}
@@ -545,6 +551,13 @@ portalRoutes.post('/solicitacoes/:id/aprovar', async (c) => {
         return c.redirect(`/portal/solicitacoes/${reqId}?error=Solicita%C3%A7%C3%A3o+n%C3%A3o+est%C3%A1+aguardando+aprova%C3%A7%C3%A3o.`);
     }
 
+    const reqLockRes = await db.prepare(
+        'UPDATE service_requests SET status = "in_progress", updated_at = datetime("now") WHERE id = ? AND client_id = ? AND status = "quotation_sent"'
+    ).bind(reqId, client.id).run();
+    if (!reqLockRes.meta?.changes) {
+        return c.redirect(`/portal/solicitacoes/${reqId}?error=Esta+solicita%C3%A7%C3%A3o+j%C3%A1+foi+aprovada.`);
+    }
+
     let linkedQuote: any = null;
     try {
         linkedQuote = await db.prepare(
@@ -603,10 +616,12 @@ portalRoutes.post('/solicitacoes/:id/aprovar', async (c) => {
         if (quoteAmt > 0) {
             const dueDate = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
             await db.prepare(
-                `INSERT INTO financial_transactions (client_id, type, category, description, amount, status, due_date, payment_method, invoice_number, created_at, updated_at)
-                 VALUES (?, 'income', 'contract', ?, ?, 'pending', ?, 'PIX', ?, datetime('now'), datetime('now'))`
+                `INSERT INTO financial_transactions (client_id, project_id, quotation_id, type, category, description, amount, status, due_date, payment_method, invoice_number, created_at, updated_at)
+                 VALUES (?, ?, ?, 'income', 'contract', ?, ?, 'pending', ?, 'PIX', ?, datetime('now'), datetime('now'))`
             ).bind(
                 client.id,
+                createdProjectId || null,
+                linkedQuote?.id || null,
                 `Contrato Aprovado: ${projectName}${linkedQuote?.reference_code ? ` (Orçamento ${linkedQuote.reference_code})` : ''}`,
                 quoteAmt,
                 dueDate,
@@ -739,9 +754,12 @@ portalRoutes.get('/financeiro', async (c) => {
     const proofMap = new Map<number, string>();
     try {
         const payRes = await db.prepare(
-            `SELECT financial_transaction_id, proof_file FROM payments
-             WHERE proof_file IS NOT NULL ORDER BY id ASC`
-        ).all();
+            `SELECT p.financial_transaction_id, p.proof_file
+             FROM payments p
+             INNER JOIN financial_transactions t ON t.id = p.financial_transaction_id
+             WHERE t.client_id = ? AND p.proof_file IS NOT NULL
+             ORDER BY p.id ASC`
+        ).bind(client.id).all();
         for (const p of (payRes?.results || []) as any[]) {
             if (p.financial_transaction_id && p.proof_file) {
                 proofMap.set(Number(p.financial_transaction_id), String(p.proof_file));
@@ -784,7 +802,7 @@ portalRoutes.get('/financeiro', async (c) => {
     );
 });
 
-portalRoutes.post('/financeiro/:id/comprovante', async (c) => {
+portalRoutes.post('/financeiro/:id/comprovante', rateLimit({ keyPrefix: 'portal_receipt', maxRequests: 10, windowSeconds: 300 }), async (c) => {
     const { db, client } = await getClientContext(c);
     const txId = Number(c.req.param('id'));
 
@@ -830,21 +848,22 @@ portalRoutes.post('/financeiro/:id/comprovante', async (c) => {
             });
         }
 
-        await db.prepare(
-            `INSERT INTO payments (financial_transaction_id, amount, payment_method, transaction_reference, proof_file, status, paid_at, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, 'reviewing', datetime('now'), datetime('now'), datetime('now'))`
-        ).bind(tx.id, tx.amount, chosenMethod, `GTFAT${String(tx.id).padStart(5, '0')}`, r2Key).run();
+        await db.batch([
+            db.prepare(
+                `INSERT INTO payments (financial_transaction_id, amount, payment_method, transaction_reference, proof_file, status, paid_at, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, 'reviewing', datetime('now'), datetime('now'), datetime('now'))`
+            ).bind(tx.id, tx.amount, chosenMethod, `GTFAT${String(tx.id).padStart(5, '0')}`, r2Key),
+            db.prepare(
+                `UPDATE financial_transactions
+                 SET status = 'reviewing',
+                     payment_method = ?,
+                     notes = NULL,
+                     updated_at = datetime('now')
+                 WHERE id = ? AND client_id = ? AND status NOT IN ('paid', 'canceled')`
+            ).bind(chosenMethod, tx.id, client.id)
+        ]);
 
-        await db.prepare(
-            `UPDATE financial_transactions
-             SET status = 'reviewing',
-                 payment_method = ?,
-                 notes = NULL,
-                 updated_at = datetime('now')
-             WHERE id = ? AND client_id = ? AND status NOT IN ('paid', 'canceled')`
-        ).bind(chosenMethod, tx.id, client.id).run();
-
-        // Notifica o financeiro por e-mail
+        // Notifica o financeiro por e-mail (template seguro com escapeHtml)
         try {
             const staffTo = c.env.STAFF_NOTIFY_EMAIL || 'gundjatech@gmail.com';
             const appUrl = (c.env.APP_URL || 'https://gundjatech.casimirogundja.workers.dev').replace(/\/$/, '');
@@ -852,11 +871,16 @@ portalRoutes.post('/financeiro/:id/comprovante', async (c) => {
             await sendEmail(c.env, {
                 to: staffTo,
                 subject: `Comprovante recebido • Fatura #${tx.id} (R$ ${valFmt})`,
-                html: `<p>O cliente <strong>${client.company || client.name}</strong> enviou um comprovante de pagamento via <strong>${chosenMethod}</strong>.</p>
-                       <p><strong>Fatura:</strong> ${tx.description}<br/><strong>Valor:</strong> R$ ${valFmt}</p>
-                       <p><a href="${appUrl}/admin/financeiro">Abrir Financeiro para Conferência &amp; Baixa</a></p>`
+                html: renderEmailTemplate(
+                    'Comprovante de Pagamento Recebido',
+                    `<p>O cliente <strong>${escapeEmailHtml(client.company || client.name)}</strong> enviou um comprovante de pagamento via <strong>${escapeEmailHtml(chosenMethod)}</strong>.</p>
+                     <p><strong>Fatura:</strong> ${escapeEmailHtml(tx.description)}<br/><strong>Valor:</strong> R$ ${valFmt}</p>`,
+                    { text: 'Abrir Financeiro para Conferência & Baixa', url: `${appUrl}/admin/financeiro` }
+                )
             });
-        } catch { }
+        } catch (mailErr) {
+            console.error('[Portal Comprovante] Erro ao notificar financeiro:', mailErr);
+        }
 
         return c.redirect('/portal/financeiro?success=Comprovante+enviado+com+sucesso!+Nossa+equipe+confirmar%C3%A1+o+recebimento+em+instantes.');
     } catch {
