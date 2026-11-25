@@ -70,7 +70,7 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                         <span>{linkedRequest?.protocol ? `Voltar para Solicitação ${linkedRequest.protocol}` : 'Voltar para Orçamentos'}</span>
                     </a>
                     <div class="gt-detail-toolbar-actions">
-                        <button type="button" onclick="window.print()" class="gt-btn-outline gt-btn-sm">
+                        <button type="button" onclick="window.print()" class="gt-btn-outline gt-btn-sm" title="Imprimir ou salvar proposta comercial em PDF">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="6 9 6 2 18 2 18 9" />
                                 <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
@@ -78,38 +78,6 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                             </svg>
                             <span>Imprimir / PDF</span>
                         </button>
-                        {quotationDetail.status !== 'sent' && quotationDetail.status !== 'approved' && (
-                            <form action={`/admin/orcamentos/${quotationDetail.id}/status`} method="post" class="m-0">
-                                <input type="hidden" name="status" value="sent" />
-                                <button type="submit" data-loading-text="Enviando..." class="gt-btn-primary gt-btn-sm">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="m22 2-7 20-4-9-9-4Z" />
-                                        <path d="M22 2 11 13" />
-                                    </svg>
-                                    <span>Enviar Orçamento ao Cliente</span>
-                                </button>
-                            </form>
-                        )}
-                        {quotationDetail.status === 'sent' && (
-                            <form action={`/admin/orcamentos/${quotationDetail.id}/status`} method="post" class="m-0">
-                                <input type="hidden" name="status" value="approved" />
-                                <button type="submit" data-loading-text="Aprovando..." class="gt-btn-primary gt-btn-sm">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="20 6 9 17 4 12" />
-                                    </svg>
-                                    <span>Aprovar &amp; Iniciar Projeto</span>
-                                </button>
-                            </form>
-                        )}
-                        {quotationDetail.status === 'approved' && (
-                            <a href={linkedProject?.id ? `/admin/projetos/${linkedProject.id}` : '/admin/projetos'} class="gt-btn-petrol gt-btn-sm">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <path d="m9 11 3 3L22 4" />
-                                </svg>
-                                <span>Abrir Projeto em Execução</span>
-                            </a>
-                        )}
                     </div>
                 </div>
 
@@ -297,7 +265,7 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                                 <span class="text-[11px] text-[#8C95AA]">
                                     Alterações sincronizadas automaticamente com o Portal do Cliente e Receita &amp; Caixa.
                                 </span>
-                                <button type="submit" data-loading-text="Salvando..." class="gt-btn-primary gt-btn-sm">
+                                <button type="submit" data-loading-text="Salvando..." class="gt-btn-petrol gt-btn-sm">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
                                         <polyline points="17 21 17 13 7 13 7 21" />
@@ -357,60 +325,92 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                         </aside>
 
                         {/* Card 2: Portal do Cliente & Ações Rápidas */}
-                        <aside class="gtb-card !p-4 min-w-0 gt-no-print" style="flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;">
-                            <div class="space-y-2.5">
-                                <div class="flex items-center justify-between gap-2 pb-2" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
-                                    <div>
-                                        <h2 class="gt-font-display text-sm font-extrabold text-white">Portal do Cliente &amp; Ações</h2>
-                                        <p class="text-[11px] text-[#8C95AA] mt-0.5">Entrega multicanal e controle de acesso.</p>
-                                    </div>
-                                    {Number(quotationDetail.portal_user_active) === 1 || quotationDetail.status === 'sent' || quotationDetail.status === 'approved' ? (
-                                        <span class="gt-badge gt-badge-success">Portal Ativo</span>
-                                    ) : (
-                                        <span class="gt-badge gt-badge-warning">Em Rascunho</span>
-                                    )}
+                        <aside class="gtb-card !p-4 min-w-0 gt-no-print" style="flex: 0 0 auto; display: flex; flex-direction: column; gap: 12px;">
+                            <div class="flex items-center justify-between gap-2 pb-2" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                                <div>
+                                    <h2 class="gt-font-display text-sm font-extrabold text-white">Portal do Cliente &amp; Ações</h2>
+                                    <p class="text-[11px] text-[#8C95AA] mt-0.5">Entrega multicanal e controle de acesso.</p>
                                 </div>
+                                {Number(quotationDetail.portal_user_active) === 1 || quotationDetail.status === 'sent' || quotationDetail.status === 'approved' ? (
+                                    <span class="gt-badge gt-badge-success">Portal Ativo</span>
+                                ) : (
+                                    <span class="gt-badge gt-badge-warning">Em Rascunho</span>
+                                )}
+                            </div>
 
-                                <div class="space-y-2">
-                                    {quotationDetail.client_id && (quotationDetail.status === 'sent' || quotationDetail.status === 'approved') && (
-                                        <button
-                                            type="button"
-                                            id="gt-quote-portal-wa-btn"
-                                            onclick={`(function(btn){btn.disabled=true;var orig=btn.innerHTML;btn.textContent='Gerando link seguro...';fetch('/admin/clientes/${quotationDetail.client_id}/ativar-portal',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({send_email:true,promote_active:${quotationDetail.status === 'approved' ? 'true' : 'false'}})}).then(function(r){return r.json();}).then(function(d){btn.disabled=false;btn.innerHTML=orig;if(d&&d.ok&&d.whatsapp_url){window.open(d.whatsapp_url,'_blank');}else if(window.GT_ShowToast){window.GT_ShowToast((d&&d.error)||'Informe um e-mail válido para o cliente primeiro.','warning');}}).catch(function(){btn.disabled=false;btn.innerHTML=orig;if(window.GT_ShowToast){window.GT_ShowToast('Não foi possível gerar o link agora. Tente novamente.','error');}});})(this)`}
-                                            class="gt-quick-action-btn !py-2 !px-3"
-                                        >
-                                            <span class="flex items-center gap-2.5 text-xs font-bold">
-                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                                                <span>Enviar Acesso do Portal no WhatsApp</span>
-                                            </span>
-                                            <span class="gt-quick-action-tag">WHATSAPP</span>
-                                        </button>
-                                    )}
+                            <div class="space-y-2.5">
+                                {quotationDetail.status !== 'sent' && quotationDetail.status !== 'approved' && (
+                                    <div class="space-y-1.5">
+                                        <form action={`/admin/orcamentos/${quotationDetail.id}/status`} method="post" class="m-0">
+                                            <input type="hidden" name="status" value="sent" />
+                                            <button type="submit" data-loading-text="Enviando..." class="gt-btn-primary gt-btn-sm w-full justify-center">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="m22 2-7 20-4-9-9-4Z" />
+                                                    <path d="M22 2 11 13" />
+                                                </svg>
+                                                <span>Enviar Orçamento ao Cliente</span>
+                                            </button>
+                                        </form>
+                                        <p class="text-[11px] text-[#8C95AA] leading-snug">
+                                            Envia a proposta por e-mail e libera a aprovação em 1 clique no Portal do Cliente.
+                                        </p>
+                                    </div>
+                                )}
 
+                                {quotationDetail.status === 'sent' && (
+                                    <div class="space-y-1.5">
+                                        <form action={`/admin/orcamentos/${quotationDetail.id}/status`} method="post" class="m-0">
+                                            <input type="hidden" name="status" value="approved" />
+                                            <button type="submit" data-loading-text="Aprovando..." class="gt-btn-primary gt-btn-sm w-full justify-center">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="20 6 9 17 4 12" />
+                                                </svg>
+                                                <span>Aprovar &amp; Iniciar Projeto</span>
+                                            </button>
+                                        </form>
+                                        <p class="text-[11px] text-[#8C95AA] leading-snug">
+                                            Confirma a aprovação, cria o projeto e libera o faturamento.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {quotationDetail.status === 'approved' && (
+                                    <a href={linkedProject?.id ? `/admin/projetos/${linkedProject.id}` : '/admin/projetos'} class="gt-btn-petrol gt-btn-sm w-full justify-center">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                            <path d="m9 11 3 3L22 4" />
+                                        </svg>
+                                        <span>Abrir Projeto em Execução</span>
+                                    </a>
+                                )}
+
+                                {quotationDetail.client_id && (quotationDetail.status === 'sent' || quotationDetail.status === 'approved') && (
                                     <button
                                         type="button"
-                                        onclick="window.print()"
+                                        id="gt-quote-portal-wa-btn"
+                                        onclick={`(function(btn){btn.disabled=true;var orig=btn.innerHTML;btn.textContent='Gerando link seguro...';fetch('/admin/clientes/${quotationDetail.client_id}/ativar-portal',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({send_email:true,promote_active:${quotationDetail.status === 'approved' ? 'true' : 'false'}})}).then(function(r){return r.json();}).then(function(d){btn.disabled=false;btn.innerHTML=orig;if(d&&d.ok&&d.whatsapp_url){window.open(d.whatsapp_url,'_blank');}else if(window.GT_ShowToast){window.GT_ShowToast((d&&d.error)||'Informe um e-mail válido para o cliente primeiro.','warning');}}).catch(function(){btn.disabled=false;btn.innerHTML=orig;if(window.GT_ShowToast){window.GT_ShowToast('Não foi possível gerar o link agora. Tente novamente.','error');}});})(this)`}
                                         class="gt-quick-action-btn !py-2 !px-3"
                                     >
                                         <span class="flex items-center gap-2.5 text-xs font-bold">
-                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
-                                            <span>Exportar Proposta Comercial (PDF)</span>
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                                            <span>Enviar Acesso do Portal no WhatsApp</span>
                                         </span>
-                                        <span class="gt-quick-action-tag">PDF</span>
+                                        <span class="gt-quick-action-tag">WHATSAPP</span>
                                     </button>
-                                </div>
+                                )}
                             </div>
 
-                            <div class="grid grid-cols-2 gap-2 pt-2.5 border-t border-white/10">
-                                {quotationDetail.status !== 'rejected' ? (
+                            <div
+                                class={quotationDetail.status !== 'rejected' ? 'grid grid-cols-2 gap-2 pt-3' : 'grid grid-cols-1 gap-2 pt-3'}
+                                style="border-top: 1px solid rgba(22, 116, 154, 0.14);"
+                            >
+                                {quotationDetail.status !== 'rejected' && (
                                     <form action={`/admin/orcamentos/${quotationDetail.id}/status`} method="post" class="m-0">
                                         <input type="hidden" name="status" value="rejected" />
                                         <button type="submit" data-loading-text="Atualizando..." class="gt-btn-outline gt-btn-sm w-full justify-center">
                                             Marcar Recusado
                                         </button>
                                     </form>
-                                ) : (
-                                    <div></div>
                                 )}
                                 <form
                                     action={`/admin/orcamentos/${quotationDetail.id}/excluir`}
