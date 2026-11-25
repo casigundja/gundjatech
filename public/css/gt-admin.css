@@ -2636,6 +2636,90 @@ html[data-admin-theme="light"] .gt-list-table-scroll thead th {
     }
 }
 
+/* ==========================================================================
+   UNIVERSAL VIEWPORT-FIT SHELL FOR ALL ADMIN & PORTAL LISTS (DESKTOP >= 1024px)
+   Garante que listagens, tabelas e grids nunca extrapolem a tela — mesmo com
+   o banner global de pagamento pendente visível no topo do Portal.
+   ========================================================================== */
+@media (min-width: 1024px) {
+    main.gt-admin-main:has(> .gt-list-shell),
+    main.gt-admin-main:has(> .gt-req-detail-shell),
+    main.gt-admin-main:has(> .gt-page-header):has(> .gtb-card > .gt-table-wrap),
+    main.gt-admin-main:has(> .gt-page-header):has(> .gt-cards-grid) {
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        gap: 14px !important;
+        padding-top: 16px !important;
+        padding-bottom: 16px !important;
+    }
+
+    main.gt-admin-main:has(> .gt-list-shell) > *,
+    main.gt-admin-main:has(> .gt-req-detail-shell) > *,
+    main.gt-admin-main:has(> .gt-page-header):has(> .gtb-card > .gt-table-wrap) > *,
+    main.gt-admin-main:has(> .gt-page-header):has(> .gt-cards-grid) > * {
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+    }
+
+    main.gt-admin-main:has(> .gt-list-shell) > .gt-billing-alert-banner,
+    main.gt-admin-main:has(> .gt-req-detail-shell) > .gt-billing-alert-banner,
+    main.gt-admin-main:has(> .gt-page-header):has(> .gtb-card > .gt-table-wrap) > :not(.gtb-card:has(> .gt-table-wrap)):not(.gt-modal-overlay):not(script),
+    main.gt-admin-main:has(> .gt-page-header):has(> .gt-cards-grid) > :not(.gt-cards-grid):not(.gt-modal-overlay):not(script) {
+        flex-shrink: 0 !important;
+    }
+
+    main.gt-admin-main:has(> .gt-list-shell) > .gt-list-shell,
+    main.gt-admin-main:has(> .gt-req-detail-shell) > .gt-req-detail-shell {
+        flex: 1 1 0% !important;
+        min-height: 0 !important;
+        height: auto !important;
+        max-height: none !important;
+    }
+
+    main.gt-admin-main:has(> .gt-page-header) > .gtb-card:has(> .gt-table-wrap) {
+        flex: 0 1 auto !important;
+        min-height: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+    }
+
+    main.gt-admin-main:has(> .gt-page-header) > .gtb-card:has(> .gt-table-wrap) > :not(.gt-table-wrap) {
+        flex-shrink: 0 !important;
+    }
+
+    main.gt-admin-main:has(> .gt-page-header) > .gtb-card > .gt-table-wrap {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        overflow-x: auto !important;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(22, 116, 154, 0.35) transparent;
+    }
+
+    main.gt-admin-main:has(> .gt-page-header) > .gtb-card > .gt-table-wrap thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: var(--gtb-card);
+    }
+
+    html[data-admin-theme="light"] main.gt-admin-main:has(> .gt-page-header) > .gtb-card > .gt-table-wrap thead th {
+        background: #F4F8FB;
+    }
+
+    main.gt-admin-main:has(> .gt-page-header) > .gt-cards-grid {
+        flex: 1 1 0% !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        align-content: start;
+        padding-right: 4px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(22, 116, 154, 0.35) transparent;
+    }
+}
+
 .gt-cards-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
