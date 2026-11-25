@@ -68,30 +68,31 @@ export interface RbacModuleDef {
 }
 
 export const RBAC_MODULES: RbacModuleDef[] = [
+    // COMERCIAL & OPERAÇÃO (funil comercial na ordem natural)
     {
         key: 'dashboard',
-        label: 'Dashboard Executivo',
+        label: 'Visão Geral',
         description: 'Painel principal com indicadores e visão geral da operação.',
         viewPerm: 'admin.dashboard.view',
         managePerm: null
     },
     {
         key: 'requests',
-        label: 'Solicitações de Serviço',
+        label: 'Solicitações',
         description: 'Fila de triagem, protocolos GNDJ e conversão para orçamento.',
         viewPerm: 'requests.view',
         managePerm: 'requests.manage'
     },
     {
         key: 'quotations',
-        label: 'Orçamentos & Propostas',
+        label: 'Orçamentos',
         description: 'Elaboração, envio ao portal e aprovação de propostas comerciais.',
         viewPerm: 'quotations.view',
         managePerm: 'quotations.manage'
     },
     {
         key: 'projects',
-        label: 'Projetos em Execução',
+        label: 'Projetos',
         description: 'Sprints, etapas, percentual de entrega e anexos técnicos.',
         viewPerm: 'projects.view',
         managePerm: 'projects.manage',
@@ -99,10 +100,19 @@ export const RBAC_MODULES: RbacModuleDef[] = [
     },
     {
         key: 'clients',
-        label: 'Clientes & CRM',
+        label: 'Clientes',
         description: 'Cadastro de empresas, contatos e ativação do Portal do Cliente.',
         viewPerm: 'clients.view',
         managePerm: 'clients.manage'
+    },
+
+    // FINANCEIRO & SERVIÇOS
+    {
+        key: 'finance',
+        label: 'Financeiro',
+        description: 'Receita & Caixa, cobranças PIX, liquidações e relatórios.',
+        viewPerm: 'finance.view',
+        managePerm: 'finance.manage'
     },
     {
         key: 'services',
@@ -125,31 +135,28 @@ export const RBAC_MODULES: RbacModuleDef[] = [
         viewPerm: 'campaigns.view',
         managePerm: 'campaigns.manage'
     },
-    {
-        key: 'finance',
-        label: 'Financeiro & Faturas',
-        description: 'Receita & Caixa, cobranças PIX, liquidações e relatórios.',
-        viewPerm: 'finance.view',
-        managePerm: 'finance.manage'
-    },
+
+    // ATENDIMENTO & IA
     {
         key: 'chat',
-        label: 'Suporte, Chat & CRM IA',
-        description: 'Inbox de atendimento ao vivo, WhatsApp e configuração do Agente IA.',
+        label: 'Chat ao Vivo & Agente IA (CRM)',
+        description: 'Inbox de atendimento ao vivo, WhatsApp e Agente IA (CRM).',
         viewPerm: 'chat.view',
         managePerm: 'chat.manage'
     },
+
+    // ADMINISTRAÇÃO
     {
         key: 'users',
-        label: 'Equipe, Usuários & Acessos',
-        description: 'Gestão de colaboradores, papéis e controle de permissões.',
+        label: 'Equipe, Usuários & Permissões',
+        description: 'Gestão de colaboradores, papéis e controle de acessos & permissões.',
         viewPerm: 'users.view',
         managePerm: 'users.manage'
     },
     {
         key: 'settings',
-        label: 'Configurações & Canais',
-        description: 'Integrações PIX, WhatsApp, e-mail e parâmetros globais.',
+        label: 'Configurações',
+        description: 'Integrações PIX, WhatsApp, e-mail e parâmetros globais do sistema.',
         viewPerm: null,
         managePerm: 'settings.manage'
     }

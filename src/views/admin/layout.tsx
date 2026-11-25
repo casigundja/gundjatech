@@ -244,31 +244,32 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                         </div>
 
                         <div class="gtb-section-head">
-                            <span>MENU PRINCIPAL</span>
+                            <span>Comercial &amp; Operação</span>
                         </div>
 
                         <nav class="px-3 space-y-0.5 overflow-y-auto flex-1">
-                            <a href="/admin/dashboard" class={`gtb-nav-item ${activeNav === 'dashboard' ? 'is-active' : ''}`} title="Dashboard">
+                            <a href="/admin/dashboard" class={`gtb-nav-item ${activeNav === 'dashboard' ? 'is-active' : ''}`} title="Visão Geral">
                                 <div class="flex items-center gap-3">
                                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
-                                    <span>Dashboard</span>
+                                    <span>Visão Geral</span>
                                 </div>
                             </a>
 
-                            {can('campaigns.view') && (
-                                <a href="/admin/campanhas" class={`gtb-nav-item ${activeNav === 'campaigns' ? 'is-active' : ''}`} title="Tráfego & Analytics">
+                            {can('requests.view') && (
+                                <a href="/admin/solicitacoes" class={`gtb-nav-item ${activeNav === 'requests' ? 'is-active' : ''}`} title="Solicitações">
                                     <div class="flex items-center gap-3">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                                        <span>Tráfego &amp; Analytics</span>
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                        <span>Solicitações</span>
                                     </div>
+                                    <span id="gt-sidebar-requests-badge" class="gtb-count-circle hidden">0</span>
                                 </a>
                             )}
 
-                            {can('finance.view') && (
-                                <a href="/admin/financeiro" class={`gtb-nav-item ${activeNav === 'finance' ? 'is-active' : ''}`} title="Financeiro & Caixa">
+                            {can('quotations.view') && (
+                                <a href="/admin/orcamentos" class={`gtb-nav-item ${activeNav === 'quotations' ? 'is-active' : ''}`} title="Orçamentos">
                                     <div class="flex items-center gap-3">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                                        <span>Financeiro &amp; Caixa</span>
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" /></svg>
+                                        <span>Orçamentos</span>
                                     </div>
                                 </a>
                             )}
@@ -282,15 +283,6 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                 </a>
                             )}
 
-                            {can('services.view') && (
-                                <a href="/admin/servicos" class={`gtb-nav-item ${activeNav === 'services' ? 'is-active' : ''}`} title="Catálogo de Serviços">
-                                    <div class="flex items-center gap-3">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" /></svg>
-                                        <span>Catálogo de Serviços</span>
-                                    </div>
-                                </a>
-                            )}
-
                             {can('clients.view') && (
                                 <a href="/admin/clientes" class={`gtb-nav-item ${activeNav === 'clients' ? 'is-active' : ''}`} title="Clientes">
                                     <div class="flex items-center gap-3">
@@ -300,27 +292,26 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                 </a>
                             )}
 
-                            {can('requests.view') && (
-                                <a href="/admin/solicitacoes" class={`gtb-nav-item ${activeNav === 'requests' ? 'is-active' : ''}`} title="Solicitações">
+                            {(can('finance.view') || can('services.view') || can('domains.view') || can('campaigns.view')) && (
+                                <div class="gtb-section-head gtb-section-head-divided">
+                                    <span>Financeiro &amp; Serviços</span>
+                                </div>
+                            )}
+
+                            {can('finance.view') && (
+                                <a href="/admin/financeiro" class={`gtb-nav-item ${activeNav === 'finance' ? 'is-active' : ''}`} title="Financeiro">
                                     <div class="flex items-center gap-3">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                                        <span>Solicitações</span>
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                                        <span>Financeiro</span>
                                     </div>
-                                    <span id="gt-sidebar-requests-badge" class="gtb-count-circle hidden">0</span>
                                 </a>
                             )}
 
-                            <div class="gtb-sidebar-nav-divider"></div>
-
-                            <div class="gtb-section-head">
-                                <span>WORKSPACES</span>
-                            </div>
-
-                            {can('quotations.view') && (
-                                <a href="/admin/orcamentos" class={`gtb-nav-item ${activeNav === 'quotations' ? 'is-active' : ''}`} title="Orçamentos">
+                            {can('services.view') && (
+                                <a href="/admin/servicos" class={`gtb-nav-item ${activeNav === 'services' ? 'is-active' : ''}`} title="Catálogo de Serviços">
                                     <div class="flex items-center gap-3">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7h-4V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM9 5a1 1 0 011-1h4a1 1 0 011 1v2H9V5zm11 8H4" /></svg>
-                                        <span>Orçamentos</span>
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" /></svg>
+                                        <span>Catálogo de Serviços</span>
                                     </div>
                                 </a>
                             )}
@@ -332,6 +323,46 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                         <span>Domínios &amp; DNS</span>
                                     </div>
                                 </a>
+                            )}
+
+                            {can('campaigns.view') && (
+                                <a href="/admin/campanhas" class={`gtb-nav-item ${activeNav === 'campaigns' ? 'is-active' : ''}`} title="Campanhas & Tráfego">
+                                    <div class="flex items-center gap-3">
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                                        <span>Campanhas &amp; Tráfego</span>
+                                    </div>
+                                </a>
+                            )}
+
+                            {(can('chat.view') || can('chat.manage')) && (
+                                <div class="gtb-section-head gtb-section-head-divided">
+                                    <span>Atendimento &amp; IA</span>
+                                </div>
+                            )}
+
+                            {can('chat.view') && (
+                                <a href="/admin/atendimento" class={`gtb-nav-item ${activeNav === 'chat' ? 'is-active' : ''}`} title="Chat ao Vivo">
+                                    <div class="flex items-center gap-3">
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+                                        <span>Chat ao Vivo</span>
+                                    </div>
+                                    <span id="gt-sidebar-chats-badge" class="gtb-count-circle hidden">0</span>
+                                </a>
+                            )}
+
+                            {can('chat.manage') && (
+                                <a href="/admin/crm-autonomo" class={`gtb-nav-item ${activeNav === 'crm' ? 'is-active' : ''}`} title="Agente IA (CRM)">
+                                    <div class="flex items-center gap-3">
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                        <span>Agente IA (CRM)</span>
+                                    </div>
+                                </a>
+                            )}
+
+                            {(can('users.manage') || can('settings.manage')) && (
+                                <div class="gtb-section-head gtb-section-head-divided">
+                                    <span>Administração</span>
+                                </div>
                             )}
 
                             {can('users.manage') && (
@@ -349,27 +380,6 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                                         <span>Acessos &amp; Permissões</span>
                                     </div>
-                                </a>
-                            )}
-
-                            <div class="gtb-sidebar-nav-divider"></div>
-
-                            {can('chat.manage') && (
-                                <a href="/admin/crm-autonomo" class={`gtb-nav-item ${activeNav === 'crm' ? 'is-active' : ''}`} title="CRM Autônomo IA">
-                                    <div class="flex items-center gap-3">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                                        <span>CRM Autônomo IA</span>
-                                    </div>
-                                </a>
-                            )}
-
-                            {can('chat.view') && (
-                                <a href="/admin/atendimento" class={`gtb-nav-item ${activeNav === 'chat' ? 'is-active' : ''}`} title="Suporte & Chat">
-                                    <div class="flex items-center gap-3">
-                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                        <span>Suporte &amp; Chat</span>
-                                    </div>
-                                    <span id="gt-sidebar-chats-badge" class="gtb-count-circle hidden">0</span>
                                 </a>
                             )}
 
