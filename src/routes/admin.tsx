@@ -1,7 +1,14 @@
 import { Hono } from 'hono';
 import { Env, AppVariables, UserRole } from '../types/env';
 import { requireAuth, requirePermission, requireStaff } from '../middleware/auth';
-import { hasPermission } from '../lib/rbac';
+import {
+    CONFIGURABLE_STAFF_ROLES,
+    hasPermission,
+    loadDynamicRbacConfig,
+    resolveEffectivePermissions,
+    saveRolePermissions,
+    saveUserPermissionOverride
+} from '../lib/rbac';
 import { sha256Hex } from '../lib/crypto';
 import { destroyAllUserSessions } from '../lib/session';
 import { getRequestBody } from '../lib/request';
@@ -15,6 +22,7 @@ import { AutonomousCrmAgent } from '../services/ai-crm-agent';
 import { AdminClientsView } from '../views/admin/clients';
 import { AdminRequestsView } from '../views/admin/requests';
 import { AdminUsersView } from '../views/admin/users';
+import { AdminPermissionsView } from '../views/admin/permissions';
 import { AdminQuotationsView } from '../views/admin/quotations';
 import { sendWhatsAppTextMessage } from '../services/whatsapp';
 import { AdminChatView } from '../views/admin/chat';
@@ -32,6 +40,18 @@ export const adminRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>(
 // Protege todas as rotas do admin exigindo login e perfil staff
 adminRoutes.use('*', requireAuth, requireStaff);
 
+// Carrega permissões dinâmicas do D1 (por cargo + sobrescrita individual por usuário)
+adminRoutes.use('*', async (c, next) => {
+    const user = c.get('user');
+    if (user && user.role !== 'superadmin') {
+        try {
+            const rbacCfg = await loadDynamicRbacConfig(c.env?.DB);
+            user.effectivePermissions = resolveEffectivePermissions(user.role, user.id, rbacCfg);
+        } catch {}
+    }
+    await next();
+});
+
 // RBAC Granular por módulo administrativo (leitura vs mutação)
 function requireModulePermission(viewPermission: string, managePermission: string) {
     const viewGuard = requirePermission(viewPermission);
@@ -46,6 +66,7 @@ function requireModulePermission(viewPermission: string, managePermission: strin
 }
 
 adminRoutes.use('/usuarios*', requirePermission('users.manage'));
+adminRoutes.use('/permissoes*', requirePermission('users.manage'));
 adminRoutes.use('/configuracoes*', requirePermission('settings.manage'));
 adminRoutes.use('/financeiro*', requireModulePermission('finance.view', 'finance.manage'));
 adminRoutes.use('/clientes*', requireModulePermission('clients.view', 'clients.manage'));
@@ -3445,6 +3466,11 @@ adminRoutes.post('/projetos/:id', async (c) => {
 });
 
 adminRoutes.post('/projetos/:id/excluir', async (c) => {
+    const user = c.get('user');
+    if (!user || !hasPermission(user.role, 'projects.delete', user.effectivePermissions)) {
+        return c.json({ error: 'Forbidden', message: 'Apenas perfis autorizados (Diretoria / Admin) podem excluir projetos.' }, 403);
+    }
+
     const db = c.env.DB;
     const id = Number(c.req.param('id'));
 
@@ -4233,7 +4259,134 @@ adminRoutes.post('/orcamentos/:id/excluir', async (c) => {
     return c.redirect('/admin/orcamentos?success=Orçamento e vínculos (solicitação e faturas em aberto) excluídos com sucesso.');
 });
 
-adminRoutes.get('/permissoes', (c) => c.redirect('/admin/usuarios'));
+// ==========================================
+// GESTÃO DE ACESSOS & PERMISSÕES (RBAC DINÂMICO)
+// ==========================================
+adminRoutes.get('/permissoes', async (c) => {
+    const user = c.get('user')!;
+    const db = c.env.DB;
+    const { successMessage, errorMessage } = getFlashMessages(c);
+
+    const tabParam = c.req.query('tab') === 'users' ? 'users' : 'roles';
+    const validRoleKeys = CONFIGURABLE_STAFF_ROLES.map((r) => r.key);
+    const roleParam = (c.req.query('role') || 'manager') as UserRole;
+    const selectedRole: UserRole = validRoleKeys.includes(roleParam) ? roleParam : 'manager';
+    const selectedUserId = Number(c.req.query('user_id') || 0) || null;
+
+    const [rbacConfig, staffRes] = await Promise.all([
+        loadDynamicRbacConfig(db),
+        db.prepare(
+            `SELECT id, name, email, role, is_active
+             FROM users
+             WHERE role != 'client'
+             ORDER BY name ASC`
+        ).all()
+    ]);
+
+    return c.html(
+        <AdminPermissionsView
+            currentUser={user}
+            staffUsers={staffRes.results || []}
+            rbacConfig={rbacConfig}
+            selectedTab={tabParam}
+            selectedRole={selectedRole}
+            selectedUserId={selectedUserId}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+        />
+    );
+});
+
+adminRoutes.post('/permissoes/cargo', async (c) => {
+    const user = c.get('user')!;
+    const db = c.env.DB;
+    const body = await c.req.parseBody({ all: true });
+    const role = String(body.role || '').trim() as UserRole;
+    const validRoleKeys = CONFIGURABLE_STAFF_ROLES.map((r) => r.key);
+
+    if (!validRoleKeys.includes(role)) {
+        return c.redirect('/admin/permissoes?error=' + encodeURIComponent('Cargo inválido.'));
+    }
+    if (role === 'admin' && user.role !== 'superadmin') {
+        return c.redirect(`/admin/permissoes?tab=roles&role=${role}&error=` + encodeURIComponent('Apenas Super Admin pode alterar permissões do cargo Administrador.'));
+    }
+
+    const rawPerms = body.permissions;
+    const permsList = Array.isArray(rawPerms)
+        ? rawPerms.map((v) => String(v))
+        : rawPerms
+        ? [String(rawPerms)]
+        : [];
+
+    await saveRolePermissions(db, role, permsList);
+    return c.redirect(`/admin/permissoes?tab=roles&role=${role}&success=` + encodeURIComponent('Permissões do cargo atualizadas com sucesso!'));
+});
+
+adminRoutes.post('/permissoes/cargo/reset', async (c) => {
+    const user = c.get('user')!;
+    const db = c.env.DB;
+    const body = await getRequestBody(c);
+    const role = String(body.role || '').trim() as UserRole;
+    const validRoleKeys = CONFIGURABLE_STAFF_ROLES.map((r) => r.key);
+
+    if (!validRoleKeys.includes(role)) {
+        return c.redirect('/admin/permissoes?error=' + encodeURIComponent('Cargo inválido.'));
+    }
+    if (role === 'admin' && user.role !== 'superadmin') {
+        return c.redirect(`/admin/permissoes?tab=roles&role=${role}&error=` + encodeURIComponent('Apenas Super Admin pode restaurar o cargo Administrador.'));
+    }
+
+    await saveRolePermissions(db, role, null);
+    return c.redirect(`/admin/permissoes?tab=roles&role=${role}&success=` + encodeURIComponent('Permissões restauradas para o padrão do sistema!'));
+});
+
+adminRoutes.post('/permissoes/usuario', async (c) => {
+    const user = c.get('user')!;
+    const db = c.env.DB;
+    const body = await c.req.parseBody({ all: true });
+    const targetId = Number(body.user_id || 0);
+
+    if (!targetId) {
+        return c.redirect('/admin/permissoes?tab=users&error=' + encodeURIComponent('Usuário inválido.'));
+    }
+
+    const target = await db.prepare('SELECT id, name, role FROM users WHERE id = ?').bind(targetId).first<{ id: number; name: string; role: UserRole }>();
+    if (!target || target.role === 'client' || target.role === 'superadmin') {
+        return c.redirect('/admin/permissoes?tab=users&error=' + encodeURIComponent('Este usuário não pode ter permissões personalizadas.'));
+    }
+    if (target.role === 'admin' && user.role !== 'superadmin') {
+        return c.redirect(`/admin/permissoes?tab=users&user_id=${targetId}&error=` + encodeURIComponent('Apenas Super Admin pode personalizar acessos de outro Administrador.'));
+    }
+
+    const rawPerms = body.permissions;
+    const permsList = Array.isArray(rawPerms)
+        ? rawPerms.map((v) => String(v))
+        : rawPerms
+        ? [String(rawPerms)]
+        : [];
+
+    await saveUserPermissionOverride(db, targetId, permsList);
+    return c.redirect(`/admin/permissoes?tab=users&user_id=${targetId}&success=` + encodeURIComponent(`Acessos individuais de ${target.name} salvos com sucesso!`));
+});
+
+adminRoutes.post('/permissoes/usuario/reset', async (c) => {
+    const user = c.get('user')!;
+    const db = c.env.DB;
+    const body = await getRequestBody(c);
+    const targetId = Number(body.user_id || 0);
+
+    if (!targetId) {
+        return c.redirect('/admin/permissoes?tab=users&error=' + encodeURIComponent('Usuário inválido.'));
+    }
+
+    const target = await db.prepare('SELECT id, name, role FROM users WHERE id = ?').bind(targetId).first<{ id: number; name: string; role: UserRole }>();
+    if (target && target.role === 'admin' && user.role !== 'superadmin') {
+        return c.redirect(`/admin/permissoes?tab=users&user_id=${targetId}&error=` + encodeURIComponent('Apenas Super Admin pode alterar acessos de outro Administrador.'));
+    }
+
+    await saveUserPermissionOverride(db, targetId, null);
+    return c.redirect(`/admin/permissoes?tab=users&user_id=${targetId}&success=` + encodeURIComponent('Usuário voltou a herdar as permissões padrão do cargo!'));
+});
 
 // ==========================================
 // 12. CRM AUTÔNOMO IA (/admin/crm-autonomo)

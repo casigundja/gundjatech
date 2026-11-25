@@ -48,6 +48,7 @@ export interface UserSessionPayload {
     role: UserRole;
     is_active: boolean;
     client_id?: number | null;
+    effectivePermissions?: string[];
 }
 
 export interface AppVariables {

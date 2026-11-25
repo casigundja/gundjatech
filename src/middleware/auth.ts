@@ -102,7 +102,7 @@ export function requirePermission(permission: string): MiddlewareHandler<{ Bindi
             return c.redirect('/login');
         }
 
-        if (!hasPermission(user.role, permission)) {
+        if (!hasPermission(user.role, permission, user.effectivePermissions)) {
             return c.json({ error: 'Forbidden', message: 'Você não possui permissão para acessar este recurso.' }, 403);
         }
 
