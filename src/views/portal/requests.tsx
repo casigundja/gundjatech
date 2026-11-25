@@ -104,7 +104,7 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                         <span class="gt-req-pill-neutral">Protocolo automático GNDJ</span>
                     </div>
 
-                    <div class="gt-req-detail-grid" style="align-items: start;">
+                    <div class="gt-grid-detail gt-req-detail-grid" style="align-items: start; gap: 18px;">
                         {/* Coluna Principal: Formulário Executivo de Briefing */}
                         <section class="gtb-card !p-5 sm:!p-6 min-w-0">
                             <div class="gtb-card-accent-top gtb-card-accent-gold"></div>
@@ -343,7 +343,7 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                         </div>
                     </div>
 
-                    <div class="gt-req-detail-grid">
+                    <div class="gt-grid-detail gt-req-detail-grid" style="gap: 18px;">
                         {/* Coluna Principal */}
                         <div class="min-w-0 gt-req-detail-left" style="display: flex; flex-direction: column; gap: 12px;">
                             {/* Card 1: Cabeçalho Executivo + 3 Mini-Cards + Esteira Visual */}
