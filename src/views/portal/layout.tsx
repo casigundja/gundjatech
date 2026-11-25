@@ -222,7 +222,7 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                                     <span class="truncate">Financeiro &amp; Faturas</span>
                                 </div>
-                                <span id="gt-portal-finance-badge" class="gt-portal-nav-badge hidden" aria-label="Faturas pendentes">0</span>
+                                <span id="gt-portal-finance-badge" class="gt-portal-nav-badge hidden" style="display: none;" aria-label="Faturas pendentes">0</span>
                             </a>
 
                             <a href="/portal/atendimento" class={`gtb-nav-item ${activeNav === 'chat' ? 'is-active' : ''}`} title="Falar com Atendimento">
@@ -270,7 +270,7 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                                     aria-label="Sair do Portal"
                                     class="gt-portal-logout-btn"
                                 >
-                                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
                                 </button>
                             </form>
                         </div>
@@ -410,7 +410,7 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                     {/* Main Content Canvas */}
                     <main class="gt-admin-main flex-1 overflow-y-auto p-4 sm:p-6 lg:p-7 space-y-6">
                         {activeNav !== 'finance' && (
-                            <div id="gt-portal-billing-banner" class="gt-billing-alert-banner hidden" role="alert">
+                            <div id="gt-portal-billing-banner" class="gt-billing-alert-banner hidden" style="display: none;" role="alert">
                                 <div class="gt-billing-alert-left">
                                     <span class="gt-billing-alert-icon" aria-hidden="true">
                                         <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -772,8 +772,10 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                                     if (count > 0) {
                                         finBadge.textContent = count > 9 ? '9+' : String(count);
                                         finBadge.classList.remove('hidden');
+                                        finBadge.style.display = '';
                                     } else {
                                         finBadge.classList.add('hidden');
+                                        finBadge.style.display = 'none';
                                     }
                                 }
 
@@ -801,8 +803,10 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                                             }
                                         }
                                         banner.classList.remove('hidden');
+                                        banner.style.display = '';
                                     } else {
                                         banner.classList.add('hidden');
+                                        banner.style.display = 'none';
                                     }
                                 }
                             }

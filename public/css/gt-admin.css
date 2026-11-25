@@ -5177,6 +5177,11 @@ html[data-admin-theme="light"] .gt-inbox-channel {
 /* ==========================================================================
    PORTAL MANDATORY PAYMENT ALERT BANNER & SIDEBAR BADGE (PALETA 3)
    ========================================================================== */
+.gt-billing-alert-banner.hidden,
+.gt-portal-nav-badge.hidden {
+    display: none !important;
+}
+
 .gt-portal-nav-badge {
     display: inline-flex;
     align-items: center;
