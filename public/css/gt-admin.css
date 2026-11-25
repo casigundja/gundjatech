@@ -4257,6 +4257,8 @@ html[data-admin-theme="light"] body.gt-admin-boost .gt-badge-danger {
 .gt-petrol-cta-card {
     background: linear-gradient(135deg, #042840 0%, #063B5C 60%, #16749A 100%) !important;
     border: 1px solid rgba(22, 116, 154, 0.45) !important;
+    border-radius: 1rem !important;
+    padding: 1.25rem !important;
     box-shadow: 0 14px 30px -12px rgba(6, 59, 92, 0.38);
 }
 

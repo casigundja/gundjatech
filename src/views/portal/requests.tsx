@@ -250,19 +250,13 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                                 </div>
                             </aside>
 
-                            <div class="gt-petrol-cta-card">
-                                <div class="gt-petrol-cta-head">
-                                    <span class="gt-petrol-cta-icon" aria-hidden="true">
-                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.1" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-                                    </span>
-                                    <div class="gt-petrol-cta-title">Precisa de ajuda no escopo?</div>
-                                </div>
+                            <div class="gt-petrol-cta-card rounded-2xl p-5">
+                                <div class="gt-petrol-cta-title mb-1.5">Precisa de ajuda no escopo?</div>
                                 <p class="gt-petrol-cta-desc">
                                     Fale diretamente com nossa equipe técnica no chat em tempo real antes de enviar sua solicitação.
                                 </p>
                                 <a href="/portal/atendimento" class="gt-btn-primary gt-btn-sm w-full justify-center">
-                                    <span>Abrir Chat com Engenharia</span>
-                                    <span>&rarr;</span>
+                                    <span>Abrir Chat com Engenharia &rarr;</span>
                                 </a>
                             </div>
                         </div>
@@ -612,20 +606,14 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                             </aside>
 
                             {/* Card de Suporte Institucional (Paleta 3: Azul Petróleo + Amarelo Ouro) */}
-                            <div class="gt-petrol-cta-card" style="flex-shrink: 0;">
-                                <div class="gt-petrol-cta-head">
-                                    <span class="gt-petrol-cta-icon" aria-hidden="true">
-                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.1" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-                                    </span>
-                                    <div class="gt-petrol-cta-title">Dúvidas sobre esta demanda?</div>
-                                </div>
+                            <div class="gt-petrol-cta-card rounded-2xl p-5" style="flex-shrink: 0;">
+                                <div class="gt-petrol-cta-title mb-1.5">Dúvidas sobre esta demanda?</div>
                                 <p class="gt-petrol-cta-desc">
                                     Fale em tempo real com nossa equipe técnica pelo chat ou acompanhe suas propostas comerciais.
                                 </p>
                                 <div class="space-y-2">
                                     <a href="/portal/atendimento" class="gt-btn-primary gt-btn-sm w-full justify-center">
-                                        <span>Falar com a Equipe</span>
-                                        <span>&rarr;</span>
+                                        <span>Falar com a Equipe &rarr;</span>
                                     </a>
                                     <a href="/portal/orcamentos" class="gt-btn-outline gt-btn-xs w-full justify-center" style="border-color: rgba(231, 240, 245, 0.25); color: #E7F0F5;">
                                         <span>Ver Meus Orçamentos</span>
