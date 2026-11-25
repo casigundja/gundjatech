@@ -1242,7 +1242,7 @@ describe('Fase 4 • Módulo 5 & 6: Painel Administrativo Core & Avançado (/adm
             headers: { 'Cookie': adminCookie }
         }, env);
         expect(newServiceForm.status).toBe(200);
-        expect(await newServiceForm.text()).toContain('Cadastrar Novo Pacote de Serviço');
+        expect(await newServiceForm.text()).toContain('Cadastrar Novo Serviço');
 
         // POST /admin/solicitacoes/1/cancelar
         const cancelReq = await app.request('/admin/solicitacoes/1/cancelar', {

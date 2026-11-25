@@ -33,6 +33,24 @@ const STAGE_LABELS: Record<string, string> = {
     closed: 'Encerrado'
 };
 
+function formatInboxTimeBrt(raw?: string | null): string {
+    if (!raw) return '';
+    try {
+        const s = String(raw).trim();
+        const iso = s.includes('T') ? (s.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(s) ? s : `${s}Z`) : `${s.replace(' ', 'T')}Z`;
+        const dt = new Date(iso);
+        if (isNaN(dt.getTime())) return s.slice(11, 16);
+        return new Intl.DateTimeFormat('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        }).format(dt);
+    } catch {
+        return String(raw).slice(11, 16);
+    }
+}
+
 export const AdminChatView: FC<AdminChatProps> = ({
     currentUser,
     conversations = [],
@@ -142,23 +160,28 @@ export const AdminChatView: FC<AdminChatProps> = ({
             <div class="gtb-card !p-0 gt-chat-layout !gap-0" data-has-active={activeConversation ? '1' : '0'}>
                 {/* Coluna Esquerda: Lista de Conversas (Inbox) */}
                 <aside class="gtb-chat-sidebar gt-chat-inbox border-r">
-                    <div class="px-4 py-3 border-b border-white/10 space-y-2.5 shrink-0">
+                    <div class="gt-inbox-header shrink-0">
                         <div class="flex items-center justify-between gap-2">
-                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-white">
-                                Inbox de Atendimento (<span id="gt-inbox-count">{conversations.length}</span>)
+                            <span class="gt-inbox-heading">
+                                Inbox de Atendimento
+                                <span id="gt-inbox-count" class="gt-inbox-count-pill">{conversations.length}</span>
                             </span>
-                            <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#34D399]">
-                                <span class="w-2 h-2 rounded-full bg-[#34D399] animate-pulse"></span>
-                                Ao vivo
+                            <span class="gt-inbox-live-pill">
+                                <span class="gt-inbox-live-dot"></span>
+                                <span>Ao vivo</span>
                             </span>
                         </div>
-                        <div style="position: relative;">
+                        <div class="gt-inbox-search-wrap">
+                            <svg class="gt-inbox-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="11" cy="11" r="8" />
+                                <path d="m21 21-4.3-4.3" />
+                            </svg>
                             <input
                                 id="gt-inbox-search"
                                 type="search"
                                 placeholder="Buscar cliente, assunto ou canal..."
                                 oninput="var q=this.value.toLowerCase().trim();document.querySelectorAll('#gt-inbox-list .gtb-chat-item').forEach(function(el){el.style.display=!q||el.textContent.toLowerCase().indexOf(q)!==-1?'':'none';});"
-                                class="w-full rounded-xl px-3 py-1.5 text-xs"
+                                class="gt-inbox-search-input"
                             />
                         </div>
                     </div>
@@ -167,7 +190,7 @@ export const AdminChatView: FC<AdminChatProps> = ({
                         id="gt-inbox-list"
                         data-status-filter={statusFilter}
                         data-active-id={activeConversation ? String(activeConversation.id) : ''}
-                        class="flex-1 overflow-y-auto divide-y divide-white/5"
+                        class="gt-inbox-list flex-1 overflow-y-auto"
                     >
                         {conversations.length === 0 ? (
                             <div class="flex flex-col items-center justify-center text-center px-5 py-12">
@@ -184,48 +207,63 @@ export const AdminChatView: FC<AdminChatProps> = ({
                         ) : (
                             conversations.map((c) => {
                                 const isSelected = activeConversation?.id === c.id;
-                                const isHandoff = c.status !== 'closed' && (c.status === 'waiting_staff' || c.crm_stage === 'handoff_human');
-                                const stageText = isHandoff ? 'Aguardando Humano' : (STAGE_LABELS[c.crm_stage] || c.crm_stage || 'Novo Lead');
+                                const isClosed = c.status === 'closed';
+                                const isHandoff = !isClosed && (c.status === 'waiting_staff' || c.crm_stage === 'handoff_human');
+                                const stageText = isClosed
+                                    ? 'Encerrado'
+                                    : isHandoff
+                                    ? ''
+                                    : (STAGE_LABELS[c.crm_stage] || c.crm_stage || 'Novo Lead');
                                 const clientName = c.visitor_name || c.client_name || c.visitor_company || `Sessão #${c.id}`;
                                 const initials = String(clientName || 'GT').trim().slice(0, 2).toUpperCase();
                                 const channelLabel = c.channel === 'whatsapp' ? 'WhatsApp' : c.channel === 'web_chat' ? 'Portal' : 'Site';
-                                const timeStr = c.last_message_at
-                                    ? new Date(c.last_message_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-                                    : '';
+                                const timeStr = formatInboxTimeBrt(c.last_message_at || c.updated_at);
+                                const pillCls = isClosed
+                                    ? 'gt-inbox-pill--muted'
+                                    : isHandoff
+                                    ? 'gt-inbox-pill--warning'
+                                    : c.ai_enabled
+                                    ? 'gt-inbox-pill--success'
+                                    : 'gt-inbox-pill--info';
+                                const pillTxt = isClosed
+                                    ? 'Encerrada'
+                                    : isHandoff
+                                    ? 'Aguardando Humano'
+                                    : c.ai_enabled
+                                    ? 'IA Ativa'
+                                    : 'Humano';
+                                const dotCls = isClosed
+                                    ? 'is-closed'
+                                    : isHandoff
+                                    ? 'is-handoff'
+                                    : c.ai_enabled
+                                    ? 'is-ai'
+                                    : 'is-human';
 
                                 return (
                                     <a
                                         href={`/admin/atendimento?id=${c.id}&status=${statusFilter}`}
-                                        style={isHandoff ? 'border-left: 3px solid #F2C230;' : ''}
-                                        class={`gtb-chat-item block px-4 py-3.5 no-underline transition ${isSelected ? 'is-active' : ''}`}
+                                        class={`gtb-chat-item ${isSelected ? 'is-active' : ''} ${isHandoff ? 'is-handoff' : ''}`}
                                     >
-                                        <div class="flex items-start gap-2.5">
-                                            <span class="gt-chat-avatar">{initials}</span>
+                                        <div class="gt-inbox-item-row">
+                                            <span class="gt-chat-avatar">
+                                                <span>{initials}</span>
+                                                <span class={`gt-chat-avatar-dot ${dotCls}`} aria-hidden="true"></span>
+                                            </span>
                                             <div class="min-w-0 flex-1">
-                                                <div class="flex items-center justify-between gap-2 mb-0.5">
-                                                    <span class="text-[13px] font-extrabold text-white truncate">
-                                                        {clientName}
-                                                    </span>
-                                                    {timeStr && (
-                                                        <span class="text-[10.5px] text-[#8C95AA] shrink-0 font-semibold">
-                                                            {timeStr}
-                                                        </span>
-                                                    )}
+                                                <div class="gt-inbox-top">
+                                                    <span class="gt-inbox-name">{clientName}</span>
+                                                    {timeStr && <span class="gt-inbox-time">{timeStr}</span>}
                                                 </div>
 
-                                                <div class="text-[11.5px] text-[#8C95AA] truncate mb-2">
+                                                <div class="gt-inbox-preview">
                                                     {c.last_message_preview || c.visitor_objective || c.subject || c.visitor_email || 'Atendimento ao vivo'}
                                                 </div>
 
-                                                <div class="flex items-center justify-between gap-1.5 flex-wrap">
-                                                    <div class="flex items-center gap-1.5">
-                                                        <span class={`gt-badge ${isHandoff ? 'gt-badge-warning' : c.ai_enabled ? 'gt-badge-success' : 'gt-badge-info'}`}>
-                                                            {isHandoff ? 'Humano Solicitado' : c.ai_enabled ? 'IA' : 'Humano'}
-                                                        </span>
-                                                        <span class="text-[10.5px] font-semibold text-[#8C95AA]">· {channelLabel}</span>
-                                                    </div>
-                                                    <span class="text-[10px] font-bold text-[#8C95AA]">
-                                                        {stageText}
+                                                <div class="gt-inbox-meta">
+                                                    <span class={`gt-inbox-pill ${pillCls}`}>{pillTxt}</span>
+                                                    <span class="gt-inbox-channel">
+                                                        {channelLabel}{stageText ? ` · ${stageText}` : ''}
                                                     </span>
                                                 </div>
                                             </div>
@@ -521,32 +559,37 @@ export const AdminChatView: FC<AdminChatProps> = ({
 
                             var html = items.map(function (c) {
                                 var isSelected = String(c.id) === String(activeId);
-                                var isHandoff = c.status !== 'closed' && (c.status === 'waiting_staff' || c.crm_stage === 'handoff_human');
-                                var stageText = isHandoff ? 'Aguardando Humano' : (stageLabels[c.crm_stage] || c.crm_stage || 'Novo Lead');
+                                var isClosed = c.status === 'closed';
+                                var isHandoff = !isClosed && (c.status === 'waiting_staff' || c.crm_stage === 'handoff_human');
+                                var stageText = isClosed ? 'Encerrado' : isHandoff ? '' : (stageLabels[c.crm_stage] || c.crm_stage || 'Novo Lead');
                                 var name = c.visitor_name || c.client_name || c.visitor_company || ('Sessão #' + c.id);
                                 var initials = String(name || 'GT').trim().slice(0, 2).toUpperCase();
                                 var channelLabel = c.channel === 'whatsapp' ? 'WhatsApp' : c.channel === 'web_chat' ? 'Portal' : 'Site';
                                 var preview = c.last_message_preview || c.visitor_objective || c.subject || c.visitor_email || 'Atendimento ao vivo';
                                 var timeStr = '';
-                                if (c.last_message_at) {
+                                var rawTime = c.last_message_at || c.updated_at;
+                                if (rawTime) {
                                     try {
-                                        timeStr = new Date(c.last_message_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                                        var ts = String(rawTime).trim();
+                                        var iso = ts.indexOf('T') !== -1 ? (ts.endsWith('Z') ? ts : ts + 'Z') : ts.replace(' ', 'T') + 'Z';
+                                        timeStr = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso));
                                     } catch (e) {}
                                 }
-                                var badgeCls = isHandoff ? 'gt-badge-warning' : c.ai_enabled ? 'gt-badge-success' : 'gt-badge-info';
-                                var badgeTxt = isHandoff ? 'Humano Solicitado' : c.ai_enabled ? 'IA' : 'Humano';
-                                var matchesSearch = !q || (name + ' ' + preview + ' ' + channelLabel + ' ' + stageText).toLowerCase().indexOf(q) !== -1;
-                                var rowStyle = (isHandoff ? 'border-left: 3px solid #F2C230;' : '') + (matchesSearch ? '' : 'display:none;');
-                                return '<a href="/admin/atendimento?id=' + encodeURIComponent(c.id) + '&status=' + encodeURIComponent(statusFilter) + '" style="' + rowStyle + '" class="gtb-chat-item block px-4 py-3.5 no-underline transition ' + (isSelected ? 'is-active' : '') + '">'
-                                    + '<div class="flex items-start gap-2.5"><span class="gt-chat-avatar">' + esc(initials) + '</span><div class="min-w-0 flex-1">'
-                                    + '<div class="flex items-center justify-between gap-2 mb-0.5">'
-                                    + '<span class="text-[13px] font-extrabold text-white truncate">' + esc(name) + '</span>'
-                                    + (timeStr ? '<span class="text-[10.5px] text-[#8C95AA] shrink-0 font-semibold">' + esc(timeStr) + '</span>' : '')
+                                var pillCls = isClosed ? 'gt-inbox-pill--muted' : isHandoff ? 'gt-inbox-pill--warning' : c.ai_enabled ? 'gt-inbox-pill--success' : 'gt-inbox-pill--info';
+                                var pillTxt = isClosed ? 'Encerrada' : isHandoff ? 'Aguardando Humano' : c.ai_enabled ? 'IA Ativa' : 'Humano';
+                                var dotCls = isClosed ? 'is-closed' : isHandoff ? 'is-handoff' : c.ai_enabled ? 'is-ai' : 'is-human';
+                                var matchesSearch = !q || (name + ' ' + preview + ' ' + channelLabel + ' ' + stageText + ' ' + pillTxt).toLowerCase().indexOf(q) !== -1;
+                                var rowStyle = matchesSearch ? '' : 'display:none;';
+                                return '<a href="/admin/atendimento?id=' + encodeURIComponent(c.id) + '&status=' + encodeURIComponent(statusFilter) + '" style="' + rowStyle + '" class="gtb-chat-item ' + (isSelected ? 'is-active ' : '') + (isHandoff ? 'is-handoff' : '') + '">'
+                                    + '<div class="gt-inbox-item-row"><span class="gt-chat-avatar"><span>' + esc(initials) + '</span><span class="gt-chat-avatar-dot ' + dotCls + '" aria-hidden="true"></span></span><div class="min-w-0 flex-1">'
+                                    + '<div class="gt-inbox-top">'
+                                    + '<span class="gt-inbox-name">' + esc(name) + '</span>'
+                                    + (timeStr ? '<span class="gt-inbox-time">' + esc(timeStr) + '</span>' : '')
                                     + '</div>'
-                                    + '<div class="text-[11.5px] text-[#8C95AA] truncate mb-2">' + esc(preview) + '</div>'
-                                    + '<div class="flex items-center justify-between gap-1.5 flex-wrap">'
-                                    + '<div class="flex items-center gap-1.5"><span class="gt-badge ' + badgeCls + '">' + badgeTxt + '</span><span class="text-[10.5px] font-semibold text-[#8C95AA]">· ' + esc(channelLabel) + '</span></div>'
-                                    + '<span class="text-[10px] font-bold text-[#8C95AA]">' + esc(stageText) + '</span>'
+                                    + '<div class="gt-inbox-preview">' + esc(preview) + '</div>'
+                                    + '<div class="gt-inbox-meta">'
+                                    + '<span class="gt-inbox-pill ' + pillCls + '">' + pillTxt + '</span>'
+                                    + '<span class="gt-inbox-channel">' + esc(channelLabel) + (stageText ? ' · ' + esc(stageText) : '') + '</span>'
                                     + '</div></div></div></a>';
                             }).join('');
                             listEl.innerHTML = html;

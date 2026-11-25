@@ -4709,18 +4709,343 @@ html[data-admin-theme="light"] .gt-chat-channel-card {
 }
 
 .gt-chat-avatar {
-    width: 34px;
-    height: 34px;
-    border-radius: 999px;
+    position: relative;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, #063B5C 0%, #16749A 100%);
     color: #F2C230;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.03em;
     flex-shrink: 0;
+    box-shadow: 0 4px 10px -4px rgba(6, 59, 92, 0.35);
+}
+
+.gt-chat-avatar-dot {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    border: 2px solid #081C2D;
+}
+
+.gt-chat-avatar-dot.is-ai { background: #10B981; }
+.gt-chat-avatar-dot.is-handoff { background: #F2C230; }
+.gt-chat-avatar-dot.is-human { background: #38BDF8; }
+.gt-chat-avatar-dot.is-closed { background: #64748B; }
+
+html[data-admin-theme="light"] .gt-chat-avatar-dot {
+    border-color: #FFFFFF;
+}
+
+/* Modern Admin Inbox de Atendimento (Dark & Light) */
+.gt-inbox-header {
+    padding: 14px 14px 12px;
+    border-bottom: 1px solid rgba(231, 240, 245, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+html[data-admin-theme="light"] .gt-inbox-header {
+    border-bottom-color: #E2ECF3;
+}
+
+.gt-inbox-heading {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #E7F0F5;
+}
+
+html[data-admin-theme="light"] .gt-inbox-heading {
+    color: #063B5C;
+}
+
+.gt-inbox-count-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    background: rgba(242, 194, 48, 0.16);
+    color: #F2C230;
+}
+
+html[data-admin-theme="light"] .gt-inbox-count-pill {
+    background: #E7F0F5;
+    color: #063B5C;
+}
+
+.gt-inbox-live-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    background: rgba(16, 185, 129, 0.14);
+    color: #34D399;
+    border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+html[data-admin-theme="light"] .gt-inbox-live-pill {
+    background: #ECFDF5;
+    color: #047857;
+    border-color: #A7F3D0;
+}
+
+.gt-inbox-live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: #10B981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22);
+}
+
+.gt-inbox-search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.gt-inbox-search-icon {
+    position: absolute;
+    left: 11px;
+    color: #7E96AA;
+    pointer-events: none;
+}
+
+.gt-inbox-search-input {
+    width: 100%;
+    height: 36px;
+    padding: 0 12px 0 33px !important;
+    border-radius: 10px !important;
+    font-size: 12px !important;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(231, 240, 245, 0.12) !important;
+    color: #FFFFFF !important;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.gt-inbox-search-input:focus {
+    outline: none;
+    border-color: #16749A !important;
+    box-shadow: 0 0 0 3px rgba(22, 116, 154, 0.22);
+}
+
+html[data-admin-theme="light"] .gt-inbox-search-input {
+    background: #F4F8FB !important;
+    border-color: #D6E4EE !important;
+    color: #063B5C !important;
+}
+
+html[data-admin-theme="light"] .gt-inbox-search-input:focus {
+    background: #FFFFFF !important;
+    border-color: #16749A !important;
+    box-shadow: 0 0 0 3px rgba(22, 116, 154, 0.14);
+}
+
+.gt-inbox-list {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.gt-inbox-list .gtb-chat-item {
+    display: block;
+    padding: 11px 12px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    text-decoration: none;
+    transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.14s ease;
+}
+
+.gt-inbox-list .gtb-chat-item:hover {
+    background: rgba(231, 240, 245, 0.06);
+    border-color: rgba(231, 240, 245, 0.10);
+}
+
+.gt-inbox-list .gtb-chat-item.is-handoff:not(.is-active) {
+    background: rgba(242, 194, 48, 0.05);
+    border-color: rgba(242, 194, 48, 0.20);
+}
+
+.gt-inbox-list .gtb-chat-item.is-active {
+    background: rgba(242, 194, 48, 0.11) !important;
+    border: 1px solid rgba(242, 194, 48, 0.45) !important;
+    border-left: 3.5px solid #F2C230 !important;
+    box-shadow: 0 6px 18px -10px rgba(242, 194, 48, 0.35);
+}
+
+html[data-admin-theme="light"] .gt-inbox-list .gtb-chat-item:hover {
+    background: #F4F8FB !important;
+    border-color: #D8E6F0 !important;
+}
+
+html[data-admin-theme="light"] .gt-inbox-list .gtb-chat-item.is-handoff:not(.is-active) {
+    background: #FFFDF4 !important;
+    border-color: #F3DF9A !important;
+}
+
+html[data-admin-theme="light"] .gt-inbox-list .gtb-chat-item.is-active {
+    background: #FFFBEA !important;
+    border: 1px solid #F2C230 !important;
+    border-left: 3.5px solid #F2C230 !important;
+    box-shadow: 0 6px 16px -10px rgba(6, 59, 92, 0.18);
+}
+
+.gt-inbox-item-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+}
+
+.gt-inbox-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.gt-inbox-name {
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.25;
+    color: #FFFFFF;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+html[data-admin-theme="light"] .gt-inbox-name {
+    color: #063B5C !important;
+}
+
+.gt-inbox-time {
+    font-size: 11px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: #8C95AA;
+    flex-shrink: 0;
+}
+
+html[data-admin-theme="light"] .gt-inbox-time {
+    color: #64748B !important;
+}
+
+.gt-inbox-preview {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: #9FB1C4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 8px;
+}
+
+html[data-admin-theme="light"] .gt-inbox-preview {
+    color: #4A6479 !important;
+}
+
+.gt-inbox-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.gt-inbox-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    line-height: 1.35;
+    white-space: nowrap;
+}
+
+.gt-inbox-pill--warning {
+    background: rgba(242, 194, 48, 0.18);
+    color: #F2C230;
+    border: 1px solid rgba(242, 194, 48, 0.35);
+}
+
+.gt-inbox-pill--success {
+    background: rgba(16, 185, 129, 0.16);
+    color: #34D399;
+    border: 1px solid rgba(16, 185, 129, 0.30);
+}
+
+.gt-inbox-pill--info {
+    background: rgba(22, 116, 154, 0.22);
+    color: #7DD3FC;
+    border: 1px solid rgba(22, 116, 154, 0.40);
+}
+
+.gt-inbox-pill--muted {
+    background: rgba(148, 163, 184, 0.14);
+    color: #94A3B8;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+html[data-admin-theme="light"] .gt-inbox-pill--warning {
+    background: #FEF3C7 !important;
+    color: #92400E !important;
+    border-color: #F5D06B !important;
+}
+
+html[data-admin-theme="light"] .gt-inbox-pill--success {
+    background: #ECFDF5 !important;
+    color: #065F46 !important;
+    border-color: #A7F3D0 !important;
+}
+
+html[data-admin-theme="light"] .gt-inbox-pill--info {
+    background: #E7F0F5 !important;
+    color: #063B5C !important;
+    border-color: #C4DAE8 !important;
+}
+
+html[data-admin-theme="light"] .gt-inbox-pill--muted {
+    background: #F1F5F9 !important;
+    color: #475569 !important;
+    border-color: #CBD5E1 !important;
+}
+
+.gt-inbox-channel {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #7E96AA;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+html[data-admin-theme="light"] .gt-inbox-channel {
+    color: #64748B !important;
 }
 
 .gt-chat-tab-count {

@@ -49,10 +49,10 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                 </div>
 
                 <form action="/admin/servicos" method="post" class="gt-grid-detail items-start">
-                    {/* Coluna Principal: Dados do Pacote */}
+                    {/* Coluna Principal: Dados do Serviço */}
                     <section class="gtb-card gtb-kpi-gold space-y-5 min-w-0">
                         <div>
-                            <h1 class="gt-font-display text-xl font-extrabold text-white">Cadastrar Novo Pacote de Serviço</h1>
+                            <h1 class="gt-font-display text-xl font-extrabold text-white">Cadastrar Novo Serviço</h1>
                             <p class="text-xs text-[#8C95AA] mt-1">
                                 Configure título, categoria, descrição comercial e valor base exibidos no site e nos orçamentos.
                             </p>
@@ -75,7 +75,7 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                         </div>
 
                         <div>
-                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Nome do Pacote *</label>
+                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Nome do Serviço *</label>
                             <input
                                 type="text"
                                 name="name"
@@ -100,7 +100,7 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                             <textarea
                                 name="description"
                                 rows={4}
-                                placeholder="Detalhe entregáveis, tecnologias, SLA e diferenciais deste pacote..."
+                                placeholder="Detalhe entregáveis, tecnologias, SLA e diferenciais deste serviço..."
                                 class="w-full rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed"
                             ></textarea>
                         </div>
@@ -111,7 +111,7 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                     <polyline points="20 6 9 17 4 12" />
                                 </svg>
-                                <span>Cadastrar Pacote</span>
+                                <span>Cadastrar Serviço</span>
                             </button>
                         </div>
                     </section>
@@ -120,13 +120,13 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                     <aside class="gtb-card space-y-4 min-w-0">
                         <div>
                             <h2 class="gt-font-display text-sm font-extrabold text-white">Publicação &amp; Visibilidade</h2>
-                            <p class="text-xs text-[#8C95AA] mt-0.5">Defina como este pacote aparece no catálogo.</p>
+                            <p class="text-xs text-[#8C95AA] mt-0.5">Defina como este serviço aparece no catálogo.</p>
                         </div>
 
                         <div class="gtb-surface-box rounded-xl divide-y divide-white/10 overflow-hidden">
                             <label class="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer">
                                 <div>
-                                    <div class="text-xs font-bold text-white">Pacote Ativo</div>
+                                    <div class="text-xs font-bold text-white">Serviço Ativo</div>
                                     <div class="text-[10.5px] text-[#8C95AA]">Disponível imediatamente no site e orçamentos</div>
                                 </div>
                                 <input type="checkbox" name="is_active" value="1" checked class="gt-switch" />
@@ -134,7 +134,7 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                             <label class="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer">
                                 <div>
                                     <div class="text-xs font-bold text-white">Destaque Comercial</div>
-                                    <div class="text-[10.5px] text-[#8C95AA]">Prioriza este pacote nas recomendações da IA</div>
+                                    <div class="text-[10.5px] text-[#8C95AA]">Prioriza este serviço nas recomendações da IA</div>
                                 </div>
                                 <input type="checkbox" name="is_featured" value="1" class="gt-switch" />
                             </label>
@@ -161,7 +161,7 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
 
     return (
         <AdminLayout
-            title="Serviços & Catálogo • Painel Administrativo GundjaTech"
+            title="Catálogo de Serviços • Painel Administrativo GundjaTech"
             activeNav="services"
             currentUser={currentUser}
             successMessage={successMessage}
@@ -170,7 +170,7 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
             <div class="gt-page-header !mb-0">
                 <div>
                     <h1 class="gt-font-display text-xl sm:text-2xl font-extrabold text-white">
-                        Catálogo de Pacotes
+                        Catálogo de Serviços
                     </h1>
                     <p class="text-xs sm:text-sm text-[#8C95AA] mt-1">
                         Gerencie os serviços ofertados no site institucional e disponíveis no formulário de orçamento.
@@ -181,7 +181,7 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                         <path d="M5 12h14" />
                         <path d="M12 5v14" />
                     </svg>
-                    <span>Novo Pacote</span>
+                    <span>Novo Serviço</span>
                 </a>
             </div>
 
@@ -189,7 +189,7 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="gtb-card !p-3.5 flex items-center justify-between gap-2">
                     <div>
-                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total de Pacotes</span>
+                        <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total de Serviços</span>
                         <span class="gt-font-display text-lg font-extrabold text-white mt-0.5 block">{services.length}</span>
                     </div>
                     <span class="text-[11px] font-bold text-[#8C95AA]">Catálogo</span>
@@ -249,7 +249,7 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                         <table class="w-full text-left text-xs">
                             <thead>
                                 <tr class="border-b border-white/10 text-[10px] uppercase tracking-wider text-[#8C95AA]">
-                                    <th class="py-2.5 px-4">Serviço / Pacote</th>
+                                    <th class="py-2.5 px-4">Serviço</th>
                                     <th class="py-2.5 px-4">Categoria</th>
                                     <th class="py-2.5 px-4">Preço Base</th>
                                     <th class="py-2.5 px-4">Status</th>
@@ -350,13 +350,13 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                                                         action={`/admin/servicos/${s.id}/excluir`}
                                                         method="post"
                                                         class="inline-block m-0"
-                                                        data-confirm="Deseja realmente excluir este pacote de serviço permanentemente?"
+                                                        data-confirm="Deseja realmente excluir este serviço permanentemente?"
                                                     >
                                                         <button
                                                             type="submit"
                                                             class="gt-btn-danger-ghost gt-btn-icon-only"
-                                                            title="Excluir pacote"
-                                                            aria-label="Excluir pacote"
+                                                            title="Excluir serviço"
+                                                            aria-label="Excluir serviço"
                                                         >
                                                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                                 <path d="M3 6h18" />
@@ -376,7 +376,7 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
                 )}
             </div>
 
-            {/* Modal Editar Pacote de Serviço */}
+            {/* Modal Editar Serviço */}
             <div
                 id="modal-editar-servico"
                 class="gt-modal-overlay hidden"
@@ -384,7 +384,7 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
             >
                 <div class="gtb-card gt-modal-card max-w-lg p-6 sm:p-8">
                     <div class="flex items-center justify-between gap-3 mb-5">
-                        <h2 class="gt-font-display text-lg font-extrabold text-white">Editar Pacote de Serviço</h2>
+                        <h2 class="gt-font-display text-lg font-extrabold text-white">Editar Serviço</h2>
                         <button
                             type="button"
                             onclick="document.getElementById('modal-editar-servico').classList.add('hidden')"
@@ -397,7 +397,7 @@ export const AdminServicesView: FC<AdminServicesProps> = ({
 
                     <form id="form-editar-servico" action="/admin/servicos/0/editar" method="post" data-dirty-guard="1" class="space-y-4">
                         <div>
-                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Nome do Pacote *</label>
+                            <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">Nome do Serviço *</label>
                             <input type="text" id="edit-svc-title" name="title" required class="w-full rounded-xl px-3.5 py-2.5 text-[13px]" />
                         </div>
 
