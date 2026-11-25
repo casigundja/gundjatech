@@ -2446,6 +2446,57 @@ html[data-admin-theme="light"] .gtb-notif-empty-icon {
     }
 }
 
+/* Listagens Administrativas (Financeiro, etc.): contidas em 1 tela desktop com tabela scrollável e header fixo */
+.gt-list-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: calc(100vh - 120px);
+    max-height: calc(100vh - 120px);
+    overflow: hidden;
+}
+
+.gt-list-table-card {
+    flex: 0 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.gt-list-table-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(22, 116, 154, 0.35) transparent;
+}
+
+.gt-list-table-scroll thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--gtb-card);
+}
+
+html[data-admin-theme="light"] .gt-list-table-scroll thead th {
+    background: #F4F8FB;
+}
+
+@media (max-width: 1023px) {
+    .gt-list-shell,
+    .gt-list-table-card,
+    .gt-list-table-scroll {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    .gt-list-table-scroll {
+        overflow-x: auto !important;
+    }
+}
+
 .gt-cards-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));

@@ -68,19 +68,20 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
             successMessage={successMessage}
             errorMessage={errorMessage}
         >
-            <div class="gt-page-header !mb-0">
+            <div class="gt-list-shell">
+            <div class="gt-page-header !mb-0" style="flex-shrink: 0;">
                 <div>
-                    <h1 class="gt-font-display text-xl sm:text-2xl font-extrabold text-white">
+                    <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white">
                         Gestão Financeira &amp; Faturamento
                     </h1>
-                    <p class="text-xs sm:text-sm text-[#8C95AA] mt-1">
+                    <p class="text-xs text-[#8C95AA] mt-0.5">
                         Controle de receitas de contratos, parcelas, emissão de faturas e liquidações.
                     </p>
                 </div>
                 <button
                     type="button"
                     onclick="document.getElementById('modal-nova-fatura').classList.remove('hidden')"
-                    class="gt-btn-primary"
+                    class="gt-btn-primary gt-btn-sm"
                 >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M5 12h14" />
@@ -91,43 +92,43 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
             </div>
 
             {/* 4 KPIs Executivos Compactos */}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5" style="flex-shrink: 0;">
+                <div class="gtb-card !p-3.5 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total Faturado</span>
-                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-white mt-0.5 block">{formatCurrency(metrics.totalInvoiced)}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-white mt-0.5 block">{formatCurrency(metrics.totalInvoiced)}</span>
                     </div>
                     <span class="text-[11px] font-bold text-[#8C95AA]">{transactions.length} lanç.</span>
                 </div>
 
-                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+                <div class="gtb-card !p-3.5 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Recebido em Caixa</span>
-                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-white mt-0.5 block">{formatCurrency(metrics.totalReceived)}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-white mt-0.5 block">{formatCurrency(metrics.totalReceived)}</span>
                     </div>
                     <span class="gt-badge gt-badge-success">Recebido</span>
                 </div>
 
-                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+                <div class="gtb-card !p-3.5 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">A Receber (Pendente)</span>
-                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-white mt-0.5 block">{formatCurrency(metrics.totalPending)}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-white mt-0.5 block">{formatCurrency(metrics.totalPending)}</span>
                     </div>
                     <span class="gt-badge gt-badge-warning">Pendente</span>
                 </div>
 
-                <div class="gtb-card !p-4 flex items-center justify-between gap-2">
+                <div class="gtb-card !p-3.5 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Em Atraso (Vencido)</span>
-                        <span class="gt-font-display text-lg sm:text-xl font-extrabold text-white mt-0.5 block">{formatCurrency(metrics.totalOverdue)}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-white mt-0.5 block">{formatCurrency(metrics.totalOverdue)}</span>
                     </div>
                     <span class="gt-badge gt-badge-danger">Vencido</span>
                 </div>
             </div>
 
-            {/* Tabela Unificada com Barra de Filtros Integrada */}
-            <div class="gtb-card !p-0 overflow-hidden">
-                <div class="px-5 py-3.5 border-b border-white/10 flex items-center justify-between gap-3 flex-wrap">
+            {/* Tabela Unificada com Barra de Filtros Integrada e Scroll Interno */}
+            <div class="gtb-card gt-list-table-card !p-0 overflow-hidden">
+                <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between gap-3 flex-wrap" style="flex-shrink: 0;">
                     <div class="flex items-center gap-1.5 flex-wrap">
                         <a
                             href="/admin/financeiro"
@@ -155,23 +156,24 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                         </a>
                     </div>
 
-                    <form method="get" action="/admin/financeiro" class="flex items-center gap-2 flex-wrap flex-1 sm:flex-initial justify-end">
+                    <form method="get" action="/admin/financeiro" class="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end">
                         {statusFilter && <input type="hidden" name="status" value={statusFilter} />}
                         <input
                             type="text"
                             name="search"
                             value={search}
                             placeholder="Buscar descrição, cliente ou NF..."
-                            class="rounded-xl px-3 py-1.5 text-xs w-full sm:w-56"
+                            class="rounded-xl px-3 py-1.5 text-xs"
+                            style="width: 210px; max-width: 100%;"
                         />
-                        <select name="type" onchange="this.form.submit()" class="rounded-xl px-3 py-1.5 text-xs">
+                        <select name="type" onchange="this.form.submit()" class="rounded-xl px-3 py-1.5 text-xs" style="width: auto;">
                             <option value="">Todos os tipos</option>
                             <option value="income" selected={typeFilter === 'income'}>Receita (+)</option>
                             <option value="expense" selected={typeFilter === 'expense'}>Despesa (-)</option>
                         </select>
-                        <button type="submit" class="gt-btn-outline gt-btn-xs">Filtrar</button>
+                        <button type="submit" class="gt-btn-outline gt-btn-xs shrink-0">Filtrar</button>
                         {(search || statusFilter || typeFilter) && (
-                            <a href="/admin/financeiro" class="text-[11px] font-bold text-[#16749A] hover:underline">Limpar</a>
+                            <a href="/admin/financeiro" class="text-[11px] font-bold text-[#16749A] hover:underline shrink-0">Limpar</a>
                         )}
                     </form>
                 </div>
@@ -179,7 +181,7 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                 {transactions.length === 0 ? (
                     <div class="gt-empty-state">Nenhum lançamento financeiro localizado.</div>
                 ) : (
-                    <div class="gt-table-wrap">
+                    <div class="gt-table-wrap gt-list-table-scroll">
                         <table class="w-full text-left text-xs">
                             <thead>
                                 <tr class="border-b border-white/10 text-[10px] uppercase tracking-wider text-[#8C95AA]">
@@ -353,6 +355,7 @@ export const AdminFinanceView: FC<AdminFinanceProps> = ({
                         </table>
                     </div>
                 )}
+            </div>
             </div>
 
             {/* Modal Nova Fatura */}
