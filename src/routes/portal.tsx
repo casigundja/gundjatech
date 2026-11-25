@@ -1214,7 +1214,7 @@ portalRoutes.get('/atendimento', async (c) => {
     }
 
     const messagesRes = await db.prepare(
-        'SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY created_at ASC'
+        'SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY id ASC'
     ).bind(conversation.id).all();
 
     return c.html(

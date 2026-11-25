@@ -2835,13 +2835,13 @@ adminRoutes.get('/atendimento', async (c) => {
         }
         if (activeConversation) {
             messages = (await db.prepare(
-                `SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY created_at ASC`
+                `SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY id ASC`
             ).bind(activeId).all()).results || [];
         }
     } else if (conversations.length > 0) {
         activeConversation = conversations[0];
         messages = (await db.prepare(
-            `SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY created_at ASC`
+            `SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY id ASC`
         ).bind(activeConversation.id).all()).results || [];
     }
 
