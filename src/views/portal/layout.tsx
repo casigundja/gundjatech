@@ -442,18 +442,18 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                     class="gt-modal-overlay bg-[#041E30]/75 backdrop-blur-xs"
                     onclick="if(event.target===this){this.style.display='none';}"
                 >
-                    <div class="gtb-card !p-0 overflow-hidden w-full max-w-md shadow-2xl" style="border: 1.5px solid #F2C230;">
-                        <div class="px-6 py-5" style="background: linear-gradient(135deg, #042840 0%, #063B5C 65%, #16749A 100%);">
+                    <div class="gt-approved-dialog">
+                        <div class="gt-approved-head">
                             <div class="flex items-start justify-between gap-3">
-                                <div class="flex items-center gap-3">
-                                    <span style="width:40px;height:40px;min-width:40px;border-radius:12px;background:rgba(242,194,48,0.18);border:1px solid rgba(242,194,48,0.5);color:#F2C230;display:inline-flex;align-items:center;justify-content:center;">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <span class="gt-approved-head-icon" aria-hidden="true">
                                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                                         </svg>
                                     </span>
-                                    <div>
-                                        <div style="font-size:10px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#F2C230;">Próximo Passo Obrigatório</div>
-                                        <h3 id="gt-approved-modal-title" class="gt-font-display text-base font-extrabold text-white mt-0.5">
+                                    <div class="min-w-0">
+                                        <div class="gt-approved-kicker">Próximo Passo Obrigatório</div>
+                                        <h3 id="gt-approved-modal-title" class="gt-approved-title">
                                             Orçamento Aprovado com Sucesso!
                                         </h3>
                                     </div>
@@ -461,7 +461,7 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                                 <button
                                     type="button"
                                     onclick="var m=document.getElementById('gt-portal-approved-modal');if(m)m.style.display='none';"
-                                    style="width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,0.12);color:#FFFFFF;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;"
+                                    class="gt-approved-close"
                                     aria-label="Fechar"
                                 >
                                     &times;
@@ -469,20 +469,20 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                             </div>
                         </div>
 
-                        <div class="p-6 space-y-4">
-                            <div id="gt-approved-amount-box" class="gtb-surface-box rounded-xl px-4 py-3 flex items-center justify-between gap-3">
-                                <span class="text-xs font-bold text-[#8C95AA]">Fatura gerada para início</span>
-                                <span id="gt-approved-amount-val" class="gt-font-display text-base font-extrabold text-[#F2C230]">—</span>
+                        <div class="gt-approved-body">
+                            <div id="gt-approved-amount-box" class="gt-approved-amount-box">
+                                <span class="gt-approved-amount-label">Fatura gerada para início</span>
+                                <span id="gt-approved-amount-val" class="gt-approved-amount-val">—</span>
                             </div>
 
-                            <p class="text-xs text-[#8C95AA] leading-relaxed">
-                                Sua fatura já foi emitida no <strong class="text-white">Financeiro</strong>. Para liberar o início imediato da execução pela engenharia GundjaTech, é obrigatório concluir o pagamento.
+                            <p class="gt-approved-desc">
+                                Sua fatura já foi emitida no <strong>Financeiro</strong>. Para liberar o início imediato da execução pela engenharia GundjaTech, é obrigatório concluir o pagamento.
                             </p>
-                            <p class="text-xs font-bold text-white">
+                            <p class="gt-approved-question">
                                 Deseja visualizar a fatura e realizar o pagamento agora?
                             </p>
 
-                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-2">
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-1">
                                 <button
                                     type="button"
                                     onclick="var m=document.getElementById('gt-portal-approved-modal');if(m)m.style.display='none';"

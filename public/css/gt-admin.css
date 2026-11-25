@@ -5274,6 +5274,162 @@ html[data-admin-theme="light"] .gt-quote-label {
     line-height: 1.55 !important;
 }
 
+/* ==========================================================================
+   POST-APPROVAL PAYMENT DECISION MODAL (HIGH CONTRAST LIGHT & DARK)
+   ========================================================================== */
+.gt-approved-dialog {
+    width: 100%;
+    max-width: 460px;
+    border-radius: 18px;
+    overflow: hidden;
+    padding: 0 !important;
+    background: #081C2D;
+    border: 1.5px solid rgba(242, 194, 48, 0.55);
+    box-shadow: 0 28px 60px -16px rgba(4, 24, 38, 0.65);
+}
+
+html[data-admin-theme="light"] .gt-approved-dialog {
+    background: #FFFFFF !important;
+    border: 1.5px solid #D4E3ED !important;
+    box-shadow: 0 24px 54px -16px rgba(6, 59, 92, 0.28) !important;
+}
+
+.gt-approved-head {
+    padding: 20px 22px;
+    background: linear-gradient(135deg, #042840 0%, #063B5C 62%, #16749A 100%) !important;
+    border-bottom: 2px solid #F2C230;
+}
+
+.gt-approved-head-icon {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(242, 194, 48, 0.18);
+    border: 1px solid rgba(242, 194, 48, 0.5);
+    color: #F2C230 !important;
+}
+
+.gt-approved-kicker {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #F2C230 !important;
+    line-height: 1.2;
+}
+
+.gt-approved-title {
+    margin: 3px 0 0;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
+    color: #FFFFFF !important;
+}
+
+.gt-approved-close {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #FFFFFF !important;
+    border: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
+}
+
+.gt-approved-close:hover {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+.gt-approved-body {
+    padding: 20px 22px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.gt-approved-amount-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(22, 116, 154, 0.14);
+    border: 1px solid rgba(22, 116, 154, 0.30);
+}
+
+html[data-admin-theme="light"] .gt-approved-amount-box {
+    background: #F4F8FB !important;
+    border-color: #D6E4EE !important;
+}
+
+.gt-approved-amount-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #B8CAD8;
+}
+
+html[data-admin-theme="light"] .gt-approved-amount-label {
+    color: #4A6479 !important;
+}
+
+.gt-approved-amount-val {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: #F2C230 !important;
+}
+
+html[data-admin-theme="light"] .gt-approved-amount-val {
+    color: #063B5C !important;
+}
+
+.gt-approved-desc {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #B8CAD8;
+}
+
+.gt-approved-desc strong {
+    color: #FFFFFF;
+    font-weight: 800;
+}
+
+html[data-admin-theme="light"] .gt-approved-desc {
+    color: #4A6479 !important;
+}
+
+html[data-admin-theme="light"] .gt-approved-desc strong {
+    color: #063B5C !important;
+}
+
+.gt-approved-question {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 800;
+    color: #FFFFFF;
+}
+
+html[data-admin-theme="light"] .gt-approved-question {
+    color: #063B5C !important;
+}
+
 .gt-chat-tab-count {
     display: inline-flex;
     align-items: center;
