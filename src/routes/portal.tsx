@@ -1109,3 +1109,94 @@ portalRoutes.get('/atendimento/:id/mensagens', async (c) => {
 
     return c.json({ messages: messages.results || [] });
 });
+
+// Central de Notificações do Portal do Cliente (isolamento multi-tenant por client_id)
+portalRoutes.get('/notificacoes/resumo', async (c) => {
+    const { db, client } = await getClientContext(c);
+    const notifications: any[] = [];
+
+    const formatTimeBrt = (raw?: string | null): string => {
+        if (!raw) return '';
+        try {
+            const iso = String(raw).includes('T') ? String(raw) : `${String(raw).replace(' ', 'T')}Z`;
+            const dt = new Date(iso);
+            if (isNaN(dt.getTime())) return String(raw).slice(11, 16);
+            return new Intl.DateTimeFormat('pt-BR', {
+                timeZone: 'America/Sao_Paulo',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            }).format(dt);
+        } catch {
+            return String(raw).slice(11, 16);
+        }
+    };
+
+    try {
+        const [pendingQuotes, pendingInvoices, waitingChats] = await Promise.all([
+            db.prepare(
+                `SELECT id, reference_code, title, final_amount, total_amount, updated_at
+                 FROM quotations
+                 WHERE client_id = ? AND status = 'sent'
+                 ORDER BY updated_at DESC LIMIT 3`
+            ).bind(client.id).all(),
+            db.prepare(
+                `SELECT id, description, amount, due_date, updated_at
+                 FROM financial_transactions
+                 WHERE client_id = ? AND status = 'pending' AND type = 'income'
+                 ORDER BY due_date ASC LIMIT 3`
+            ).bind(client.id).all(),
+            db.prepare(
+                `SELECT id, subject, updated_at
+                 FROM conversations
+                 WHERE client_id = ? AND status = 'waiting_client'
+                 ORDER BY updated_at DESC LIMIT 2`
+            ).bind(client.id).all()
+        ]);
+
+        const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        for (const q of (pendingQuotes.results || []) as any[]) {
+            const val = brl.format(Number(q.final_amount ?? q.total_amount ?? 0));
+            notifications.push({
+                key: `pquote:${q.id}:${q.updated_at || ''}`,
+                type: 'quotation',
+                title: `Orçamento Aguardando Aprovação • ${q.reference_code || `#${q.id}`}`,
+                subtitle: `${q.title || 'Proposta comercial'} (${val})`,
+                time: formatTimeBrt(q.updated_at),
+                url: `/portal/orcamentos/${q.id}`
+            });
+        }
+
+        for (const inv of (pendingInvoices.results || []) as any[]) {
+            const val = brl.format(Number(inv.amount || 0));
+            const isOverdue = inv.due_date ? new Date(inv.due_date).getTime() < Date.now() : false;
+            const dueLabel = inv.due_date ? String(inv.due_date).slice(5, 10).split('-').reverse().join('/') : '';
+            notifications.push({
+                key: `pinv:${inv.id}:${inv.due_date || ''}`,
+                type: 'finance',
+                title: `${isOverdue ? 'Fatura Vencida' : 'Fatura Pendente'} • ${val}`,
+                subtitle: inv.description || 'Cobrança disponível no Financeiro',
+                time: dueLabel,
+                url: '/portal/financeiro'
+            });
+        }
+
+        for (const chat of (waitingChats.results || []) as any[]) {
+            notifications.push({
+                key: `pchat:${chat.id}:${chat.updated_at || ''}`,
+                type: 'chat',
+                title: 'Nova resposta da equipe GundjaTech',
+                subtitle: chat.subject || 'Clique para continuar no chat ao vivo',
+                time: formatTimeBrt(chat.updated_at),
+                url: '/portal/atendimento'
+            });
+        }
+    } catch { }
+
+    return c.json({
+        ok: true,
+        total_notifications: notifications.length,
+        notifications
+    });
+});

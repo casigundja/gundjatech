@@ -146,7 +146,7 @@ export const AccountView: FC<AccountViewProps> = ({ user, successMessage, errorM
                             action="/minha-conta/senha"
                             method="post"
                             data-dirty-guard="1"
-                            onsubmit="var p=this.querySelector('input[name=password]').value;var c=this.querySelector('input[name=password_confirmation]').value;if(p!==c){alert('A confirmação da nova senha não confere.');return false;}"
+                            onsubmit="var p=this.querySelector('input[name=password]').value;var c=this.querySelector('input[name=password_confirmation]').value;if(p!==c){if(window.GT_ShowToast){window.GT_ShowToast('A confirmação da nova senha não confere.','warning');}return false;}"
                             class="space-y-4"
                         >
                             <div>

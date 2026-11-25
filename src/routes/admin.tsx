@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
-import { Env, AppVariables } from '../types/env';
+import { Env, AppVariables, UserRole } from '../types/env';
 import { requireAuth, requirePermission, requireStaff } from '../middleware/auth';
+import { hasPermission } from '../lib/rbac';
 import { destroyAllUserSessions } from '../lib/session';
 import { getRequestBody } from '../lib/request';
 import { hashPassword } from '../lib/password';
@@ -4298,8 +4299,32 @@ adminRoutes.get('/atendimento/:id/mensagens', async (c) => {
 
 adminRoutes.get('/atendimento/resumo', async (c) => {
     const db = c.env.DB;
-    const stats = await getAdminDashboardStats(db, 30);
+    const currentUser = c.get('user');
+    const role = (currentUser?.role || 'client') as UserRole;
+    const canReq = hasPermission(role, 'requests.view');
+    const canChat = hasPermission(role, 'chat.view');
+    const canQuotes = hasPermission(role, 'quotations.view');
+    const canFinance = hasPermission(role, 'finance.view');
 
+    const formatTimeBrt = (raw?: string | null): string => {
+        if (!raw) return '';
+        try {
+            const iso = String(raw).includes('T') ? String(raw) : `${String(raw).replace(' ', 'T')}Z`;
+            const dt = new Date(iso);
+            if (isNaN(dt.getTime())) return String(raw).slice(11, 16);
+            return new Intl.DateTimeFormat('pt-BR', {
+                timeZone: 'America/Sao_Paulo',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            }).format(dt);
+        } catch {
+            return String(raw).slice(11, 16);
+        }
+    };
+
+    let pendingRequests = 0;
+    let openConversations = 0;
     let latestConversationId = 0;
     let latestClientMessageId = 0;
     let latestRequestId = 0;
@@ -4308,50 +4333,96 @@ adminRoutes.get('/atendimento/resumo', async (c) => {
     const notifications: any[] = [];
 
     try {
-        const cRow = await db.prepare(`SELECT MAX(id) as max_id FROM conversations`).first<{ max_id: number }>();
-        latestConversationId = cRow?.max_id ?? 0;
+        // Queries leves dedicadas (substituem getAdminDashboardStats(db, 30) completo no polling de 6s)
+        const [reqStats, chatStats, msgStats, handoffStats] = await Promise.all([
+            canReq
+                ? db.prepare(`SELECT COUNT(*) as pending, COALESCE(MAX(id), 0) as max_id FROM service_requests WHERE status IN ('new', 'analyzing')`).first<{ pending: number; max_id: number }>()
+                : Promise.resolve(null),
+            canChat
+                ? db.prepare(`SELECT COUNT(*) as open_total, COALESCE(MAX(id), 0) as max_id FROM conversations WHERE status IN ('open', 'waiting_staff', 'waiting_client')`).first<{ open_total: number; max_id: number }>()
+                : Promise.resolve(null),
+            canChat
+                ? db.prepare(`SELECT COALESCE(MAX(id), 0) as max_id FROM conversation_messages WHERE sender_type IN ('client', 'visitor')`).first<{ max_id: number }>()
+                : Promise.resolve(null),
+            canChat
+                ? db.prepare(`SELECT COALESCE(MAX(id), 0) as max_id, COUNT(*) as total FROM conversations WHERE status != 'closed' AND (status = 'waiting_staff' OR crm_stage = 'handoff_human')`).first<{ max_id: number; total: number }>()
+                : Promise.resolve(null),
+        ]);
 
-        const mRow = await db.prepare(`SELECT MAX(id) as max_id FROM conversation_messages WHERE sender_type IN ('client', 'visitor')`).first<{ max_id: number }>();
-        latestClientMessageId = mRow?.max_id ?? 0;
+        pendingRequests = reqStats?.pending ?? 0;
+        latestRequestId = reqStats?.max_id ?? 0;
+        openConversations = chatStats?.open_total ?? 0;
+        latestConversationId = chatStats?.max_id ?? 0;
+        latestClientMessageId = msgStats?.max_id ?? 0;
+        latestHandoffId = handoffStats?.max_id ?? 0;
+        handoffCount = handoffStats?.total ?? 0;
 
-        const rRow = await db.prepare(`SELECT MAX(id) as max_id FROM service_requests`).first<{ max_id: number }>();
-        latestRequestId = rRow?.max_id ?? 0;
+        const [recentReqs, recentConvs, recentQuotes, overdueFinance] = await Promise.all([
+            canReq
+                ? db.prepare(`SELECT id, protocol, name, title, service_title, created_at FROM service_requests WHERE status IN ('new', 'analyzing') ORDER BY id DESC LIMIT 3`).all()
+                : Promise.resolve({ results: [] }),
+            canChat
+                ? db.prepare(`SELECT id, visitor_name, subject, status, crm_stage, updated_at FROM conversations WHERE status IN ('open', 'waiting_staff', 'waiting_client') ORDER BY updated_at DESC LIMIT 3`).all()
+                : Promise.resolve({ results: [] }),
+            canQuotes
+                ? db.prepare(`SELECT id, reference_code, title, status, updated_at FROM quotations WHERE status IN ('approved', 'rejected') ORDER BY updated_at DESC LIMIT 2`).all()
+                : Promise.resolve({ results: [] }),
+            canFinance
+                ? db.prepare(`SELECT id, description, amount, due_date, updated_at FROM financial_transactions WHERE status = 'pending' AND due_date IS NOT NULL AND date(due_date) < date('now') ORDER BY due_date ASC LIMIT 2`).all()
+                : Promise.resolve({ results: [] }),
+        ]);
 
-        const hRow = await db.prepare(
-            `SELECT MAX(id) as max_id, COUNT(*) as total FROM conversations WHERE status != 'closed' AND (status = 'waiting_staff' OR crm_stage = 'handoff_human')`
-        ).first<{ max_id: number; total: number }>();
-        latestHandoffId = hRow?.max_id ?? 0;
-        handoffCount = hRow?.total ?? 0;
-
-        for (const req of (stats.recentRequests || []).slice(0, 3)) {
+        for (const req of (recentReqs.results || []) as any[]) {
             notifications.push({
                 key: `request:${req.id}`,
                 type: 'request',
                 title: req.service_title || req.title || `Solicitação ${req.protocol}`,
                 subtitle: `${req.protocol || ''} • ${req.name || 'Cliente'}`,
-                time: String(req.created_at || '').slice(11, 16),
+                time: formatTimeBrt(req.created_at),
                 url: `/admin/solicitacoes/${req.id}`
             });
         }
-        for (const conv of (stats.recentConversations || []).slice(0, 3)) {
+        for (const conv of (recentConvs.results || []) as any[]) {
             const isHandoff = conv.status === 'waiting_staff' || conv.crm_stage === 'handoff_human';
             notifications.push({
-                key: `chat:${conv.id}`,
+                key: `chat:${conv.id}:${conv.updated_at || ''}`,
                 type: 'chat',
                 title: `${isHandoff ? 'Handoff Humano' : 'Chat'} • ${conv.visitor_name || 'Visitante'}`,
                 subtitle: conv.subject || 'Atendimento aberto',
-                time: String(conv.updated_at || '').slice(11, 16),
+                time: formatTimeBrt(conv.updated_at),
                 url: `/admin/atendimento?id=${conv.id}`
+            });
+        }
+        for (const q of (recentQuotes.results || []) as any[]) {
+            const isApproved = q.status === 'approved';
+            notifications.push({
+                key: `quote:${q.id}:${q.status}:${q.updated_at || ''}`,
+                type: 'quotation',
+                title: `${isApproved ? 'Orçamento Aprovado' : 'Revisão Solicitada'} • ${q.reference_code || `#${q.id}`}`,
+                subtitle: q.title || 'Proposta comercial atualizada',
+                time: formatTimeBrt(q.updated_at),
+                url: `/admin/orcamentos/${q.id}`
+            });
+        }
+        for (const fin of (overdueFinance.results || []) as any[]) {
+            const val = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(fin.amount || 0));
+            notifications.push({
+                key: `overdue:${fin.id}:${fin.due_date || ''}`,
+                type: 'finance',
+                title: `Fatura Vencida • ${val}`,
+                subtitle: fin.description || 'Cobrança em atraso',
+                time: fin.due_date ? String(fin.due_date).slice(5, 10).split('-').reverse().join('/') : '',
+                url: '/admin/financeiro?status=pending'
             });
         }
     } catch { }
 
     return c.json({
         ok: true,
-        pending_requests: stats.pendingRequests,
-        open_chats: stats.openConversations,
+        pending_requests: pendingRequests,
+        open_chats: openConversations,
         handoff_count: handoffCount,
-        total_notifications: stats.pendingRequests + stats.openConversations,
+        total_notifications: pendingRequests + openConversations,
         latest_conversation_id: latestConversationId,
         latest_client_message_id: latestClientMessageId,
         latest_request_id: latestRequestId,

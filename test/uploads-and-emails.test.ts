@@ -325,6 +325,12 @@ describe('Fase 4 • Módulo 7: Uploads R2 Storage & E-mails Transacionais', () 
         expect(html).toContain('#F2C230'); // Amarelo Ouro
         expect(html).toContain('Acessar Plataforma');
         expect(html).toContain('https://gundjatech.com/portal');
-        expect(html).toContain('Av. Eng. Luís Carlos Berrini, São Paulo');
+        expect(html).toContain('GundjaTech Soluções Digitais');
+        expect(html).toContain('São Paulo, SP');
+
+        // Garante escape de HTML em títulos dinâmicos
+        const xssHtml = renderEmailTemplate('<script>alert(1)</script>', '<p>Ok</p>');
+        expect(xssHtml).not.toContain('<script>alert(1)</script>');
+        expect(xssHtml).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
     });
 });

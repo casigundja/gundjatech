@@ -497,8 +497,12 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                         </div>
                                     </div>
                                     <div class="px-4 py-2.5 border-t border-white/10 bg-white/[0.02] flex items-center justify-between gap-2 text-[11px] font-bold">
-                                        <a href="/admin/solicitacoes" class="text-[#F2C230] hover:underline no-underline whitespace-nowrap">Ver Solicitações →</a>
-                                        <a href="/admin/atendimento" class="text-[#D5DCEB] hover:text-[#F2C230] hover:underline no-underline ml-auto whitespace-nowrap">Abrir Chat ao Vivo →</a>
+                                        {can('requests.view') && (
+                                            <a href="/admin/solicitacoes" class="text-[#F2C230] hover:underline no-underline whitespace-nowrap">Ver Solicitações →</a>
+                                        )}
+                                        {can('chat.view') && (
+                                            <a href="/admin/atendimento" class="text-[#D5DCEB] hover:text-[#F2C230] hover:underline no-underline ml-auto whitespace-nowrap">Abrir Chat ao Vivo →</a>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -535,14 +539,14 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                         </div>
                     </header>
 
-                    {/* Flash Toast Notifications (Auto-dismiss 5s) */}
-                    {(successMessage || errorMessage) && (() => {
+                    {/* Flash Toast Notifications (Auto-dismiss 5s / 6.5s) */}
+                    {(() => {
                         const okMeta = successMessage ? resolveToastMeta(successMessage, false) : null;
                         const errMeta = errorMessage ? resolveToastMeta(errorMessage, true) : null;
                         return (
-                            <div id="gt-flash-toast-stack" class="gt-flash-toast-stack" role="status" aria-live="polite">
+                            <div id="gt-flash-toast-stack" class="gt-flash-toast-stack" aria-live="polite">
                                 {successMessage && okMeta && (
-                                    <div class="gt-flash-toast gt-flash-toast--success" data-auto-dismiss="5000">
+                                    <div class="gt-flash-toast gt-flash-toast--success" role="status" data-auto-dismiss="5000">
                                         <span class="gt-flash-toast__icon" aria-hidden="true">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d={okMeta.iconPath} /></svg>
                                         </span>
@@ -557,7 +561,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                                     </div>
                                 )}
                                 {errorMessage && errMeta && (
-                                    <div class="gt-flash-toast gt-flash-toast--error" data-auto-dismiss="6500">
+                                    <div class={`gt-flash-toast gt-flash-toast--${errMeta.variant}`} role={errMeta.variant === 'error' ? 'alert' : 'status'} data-auto-dismiss="6500">
                                         <span class="gt-flash-toast__icon" aria-hidden="true">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d={errMeta.iconPath} /></svg>
                                         </span>
@@ -675,16 +679,73 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                         if (!stack) return;
                         var card = document.createElement('a');
                         card.href = href || '/admin/atendimento';
-                        card.className = 'gtb-toast-card pointer-events-auto block rounded-2xl p-3.5 shadow-2xl no-underline transition';
-                        card.innerHTML = '<div class="flex items-center justify-between gap-2"><span class="gtb-toast-title text-xs font-extrabold"></span><span class="w-2 h-2 rounded-full bg-[#34D399] shrink-0"></span></div><p class="gtb-toast-body text-[11px] mt-1 leading-snug"></p>';
+                        card.className = 'gtb-toast-card pointer-events-auto block rounded-2xl p-3.5 shadow-2xl no-underline transition relative overflow-hidden';
+                        card.innerHTML = '<div class="flex items-start justify-between gap-2"><div class="flex items-center gap-2 min-w-0"><span class="w-2 h-2 rounded-full bg-[#34D399] shrink-0"></span><span class="gtb-toast-title text-xs font-extrabold truncate"></span></div><button type="button" class="gt-flash-toast__close" style="width:22px;height:22px;margin:-3px -4px 0 0;" aria-label="Fechar"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg></button></div><p class="gtb-toast-body text-[11px] mt-1 leading-snug"></p>';
                         card.querySelector('.gtb-toast-title').textContent = title;
                         card.querySelector('.gtb-toast-body').textContent = body;
-                        stack.appendChild(card);
-                        setTimeout(function () {
+                        var remaining = 8000;
+                        var startedAt = Date.now();
+                        var timer = null;
+                        function dismissCard() {
                             card.style.opacity = '0';
+                            card.style.transform = 'translate3d(16px,0,0)';
                             setTimeout(function () { card.remove(); }, 250);
-                        }, 8000);
+                        }
+                        function startCard() {
+                            startedAt = Date.now();
+                            timer = setTimeout(dismissCard, Math.max(400, remaining));
+                        }
+                        var closeBtn = card.querySelector('.gt-flash-toast__close');
+                        if (closeBtn) {
+                            closeBtn.addEventListener('click', function (ev) {
+                                ev.preventDefault();
+                                ev.stopPropagation();
+                                if (timer) clearTimeout(timer);
+                                dismissCard();
+                            });
+                        }
+                        card.addEventListener('mouseenter', function () {
+                            if (timer) {
+                                clearTimeout(timer);
+                                timer = null;
+                                remaining -= (Date.now() - startedAt);
+                            }
+                        });
+                        card.addEventListener('mouseleave', function () {
+                            if (!timer && remaining > 0) startCard();
+                        });
+                        stack.appendChild(card);
+                        startCard();
                     }
+
+                    window.GT_ShowToast = function (message, variant) {
+                        var stack = document.getElementById('gt-flash-toast-stack');
+                        if (!stack || !message) return;
+                        var v = variant === 'error' ? 'error' : (variant === 'warning' ? 'warning' : 'success');
+                        var title = v === 'error' ? 'Não foi possível concluir' : (v === 'warning' ? 'Atenção' : 'Ação concluída');
+                        var iconPath = v === 'error'
+                            ? 'M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z'
+                            : (v === 'warning'
+                                ? 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+                                : 'M5 13l4 4L19 7');
+                        var duration = v === 'success' ? 5000 : 6500;
+                        var toast = document.createElement('div');
+                        toast.className = 'gt-flash-toast gt-flash-toast--' + v;
+                        toast.setAttribute('role', v === 'error' ? 'alert' : 'status');
+                        toast.innerHTML = '<span class="gt-flash-toast__icon" aria-hidden="true"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="' + iconPath + '"/></svg></span><div class="gt-flash-toast__content"><div class="gt-flash-toast__title"></div><div class="gt-flash-toast__msg"></div></div><button type="button" class="gt-flash-toast__close" aria-label="Fechar notificação"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"/></svg></button><span class="gt-flash-toast__bar" style="animation-duration:' + (duration / 1000) + 's;"></span>';
+                        toast.querySelector('.gt-flash-toast__title').textContent = title;
+                        toast.querySelector('.gt-flash-toast__msg').textContent = String(message);
+                        var remaining = duration;
+                        var startedAt = Date.now();
+                        var timer = null;
+                        function dismiss() { toast.classList.add('is-leaving'); setTimeout(function () { toast.remove(); }, 260); }
+                        function start() { startedAt = Date.now(); timer = setTimeout(dismiss, Math.max(400, remaining)); }
+                        toast.querySelector('.gt-flash-toast__close').addEventListener('click', function () { if (timer) clearTimeout(timer); dismiss(); });
+                        toast.addEventListener('mouseenter', function () { if (timer) { clearTimeout(timer); timer = null; remaining -= (Date.now() - startedAt); } });
+                        toast.addEventListener('mouseleave', function () { if (!timer && remaining > 0) start(); });
+                        stack.appendChild(toast);
+                        start();
+                    };
 
                     var topSoundBtn = document.getElementById('gt-topbar-sound-btn');
                     if (topSoundBtn) {
@@ -745,6 +806,13 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             row.querySelector('.text-white').textContent = item.title || '';
                             row.querySelector('.shrink-0').textContent = item.time || '';
                             row.querySelector('p').textContent = item.subtitle || '';
+                            row.addEventListener('click', function () {
+                                if (item.key) {
+                                    var map = getDismissed();
+                                    map[item.key] = true;
+                                    saveDismissed(map);
+                                }
+                            });
                             list.appendChild(row);
                         });
                     }

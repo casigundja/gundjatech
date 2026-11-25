@@ -17,16 +17,31 @@ export interface EmailResult {
 }
 
 /**
+ * Escapa caracteres HTML para evitar quebra de layout ou HTML injection nos e-mails
+ */
+export function escapeEmailHtml(value?: string | number | null): string {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/**
  * Cria o invólucro HTML padrão de e-mail institucional GundjaTech
  * Respeita rigorosamente a Paleta 3 (Amarelo Ouro #F2C230, Azul Petróleo #063B5C, Branco Puro #FFFFFF)
  */
 export function renderEmailTemplate(title: string, bodyContent: string, actionButton?: { text: string; url: string }): string {
+    const safeTitle = escapeEmailHtml(title);
+    const safeBtnText = actionButton ? escapeEmailHtml(actionButton.text) : '';
+    const safeBtnUrl = actionButton ? escapeEmailHtml(actionButton.url) : '';
     return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title}</title>
+    <title>${safeTitle}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #032033; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #063B5C;">
     <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #032033; padding: 30px 10px;">
@@ -40,7 +55,7 @@ export function renderEmailTemplate(title: string, bodyContent: string, actionBu
                                 Gundja<span style="color: #F2C230;">Tech</span>
                             </div>
                             <div style="font-size: 11px; text-transform: uppercase; color: #E7F0F5; letter-spacing: 2px; margin-top: 4px; font-weight: 600;">
-                                Arquitetura Digital & Alta Performance
+                                Arquitetura Digital &amp; Alta Performance
                             </div>
                         </td>
                     </tr>
@@ -49,7 +64,7 @@ export function renderEmailTemplate(title: string, bodyContent: string, actionBu
                     <tr>
                         <td style="padding: 40px 40px 30px 40px; line-height: 1.6; font-size: 15px; color: #063B5C;">
                             <h1 style="font-size: 20px; font-weight: 800; color: #063B5C; margin: 0 0 16px 0;">
-                                ${title}
+                                ${safeTitle}
                             </h1>
                             <div style="color: #2D4C63; font-size: 14px;">
                                 ${bodyContent}
@@ -57,8 +72,8 @@ export function renderEmailTemplate(title: string, bodyContent: string, actionBu
 
                             ${actionButton ? `
                             <div style="margin: 32px 0 20px 0; text-align: center;">
-                                <a href="${actionButton.url}" target="_blank" style="display: inline-block; background-color: #F2C230; color: #041B2B; font-weight: 800; font-size: 14px; text-decoration: none; padding: 14px 28px; border-radius: 10px; box-shadow: 0 4px 14px rgba(242, 194, 48, 0.4);">
-                                    ${actionButton.text} &rarr;
+                                <a href="${safeBtnUrl}" target="_blank" style="display: inline-block; background-color: #F2C230; color: #063B5C; font-weight: 800; font-size: 14px; text-decoration: none; padding: 14px 28px; border-radius: 10px; box-shadow: 0 4px 14px rgba(242, 194, 48, 0.4);">
+                                    ${safeBtnText} &rarr;
                                 </a>
                             </div>
                             ` : ''}
@@ -67,9 +82,9 @@ export function renderEmailTemplate(title: string, bodyContent: string, actionBu
 
                     <!-- Footer -->
                     <tr>
-                        <td style="background-color: #F8FAFC; padding: 24px 40px; text-align: center; border-top: 1px solid #E2E8F0; font-size: 12px; color: #64748B;">
-                            <div style="font-weight: 700; color: #063B5C; margin-bottom: 4px;">GundjaTech Soluções Digitais</div>
-                            <div>Av. Eng. Luís Carlos Berrini, São Paulo &bull; Alphaville, Barueri</div>
+                        <td style="background-color: #E7F0F5; padding: 24px 40px; text-align: center; border-top: 1px solid #D4E3ED; font-size: 12px; color: #3E5C71;">
+                            <div style="font-weight: 800; color: #063B5C; margin-bottom: 4px;">GundjaTech Soluções Digitais</div>
+                            <div>São Paulo, SP &bull; Engenharia Digital &amp; Operação Contínua</div>
                             <div style="margin-top: 8px; font-size: 11px;">
                                 Mensagem automática gerada pelo sistema edge da plataforma. Em caso de dúvidas, responda diretamente a este e-mail.
                             </div>
@@ -152,7 +167,7 @@ export async function sendPasswordResetEmail(env: Env, to: string, name: string,
     const html = renderEmailTemplate(
         'Recuperação de Senha de Acesso',
         `
-        <p>Olá, <strong>${name}</strong>,</p>
+        <p>Olá, <strong>${escapeEmailHtml(name)}</strong>,</p>
         <p>Recebemos uma solicitação para redefinir a sua senha de acesso ao portal e aos painéis da <strong>GundjaTech</strong>.</p>
         <p>Para criar uma nova credencial com segurança, clique no botão abaixo. Este link expira em 60 minutos por medidas de proteção:</p>
         `,
@@ -181,11 +196,11 @@ export async function sendPortalInviteEmail(
     const html = renderEmailTemplate(
         'Seu acesso ao Portal do Cliente está pronto!',
         `
-        <p>Olá, <strong>${name}</strong>,</p>
+        <p>Olá, <strong>${escapeEmailHtml(name)}</strong>,</p>
         <p>Ativamos o seu acesso exclusivo ao <strong>Portal do Cliente GundjaTech</strong>. Por lá você poderá acompanhar solicitações em tempo real, aprovar orçamentos, visualizar o progresso de projetos e falar diretamente com nossa equipe.</p>
         <div style="background-color: #E7F0F5; border-radius: 8px; padding: 14px 18px; margin: 20px 0; border-left: 4px solid #16749A;">
             <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #16749A;">E-mail de Acesso</div>
-            <div style="font-size: 15px; font-weight: 800; color: #063B5C; margin-top: 2px;">${to}</div>
+            <div style="font-size: 15px; font-weight: 800; color: #063B5C; margin-top: 2px;">${escapeEmailHtml(to)}</div>
         </div>
         <p>Por segurança, nenhuma senha trafega em texto aberto. Clique no botão abaixo para criar sua senha pessoal e entrar no portal:</p>
         `,
@@ -218,12 +233,12 @@ export async function sendQuoteConfirmationEmail(
     const html = renderEmailTemplate(
         'Sua solicitação foi recebida com sucesso!',
         `
-        <p>Olá, <strong>${name}</strong>,</p>
-        <p>Recebemos o seu briefing e a solicitação para o projeto <strong>${serviceTitle}</strong>.</p>
+        <p>Olá, <strong>${escapeEmailHtml(name)}</strong>,</p>
+        <p>Recebemos o seu briefing e a solicitação para o projeto <strong>${escapeEmailHtml(serviceTitle)}</strong>.</p>
         <p>Nosso time de engenharia e arquitetura já está analisando o escopo para preparar a proposta técnica mais eficiente e performática.</p>
         <div style="background-color: #E7F0F5; border-radius: 8px; padding: 14px 18px; margin: 20px 0; border-left: 4px solid #16749A;">
             <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #16749A;">Número do Protocolo</div>
-            <div style="font-size: 18px; font-weight: 800; color: #063B5C; margin-top: 2px;">${protocol}</div>
+            <div style="font-size: 18px; font-weight: 800; color: #063B5C; margin-top: 2px;">${escapeEmailHtml(protocol)}</div>
         </div>
         <p>Você pode acompanhar o andamento em tempo real a qualquer momento:</p>
         `,
@@ -258,16 +273,16 @@ export async function sendNewLeadStaffNotification(
     const adminUrl = `${baseUrl}/admin/solicitacoes`;
 
     const html = renderEmailTemplate(
-        '🚀 Novo Lead / Solicitação Recebida no Site',
+        'Novo Lead / Solicitação Recebida no Site',
         `
         <p>Um novo briefing comercial acaba de ser submetido através do portal GundjaTech:</p>
         <table role="presentation" border="0" cellpadding="6" cellspacing="0" style="width: 100%; font-size: 13px; margin: 16px 0;">
-            <tr><td style="font-weight: 700; color: #063B5C; width: 120px;">Protocolo:</td><td>${lead.protocol || '—'}</td></tr>
-            <tr><td style="font-weight: 700; color: #063B5C;">Nome:</td><td>${lead.name}</td></tr>
-            <tr><td style="font-weight: 700; color: #063B5C;">E-mail:</td><td>${lead.email}</td></tr>
-            <tr><td style="font-weight: 700; color: #063B5C;">Telefone:</td><td>${lead.phone || 'Não informado'}</td></tr>
-            <tr><td style="font-weight: 700; color: #063B5C;">Empresa:</td><td>${lead.company || '—'}</td></tr>
-            <tr><td style="font-weight: 700; color: #063B5C;">Solução:</td><td><strong>${lead.serviceTitle || 'Geral'}</strong></td></tr>
+            <tr><td style="font-weight: 700; color: #063B5C; width: 120px;">Protocolo:</td><td>${escapeEmailHtml(lead.protocol || '—')}</td></tr>
+            <tr><td style="font-weight: 700; color: #063B5C;">Nome:</td><td>${escapeEmailHtml(lead.name)}</td></tr>
+            <tr><td style="font-weight: 700; color: #063B5C;">E-mail:</td><td>${escapeEmailHtml(lead.email)}</td></tr>
+            <tr><td style="font-weight: 700; color: #063B5C;">Telefone:</td><td>${escapeEmailHtml(lead.phone || 'Não informado')}</td></tr>
+            <tr><td style="font-weight: 700; color: #063B5C;">Empresa:</td><td>${escapeEmailHtml(lead.company || '—')}</td></tr>
+            <tr><td style="font-weight: 700; color: #063B5C;">Solução:</td><td><strong>${escapeEmailHtml(lead.serviceTitle || 'Geral')}</strong></td></tr>
         </table>
         <p>Acesse o painel para revisar o briefing e converter em projeto ou orçamento:</p>
         `,
@@ -305,14 +320,14 @@ export async function sendInvoiceNoticeEmail(
     const html = renderEmailTemplate(
         'Fatura Disponível para Pagamento',
         `
-        <p>Olá, <strong>${clientName}</strong>,</p>
+        <p>Olá, <strong>${escapeEmailHtml(clientName)}</strong>,</p>
         <p>Uma nova fatura referente aos serviços digitais contratados foi emitida e está disponível:</p>
         <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 20px; margin: 20px 0;">
-            <div style="font-size: 13px; color: #64748B;">${invoice.description}</div>
+            <div style="font-size: 13px; color: #64748B;">${escapeEmailHtml(invoice.description)}</div>
             <div style="font-size: 24px; font-weight: 800; color: #063B5C; margin: 8px 0;">${formatCurrency}</div>
             <div style="font-size: 12px; color: #16749A; font-weight: 700;">
                 Vencimento: ${new Date(invoice.dueDate).toLocaleDateString('pt-BR')}
-                ${invoice.invoiceNumber ? ` &bull; NF: #${invoice.invoiceNumber}` : ''}
+                ${invoice.invoiceNumber ? ` &bull; NF: #${escapeEmailHtml(invoice.invoiceNumber)}` : ''}
             </div>
         </div>
         <p>Acesse o Portal do Cliente para visualizar as opções de pagamento (PIX ou Boleto):</p>
@@ -349,12 +364,12 @@ export async function sendProjectStartedEmail(
     const html = renderEmailTemplate(
         'Seu projeto foi iniciado!',
         `
-        <p>Olá, <strong>${clientName}</strong>,</p>
+        <p>Olá, <strong>${escapeEmailHtml(clientName)}</strong>,</p>
         <p>Temos o prazer de informar que sua demanda foi aprovada e oficialmente convertida em projeto na <strong>GundjaTech</strong>.</p>
         <div style="background-color: #E7F0F5; border-radius: 10px; padding: 16px 20px; margin: 20px 0; border-left: 4px solid #16749A;">
             <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #16749A;">Projeto em Andamento</div>
-            <div style="font-size: 17px; font-weight: 800; color: #063B5C; margin-top: 4px;">${project.title}</div>
-            ${project.protocol ? `<div style="font-size: 12px; color: #527287; margin-top: 4px;">Referência: <strong>${project.protocol}</strong></div>` : ''}
+            <div style="font-size: 17px; font-weight: 800; color: #063B5C; margin-top: 4px;">${escapeEmailHtml(project.title)}</div>
+            ${project.protocol ? `<div style="font-size: 12px; color: #527287; margin-top: 4px;">Referência: <strong>${escapeEmailHtml(project.protocol)}</strong></div>` : ''}
         </div>
         <p>Nossa equipe técnica já deu início ao planejamento e execução das etapas. Você pode acompanhar o progresso, cronograma e entregáveis em tempo real pelo seu Portal do Cliente:</p>
         `,
@@ -389,11 +404,11 @@ export async function sendProjectCompletedEmail(
     const html = renderEmailTemplate(
         'Seu projeto foi concluído com sucesso!',
         `
-        <p>Olá, <strong>${clientName}</strong>,</p>
+        <p>Olá, <strong>${escapeEmailHtml(clientName)}</strong>,</p>
         <p>É com grande satisfação que informamos que todas as etapas do seu projeto foram finalizadas pela equipe da <strong>GundjaTech</strong>:</p>
         <div style="background-color: #ECFDF5; border-radius: 10px; padding: 16px 20px; margin: 20px 0; border-left: 4px solid #10B981;">
             <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #047857;">Projeto Concluído • 100%</div>
-            <div style="font-size: 17px; font-weight: 800; color: #063B5C; margin-top: 4px;">${project.title}</div>
+            <div style="font-size: 17px; font-weight: 800; color: #063B5C; margin-top: 4px;">${escapeEmailHtml(project.title)}</div>
         </div>
         <p>Acesse o Portal do Cliente para revisar as entregas, baixar arquivos disponíveis ou falar com nosso time para suporte contínuo e próximos passos:</p>
         `,
