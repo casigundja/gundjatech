@@ -5489,6 +5489,18 @@ html[data-admin-theme="light"] body.gt-admin-boost .gt-modal-card label.uppercas
     color: #4A6479 !important;
 }
 
+/* Destaque visual das faturas pendentes ao navegar por ?pendentes=1 */
+tr[data-pending-invoice="1"].is-pending-highlight {
+    background: rgba(242, 194, 48, 0.12) !important;
+    box-shadow: inset 3.5px 0 0 #F2C230;
+    transition: background 0.25s ease;
+}
+
+html[data-admin-theme="light"] tr[data-pending-invoice="1"].is-pending-highlight {
+    background: #FFFBEA !important;
+    box-shadow: inset 3.5px 0 0 #F2C230;
+}
+
 .gt-chat-tab-count {
     display: inline-flex;
     align-items: center;

@@ -61,13 +61,23 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                             </p>
                         </div>
                     </div>
-                    <button
-                        type="button"
-                        onclick={`var btn=document.querySelector('button[data-id="${firstPending.id}"]');if(btn&&window.GT_OpenPayModal){window.GT_OpenPayModal(btn);}`}
-                        class="gt-btn-primary gt-btn-sm shrink-0"
-                    >
-                        <span>Pagar Agora (PIX) &rarr;</span>
-                    </button>
+                    {pendingItems.length > 1 ? (
+                        <button
+                            type="button"
+                            onclick="window.GT_HighlightPendingInvoices && window.GT_HighlightPendingInvoices()"
+                            class="gt-btn-primary gt-btn-sm shrink-0"
+                        >
+                            <span>Escolher Fatura Abaixo &darr;</span>
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            onclick={`var btn=document.querySelector('button[data-id="${firstPending.id}"]');if(btn&&window.GT_OpenPayModal){window.GT_OpenPayModal(btn);}`}
+                            class="gt-btn-primary gt-btn-sm shrink-0"
+                        >
+                            <span>Pagar Agora (PIX) &rarr;</span>
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -121,7 +131,7 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                     <p class="text-xs text-[#8C95AA] mt-1">Todas as suas obrigações financeiras e parcelas acordadas estarão visíveis aqui.</p>
                 </div>
             ) : (
-                <div class="gtb-card !p-0 overflow-hidden">
+                <div id="gt-finance-table-card" class="gtb-card !p-0 overflow-hidden">
                     <div class="gt-table-wrap">
                         <table>
                             <thead>
@@ -142,7 +152,7 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                                     const formattedVal = Number(t.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
                                     return (
-                                        <tr class="border-b border-white/5">
+                                        <tr class="border-b border-white/5" data-pending-invoice={canPay ? '1' : '0'}>
                                             <td class="py-3.5 px-5">
                                                 <div class="text-xs font-extrabold text-white">{t.description}</div>
                                                 <div class="text-[11px] text-[#8C95AA] mt-0.5">
@@ -628,18 +638,40 @@ export const PortalFinanceView: FC<PortalFinanceProps> = ({
                     }
                 };
 
-                // Abre automaticamente o Checkout PIX quando redirecionado pós-aprovação (?pagar=<id>)
+                window.GT_HighlightPendingInvoices = function () {
+                    var tableCard = document.getElementById('gt-finance-table-card');
+                    if (tableCard && tableCard.scrollIntoView) {
+                        tableCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    var rows = document.querySelectorAll('tr[data-pending-invoice="1"]');
+                    rows.forEach(function (tr) {
+                        tr.classList.remove('is-pending-highlight');
+                        void tr.offsetWidth;
+                        tr.classList.add('is-pending-highlight');
+                    });
+                };
+
+                // Abre automaticamente o Checkout PIX (?pagar=<id>) OU destaca as faturas pendentes (?pendentes=1)
                 (function autoOpenCheckoutFromQuery() {
                     try {
                         var url = new URL(window.location.href);
                         var payId = url.searchParams.get('pagar');
-                        if (!payId) return;
+                        var showPending = url.searchParams.get('pendentes');
+                        if (!payId && !showPending) return;
                         url.searchParams.delete('pagar');
+                        url.searchParams.delete('pendentes');
                         window.history.replaceState({}, '', url.pathname + (url.search ? url.search : '') + url.hash);
-                        var targetBtn = document.querySelector('button[data-id="' + payId.replace(/[^0-9]/g, '') + '"]')
-                            || document.querySelector('button[onclick*="GT_OpenPayModal"]');
-                        if (targetBtn && window.GT_OpenPayModal) {
-                            setTimeout(function () { window.GT_OpenPayModal(targetBtn); }, 180);
+
+                        if (payId) {
+                            var targetBtn = document.querySelector('button[data-id="' + payId.replace(/[^0-9]/g, '') + '"]')
+                                || document.querySelector('button[onclick*="GT_OpenPayModal"]');
+                            if (targetBtn && window.GT_OpenPayModal) {
+                                setTimeout(function () { window.GT_OpenPayModal(targetBtn); }, 180);
+                            }
+                            return;
+                        }
+                        if (showPending && window.GT_HighlightPendingInvoices) {
+                            setTimeout(function () { window.GT_HighlightPendingInvoices(); }, 180);
                         }
                     } catch (e) {}
                 })();

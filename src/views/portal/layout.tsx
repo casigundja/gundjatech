@@ -791,7 +791,13 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                                             descEl.textContent = 'Você possui ' + count + (count === 1 ? ' fatura em aberto' : ' faturas em aberto') + dueTxt + '. A confirmação do pagamento é obrigatória para liberar e manter a execução do seu projeto.';
                                         }
                                         if (ctaEl) {
-                                            ctaEl.setAttribute('href', pb.next_invoice_id ? '/portal/financeiro?pagar=' + encodeURIComponent(pb.next_invoice_id) : '/portal/financeiro');
+                                            if (count > 1) {
+                                                ctaEl.setAttribute('href', '/portal/financeiro?pendentes=1');
+                                                ctaEl.textContent = 'Ver Faturas Pendentes (' + count + ') →';
+                                            } else {
+                                                ctaEl.setAttribute('href', pb.next_invoice_id ? '/portal/financeiro?pagar=' + encodeURIComponent(pb.next_invoice_id) : '/portal/financeiro');
+                                                ctaEl.textContent = 'Realizar Pagamento →';
+                                            }
                                         }
                                         banner.classList.remove('hidden');
                                     } else {
