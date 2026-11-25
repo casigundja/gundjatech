@@ -72,10 +72,37 @@ export const PortalChatView: FC<PortalChatProps> = ({
                                 </div>
                             </div>
                         </div>
-                        <span class="gt-badge gt-badge-success">
-                            <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
-                            <span>Chat Ativo</span>
-                        </span>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span class="gt-badge gt-badge-success">
+                                <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+                                <span>Chat Ativo</span>
+                            </span>
+                            {conversation?.id && messages.length > 0 && (
+                                <form
+                                    action={`/portal/atendimento/${conversation.id}/nova-conversa`}
+                                    method="post"
+                                    class="m-0"
+                                    data-confirm={
+                                        conversation.crm_stage === 'handoff_human' || conversation.status === 'waiting_staff'
+                                            ? 'Há um atendimento em andamento com nossa equipe. Deseja arquivar esta conversa e iniciar uma nova? O histórico anterior continua salvo com a GundjaTech.'
+                                            : 'Deseja limpar a tela e iniciar uma nova conversa? O histórico anterior permanece salvo com nossa equipe para sua segurança.'
+                                    }
+                                    data-confirm-title="Iniciar Nova Conversa"
+                                    data-confirm-ok="Sim, Nova Conversa"
+                                >
+                                    <button
+                                        type="submit"
+                                        class="gt-btn-outline gt-btn-xs"
+                                        title="Arquivar esta conversa e iniciar um novo atendimento em branco"
+                                    >
+                                        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                        <span>Nova Conversa</span>
+                                    </button>
+                                </form>
+                            )}
+                        </div>
                     </div>
 
                     <div

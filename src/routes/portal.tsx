@@ -1277,6 +1277,44 @@ portalRoutes.post('/atendimento/:id/mensagem', rateLimit({ keyPrefix: 'portal_ch
     return c.redirect('/portal/atendimento?success=Mensagem+enviada+com+sucesso!');
 });
 
+// Arquivamento lógico seguro ("Nova Conversa / Limpar Chat"):
+// Preserva integralmente a conversa e mensagens no D1 para auditoria, CRM e jurídico (zero DELETE físico).
+portalRoutes.post('/atendimento/:id/nova-conversa', rateLimit({ keyPrefix: 'portal_chat_clear', maxRequests: 10, windowSeconds: 60 }), async (c) => {
+    const { user, db, client } = await getClientContext(c);
+    const convId = Number(c.req.param('id'));
+
+    const ownedConv = (await db.prepare(
+        'SELECT id, status FROM conversations WHERE id = ? AND client_id = ?'
+    ).bind(convId, client.id).first()) as { id: number; status?: string } | null;
+
+    if (!ownedConv) {
+        return c.json({ error: 'Acesso não autorizado a esta conversa.' }, 403);
+    }
+
+    if (ownedConv.status !== 'closed') {
+        await db.prepare(
+            `UPDATE conversations SET status = 'closed', updated_at = datetime('now') WHERE id = ? AND client_id = ?`
+        ).bind(convId, client.id).run();
+
+        try {
+            const clientIp = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown';
+            const userAgent = c.req.header('user-agent') || 'unknown';
+            await db.prepare(
+                `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, user_agent, created_at)
+                 VALUES (?, 'portal_chat_archived', 'conversation', ?, ?, ?, ?, datetime('now'))`
+            ).bind(
+                user.id,
+                convId,
+                JSON.stringify({ archived_by: 'client', client_id: client.id, preserved_for_audit: true }),
+                clientIp,
+                userAgent
+            ).run();
+        } catch {}
+    }
+
+    return c.redirect('/portal/atendimento?success=' + encodeURIComponent('Nova conversa iniciada! O histórico anterior permanece salvo com nossa equipe.'));
+});
+
 portalRoutes.get('/atendimento/:id/mensagens', async (c) => {
     const { db, client } = await getClientContext(c);
     const convId = Number(c.req.param('id'));

@@ -411,5 +411,20 @@ describe('Fase 4 - Módulo 4: Portal do Cliente Multi-tenant', () => {
 
         expect(sendRes.status).toBe(302);
         expect(sendRes.headers.get('Location')).toContain('success=Mensagem');
+
+        // Arquivamento lógico seguro ("Nova Conversa") — fecha sem apagar mensagens (zero DELETE)
+        const archiveRes = await app.request('/portal/atendimento/1/nova-conversa', {
+            method: 'POST',
+            headers: { Cookie: clientCookie }
+        }, env);
+        expect(archiveRes.status).toBe(302);
+        expect(archiveRes.headers.get('Location')).toContain('Nova%20conversa%20iniciada');
+
+        // Bloqueia IDOR se tentar arquivar conversa que não pertence ao cliente
+        const idorRes = await app.request('/portal/atendimento/999/nova-conversa', {
+            method: 'POST',
+            headers: { Cookie: clientCookie }
+        }, env);
+        expect(idorRes.status).toBe(403);
     });
 });
