@@ -83,31 +83,31 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
 
                 <div class="gt-grid-detail" style="height: calc(100vh - 176px); max-height: calc(100vh - 176px); align-items: stretch; overflow: hidden;">
                     {/* Coluna Principal: Proposta Comercial (Sem duplicações e com ritmo visual executivo) */}
-                    <section class="gtb-card !p-4 min-w-0" style="display: flex; flex-direction: column; gap: 10px; height: 100%; max-height: 100%; overflow: hidden;">
+                    <section class="gtb-card !p-5 min-w-0 gt-quote-editor-card" style="display: flex; flex-direction: column; gap: 12px; height: 100%; max-height: 100%; overflow: hidden;">
                         {/* Cabeçalho Limpo (Sem subtítulo repetido) */}
-                        <div class="space-y-2.5 pb-2.5" style="flex-shrink: 0; border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                        <div class="space-y-3 pb-3" style="flex-shrink: 0; border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
                             <div class="flex items-center justify-between gap-3 flex-wrap">
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <span class="gt-req-pill-neutral font-mono">{quotationDetail.reference_code}</span>
+                                    <span class="gt-req-pill-neutral">{quotationDetail.reference_code}</span>
                                     <span class={`gt-badge ${meta.badgeClass}`}>{meta.label}</span>
                                     {linkedRequest?.protocol && (
-                                        <a href={`/admin/solicitacoes/${linkedRequest.id}`} class="gt-req-pill-neutral font-mono no-underline hover:underline">
+                                        <a href={`/admin/solicitacoes/${linkedRequest.id}`} class="gt-req-pill-neutral no-underline hover:underline">
                                             Solicitação {linkedRequest.protocol}
                                         </a>
                                     )}
                                 </div>
-                                <span class="text-[11px] font-semibold text-[#8C95AA]">
+                                <span class="gt-quote-date">
                                     Emitida em {quotationDetail.created_at ? new Date(quotationDetail.created_at).toLocaleDateString('pt-BR') : '—'}
                                 </span>
                             </div>
 
-                            <div class="flex items-center justify-between gap-4 flex-wrap">
-                                <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white leading-tight truncate">
+                            <div class="flex items-baseline justify-between gap-4 flex-wrap">
+                                <h1 class="gt-quote-title truncate">
                                     {quotationDetail.title}
                                 </h1>
                                 <div class="flex items-baseline gap-2 shrink-0">
-                                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total Líquido</span>
-                                    <span class="gt-font-display text-xl sm:text-2xl font-extrabold text-[#F2C230] leading-none">{formatBRL(finalAmt)}</span>
+                                    <span class="gt-quote-total-label">Total Líquido</span>
+                                    <span class="gt-quote-total-val">{formatBRL(finalAmt)}</span>
                                 </div>
                             </div>
 
@@ -179,20 +179,20 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                             </div>
                         )}
 
-                        <form action={`/admin/orcamentos/${quotationDetail.id}`} method="post" data-dirty-guard="1" style="flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow: hidden;">
+                        <form action={`/admin/orcamentos/${quotationDetail.id}`} method="post" data-dirty-guard="1" class="gt-quote-form" style="flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column; gap: 11px; overflow: hidden;">
                             <div class="gt-grid-2" style="flex-shrink: 0;">
                                 <div>
-                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Título da Proposta *</label>
+                                    <label class="gt-quote-label">Título da Proposta *</label>
                                     <input
                                         type="text"
                                         name="title"
                                         required
                                         value={quotationDetail.title || ''}
-                                        class="w-full rounded-xl px-3 py-2 text-[12.5px]"
+                                        class="gt-quote-input"
                                     />
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">
+                                    <label class="gt-quote-label">
                                         E-mail do Cliente (Acesso ao Portal) *
                                     </label>
                                     <input
@@ -200,14 +200,14 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                                         name="client_email"
                                         placeholder="cliente@empresa.com"
                                         value={quotationDetail.client_email && !String(quotationDetail.client_email).endsWith('.local') ? quotationDetail.client_email : ''}
-                                        class="w-full rounded-xl px-3 py-2 text-[12.5px]"
+                                        class="gt-quote-input"
                                     />
                                 </div>
                             </div>
 
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" style="flex-shrink: 0;">
                                 <div>
-                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Valor Bruto (R$) *</label>
+                                    <label class="gt-quote-label">Valor Bruto (R$) *</label>
                                     <input
                                         type="number"
                                         step="0.01"
@@ -215,23 +215,23 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                                         name="total_amount"
                                         required
                                         value={totalAmt}
-                                        class="w-full rounded-xl px-3 py-2 text-[12.5px] font-mono"
+                                        class="gt-quote-input gt-quote-input-num"
                                     />
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Desconto (R$)</label>
+                                    <label class="gt-quote-label">Desconto (R$)</label>
                                     <input
                                         type="number"
                                         step="0.01"
                                         min="0"
                                         name="discount_amount"
                                         value={discountAmt}
-                                        class="w-full rounded-xl px-3 py-2 text-[12.5px] font-mono"
+                                        class="gt-quote-input gt-quote-input-num"
                                     />
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Status da Proposta</label>
-                                    <select name="status" class="w-full rounded-xl px-3 py-2 text-[12.5px]">
+                                    <label class="gt-quote-label">Status da Proposta</label>
+                                    <select name="status" class="gt-quote-input">
                                         <option value="draft" selected={quotationDetail.status === 'draft'}>Rascunho</option>
                                         <option value="sent" selected={quotationDetail.status === 'sent'}>Enviado (Libera Portal)</option>
                                         <option value="approved" selected={quotationDetail.status === 'approved'}>Aprovado (Inicia Projeto)</option>
@@ -240,23 +240,23 @@ export const AdminQuotationsView: FC<AdminQuotationsProps> = ({
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1">Validade</label>
+                                    <label class="gt-quote-label">Validade</label>
                                     <input
                                         type="date"
                                         name="expires_at"
                                         value={String(quotationDetail.expires_at || '').slice(0, 10)}
-                                        class="w-full rounded-xl px-3 py-2 text-[12.5px]"
+                                        class="gt-quote-input gt-quote-input-num"
                                     />
                                 </div>
                             </div>
 
                             <div style="flex: 1 1 0%; min-height: 0; display: flex; flex-direction: column;">
-                                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1" style="flex-shrink: 0;">Escopo Técnico, Entregáveis &amp; Condições Comerciais</label>
+                                <label class="gt-quote-label" style="flex-shrink: 0;">Escopo Técnico, Entregáveis &amp; Condições Comerciais</label>
                                 <textarea
                                     name="notes"
                                     rows={3}
                                     placeholder="Descreva os entregáveis, prazo estimado, forma de pagamento e observações comerciais..."
-                                    class="w-full rounded-xl px-3 py-2 text-[12.5px] leading-relaxed"
+                                    class="gt-quote-input gt-quote-textarea"
                                     style="flex: 1 1 0%; min-height: 54px; resize: none;"
                                 >{quotationDetail.notes || ''}</textarea>
                             </div>

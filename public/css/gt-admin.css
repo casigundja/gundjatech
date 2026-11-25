@@ -5164,6 +5164,116 @@ html[data-admin-theme="light"] .gt-project-payment-sub {
     color: #4A6479 !important;
 }
 
+/* ==========================================================================
+   ADMIN QUOTATION EDITOR TYPOGRAPHY & PILLS (CRISP LIGHT & DARK)
+   ========================================================================== */
+.gt-req-pill-neutral {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    font-variant-numeric: tabular-nums;
+    background: rgba(231, 240, 245, 0.08);
+    border: 1px solid rgba(231, 240, 245, 0.14);
+    color: #D5E6F0;
+}
+
+html[data-admin-theme="light"] .gt-req-pill-neutral {
+    background: #F1F6FA !important;
+    border-color: #D6E4EE !important;
+    color: #063B5C !important;
+}
+
+.gt-quote-date {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #8C95AA;
+    font-variant-numeric: tabular-nums;
+}
+
+html[data-admin-theme="light"] .gt-quote-date {
+    color: #64748B !important;
+}
+
+.gt-quote-title {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    color: #FFFFFF;
+}
+
+html[data-admin-theme="light"] .gt-quote-title {
+    color: #063B5C !important;
+}
+
+.gt-quote-total-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #8C95AA;
+}
+
+html[data-admin-theme="light"] .gt-quote-total-label {
+    color: #64748B !important;
+}
+
+.gt-quote-total-val {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    color: #F2C230;
+}
+
+html[data-admin-theme="light"] .gt-quote-total-val {
+    color: #B47B00 !important;
+}
+
+.gt-quote-label {
+    display: block;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #8C95AA;
+    margin-bottom: 5px;
+}
+
+html[data-admin-theme="light"] .gt-quote-label {
+    color: #4A6479 !important;
+}
+
+.gt-quote-input {
+    width: 100%;
+    padding: 8px 12px !important;
+    border-radius: 10px !important;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    line-height: 1.45 !important;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.gt-quote-input-num {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600 !important;
+}
+
+.gt-quote-textarea {
+    padding: 10px 12px !important;
+    line-height: 1.55 !important;
+}
+
 .gt-chat-tab-count {
     display: inline-flex;
     align-items: center;
