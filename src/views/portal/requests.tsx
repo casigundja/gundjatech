@@ -95,147 +95,176 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
                 successMessage={successMessage}
                 errorMessage={errorMessage}
             >
-                <div class="gt-detail-toolbar">
-                    <a href="/portal/solicitacoes" class="gt-back-link">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-                        <span>Voltar para Solicitações</span>
-                    </a>
-                </div>
-
-                <div class="gt-grid-detail items-start">
-                    <div class="gtb-card !p-6">
-                        <div class="gtb-card-accent-top gtb-card-accent-gold"></div>
-                        <div class="flex items-center gap-3 pb-4 mb-5 border-b border-white/10">
-                            <span class="w-10 h-10 rounded-xl bg-[#F2C230]/15 border border-[#F2C230]/35 flex items-center justify-center text-[#F2C230] shrink-0">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                            </span>
-                            <div>
-                                <h1 class="gt-font-display text-lg font-extrabold text-white">Abrir Nova Solicitação</h1>
-                                <p class="text-xs text-[#8C95AA] mt-0.5">Descreva o escopo desejado para receber análise técnica e proposta formal.</p>
-                            </div>
-                        </div>
-
-                        <form action="/portal/solicitacoes" method="post" class="space-y-4">
-                            <div>
-                                <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
-                                    Categoria do Serviço *
-                                </label>
-                                <select name="service_id" required class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white">
-                                    <option value="">Selecione o serviço desejado...</option>
-                                    {services.map((s: any) => (
-                                        <option value={s.id}>{s.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
-                                    Título do Pedido *
-                                </label>
-                                <input
-                                    type="text"
-                                    name="title"
-                                    required
-                                    placeholder="Ex: Criação de Landing Page com foco em captação de leads"
-                                    class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white"
-                                />
-                            </div>
-
-                            <div>
-                                <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
-                                    Descrição Detalhada *
-                                </label>
-                                <textarea
-                                    name="description"
-                                    rows={5}
-                                    required
-                                    placeholder="Explique os objetivos, público-alvo, integrações e requisitos essenciais do projeto..."
-                                    class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white"
-                                ></textarea>
-                            </div>
-
-                            <div class="gt-grid-2">
-                                <div>
-                                    <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
-                                        Orçamento Estimado (R$)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        name="estimated_budget"
-                                        placeholder="Ex: 5000.00"
-                                        class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label class="block text-[11px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
-                                        Prazo Desejado
-                                    </label>
-                                    <input
-                                        type="date"
-                                        name="desired_deadline"
-                                        class="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#032033] text-xs text-white"
-                                    />
-                                </div>
-                            </div>
-
-                            <div class="pt-3 border-t border-white/10 flex items-center justify-end gap-2.5 flex-wrap">
-                                <a href="/portal/solicitacoes" class="gt-btn-outline gt-btn-sm">Cancelar</a>
-                                <button type="submit" class="gt-btn-primary gt-btn-sm">
-                                    <span>Enviar Solicitação para Análise</span>
-                                    <span>&rarr;</span>
-                                </button>
-                            </div>
-                        </form>
+                <div class="gt-req-detail-shell">
+                    <div class="gt-detail-toolbar !mb-0" style="flex-shrink: 0;">
+                        <a href="/portal/solicitacoes" class="gt-back-link">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                            <span>Voltar para Solicitações</span>
+                        </a>
+                        <span class="gt-req-pill-neutral">Protocolo automático GNDJ</span>
                     </div>
 
-                    <div class="space-y-4">
-                        <div class="gtb-card !p-5">
-                            <div class="gtb-card-accent-top gtb-card-accent-blue"></div>
-                            <div class="flex items-center justify-between mb-4">
-                                <h2 class="text-xs font-extrabold uppercase tracking-wider text-[#16749A]">Fluxo de Atendimento</h2>
-                                <span class="text-[10.5px] font-bold text-[#8C95AA]">3 etapas</span>
+                    <div class="gt-req-detail-grid" style="align-items: start;">
+                        {/* Coluna Principal: Formulário Executivo de Briefing */}
+                        <section class="gtb-card !p-5 sm:!p-6 min-w-0">
+                            <div class="gtb-card-accent-top gtb-card-accent-gold"></div>
+                            <div class="flex items-center justify-between gap-3 pb-4 mb-5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <span class="gtb-icon-box !w-10 !h-10 shrink-0" style="color: #F2C230;">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                    </span>
+                                    <div class="min-w-0">
+                                        <h1 class="gt-font-display text-base sm:text-lg font-extrabold text-white leading-tight">Abrir Nova Solicitação</h1>
+                                        <p class="text-xs text-[#8C95AA] mt-0.5">Descreva o escopo desejado para receber análise técnica e proposta formal.</p>
+                                    </div>
+                                </div>
+                                <span class="gt-badge gt-badge-info hidden sm:inline-flex">Briefing Técnico</span>
                             </div>
-                            <div class="gt-step-list">
-                                <div class="gt-step-item">
-                                    <span class="gt-step-badge">1</span>
-                                    <div class="min-w-0">
-                                        <div class="text-xs font-extrabold text-white">Protocolo &amp; Triagem</div>
-                                        <div class="text-[11px] text-[#8C95AA] mt-0.5 leading-relaxed">Seu pedido recebe um código único GNDJ e entra na fila prioritária de engenharia.</div>
-                                    </div>
-                                </div>
-                                <div class="gt-step-item">
-                                    <span class="gt-step-badge">2</span>
-                                    <div class="min-w-0">
-                                        <div class="text-xs font-extrabold text-white">Orçamento Transparente</div>
-                                        <div class="text-[11px] text-[#8C95AA] mt-0.5 leading-relaxed">Enviamos a proposta detalhada com escopo, prazo e valor para aprovação em 1 clique.</div>
-                                    </div>
-                                </div>
-                                <div class="gt-step-item">
-                                    <span class="gt-step-badge">3</span>
-                                    <div class="min-w-0">
-                                        <div class="text-xs font-extrabold text-white">Execução &amp; Entregas</div>
-                                        <div class="text-[11px] text-[#8C95AA] mt-0.5 leading-relaxed">Acompanhe cada etapa, percentual concluído e arquivos direto pelo Portal.</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="gt-petrol-cta-card rounded-2xl p-5">
-                            <div class="flex items-center gap-2.5 mb-2">
-                                <span class="w-8 h-8 rounded-lg bg-[#F2C230]/20 border border-[#F2C230]/40 flex items-center justify-center text-[#F2C230] shrink-0">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-                                </span>
-                                <div class="gt-petrol-cta-title">Precisa de ajuda no escopo?</div>
+                            <form action="/portal/solicitacoes" method="post" class="space-y-4">
+                                {/* Linha 1: Categoria + Título lado a lado */}
+                                <div class="gt-grid-2">
+                                    <div>
+                                        <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
+                                            Categoria do Serviço *
+                                        </label>
+                                        <select name="service_id" required class="w-full px-3.5 py-2.5 rounded-xl text-xs">
+                                            <option value="">Selecione o serviço desejado...</option>
+                                            {services.map((s: any) => (
+                                                <option value={s.id}>{s.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
+                                            Título do Pedido *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="title"
+                                            required
+                                            maxlength={160}
+                                            placeholder="Ex: Criação de Landing Page para captação de leads"
+                                            class="w-full px-3.5 py-2.5 rounded-xl text-xs"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Linha 2: Descrição Detalhada com guia estruturado */}
+                                <div>
+                                    <div class="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                                        <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA]">
+                                            Descrição Detalhada *
+                                        </label>
+                                        <span class="text-[10.5px] text-[#8C95AA]">
+                                            Dica: informe objetivo, público-alvo e integrações desejadas
+                                        </span>
+                                    </div>
+                                    <textarea
+                                        name="description"
+                                        rows={6}
+                                        required
+                                        maxlength={4000}
+                                        placeholder="Explique os objetivos do projeto, funcionalidades essenciais, integrações (PIX, WhatsApp, CRM, ERP) e referências visuais..."
+                                        class="w-full px-3.5 py-2.5 rounded-xl text-xs leading-relaxed"
+                                        style="resize: vertical; min-height: 128px;"
+                                    ></textarea>
+                                </div>
+
+                                {/* Linha 3: Orçamento Estimado + Prazo Desejado */}
+                                <div class="gt-grid-2">
+                                    <div>
+                                        <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
+                                            Orçamento Estimado (R$) <span class="font-semibold normal-case opacity-75">(opcional)</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            name="estimated_budget"
+                                            placeholder="Ex: 5000.00"
+                                            class="w-full px-3.5 py-2.5 rounded-xl text-xs font-mono"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[10.5px] font-extrabold uppercase tracking-wider text-[#8C95AA] mb-1.5">
+                                            Prazo Desejado <span class="font-semibold normal-case opacity-75">(opcional)</span>
+                                        </label>
+                                        <input
+                                            type="date"
+                                            name="desired_deadline"
+                                            class="w-full px-3.5 py-2.5 rounded-xl text-xs"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Rodapé de Ações */}
+                                <div class="pt-4 flex items-center justify-between gap-3 flex-wrap" style="border-top: 1px solid rgba(22, 116, 154, 0.14);">
+                                    <div class="flex items-center gap-2 text-[11px] text-[#8C95AA]">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16749A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                                        <span>Análise técnica gratuita e sem compromisso</span>
+                                    </div>
+                                    <div class="flex items-center gap-2.5 ml-auto">
+                                        <a href="/portal/solicitacoes" class="gt-btn-outline gt-btn-sm">Cancelar</a>
+                                        <button type="submit" data-loading-text="Enviando..." class="gt-btn-primary gt-btn-sm">
+                                            <span>Enviar Solicitação para Análise</span>
+                                            <span>&rarr;</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </section>
+
+                        {/* Coluna Lateral: Fluxo de Atendimento + Suporte Técnico */}
+                        <div class="min-w-0 gt-req-detail-right" style="display: flex; flex-direction: column; gap: 12px;">
+                            <aside class="gtb-card !p-4 sm:!p-5">
+                                <div class="gtb-card-accent-top gtb-card-accent-blue"></div>
+                                <div class="flex items-center justify-between mb-3.5 pb-2.5" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+                                    <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-[#16749A]">Fluxo de Atendimento</h2>
+                                    <span class="gt-badge gt-badge-info">3 etapas</span>
+                                </div>
+                                <div class="gt-step-list">
+                                    <div class="gt-step-item">
+                                        <span class="gt-step-badge">1</span>
+                                        <div class="min-w-0">
+                                            <div class="text-xs font-extrabold text-white">Protocolo &amp; Triagem</div>
+                                            <div class="text-[11px] text-[#8C95AA] mt-0.5 leading-relaxed">Seu pedido recebe um código único GNDJ e entra na fila prioritária da engenharia.</div>
+                                        </div>
+                                    </div>
+                                    <div class="gt-step-item">
+                                        <span class="gt-step-badge">2</span>
+                                        <div class="min-w-0">
+                                            <div class="text-xs font-extrabold text-white">Orçamento Transparente</div>
+                                            <div class="text-[11px] text-[#8C95AA] mt-0.5 leading-relaxed">Enviamos a proposta detalhada com escopo, prazo e valor para aprovação em 1 clique.</div>
+                                        </div>
+                                    </div>
+                                    <div class="gt-step-item">
+                                        <span class="gt-step-badge">3</span>
+                                        <div class="min-w-0">
+                                            <div class="text-xs font-extrabold text-white">Execução &amp; Entregas</div>
+                                            <div class="text-[11px] text-[#8C95AA] mt-0.5 leading-relaxed">Acompanhe cada etapa, percentual concluído e arquivos direto pelo Portal.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </aside>
+
+                            <div class="gt-petrol-cta-card">
+                                <div class="gt-petrol-cta-head">
+                                    <span class="gt-petrol-cta-icon" aria-hidden="true">
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.1" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+                                    </span>
+                                    <div class="gt-petrol-cta-title">Precisa de ajuda no escopo?</div>
+                                </div>
+                                <p class="gt-petrol-cta-desc">
+                                    Fale diretamente com nossa equipe técnica no chat em tempo real antes de enviar sua solicitação.
+                                </p>
+                                <a href="/portal/atendimento" class="gt-btn-primary gt-btn-sm w-full justify-center">
+                                    <span>Abrir Chat com Engenharia</span>
+                                    <span>&rarr;</span>
+                                </a>
                             </div>
-                            <p class="gt-petrol-cta-desc">
-                                Fale diretamente com nossa equipe técnica no chat em tempo real antes de enviar sua solicitação.
-                            </p>
-                            <a href="/portal/atendimento" class="gt-btn-primary gt-btn-sm w-full justify-center">
-                                <span>Abrir Chat com Engenharia</span>
-                                <span>&rarr;</span>
-                            </a>
                         </div>
                     </div>
                 </div>
@@ -610,6 +639,10 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
         );
     }
 
+    const openCount = requests.filter((r: any) => ['new', 'analyzing', 'in_review', 'awaiting_info'].includes(r.status)).length;
+    const awaitingApprovalCount = requests.filter((r: any) => r.status === 'quotation_sent').length;
+    const activeDoneCount = requests.filter((r: any) => ['approved', 'in_progress', 'completed'].includes(r.status)).length;
+
     return (
         <PortalLayout
             title="Solicitações • Portal do Cliente GundjaTech"
@@ -619,61 +652,127 @@ export const PortalRequestsView: FC<PortalRequestsProps> = ({
             successMessage={successMessage}
             errorMessage={errorMessage}
         >
-            <div class="gt-page-header">
-                <div>
-                    <h1 class="gt-font-display text-xl font-extrabold text-white">Solicitações de Serviço</h1>
-                    <p class="text-xs text-[#8C95AA] mt-1">Consulte e acompanhe suas demandas, orçamentos solicitados e prazos.</p>
+            <div class="gt-list-shell">
+                <div class="gt-page-header !mb-0" style="flex-shrink: 0;">
+                    <div>
+                        <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white">Solicitações de Serviço</h1>
+                        <p class="text-xs text-[#8C95AA] mt-0.5">Consulte e acompanhe suas demandas, orçamentos solicitados e prazos.</p>
+                    </div>
+                    <a href="/portal/orcamentos" class="gt-btn-outline gt-btn-sm shrink-0">
+                        <span>Ver Meus Orçamentos</span>
+                        <span>&rarr;</span>
+                    </a>
                 </div>
-                <a href="/portal/solicitacoes/nova" class="gt-btn-primary gt-btn-sm">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
-                    <span>+ Nova Solicitação</span>
-                </a>
-            </div>
 
-            {requests.length === 0 ? (
-                <div class="gtb-card !p-10 text-center">
-                    <div class="w-12 h-12 rounded-2xl bg-[#F2C230]/15 border border-[#F2C230]/30 flex items-center justify-center text-[#F2C230] mx-auto mb-3">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                {/* 4 KPIs Executivos Compactos */}
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5" style="flex-shrink: 0;">
+                    <div class="gtb-card gtb-kpi-gold !py-3 !px-4 flex items-center justify-between gap-2">
+                        <div>
+                            <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total de Pedidos</span>
+                            <span class="gt-font-display text-lg font-extrabold text-white mt-0.5 block" style="font-variant-numeric: tabular-nums;">{requests.length}</span>
+                        </div>
+                        <span class="gt-badge gt-badge-info">Histórico</span>
                     </div>
-                    <h3 class="text-sm font-extrabold text-white">Nenhuma solicitação aberta.</h3>
-                    <p class="text-xs text-[#8C95AA] mt-1 mb-5">Precisa de um novo site, funcionalidade ou ajuste técnico? Abra sua solicitação agora mesmo.</p>
-                    <a href="/portal/solicitacoes/nova" class="gt-btn-primary gt-btn-sm">+ Abrir Solicitação</a>
+                    <div class="gtb-card gtb-kpi-blue !py-3 !px-4 flex items-center justify-between gap-2">
+                        <div>
+                            <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Em Triagem / Análise</span>
+                            <span class="gt-font-display text-lg font-extrabold text-white mt-0.5 block" style="font-variant-numeric: tabular-nums;">{openCount}</span>
+                        </div>
+                        <span class="gt-badge gt-badge-info">Análise</span>
+                    </div>
+                    <div class="gtb-card !py-3 !px-4 flex items-center justify-between gap-2">
+                        <div>
+                            <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Aguardando Aprovação</span>
+                            <span class="gt-font-display text-lg font-extrabold text-[#F2C230] mt-0.5 block" style="font-variant-numeric: tabular-nums;">{awaitingApprovalCount}</span>
+                        </div>
+                        <span class="gt-badge gt-badge-warning">Proposta</span>
+                    </div>
+                    <div class="gtb-card gtb-kpi-petrol !py-3 !px-4 flex items-center justify-between gap-2">
+                        <div>
+                            <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Em Execução / Entregues</span>
+                            <span class="gt-font-display text-lg font-extrabold text-[#34D399] mt-0.5 block" style="font-variant-numeric: tabular-nums;">{activeDoneCount}</span>
+                        </div>
+                        <span class="gt-badge gt-badge-success">Aprovado</span>
+                    </div>
                 </div>
-            ) : (
-                <div class="gtb-card !p-0 overflow-hidden">
-                    <div class="gt-table-wrap">
-                        <table>
-                            <thead>
-                                <tr class="border-b border-white/10 text-left text-[11px] uppercase text-[#8C95AA]">
-                                    <th class="py-3.5 px-5">Protocolo</th>
-                                    <th class="py-3.5 px-5">Título / Demanda</th>
-                                    <th class="py-3.5 px-5">Data</th>
-                                    <th class="py-3.5 px-5">Status</th>
-                                    <th class="py-3.5 px-5 text-right">Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {requests.map((r: any) => (
-                                    <tr class="border-b border-white/5">
-                                        <td class="py-3.5 px-5 text-xs font-extrabold font-mono text-white">{r.protocol}</td>
-                                        <td class="py-3.5 px-5 text-xs font-bold text-white">{r.service_title}</td>
-                                        <td class="py-3.5 px-5 text-xs text-[#8C95AA]">{r.created_at?.slice(0, 10)}</td>
-                                        <td class="py-3.5 px-5">
-                                            <span class="gt-badge gt-badge-warning">{reqStatusLabel[r.status] || r.status}</span>
-                                        </td>
-                                        <td class="py-3.5 px-5 text-right">
-                                            <a href={`/portal/solicitacoes/${r.id}`} class="gt-btn-outline gt-btn-xs">
-                                                <span>Ver Detalhes</span>
-                                                <span>&rarr;</span>
-                                            </a>
-                                        </td>
+
+                {requests.length === 0 ? (
+                    <div class="gtb-card !p-8 text-center">
+                        <div class="gt-crm-empty-frame" style="margin-top: 0;">
+                            <span class="gt-crm-empty-icon" aria-hidden="true">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            </span>
+                            <h3 class="gt-font-display text-sm sm:text-base font-extrabold text-white" style="margin: 0 0 6px 0;">
+                                Nenhuma solicitação aberta
+                            </h3>
+                            <p class="text-xs text-[#8C95AA]" style="max-width: 400px; line-height: 1.6; margin: 0 0 18px 0;">
+                                Precisa de um novo site, funcionalidade ou ajuste técnico? Use o botão <strong>+ Nova Solicitação</strong> no topo para iniciar seu pedido.
+                            </p>
+                            <a href="/portal/solicitacoes/nova" class="gt-btn-primary gt-btn-xs">Abrir Primeira Solicitação →</a>
+                        </div>
+                    </div>
+                ) : (
+                    <div class="gtb-card gt-list-table-card !p-0 overflow-hidden">
+                        <div class="gt-table-wrap gt-list-table-scroll">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="border-b border-white/10 text-[10.5px] uppercase tracking-wider text-[#8C95AA]">
+                                        <th class="py-3.5 px-5">Protocolo</th>
+                                        <th class="py-3.5 px-5">Título / Demanda</th>
+                                        <th class="py-3.5 px-5">Abertura</th>
+                                        <th class="py-3.5 px-5">Status</th>
+                                        <th class="py-3.5 px-5 text-right">Ação</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody class="divide-y divide-white/5">
+                                    {requests.map((r: any) => {
+                                        const stBadge =
+                                            r.status === 'approved' || r.status === 'completed'
+                                                ? 'gt-badge-success'
+                                                : r.status === 'cancelled'
+                                                    ? 'gt-badge-danger'
+                                                    : r.status === 'quotation_sent'
+                                                        ? 'gt-badge-warning'
+                                                        : 'gt-badge-info';
+                                        const titleText = r.service_title || r.title || 'Solicitação';
+                                        return (
+                                            <tr class="hover:bg-white/[0.02] transition">
+                                                <td class="py-3.5 px-5 text-xs font-extrabold font-mono text-[#F2C230] whitespace-nowrap">
+                                                    <a href={`/portal/solicitacoes/${r.id}`} class="text-inherit no-underline hover:underline">
+                                                        {r.protocol}
+                                                    </a>
+                                                </td>
+                                                <td class="py-3.5 px-5 text-xs font-bold text-white">
+                                                    <a
+                                                        href={`/portal/solicitacoes/${r.id}`}
+                                                        title={titleText}
+                                                        class="text-inherit no-underline hover:text-[#16749A] block"
+                                                        style="max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                                    >
+                                                        {titleText}
+                                                    </a>
+                                                </td>
+                                                <td class="py-3.5 px-5 text-xs text-[#8C95AA] whitespace-nowrap" style="font-variant-numeric: tabular-nums;">
+                                                    {formatPortalDateBrt(r.created_at)}
+                                                </td>
+                                                <td class="py-3.5 px-5 whitespace-nowrap">
+                                                    <span class={`gt-badge ${stBadge}`}>{reqStatusLabel[r.status] || r.status}</span>
+                                                </td>
+                                                <td class="py-3.5 px-5 text-right whitespace-nowrap">
+                                                    <a href={`/portal/solicitacoes/${r.id}`} class="gt-btn-outline gt-btn-xs">
+                                                        <span>Acompanhar</span>
+                                                        <span>&rarr;</span>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </PortalLayout>
     );
 };
