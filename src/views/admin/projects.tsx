@@ -430,7 +430,8 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
             successMessage={successMessage}
             errorMessage={errorMessage}
         >
-            <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="gt-list-shell">
+            <div class="flex flex-wrap items-center justify-between gap-3" style="flex-shrink: 0;">
                 <div class="min-w-0">
                     <h1 class="gt-font-display text-lg sm:text-xl font-extrabold text-white">Projetos &amp; Gestão de Entregas</h1>
                     <p class="text-xs text-[#8C95AA] mt-0.5">
@@ -451,40 +452,40 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
             </div>
 
             {/* 4 KPIs Executivos Compactos */}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="gtb-card gtb-kpi-gold !py-3.5 !px-4 flex items-center justify-between gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5" style="flex-shrink: 0;">
+                <div class="gtb-card gtb-kpi-gold !py-3 !px-4 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Total de Projetos</span>
-                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block" style="font-variant-numeric: tabular-nums;">{projects.length}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-white mt-0.5 block" style="font-variant-numeric: tabular-nums;">{projects.length}</span>
                     </div>
                     <span class="gt-badge gt-badge-info">Carteira</span>
                 </div>
-                <div class="gtb-card gtb-kpi-blue !py-3.5 !px-4 flex items-center justify-between gap-2">
+                <div class="gtb-card gtb-kpi-blue !py-3 !px-4 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Em Desenvolvimento</span>
-                        <span class="gt-font-display text-xl font-extrabold text-[#F2C230] mt-0.5 block" style="font-variant-numeric: tabular-nums;">{inProgressCount}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-[#F2C230] mt-0.5 block" style="font-variant-numeric: tabular-nums;">{inProgressCount}</span>
                     </div>
                     <span class="gt-badge gt-badge-warning">Ativo</span>
                 </div>
-                <div class="gtb-card !py-3.5 !px-4 flex items-center justify-between gap-2">
+                <div class="gtb-card !py-3 !px-4 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Em Homologação</span>
-                        <span class="gt-font-display text-xl font-extrabold text-white mt-0.5 block" style="font-variant-numeric: tabular-nums;">{reviewingCount}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-white mt-0.5 block" style="font-variant-numeric: tabular-nums;">{reviewingCount}</span>
                     </div>
                     <span class="gt-badge gt-badge-info">Revisão</span>
                 </div>
-                <div class="gtb-card gtb-kpi-petrol !py-3.5 !px-4 flex items-center justify-between gap-2">
+                <div class="gtb-card gtb-kpi-petrol !py-3 !px-4 flex items-center justify-between gap-2">
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase tracking-wider text-[#8C95AA]">Entregues</span>
-                        <span class="gt-font-display text-xl font-extrabold text-[#34D399] mt-0.5 block" style="font-variant-numeric: tabular-nums;">{completedCount}</span>
+                        <span class="gt-font-display text-lg font-extrabold text-[#34D399] mt-0.5 block" style="font-variant-numeric: tabular-nums;">{completedCount}</span>
                     </div>
                     <span class="gt-badge gt-badge-success">Concluído</span>
                 </div>
             </div>
 
-            {/* Card Unificado: Toolbar de Filtros + Tabela Executiva de Projetos */}
-            <section class="gtb-card !p-0 overflow-hidden">
-                <div class="px-5 py-3.5 flex flex-wrap items-center justify-between gap-3" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14);">
+            {/* Card Unificado: Toolbar de Filtros + Tabela Executiva de Projetos com Scroll Interno */}
+            <section class="gtb-card gt-list-table-card !p-0 overflow-hidden">
+                <div class="px-4 py-3 flex flex-wrap items-center justify-between gap-3" style="border-bottom: 1px solid rgba(22, 116, 154, 0.14); flex-shrink: 0;">
                     <div class="flex flex-wrap items-center gap-1.5">
                         <a
                             href={buildFilterUrl('')}
@@ -528,7 +529,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                         </a>
                     </div>
 
-                    <form method="get" action="/admin/projetos" class="flex flex-wrap items-center gap-2 m-0">
+                    <form method="get" action="/admin/projetos" class="flex flex-wrap sm:flex-nowrap items-center gap-2 m-0">
                         {statusFilter && <input type="hidden" name="status" value={statusFilter} />}
                         <input
                             type="text"
@@ -536,7 +537,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                             value={search}
                             placeholder="Buscar projeto ou cliente..."
                             class="rounded-xl px-3 py-1.5 text-xs"
-                            style="width: 220px;"
+                            style="width: 210px; max-width: 100%;"
                         />
                         <button type="submit" class="gt-btn-outline gt-btn-xs">Filtrar</button>
                         {(search || statusFilter) && (
@@ -569,7 +570,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                         </div>
                     </div>
                 ) : (
-                    <div class="gt-table-wrap">
+                    <div class="gt-table-wrap gt-list-table-scroll">
                         <table class="w-full text-left text-xs">
                             <thead>
                                 <tr class="border-b border-white/10 text-[10px] uppercase tracking-wider text-[#8C95AA]">
@@ -681,6 +682,7 @@ export const AdminProjectsView: FC<AdminProjectsProps> = ({
                     </div>
                 )}
             </section>
+            </div>
 
             {/* Modal Novo Projeto */}
             <div
