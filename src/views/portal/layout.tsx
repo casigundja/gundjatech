@@ -163,72 +163,72 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                         </div>
 
                         <div class="gtb-section-head">
-                            <span>Visão Geral</span>
+                            <span>Comercial &amp; Operação</span>
                         </div>
 
-                        <nav class="px-3 space-y-1 overflow-y-auto flex-1">
-                            <a href="/portal" class={`gtb-nav-item ${activeNav === 'dashboard' ? 'is-active' : ''}`} title="Início & Resumo">
+                        <nav class="px-3 space-y-0.5 overflow-y-auto flex-1">
+                            <a href="/portal" class={`gtb-nav-item ${activeNav === 'dashboard' ? 'is-active' : ''}`} title="Visão Geral">
                                 <div class="flex items-center gap-3">
                                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
-                                    <span>Início &amp; Resumo</span>
+                                    <span>Visão Geral</span>
                                 </div>
                             </a>
 
-                            <div class="gtb-section-head gtb-section-head-divided">
-                                <span>Projetos &amp; Pedidos</span>
-                            </div>
-
-                            <a href="/portal/solicitacoes" class={`gtb-nav-item ${activeNav === 'requests' ? 'is-active' : ''}`} title="Minhas Solicitações">
+                            <a href="/portal/solicitacoes" class={`gtb-nav-item ${activeNav === 'requests' ? 'is-active' : ''}`} title="Solicitações">
                                 <div class="flex items-center gap-3">
                                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                                    <span>Minhas Solicitações</span>
+                                    <span>Solicitações</span>
                                 </div>
                             </a>
 
-                            <a href="/portal/projetos" class={`gtb-nav-item ${activeNav === 'projects' ? 'is-active' : ''}`} title="Meus Projetos">
-                                <div class="flex items-center gap-3">
-                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
-                                    <span>Meus Projetos</span>
-                                </div>
-                            </a>
-
-                            <a href="/portal/orcamentos" class={`gtb-nav-item ${activeNav === 'quotations' ? 'is-active' : ''}`} title="Orçamentos Recebidos">
+                            <a href="/portal/orcamentos" class={`gtb-nav-item ${activeNav === 'quotations' ? 'is-active' : ''}`} title="Orçamentos">
                                 <div class="flex items-center gap-3">
                                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" /></svg>
-                                    <span>Orçamentos Recebidos</span>
+                                    <span>Orçamentos</span>
+                                </div>
+                            </a>
+
+                            <a href="/portal/projetos" class={`gtb-nav-item ${activeNav === 'projects' ? 'is-active' : ''}`} title="Projetos">
+                                <div class="flex items-center gap-3">
+                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                                    <span>Projetos</span>
                                 </div>
                             </a>
 
                             <div class="gtb-section-head gtb-section-head-divided">
-                                <span>Ativos &amp; Suporte</span>
+                                <span>Financeiro &amp; Serviços</span>
                             </div>
 
-                            <a href="/portal/dominios" class={`gtb-nav-item ${activeNav === 'domains' ? 'is-active' : ''}`} title="Meus Domínios">
-                                <div class="flex items-center gap-3">
-                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
-                                    <span>Meus Domínios</span>
-                                </div>
-                            </a>
-
-                            <a href="/portal/campanhas" class={`gtb-nav-item ${activeNav === 'campaigns' ? 'is-active' : ''}`} title="Tráfego & Anúncios">
-                                <div class="flex items-center gap-3">
-                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                                    <span>Tráfego &amp; Anúncios</span>
-                                </div>
-                            </a>
-
-                            <a href="/portal/financeiro" class={`gtb-nav-item ${activeNav === 'finance' ? 'is-active' : ''}`} title="Financeiro & Faturas">
+                            <a href="/portal/financeiro" class={`gtb-nav-item ${activeNav === 'finance' ? 'is-active' : ''}`} title="Financeiro">
                                 <div class="flex items-center gap-3 min-w-0">
                                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                                    <span class="truncate">Financeiro &amp; Faturas</span>
+                                    <span class="truncate">Financeiro</span>
                                 </div>
                                 <span id="gt-portal-finance-badge" class="gt-portal-nav-badge hidden" style="display: none;" aria-label="Faturas pendentes">0</span>
                             </a>
 
-                            <a href="/portal/atendimento" class={`gtb-nav-item ${activeNav === 'chat' ? 'is-active' : ''}`} title="Falar com Atendimento">
+                            <a href="/portal/dominios" class={`gtb-nav-item ${activeNav === 'domains' ? 'is-active' : ''}`} title="Domínios & DNS">
+                                <div class="flex items-center gap-3">
+                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
+                                    <span>Domínios &amp; DNS</span>
+                                </div>
+                            </a>
+
+                            <a href="/portal/campanhas" class={`gtb-nav-item ${activeNav === 'campaigns' ? 'is-active' : ''}`} title="Campanhas & Tráfego">
+                                <div class="flex items-center gap-3">
+                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                                    <span>Campanhas &amp; Tráfego</span>
+                                </div>
+                            </a>
+
+                            <div class="gtb-section-head gtb-section-head-divided">
+                                <span>Atendimento &amp; IA</span>
+                            </div>
+
+                            <a href="/portal/atendimento" class={`gtb-nav-item ${activeNav === 'chat' ? 'is-active' : ''}`} title="Chat ao Vivo">
                                 <div class="flex items-center gap-3">
                                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-                                    <span>Falar com Atendimento</span>
+                                    <span>Chat ao Vivo</span>
                                 </div>
                             </a>
                         </nav>
