@@ -148,10 +148,6 @@ export const PortalQuotationsView: FC<PortalQuotationsProps> = ({
                     <h1 class="gt-font-display text-xl font-extrabold text-white">Orçamentos Recebidos</h1>
                     <p class="text-xs text-[#8C95AA] mt-1">Analise os escopos técnicos e aprove suas propostas com segurança e garantia em contrato.</p>
                 </div>
-                <a href="/portal/solicitacoes/nova" class="gt-btn-primary gt-btn-sm">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                    <span>Solicitar Orçamento</span>
-                </a>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">

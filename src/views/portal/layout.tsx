@@ -358,12 +358,6 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                                 </div>
                             </div>
 
-                            <a href="/portal/solicitacoes/nova" class="gt-btn-primary gt-btn-sm">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
-                                <span class="hidden sm:inline">Nova Solicitação</span>
-                                <span class="sm:hidden">Solicitar</span>
-                            </a>
-
                             <a href="/" target="_blank" class="gt-btn-outline gt-btn-sm" title="Abrir site institucional">
                                 <span class="hidden md:inline">Ir para o Site</span>
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
