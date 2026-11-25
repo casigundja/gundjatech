@@ -47,6 +47,7 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                 <link rel="stylesheet" href={`/css/gt-tailwind.css?v=${GT_TAILWIND_CSS_VERSION}`} />
                 <link rel="stylesheet" href={`/css/gt-admin.css?v=${GT_ADMIN_CSS_VERSION}`} />
                 <script src="/jsm/gt-alpine.js?v=1" defer></script>
+                <script src="/js/gt-datepicker.js?v=1" defer></script>
                 <script dangerouslySetInnerHTML={{
                     __html: `
                     (function () {
