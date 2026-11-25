@@ -82,7 +82,12 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                             var btn = document.getElementById('gt-portal-collapse-btn');
                             if (aside) aside.classList.toggle('is-collapsed', isCol);
                             if (document.body) document.body.classList.toggle('gt-sidebar-is-collapsed', isCol);
-                            if (btn) btn.setAttribute('title', isCol ? 'Expandir menu' : 'Recolher menu');
+                            if (btn) {
+                                var lbl = isCol ? 'Expandir menu' : 'Recolher menu';
+                                btn.setAttribute('data-tip', lbl);
+                                btn.setAttribute('aria-label', lbl);
+                                btn.removeAttribute('title');
+                            }
                         }
                         var initPortalCollapsed = false;
                         try { initPortalCollapsed = localStorage.getItem('gt_portal_sidebar_collapsed') === '1'; } catch (e) {}
@@ -258,11 +263,12 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                             <form action="/auth/logout" method="post" class="m-0 shrink-0">
                                 <button
                                     type="submit"
-                                    title="Sair do Portal"
+                                    data-tip="Sair do Portal"
+                                    data-tip-danger="1"
                                     aria-label="Sair do Portal"
                                     class="gt-portal-logout-btn"
                                 >
-                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                                 </button>
                             </form>
                         </div>
@@ -686,6 +692,51 @@ export const PortalLayout: FC<PropsWithChildren<PortalLayoutProps>> = ({
                             }
 
                             fetchPortalNotifs();
+                        })();
+
+                        // Tooltip corporativo instantâneo na sidebar recolhida (substitui title nativo)
+                        (function initSidebarTooltips() {
+                            var sidebar = document.getElementById('gt-portal-sidebar');
+                            if (!sidebar) return;
+                            var tip = document.createElement('div');
+                            tip.className = 'gt-sb-tooltip';
+                            tip.setAttribute('role', 'tooltip');
+                            document.body.appendChild(tip);
+
+                            sidebar.querySelectorAll('[title]').forEach(function (el) {
+                                var t = el.getAttribute('title');
+                                if (t && !el.getAttribute('data-tip')) {
+                                    el.setAttribute('data-tip', t);
+                                }
+                                el.removeAttribute('title');
+                            });
+
+                            var activeTarget = null;
+                            function hideTip() {
+                                activeTarget = null;
+                                tip.classList.remove('is-visible', 'is-danger');
+                            }
+                            sidebar.addEventListener('mouseover', function (ev) {
+                                if (document.documentElement.getAttribute('data-sidebar-collapsed') !== '1') return;
+                                var el = ev.target && ev.target.closest ? ev.target.closest('[data-tip]') : null;
+                                if (!el || !sidebar.contains(el)) return;
+                                var text = el.getAttribute('data-tip');
+                                if (!text) return;
+                                activeTarget = el;
+                                var rect = el.getBoundingClientRect();
+                                tip.textContent = text;
+                                tip.classList.toggle('is-danger', el.getAttribute('data-tip-danger') === '1');
+                                tip.style.left = (rect.right + 12) + 'px';
+                                tip.style.top = (rect.top + rect.height / 2) + 'px';
+                                tip.classList.add('is-visible');
+                            });
+                            sidebar.addEventListener('mouseout', function (ev) {
+                                if (!activeTarget) return;
+                                var related = ev.relatedTarget;
+                                if (!related || !activeTarget.contains(related)) hideTip();
+                            });
+                            sidebar.addEventListener('click', hideTip);
+                            window.addEventListener('scroll', hideTip, true);
                         })();
                     })();
                 ` }} />

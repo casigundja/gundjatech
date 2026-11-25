@@ -178,17 +178,76 @@ html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-nav-item > div {
     transition: transform 0.2s ease;
 }
 
-/* Quando recolhida (76px): vira botão quadrado centralizado [ →| ] */
+/* Quando recolhida (76px): vira botão quadrado 40x40 perfeitamente centralizado */
 .gtb-sidebar.is-collapsed .gtb-sidebar-footer-collapse,
 html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-sidebar-footer-collapse {
-    padding: 10px 10px 12px;
+    padding: 10px 8px;
+    display: flex;
+    justify-content: center;
 }
 
 .gtb-sidebar.is-collapsed .gtb-sidebar-footer-toggle,
 html[data-sidebar-collapsed="1"] .gtb-sidebar .gtb-sidebar-footer-toggle {
+    width: 40px !important;
+    height: 40px !important;
+    min-height: 40px !important;
     justify-content: center !important;
-    padding: 10px 0 !important;
+    padding: 0 !important;
     gap: 0 !important;
+    border-radius: 12px !important;
+    margin: 0 auto !important;
+}
+
+/* Tooltip corporativo instantâneo para Sidebar recolhida (Paleta 3: #063B5C + #FFFFFF + #F2C230) */
+.gt-sb-tooltip {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 240;
+    pointer-events: none;
+    padding: 7px 12px;
+    border-radius: 10px;
+    background: #063B5C;
+    color: #FFFFFF;
+    border: 1px solid rgba(242, 194, 48, 0.55);
+    box-shadow: 0 12px 28px -8px rgba(3, 24, 40, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translate3d(-4px, -50%, 0);
+    transition: opacity 0.14s ease, transform 0.16s cubic-bezier(0.16, 0.84, 0.3, 1);
+}
+
+.gt-sb-tooltip.is-visible {
+    opacity: 1;
+    transform: translate3d(0, -50%, 0);
+}
+
+.gt-sb-tooltip::before {
+    content: "";
+    position: absolute;
+    left: -5px;
+    top: 50%;
+    width: 9px;
+    height: 9px;
+    background: #063B5C;
+    border-left: 1px solid rgba(242, 194, 48, 0.55);
+    border-bottom: 1px solid rgba(242, 194, 48, 0.55);
+    transform: translateY(-50%) rotate(45deg);
+}
+
+.gt-sb-tooltip.is-danger {
+    background: #991B1B;
+    border-color: rgba(248, 113, 113, 0.65);
+}
+
+.gt-sb-tooltip.is-danger::before {
+    background: #991B1B;
+    border-left-color: rgba(248, 113, 113, 0.65);
+    border-bottom-color: rgba(248, 113, 113, 0.65);
 }
 
 /* Harmonização Modo Claro */
@@ -3928,6 +3987,37 @@ body.gt-admin-boost .gt-badge-danger {
     background: rgba(239, 68, 68, 0.14);
     border-color: rgba(239, 68, 68, 0.4);
     color: #F87171;
+}
+
+/* Rodapé do Portal no modo Sidebar recolhida (76px): empilha Avatar + Sair verticalmente sem sobreposição */
+.gtb-sidebar.is-collapsed .gt-portal-sidebar-footer,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gt-portal-sidebar-footer {
+    padding: 10px 8px 12px;
+}
+
+.gtb-sidebar.is-collapsed .gt-portal-footer-card,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gt-portal-footer-card {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 6px;
+}
+
+.gtb-sidebar.is-collapsed .gt-portal-footer-user,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gt-portal-footer-user {
+    flex: 0 0 auto;
+    justify-content: center;
+    width: auto;
+    gap: 0;
+}
+
+.gtb-sidebar.is-collapsed .gt-portal-logout-btn,
+html[data-sidebar-collapsed="1"] .gtb-sidebar .gt-portal-logout-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 10px;
 }
 
 .gt-portal-user-name {

@@ -83,7 +83,12 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                             var btn = document.getElementById('gt-sidebar-collapse-btn');
                             if (aside) aside.classList.toggle('is-collapsed', isCol);
                             if (document.body) document.body.classList.toggle('gt-sidebar-is-collapsed', isCol);
-                            if (btn) btn.setAttribute('title', isCol ? 'Expandir menu' : 'Recolher menu');
+                            if (btn) {
+                                var lbl = isCol ? 'Expandir menu' : 'Recolher menu';
+                                btn.setAttribute('data-tip', lbl);
+                                btn.setAttribute('aria-label', lbl);
+                                btn.removeAttribute('title');
+                            }
                         }
                         var initCollapsed = false;
                         try { initCollapsed = localStorage.getItem('gt_admin_sidebar_collapsed') === '1'; } catch (e) {}
@@ -1353,6 +1358,51 @@ export const AdminLayout: FC<PropsWithChildren<AdminLayoutProps>> = ({
                         } else {
                             scanSelects();
                         }
+                    })();
+
+                    // Tooltip corporativo instantâneo na sidebar recolhida (idêntico ao Portal)
+                    (function initAdminSidebarTooltips() {
+                        var sidebar = document.getElementById('gt-admin-sidebar');
+                        if (!sidebar) return;
+                        var tip = document.createElement('div');
+                        tip.className = 'gt-sb-tooltip';
+                        tip.setAttribute('role', 'tooltip');
+                        document.body.appendChild(tip);
+
+                        sidebar.querySelectorAll('[title]').forEach(function (el) {
+                            var t = el.getAttribute('title');
+                            if (t && !el.getAttribute('data-tip')) {
+                                el.setAttribute('data-tip', t);
+                            }
+                            el.removeAttribute('title');
+                        });
+
+                        var activeTarget = null;
+                        function hideTip() {
+                            activeTarget = null;
+                            tip.classList.remove('is-visible', 'is-danger');
+                        }
+                        sidebar.addEventListener('mouseover', function (ev) {
+                            if (document.documentElement.getAttribute('data-sidebar-collapsed') !== '1') return;
+                            var el = ev.target && ev.target.closest ? ev.target.closest('[data-tip]') : null;
+                            if (!el || !sidebar.contains(el)) return;
+                            var text = el.getAttribute('data-tip');
+                            if (!text) return;
+                            activeTarget = el;
+                            var rect = el.getBoundingClientRect();
+                            tip.textContent = text;
+                            tip.classList.toggle('is-danger', el.getAttribute('data-tip-danger') === '1');
+                            tip.style.left = (rect.right + 12) + 'px';
+                            tip.style.top = (rect.top + rect.height / 2) + 'px';
+                            tip.classList.add('is-visible');
+                        });
+                        sidebar.addEventListener('mouseout', function (ev) {
+                            if (!activeTarget) return;
+                            var related = ev.relatedTarget;
+                            if (!related || !activeTarget.contains(related)) hideTip();
+                        });
+                        sidebar.addEventListener('click', hideTip);
+                        window.addEventListener('scroll', hideTip, true);
                     })();
 
                     checkGlobalUpdates();
